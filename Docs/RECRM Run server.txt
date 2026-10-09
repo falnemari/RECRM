@@ -391,3 +391,5 @@ To start the server manually at any time:
 PYTHONPATH=src/backend .venv/bin/python src/backend/run.py
 ```
 
+This is Version 2 of my project running on the RECRM_v2 branch!
+
