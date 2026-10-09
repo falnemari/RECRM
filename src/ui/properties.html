@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Inventory - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .controls-bar {
+            background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px;
+        }
+        .controls-bar input, .controls-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; }
+        .properties-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
+        }
+        .property-card {
+            background: white; border-radius: 8px; padding: 18px; border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .property-badge {
+            align-self: flex-start; padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700;
+        }
+        [dir="rtl"] .property-badge { align-self: flex-start; }
+        .badge-available { background: #dcfce7; color: #166534; }
+        .badge-reserved { background: #fef3c7; color: #92400e; }
+        .badge-sold, .badge-rented { background: #fee2e2; color: #991b1b; }
+        .property-title { font-size: 1.15em; margin: 12px 0 6px 0; color: var(--text-main); }
+        .property-price { font-size: 1.3em; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+        .property-meta { font-size: 0.85em; color: var(--text-muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 10px; margin-bottom: 16px; }
+        .btn {
+            background-color: var(--secondary); color: white; padding: 8px 14px; border: none;
+            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.85em; font-weight: 600; text-align: center;
+        }
+        .btn:hover { background-color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_inventory">Inventory</span>
+        </div>
+        <div class="header-actions">
+            <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" class="active" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font" data-i18n="banner_title">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 style="margin: 0;" data-i18n="page_title">Property Inventory & Units</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label" data-i18n="loading_inventory">Loading inventory...</p>
+            </div>
+        </div>
+
+        <div class="controls-bar">
+            <input type="text" id="search-box" placeholder="Search by unit number or project..." style="flex-grow: 1; min-width: 200px;" oninput="fetchUnits()" data-i18n-placeholder="search_placeholder">
+            <select id="status-select" onchange="fetchUnits()">
+                <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
+                <option value="RESERVED" data-i18n="opt_reserved">RESERVED</option>
+                <option value="SOLD" data-i18n="opt_sold">SOLD</option>
+                <option value="RENTED" data-i18n="opt_rented">RENTED</option>
+            </select>
+            <select id="bedrooms-select" onchange="fetchUnits()">
+                <option value="" data-i18n="opt_any_bedrooms">Any Bedrooms</option>
+                <option value="1" data-i18n="opt_bed_1">1 Bedroom</option>
+                <option value="2" data-i18n="opt_bed_2">2 Bedrooms</option>
+                <option value="3" data-i18n="opt_bed_3">3 Bedrooms</option>
+                <option value="4" data-i18n="opt_bed_4">4+ Bedrooms</option>
+            </select>
+        </div>
+
+        <div class="properties-grid" id="units-grid">
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;" data-i18n="loading_inventory">Loading live property inventory from database...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        let currentLang = 'en';
+        let cachedUnits = [];
+        let cachedTotal = 0;
+
+        const i18nData = {
+            en: {
+                badge_inventory: "Inventory",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "Muath Khidr Al-Nemari Real Estate Services Office",
+                page_title: "Property Inventory & Units",
+                loading_inventory: "Loading live property inventory from database...",
+                search_placeholder: "Search by unit number or project...",
+                opt_all_statuses: "All Statuses",
+                opt_available: "AVAILABLE",
+                opt_reserved: "RESERVED",
+                opt_sold: "SOLD",
+                opt_rented: "RENTED",
+                opt_any_bedrooms: "Any Bedrooms",
+                opt_bed_1: "1 Bedroom",
+                opt_bed_2: "2 Bedrooms",
+                opt_bed_3: "3 Bedrooms",
+                opt_bed_4: "4+ Bedrooms",
+                lbl_unit: "Unit",
+                lbl_type: "Type",
+                lbl_area: "Area",
+                lbl_floor: "Floor",
+                lbl_bedrooms: "Bedrooms",
+                lbl_baths: "Baths",
+                lbl_owner: "Owner",
+                lbl_sqm: "sqm",
+                lbl_sar: "SAR",
+                lbl_sar_yr: "SAR/yr",
+                lbl_price_request: "Price on request",
+                lbl_direct_agency: "Direct / Agency",
+                btn_view_details: "View Details",
+                details_title: "Unit Details",
+                details_status: "Status",
+                details_price: "Price",
+                no_units_found: "No units found matching criteria.",
+                failed_load: "Failed to load units from backend API.",
+                counter_text: "Showing {count} of {total} units in database",
+                badge_available: "AVAILABLE",
+                badge_reserved: "RESERVED",
+                badge_sold: "SOLD",
+                badge_rented: "RENTED",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_inventory: "المخزون العقاري",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                page_title: "المخزون والوحدات العقارية",
+                loading_inventory: "جاري تحميل المخزون العقاري من قاعدة البيانات...",
+                search_placeholder: "البحث برقم الوحدة أو اسم المشروع...",
+                opt_all_statuses: "جميع الحالات",
+                opt_available: "متاح (AVAILABLE)",
+                opt_reserved: "محجوز (RESERVED)",
+                opt_sold: "مباع (SOLD)",
+                opt_rented: "مؤجر (RENTED)",
+                opt_any_bedrooms: "أي عدد غرف",
+                opt_bed_1: "غرفة نوم واحدة",
+                opt_bed_2: "غرفتان نوم",
+                opt_bed_3: "3 غرف نوم",
+                opt_bed_4: "4 غرف نوم فأكثر",
+                lbl_unit: "الوحدة",
+                lbl_type: "النوع",
+                lbl_area: "المساحة",
+                lbl_floor: "الطابق",
+                lbl_bedrooms: "غرف النوم",
+                lbl_baths: "دورات المياه",
+                lbl_owner: "المالك",
+                lbl_sqm: "م²",
+                lbl_sar: "ريال",
+                lbl_sar_yr: "ريال / سنوياً",
+                lbl_price_request: "السعر عند الطلب",
+                lbl_direct_agency: "مباشر / إدارة العقار",
+                btn_view_details: "معاينة التفاصيل",
+                details_title: "تفاصيل الوحدة",
+                details_status: "الحالة",
+                details_price: "السعر",
+                no_units_found: "لم يتم العثور على وحدات تطابق خيارات البحث.",
+                failed_load: "تعذر تحميل الوحدات العقارية من خادم النظام.",
+                counter_text: "عرض {count} من إجمالي {total} وحدة في قاعدة البيانات",
+                badge_available: "متاح",
+                badge_reserved: "محجوز",
+                badge_sold: "مباع",
+                badge_rented: "مؤجر",
+                lang_label: "English"
+            }
+        };
+
+        const propTypeMapAr = {
+            'Apartment': 'شقة',
+            'Villa': 'فيلا',
+            'Townhouse': 'تاون هاوس',
+            'Duplex': 'دوبلكس',
+            'Penthouse': 'بنتهاوس',
+            'Commercial': 'تجاري',
+            'Office': 'مكتب',
+            'Land': 'أرض',
+            'Residential': 'سكني'
+        };
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.setAttribute('placeholder', i18nData[currentLang][key]);
+                }
+            });
+
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+
+            localStorage.setItem('recrm_lang', currentLang);
+
+            // Re-render units with updated language terms
+            if (cachedUnits && cachedUnits.length > 0) {
+                renderUnits();
+            }
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+
+            const savedLang = localStorage.getItem('recrm_lang') || 'en';
+            applyLanguage(savedLang);
+        }
+
+        function getBadge(status) {
+            const s = (status || '').toUpperCase();
+            const t = i18nData[currentLang];
+            if (s === 'AVAILABLE') {
+                return `<span class="property-badge badge-available">${t.badge_available || 'AVAILABLE'}</span>`;
+            }
+            if (s === 'RESERVED') {
+                return `<span class="property-badge badge-reserved">${t.badge_reserved || 'RESERVED'}</span>`;
+            }
+            if (s === 'SOLD') {
+                return `<span class="property-badge badge-sold">${t.badge_sold || 'SOLD'}</span>`;
+            }
+            if (s === 'RENTED') {
+                return `<span class="property-badge badge-rented">${t.badge_rented || 'RENTED'}</span>`;
+            }
+            return `<span class="property-badge badge-sold">${s}</span>`;
+        }
+
+        function renderUnits() {
+            const t = i18nData[currentLang];
+            const counter = document.getElementById('counter-label');
+            counter.textContent = t.counter_text.replace('{count}', cachedUnits.length).replace('{total}', cachedTotal);
+
+            const container = document.getElementById('units-grid');
+            if (cachedUnits.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">${t.no_units_found}</div>`;
+                return;
+            }
+
+            container.innerHTML = cachedUnits.map(u => {
+                let price = t.lbl_price_request;
+                if (u.asking_price != null && !isNaN(u.asking_price)) {
+                    price = `${Number(u.asking_price).toLocaleString()} ${t.lbl_sar}`;
+                } else if (u.rent_price != null && !isNaN(u.rent_price)) {
+                    price = `${Number(u.rent_price).toLocaleString()} ${t.lbl_sar_yr}`;
+                }
+
+                const projectName = currentLang === 'ar'
+                    ? (u.project_name_ar || u.project_name_en || 'مشروع عقاري')
+                    : (u.project_name_en || u.project_name_ar || 'Building Project');
+
+                const unitTitle = currentLang === 'ar'
+                    ? `${t.lbl_unit} ${u.unit_number} - ${projectName}`
+                    : `${t.lbl_unit} ${u.unit_number} - ${projectName}`;
+
+                let propTypeName = u.property_type_name || (currentLang === 'ar' ? 'شقة' : 'Apartment');
+                if (currentLang === 'ar' && propTypeMapAr[propTypeName]) {
+                    propTypeName = propTypeMapAr[propTypeName];
+                }
+
+                const owner = u.owner_name || t.lbl_direct_agency;
+
+                return `
+                    <div class="property-card">
+                        <div>
+                            ${getBadge(u.status)}
+                            <h3 class="property-title">${unitTitle}</h3>
+                            <div class="property-price">${price}</div>
+                            <div class="property-meta">
+                                <div>${t.lbl_type}: <strong>${propTypeName}</strong></div>
+                                <div>${t.lbl_area}: <strong>${u.area_sqm || '--'} ${t.lbl_sqm}</strong> | ${t.lbl_floor}: <strong>${u.floor_no ?? '--'}</strong></div>
+                                <div>${t.lbl_bedrooms}: <strong>${u.bedrooms ?? '--'}</strong> | ${t.lbl_baths}: <strong>${u.bathrooms ?? '--'}</strong></div>
+                                <div>${t.lbl_owner}: <strong>${owner}</strong></div>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="alert('${t.details_title}: ${u.unit_number}\\n${t.details_status}: ${u.status}\\n${t.details_price}: ${price}')">${t.btn_view_details}</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function fetchUnits() {
+            const search = document.getElementById('search-box').value;
+            const status = document.getElementById('status-select').value;
+            const bedrooms = document.getElementById('bedrooms-select').value;
+
+            let url = `${API_BASE}/api/v1/units?page_size=60`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (bedrooms) url += `&bedrooms=${encodeURIComponent(bedrooms)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                cachedUnits = json.data || [];
+                cachedTotal = json.meta?.total || 0;
+                renderUnits();
+            } catch (err) {
+                console.error(err);
+                const t = i18nData[currentLang];
+                document.getElementById('units-grid').innerHTML = `<div style="grid-column: 1/-1; color: red; text-align: center;">${t.failed_load}</div>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            fetchUnits();
+        });
+    </script>
+</body>
+</html>

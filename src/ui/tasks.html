@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks & Communications - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #2563eb;
+            --secondary: #0ea5e9;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0284c7;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .badge-header {
+            font-size: 0.8em;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--primary-light);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .kpi-card.urgent::before { background: var(--danger); }
+        .kpi-card.warning::before { background: var(--warning); }
+        .kpi-card.success::before { background: var(--success); }
+        .kpi-title { font-size: 0.85em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8em; font-weight: 700; margin: 8px 0 4px 0; color: var(--text-main); }
+        .kpi-sub { font-size: 0.8em; color: var(--text-muted); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--primary); }
+        .tab-btn.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary-light);
+        }
+
+        /* Action Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            width: 240px;
+        }
+        .select-filter {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+        }
+        .btn {
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: var(--primary); }
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; }
+
+        /* Tables */
+        .table-responsive {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        [dir="rtl"] table { text-align: right; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .badge-open { background: #fef3c7; color: #92400e; }
+        .badge-completed { background: #dcfce7; color: #166534; }
+        .badge-urgent, .badge-overdue { background: #fee2e2; color: #991b1b; }
+        .badge-high { background: #ffedd5; color: #c2410c; }
+        .badge-normal { background: #f1f5f9; color: #475569; }
+        .badge-low { background: #f8fafc; color: #64748b; }
+
+        .channel-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .channel-whatsapp { background: #dcfce7; color: #166534; }
+        .channel-call { background: #e0f2fe; color: #0369a1; }
+        .channel-email { background: #f3e8ff; color: #6b21a8; }
+        .channel-sms { background: #fef9c3; color: #854d0e; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 580px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .modal-header h3 { margin: 0; }
+        .close-btn { background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text-muted); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="badge-header" data-i18n="badge_tasks">Tasks & Communications</span>
+        </div>
+                    <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" class="active" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+
+    <div class="content">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_open_tasks">Open Agent Tasks</div>
+                <div class="kpi-value" id="kpi-open-tasks">--</div>
+                <div class="kpi-sub" data-i18n="kpi_open_tasks_sub">Tasks requiring follow-up</div>
+            </div>
+            <div class="kpi-card urgent">
+                <div class="kpi-title" data-i18n="kpi_overdue_tasks">Overdue Tasks</div>
+                <div class="kpi-value" id="kpi-overdue-tasks">--</div>
+                <div class="kpi-sub" data-i18n="kpi_overdue_tasks_sub">Past SLA deadline</div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-title" data-i18n="kpi_completed_tasks">Completed Tasks</div>
+                <div class="kpi-value" id="kpi-completed-tasks">--</div>
+                <div class="kpi-sub" data-i18n="kpi_completed_tasks_sub">Finished to-dos & actions</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_activities">Activities & Comms</div>
+                <div class="kpi-value" id="kpi-activities">--</div>
+                <div class="kpi-sub" data-i18n="kpi_activities_sub">Calls, meetings & messages</div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tasks')" data-i18n="tab_tasks">Tasks & To-Dos</button>
+            <button class="tab-btn" onclick="switchTab('activities')" data-i18n="tab_activities">Activities & Log</button>
+            <button class="tab-btn" onclick="switchTab('comms')" data-i18n="tab_comms">Communications Feed</button>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: Tasks -->
+        <!-- ============================================================== -->
+        <div id="pane-tasks" class="tab-pane active">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="task-search" class="search-input" placeholder="Search task title, customer, agent..." onkeyup="filterTasks()">
+                    <select id="task-status" class="select-filter" onchange="loadTasks()">
+                        <option value="" data-i18n="opt_all_status">All Statuses</option>
+                        <option value="OPEN" data-i18n="opt_open">Open</option>
+                        <option value="COMPLETED" data-i18n="opt_completed">Completed</option>
+                    </select>
+                    <select id="task-priority" class="select-filter" onchange="loadTasks()">
+                        <option value="" data-i18n="opt_all_priority">All Priorities</option>
+                        <option value="URGENT" data-i18n="opt_urgent">Urgent</option>
+                        <option value="HIGH" data-i18n="opt_high">High</option>
+                        <option value="NORMAL" data-i18n="opt_normal">Normal</option>
+                        <option value="LOW" data-i18n="opt_low">Low</option>
+                    </select>
+                    <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="task-overdue-only" onchange="loadTasks()">
+                        <span data-i18n="lbl_overdue_only">Show Overdue Only</span>
+                    </label>
+                </div>
+                <button class="btn" onclick="openNewTaskModal()" data-i18n="btn_new_task">+ New Task</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_task_title">Task Title</th>
+                            <th data-i18n="th_priority">Priority</th>
+                            <th data-i18n="th_due_date">Due Date</th>
+                            <th data-i18n="th_assigned_to">Assigned Agent</th>
+                            <th data-i18n="th_related_to">Related Customer</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasks-tbody">
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: Activities -->
+        <!-- ============================================================== -->
+        <div id="pane-activities" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="act-search" class="search-input" placeholder="Search subject, description..." onkeyup="filterActivities()">
+                    <select id="act-type" class="select-filter" onchange="loadActivities()">
+                        <option value="" data-i18n="opt_all_types">All Types</option>
+                        <option value="CALL">Phone Call (مكالمة هاتفية)</option>
+                        <option value="WHATSAPP">WhatsApp (واتساب)</option>
+                        <option value="EMAIL">Email (بريد إلكتروني)</option>
+                        <option value="MEETING">Meeting (اجتماع)</option>
+                        <option value="VIEWING">Property Viewing (معاينة عقار)</option>
+                        <option value="FOLLOW_UP">Follow-up (متابعة)</option>
+                        <option value="NOTE">Internal Note (ملاحظة داخلية)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="openNewActivityModal()" data-i18n="btn_new_act">+ Log Activity</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_type">Type</th>
+                            <th data-i18n="th_subject">Subject</th>
+                            <th data-i18n="th_description">Details</th>
+                            <th data-i18n="th_agent">Agent</th>
+                            <th data-i18n="th_customer">Customer</th>
+                            <th data-i18n="th_date">Date / Time</th>
+                            <th data-i18n="th_status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="acts-tbody">
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading activities...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: Communications Feed -->
+        <!-- ============================================================== -->
+        <div id="pane-comms" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <select id="comm-channel" class="select-filter" onchange="loadComms()">
+                        <option value="" data-i18n="opt_all_channels">All Channels</option>
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="EMAIL">Email</option>
+                        <option value="PHONE">Phone</option>
+                        <option value="SMS">SMS</option>
+                    </select>
+                    <select id="comm-dir" class="select-filter" onchange="loadComms()">
+                        <option value="" data-i18n="opt_all_dirs">All Directions</option>
+                        <option value="OUTBOUND">Outbound (صادر)</option>
+                        <option value="INBOUND">Inbound (وارد)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="openNewCommModal()" data-i18n="btn_new_comm">+ Log Communication</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_channel">Channel</th>
+                            <th data-i18n="th_direction">Direction</th>
+                            <th data-i18n="th_subject">Subject</th>
+                            <th data-i18n="th_body">Message Preview</th>
+                            <th data-i18n="th_customer">Customer</th>
+                            <th data-i18n="th_sent_at">Sent At</th>
+                            <th data-i18n="th_delivery">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comms-tbody">
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading communications...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODALS -->
+    <!-- ============================================================== -->
+
+    <!-- Modal 1: New Task -->
+    <div id="modal-task" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_task_title">Create New Task</h3>
+                <button class="close-btn" onclick="closeModal('modal-task')">&times;</button>
+            </div>
+            <form id="task-form" onsubmit="handleCreateTask(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_task_title">Task Title *</label>
+                    <input type="text" id="task-title" placeholder="e.g. Call buyer to confirm price offer" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_due_date">Due Date & Time *</label>
+                        <input type="datetime-local" id="task-due" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_priority">Priority *</label>
+                        <select id="task-pri" required>
+                            <option value="URGENT">Urgent (عاجل)</option>
+                            <option value="HIGH">High (هام)</option>
+                            <option value="NORMAL" selected>Normal (عادي)</option>
+                            <option value="LOW">Low (منخفض)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_assigned_agent">Assign Agent</label>
+                        <select id="task-agent">
+                            <option value="">Select agent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_customer">Related Customer</label>
+                        <select id="task-cust">
+                            <option value="">Select customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-task')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_task">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Log Activity -->
+    <div id="modal-activity" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_act_title">Log Agent Activity</h3>
+                <button class="close-btn" onclick="closeModal('modal-activity')">&times;</button>
+            </div>
+            <form id="act-form" onsubmit="handleCreateActivity(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_act_type">Activity Type *</label>
+                        <select id="act-type-select" required>
+                            <option value="CALL">Phone Call (مكالمة)</option>
+                            <option value="WHATSAPP">WhatsApp (واتساب)</option>
+                            <option value="EMAIL">Email (بريد)</option>
+                            <option value="MEETING">Meeting (اجتماع)</option>
+                            <option value="VIEWING">Property Viewing (معاينة)</option>
+                            <option value="NOTE">Internal Note (ملاحظة)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_status">Status</label>
+                        <select id="act-status-select">
+                            <option value="COMPLETED" selected>Completed (منجز)</option>
+                            <option value="PLANNED">Planned (مجدول)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_subject">Subject *</label>
+                    <input type="text" id="act-subject" placeholder="e.g. Follow-up regarding counter-offer" required>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_details">Description / Outcome Notes</label>
+                    <textarea id="act-desc" rows="3" placeholder="Key takeaways from this interaction..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_agent">Agent</label>
+                        <select id="act-agent">
+                            <option value="">Select agent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_customer">Customer</label>
+                        <select id="act-cust">
+                            <option value="">Select customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-activity')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_act">Log Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Log Communication -->
+    <div id="modal-comm" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_comm_title">Log Message / Communication</h3>
+                <button class="close-btn" onclick="closeModal('modal-comm')">&times;</button>
+            </div>
+            <form id="comm-form" onsubmit="handleCreateComm(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_channel">Channel *</label>
+                        <select id="comm-chan" required>
+                            <option value="WHATSAPP">WhatsApp</option>
+                            <option value="EMAIL">Email</option>
+                            <option value="PHONE">Phone</option>
+                            <option value="SMS">SMS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_direction">Direction *</label>
+                        <select id="comm-direction" required>
+                            <option value="OUTBOUND">Outbound (صادر)</option>
+                            <option value="INBOUND">Inbound (وارد)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_subject">Subject</label>
+                    <input type="text" id="comm-subject" placeholder="e.g. Price offer and terms document">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_body">Message Body *</label>
+                    <textarea id="comm-body" rows="3" placeholder="Enter message contents or communication summary..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_customer">Target Customer</label>
+                    <select id="comm-cust">
+                        <option value="">Select customer</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-comm')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_comm">Log Communication</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SCRIPT -->
+    <!-- ============================================================== -->
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                badge_tasks: "Tasks & Communications",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities",
+                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                kpi_open_tasks: "Open Agent Tasks", kpi_open_tasks_sub: "Tasks requiring follow-up",
+                kpi_overdue_tasks: "Overdue Tasks", kpi_overdue_tasks_sub: "Past SLA deadline",
+                kpi_completed_tasks: "Completed Tasks", kpi_completed_tasks_sub: "Finished to-dos & actions",
+                kpi_activities: "Activities & Comms", kpi_activities_sub: "Calls, meetings & messages",
+                tab_tasks: "Tasks & To-Dos", tab_activities: "Activities & Log", tab_comms: "Communications Feed",
+                opt_all_status: "All Statuses", opt_open: "Open", opt_completed: "Completed",
+                opt_all_priority: "All Priorities", opt_urgent: "Urgent", opt_high: "High", opt_normal: "Normal", opt_low: "Low",
+                opt_all_types: "All Types", opt_all_channels: "All Channels", opt_all_dirs: "All Directions",
+                lbl_overdue_only: "Show Overdue Only",
+                btn_new_task: "+ New Task", btn_new_act: "+ Log Activity", btn_new_comm: "+ Log Communication",
+                th_task_title: "Task Title", th_priority: "Priority", th_due_date: "Due Date",
+                th_assigned_to: "Assigned Agent", th_related_to: "Related Customer", th_status: "Status", th_actions: "Action",
+                th_type: "Type", th_subject: "Subject", th_description: "Details", th_agent: "Agent", th_customer: "Customer",
+                th_date: "Date / Time", th_channel: "Channel", th_direction: "Direction", th_body: "Message Preview",
+                th_sent_at: "Sent At", th_delivery: "Status",
+                modal_task_title: "Create New Task", modal_act_title: "Log Agent Activity", modal_comm_title: "Log Message / Communication",
+                lbl_task_title: "Task Title *", lbl_due_date: "Due Date & Time *", lbl_priority: "Priority *",
+                lbl_assigned_agent: "Assign Agent", lbl_related_customer: "Related Customer",
+                lbl_act_type: "Activity Type *", lbl_subject: "Subject *", lbl_details: "Description / Outcome Notes",
+                lbl_agent: "Agent", lbl_customer: "Customer", lbl_channel: "Channel *", lbl_direction: "Direction *",
+                lbl_body: "Message Body *",
+                btn_cancel: "Cancel", btn_save_task: "Create Task", btn_save_act: "Log Activity", btn_save_comm: "Log Communication",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_tasks: "المهام والاتصالات اليومية",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة",
+                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                kpi_open_tasks: "المهام الجارية", kpi_open_tasks_sub: "تتطلب متابعة من الوكلاء",
+                kpi_overdue_tasks: "المهام المتأخرة", kpi_overdue_tasks_sub: "تجاوزت الموعد المحدد",
+                kpi_completed_tasks: "المهام المنجزة", kpi_completed_tasks_sub: "متابعات تمت بنجاح",
+                kpi_activities: "الأنشطة والاتصالات", kpi_activities_sub: "مكالمات واجتماعات ومراسلات",
+                tab_tasks: "المهام والمتابعات", tab_activities: "سجل الأنشطة والمكالمات", tab_comms: "سجل المراسلات والرسائل",
+                opt_all_status: "جميع الحالات", opt_open: "جارية", opt_completed: "مكتملة",
+                opt_all_priority: "جميع الأولويات", opt_urgent: "عاجل", opt_high: "هام", opt_normal: "عادي", opt_low: "منخفض",
+                opt_all_types: "جميع الأنواع", opt_all_channels: "جميع القنوات", opt_all_dirs: "جميع الاتجاهات",
+                lbl_overdue_only: "عرض المتأخرات فقط",
+                btn_new_task: "+ مهمة جديدة", btn_new_act: "+ تسجيل نشاط", btn_new_comm: "+ تسجيل مراسلة",
+                th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_due_date: "تاريخ الاستحقاق",
+                th_assigned_to: "الوكيل المكلف", th_related_to: "العميل المرتبط", th_status: "الحالة", th_actions: "الإجراء",
+                th_type: "النوع", th_subject: "الموضوع", th_description: "التفاصيل", th_agent: "الوكيل", th_customer: "العميل",
+                th_date: "التاريخ / الوقت", th_channel: "القناة", th_direction: "الاتجاه", th_body: "نص الرسالة",
+                th_sent_at: "تاريخ الإرسال", th_delivery: "الحالة",
+                modal_task_title: "تسجيل مهمة جديدة", modal_act_title: "تسجيل نشاط أو مكالمة", modal_comm_title: "تسجيل رسالة أو مراسلة",
+                lbl_task_title: "عنوان المهمة *", lbl_due_date: "تاريخ ووقت الاستحقاق *", lbl_priority: "الأولوية *",
+                lbl_assigned_agent: "الموظف المكلف", lbl_related_customer: "العميل المعني",
+                lbl_act_type: "نوع النشاط *", lbl_subject: "الموضوع *", lbl_details: "ملاحظات وتفاصيل التفاعل",
+                lbl_agent: "الموظف / الوكيل", lbl_customer: "العميل", lbl_channel: "القناة *", lbl_direction: "الاتجاه *",
+                lbl_body: "نص الرسالة *",
+                btn_cancel: "إلغاء", btn_save_task: "حفظ المهمة", btn_save_act: "تسجيل النشاط", btn_save_comm: "تسجيل المراسلة",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let tasksData = [];
+        let activitiesData = [];
+        let commsData = [];
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function initTypography() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('recrm_lang', lang);
+            document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+        }
+
+        function toggleLanguage() {
+            setLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (btn) btn.classList.add('active');
+
+            const pane = document.getElementById(`pane-${tabId}`);
+            if (pane) pane.classList.add('active');
+
+            if (tabId === 'tasks') loadTasks();
+            else if (tabId === 'activities') loadActivities();
+            else if (tabId === 'comms') loadComms();
+            loadSummary();
+        }
+
+        // --- Summary KPIs ---
+        async function loadSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tasks/summary`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const d = json.data;
+                document.getElementById('kpi-open-tasks').textContent = d.open_tasks;
+                document.getElementById('kpi-overdue-tasks').textContent = d.overdue_tasks;
+                document.getElementById('kpi-completed-tasks').textContent = d.completed_tasks;
+                document.getElementById('kpi-activities').textContent = `${d.total_activities + d.total_communications}`;
+            } catch (err) {
+                console.error("Summary load error:", err);
+            }
+        }
+
+        // --- Tab 1: Tasks ---
+        async function loadTasks() {
+            const status = document.getElementById('task-status').value;
+            const priority = document.getElementById('task-priority').value;
+            const overdue = document.getElementById('task-overdue-only').checked;
+            let url = `${API_BASE}/api/v1/tasks?page_size=50`;
+            if (status) url += `&status=${status}`;
+            if (priority) url += `&priority=${priority}`;
+            if (overdue) url += `&is_overdue=true`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                tasksData = json.data || [];
+                renderTasks(tasksData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tasks-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load tasks.</td></tr>';
+            }
+        }
+
+        function renderTasks(items) {
+            const tbody = document.getElementById('tasks-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No tasks found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(t => {
+                const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
+                const sCls = t.status === 'COMPLETED' ? 'badge-completed' : (t.is_overdue ? 'badge-overdue' : 'badge-open');
+                const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() : 'No date';
+                return `
+                    <tr>
+                        <td>
+                            <strong>${t.title}</strong>
+                            ${t.is_overdue ? '<span style="color:var(--danger); font-size:0.75em; margin-left:6px; font-weight:700;">[OVERDUE]</span>' : ''}
+                        </td>
+                        <td><span class="badge ${pCls}">${t.priority}</span></td>
+                        <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
+                        <td>${t.assigned_user_name || 'Unassigned'}</td>
+                        <td>${t.customer_name || 'N/A'}</td>
+                        <td><span class="badge ${sCls}">${t.status}</span></td>
+                        <td>
+                            ${t.status === 'OPEN' ? `
+                                <button class="btn btn-success btn-sm" onclick="completeTask('${t.task_id}')">
+                                    ✓ Complete
+                                </button>
+                            ` : `<span style="color:var(--success); font-size:0.85em;">✔ Done</span>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTasks() {
+            const term = document.getElementById('task-search').value.toLowerCase();
+            const filtered = tasksData.filter(t =>
+                t.title.toLowerCase().includes(term) ||
+                (t.assigned_user_name && t.assigned_user_name.toLowerCase().includes(term)) ||
+                (t.customer_name && t.customer_name.toLowerCase().includes(term))
+            );
+            renderTasks(filtered);
+        }
+
+        async function completeTask(taskId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/complete`, { method: 'POST' });
+                if (res.ok) {
+                    loadTasks();
+                    loadSummary();
+                } else {
+                    alert("Failed to complete task");
+                }
+            } catch (err) {
+                alert("Error: " + err);
+            }
+        }
+
+        // --- Tab 2: Activities ---
+        async function loadActivities() {
+            const type = document.getElementById('act-type').value;
+            let url = `${API_BASE}/api/v1/activities?page_size=50`;
+            if (type) url += `&activity_type=${type}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                activitiesData = json.data || [];
+                renderActivities(activitiesData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('acts-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load activities.</td></tr>';
+            }
+        }
+
+        function renderActivities(items) {
+            const tbody = document.getElementById('acts-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No activities recorded.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(a => {
+                const code = a.activity_type_code || 'CALL';
+                let tagCls = 'channel-call';
+                let icon = '📞';
+                if (code === 'WHATSAPP') { tagCls = 'channel-whatsapp'; icon = '💬'; }
+                else if (code === 'EMAIL') { tagCls = 'channel-email'; icon = '✉️'; }
+                else if (code === 'MEETING') { tagCls = 'channel-call'; icon = '🤝'; }
+                else if (code === 'VIEWING') { tagCls = 'channel-whatsapp'; icon = '👁️'; }
+                else if (code === 'NOTE') { tagCls = 'channel-sms'; icon = '📝'; }
+
+                const dateStr = a.completed_at || a.scheduled_at;
+                const dt = dateStr ? new Date(dateStr).toLocaleString() : 'N/A';
+
+                return `
+                    <tr>
+                        <td><span class="channel-tag ${tagCls}">${icon} ${a.activity_type_name || code}</span></td>
+                        <td><strong>${a.subject}</strong></td>
+                        <td style="color:var(--text-muted); font-size:0.85em;">${a.description || '--'}</td>
+                        <td>${a.user_name || 'Agent'}</td>
+                        <td>${a.customer_name || 'N/A'}</td>
+                        <td>${dt}</td>
+                        <td><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${a.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterActivities() {
+            const term = document.getElementById('act-search').value.toLowerCase();
+            const filtered = activitiesData.filter(a =>
+                a.subject.toLowerCase().includes(term) ||
+                (a.description && a.description.toLowerCase().includes(term))
+            );
+            renderActivities(filtered);
+        }
+
+        // --- Tab 3: Communications ---
+        async function loadComms() {
+            const chan = document.getElementById('comm-channel').value;
+            const dir = document.getElementById('comm-dir').value;
+            let url = `${API_BASE}/api/v1/communications?page_size=50`;
+            if (chan) url += `&channel=${chan}`;
+            if (dir) url += `&direction=${dir}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                commsData = json.data || [];
+                renderComms(commsData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('comms-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load communications.</td></tr>';
+            }
+        }
+
+        function renderComms(items) {
+            const tbody = document.getElementById('comms-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No communications logged.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(c => {
+                let chanCls = 'channel-call';
+                if (c.channel === 'WHATSAPP') chanCls = 'channel-whatsapp';
+                else if (c.channel === 'EMAIL') chanCls = 'channel-email';
+                else if (c.channel === 'SMS') chanCls = 'channel-sms';
+
+                const sentDate = c.sent_at ? new Date(c.sent_at).toLocaleString() : 'N/A';
+                return `
+                    <tr>
+                        <td><span class="channel-tag ${chanCls}">${c.channel}</span></td>
+                        <td><span class="badge ${c.direction === 'OUTBOUND' ? 'badge-normal' : 'badge-high'}">${c.direction}</span></td>
+                        <td><strong>${c.subject || '--'}</strong></td>
+                        <td style="color:var(--text-muted); font-size:0.85em; max-width:320px;">${c.body || '--'}</td>
+                        <td>${c.customer_name || 'N/A'}</td>
+                        <td>${sentDate}</td>
+                        <td><span class="badge badge-completed">${c.delivery_status || 'SENT'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- Modals ---
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function openNewTaskModal() {
+            try {
+                const uRes = await fetch(`${API_BASE}/api/v1/users?page_size=100`);
+                const uJson = await uRes.json();
+                document.getElementById('task-agent').innerHTML = '<option value="">Select agent</option>' +
+                    (uJson.data || []).map(u => `<option value="${u.user_id}">${u.full_name} (${u.email})</option>`).join('');
+
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('task-cust').innerHTML = '<option value="">Select customer</option>' +
+                    (cJson.data || []).map(c => {
+                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                        return `<option value="${c.customer_id}">${name}</option>`;
+                    }).join('');
+
+                const now = new Date();
+                now.setHours(now.getHours() + 24);
+                document.getElementById('task-due').value = now.toISOString().slice(0, 16);
+
+                openModal('modal-task');
+            } catch (err) {
+                alert("Failed to load options: " + err);
+            }
+        }
+
+        async function handleCreateTask(e) {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('task-title').value,
+                due_at: document.getElementById('task-due').value ? new Date(document.getElementById('task-due').value).toISOString() : null,
+                priority: document.getElementById('task-pri').value,
+                assigned_user_id: document.getElementById('task-agent').value || null,
+                customer_id: document.getElementById('task-cust').value || null,
+                status: 'OPEN'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Task creation failed');
+                closeModal('modal-task');
+                loadTasks();
+                loadSummary();
+                alert("Task created successfully!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function openNewActivityModal() {
+            try {
+                const uRes = await fetch(`${API_BASE}/api/v1/users?page_size=100`);
+                const uJson = await uRes.json();
+                document.getElementById('act-agent').innerHTML = '<option value="">Select agent</option>' +
+                    (uJson.data || []).map(u => `<option value="${u.user_id}">${u.full_name}</option>`).join('');
+
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('act-cust').innerHTML = '<option value="">Select customer</option>' +
+                    (cJson.data || []).map(c => {
+                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                        return `<option value="${c.customer_id}">${name}</option>`;
+                    }).join('');
+
+                openModal('modal-activity');
+            } catch (err) {
+                alert("Failed to load options: " + err);
+            }
+        }
+
+        async function handleCreateActivity(e) {
+            e.preventDefault();
+            const payload = {
+                activity_type_code: document.getElementById('act-type-select').value,
+                subject: document.getElementById('act-subject').value,
+                description: document.getElementById('act-desc').value || null,
+                user_id: document.getElementById('act-agent').value || null,
+                customer_id: document.getElementById('act-cust').value || null,
+                status: document.getElementById('act-status-select').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/activities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Activity creation failed');
+                closeModal('modal-activity');
+                loadActivities();
+                loadSummary();
+                alert("Activity logged successfully!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function openNewCommModal() {
+            try {
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('comm-cust').innerHTML = '<option value="">Select customer</option>' +
+                    (cJson.data || []).map(c => {
+                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                        return `<option value="${c.customer_id}">${name} (${c.mobile || ''})</option>`;
+                    }).join('');
+
+                openModal('modal-comm');
+            } catch (err) {
+                alert("Failed to load customers: " + err);
+            }
+        }
+
+        async function handleCreateComm(e) {
+            e.preventDefault();
+            const payload = {
+                channel: document.getElementById('comm-chan').value,
+                direction: document.getElementById('comm-direction').value,
+                subject: document.getElementById('comm-subject').value || null,
+                body: document.getElementById('comm-body').value,
+                customer_id: document.getElementById('comm-cust').value || null,
+                delivery_status: 'SENT'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/communications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Communication creation failed');
+                closeModal('modal-comm');
+                loadComms();
+                loadSummary();
+                alert("Communication message logged successfully!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // Init on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypography();
+            setLanguage(currentLang);
+            loadSummary();
+            loadTasks();
+        });
+    </script>
+</body>
+</html>
+

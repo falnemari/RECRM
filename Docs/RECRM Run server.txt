@@ -1,0 +1,393 @@
+RECRM
+To start the server manually at any time:
+PYTHONPATH=src/backend .venv/bin/python src/backend/run.py
+
+Summary of Actions & Architecture
+1. Database Connection & Verification
+PostgreSQL Connection: Successfully verified on localhost:5432 with user postgres against database redb.
+Credential Handling: Detected special characters in password (@) and implemented discrete keyword connection handling in asyncpg to eliminate URL-encoding parsing errors.
+Seeded Data: Confirmed all 47 baseline tables are active and loaded with operational seed data (1 Org, 50 Users, 120 Customers, 120 Leads, 300 Units, 100 Opportunities, 50 Tenancies, 100 Tickets, 150 Collections).
+2. FastAPI Backend Scaffolding (src/backend/)
+Environment & Settings (config.py): Reads database credentials from .env.
+High-Performance Connection Pooling (database.py): Initialized an asynchronous asyncpg connection pool with lifespan hooks.
+Standard Envelopes & Error Handling (schemas/common.py): Implements the exact JSON response envelopes and RFC validation error structures specified in Docs/API.md.
+REST Endpoints (/api/v1):
+/api/v1/me – Authenticated user session, organization details, and assigned roles.
+/api/v1/leads – Full CRM lead queue, SLA tracking, search, filtering, and POST /qualify.
+/api/v1/customers & /customers/{id}/360 – Full Customer 360 view (profile, leads, opportunities, tenancies, owned units).
+/api/v1/units & /projects – Multi-criteria property search (price, area, bedrooms, project, status).
+/api/v1/opportunities, /viewings, /reservations – Sales pipeline stages and scheduling.
+/api/v1/tenancies, /maintenance-tickets, /rent-collections – Property management operations.
+/api/v1/reports/executive – Live executive dashboard metrics.
+/api/v1/cities, /property-types, /lead-sources, /users – Reference lookups.
+3. Frontend & UI Synchronization (src/ui/)
+Dashboard (src/ui/index.html): Connected to live /api/v1/reports/executive KPIs, featuring a full bilingual Arabic RTL ↔ English LTR toggle.
+Leads Screen (src/ui/leads.html): Dynamically queries the database for all 120 leads with real-time text search, status filters, and one-click lead qualification.
+Properties Screen (src/ui/properties.html): Dynamically renders property inventory cards directly from redb.
+🌐 Accessing the Application
+
+The FastAPI server is running locally on port 8000:
+nterface	URL	Description
+Interactive API Docs (Swagger)	http://localhost:8000/docs
+	Test and inspect all 25 REST endpoints
+Alternative Docs (ReDoc)	http://localhost:8000/redoc
+	Clean reference documentation
+CRM Operations Dashboard	http://localhost:8000/ui/index.html
+	Live KPI metrics & Arabic/English toggle
+Leads Queue	http://localhost:8000/ui/leads.html
+	Live lead management with filtering & qualification
+Property Inventory	http://localhost:8000/ui/properties.html
+	Live project and unit cards
+	
+	Ran command: Create virtual environment (`python3 -m venv .venv || which virtualenv || true`)
+Ran command: Install Python packages via pip (`.venv/bin/pip install fastapi uvicorn pydantic pydantic-settings asyncpg sqlalchemy python-dotenv`)
+
+I have created the Python virtual environment (`.venv`) and started installing the core FastAPI and database packages (`fastapi`, `uvicorn`, `pydantic`, `asyncpg`, `sqlalchemy`, etc.). I will proceed as soon as the installation finishes.
+
+Ran command: Install Python packages via pip (`.venv/bin/pip install fastapi uvicorn pydantic pydantic-settings asyncpg sqlalchemy python-dotenv`)
+
+The installation of the Python packages (`fastapi`, `uvicorn`, `pydantic`, `asyncpg`, `sqlalchemy`, `python-dotenv`) is in progress in the background. I will notify you as soon as it completes.
+
+Ran command: Get column details for main tables (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT table_name, column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name IN ('leads', 'customers', 'units', 'projects', 'opportunities', 'tenancies', 'maintenance_tickets')
+ORDER BY table_name, ordinal_position;
+"`)
+Ran command: Get columns for users, orgs, cities, property_types (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT table_name, column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name IN ('users', 'organizations', 'cities', 'property_types')
+ORDER BY table_name, ordinal_position;
+"`)
+Created requirements.txt
+Created __init__.py
+Created config.py
+Created database.py
+Created __init__.py
+Created common.py
+Created leads.py
+Created customers.py
+Created properties.py
+Created sales.py
+Ran command: Get rent_collections column names (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'rent_collections'
+ORDER BY ordinal_position;
+"`)
+Created management.py
+Created reports.py
+Created __init__.py
+Ran command: Get lead_sources columns (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'lead_sources';
+"`)
+Created reference.py
+Ran command: Get lead_notes columns (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'lead_notes';
+"`)
+Created leads.py
+Created customers.py
+Created properties.py
+Ran command: Get viewings and reservations columns (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT table_name, column_name 
+FROM information_schema.columns 
+WHERE table_name IN ('viewings', 'reservations')
+ORDER BY table_name, ordinal_position;
+"`)
+Created sales.py
+Created management.py
+Created reports.py
+Created auth.py
+Created main.py
+Ran command: Verify Python app imports and routes (`PYTHONPATH=src/backend .venv/bin/python -c "from app.main import app; print('App imported successfully, routes count:', len(app.routes))"`)
+Ran command: Print all subrouter paths (`PYTHONPATH=src/backend .venv/bin/python -c "
+from app.routers import auth, reference, leads, customers, properties, sales, management, reports
+for r in [auth, reference, leads, customers, properties, sales, management, reports]:
+    print(r.__name__, 'routes:', [route.path for route in r.router.routes])
+"`)
+Ran command: Run end-to-end ASGI test against DB (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
+        # 1. Health
+        res = await client.get('/health')
+        print('Health:', res.status_code, res.json())
+        
+        # 2. Executive report
+        res = await client.get('/api/v1/reports/executive')
+        print('Executive report:', res.status_code, res.json()['data']['kpis'])
+        
+        # 3. List leads
+        res = await client.get('/api/v1/leads?page_size=5')
+        print('Leads:', res.status_code, 'Total count:', res.json()['meta']['total'], 'Returned:', len(res.json()['data']))
+        
+        # 4. List units
+        res = await client.get('/api/v1/units?page_size=3')
+        print('Units:', res.status_code, 'Total count:', res.json()['meta']['total'], 'Returned:', len(res.json()['data']))
+
+        # 5. List opportunities
+        res = await client.get('/api/v1/opportunities?page_size=3')
+        print('Opportunities:', res.status_code, 'Total count:', res.json()['meta']['total'])
+
+asyncio.run(test())
+"`)
+Ran command: Install httpx via pip (`.venv/bin/pip install httpx`)
+
+Installing `httpx` to run automated test requests against the FastAPI backend.
+
+Ran command: Test FastAPI API endpoints against DB (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    # Use lifespan context manager so the asyncpg pool initializes
+    from contextlib import asynccontextmanager
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            # 1. Health
+            r1 = await client.get('/health')
+            print('1. Health Check:', r1.status_code, r1.json())
+            
+            # 2. Reference data - Cities
+            r2 = await client.get('/api/v1/cities')
+            print('2. Cities Total:', r2.json()['meta']['total'], 'Sample:', r2.json()['data'][0]['name_en'])
+
+            # 3. Reference data - Property Types
+            r3 = await client.get('/api/v1/property-types')
+            print('3. Property Types Total:', r3.json()['meta']['total'])
+
+            # 4. Leads
+            r4 = await client.get('/api/v1/leads?page_size=3')
+            print('4. Leads Total:', r4.json()['meta']['total'], 'Lead 1:', r4.json()['data'][0]['customer_name'], 'Status:', r4.json()['data'][0]['status'])
+
+            # 5. Units
+            r5 = await client.get('/api/v1/units?page_size=3')
+            print('5. Units Total:', r5.json()['meta']['total'], 'Unit 1:', r5.json()['data'][0]['unit_number'], 'Price:', r5.json()['data'][0]['asking_price'])
+
+            # 6. Opportunities
+            r6 = await client.get('/api/v1/opportunities?page_size=3')
+            print('6. Opportunities Total:', r6.json()['meta']['total'], 'Stage:', r6.json()['data'][0]['stage'])
+
+            # 7. Tenancies
+            r7 = await client.get('/api/v1/tenancies?page_size=3')
+            print('7. Tenancies Total:', r7.json()['meta']['total'], 'Contract:', r7.json()['data'][0]['contract_number'])
+
+            # 8. Executive Dashboard
+            r8 = await client.get('/api/v1/reports/executive')
+            print('8. Executive KPIs:', r8.json()['data']['kpis'])
+
+asyncio.run(test())
+"`)
+Ran command: Check socket getaddrinfo (`.venv/bin/python -c "import socket; print('127.0.0.1:', socket.getaddrinfo('127.0.0.1', 5432)); print('localhost:', socket.getaddrinfo('localhost', 5432))"`)
+Edited database.py
+Edited config.py
+Ran command: Test FastAPI API endpoints against DB (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            # 1. Health
+            r1 = await client.get('/health')
+            print('1. Health Check:', r1.status_code, r1.json())
+            
+            # 2. Reference data - Cities
+            r2 = await client.get('/api/v1/cities')
+            print('2. Cities Total:', r2.json()['meta']['total'], 'Sample:', r2.json()['data'][0]['name_en'])
+
+            # 3. Reference data - Property Types
+            r3 = await client.get('/api/v1/property-types')
+            print('3. Property Types Total:', r3.json()['meta']['total'])
+
+            # 4. Leads
+            r4 = await client.get('/api/v1/leads?page_size=3')
+            print('4. Leads Total:', r4.json()['meta']['total'], 'Lead 1:', r4.json()['data'][0]['customer_name'], 'Status:', r4.json()['data'][0]['status'])
+
+            # 5. Units
+            r5 = await client.get('/api/v1/units?page_size=3')
+            print('5. Units Total:', r5.json()['meta']['total'], 'Unit 1:', r5.json()['data'][0]['unit_number'], 'Price:', r5.json()['data'][0]['asking_price'])
+
+            # 6. Opportunities
+            r6 = await client.get('/api/v1/opportunities?page_size=3')
+            print('6. Opportunities Total:', r6.json()['meta']['total'], 'Stage:', r6.json()['data'][0]['stage'])
+
+            # 7. Tenancies
+            r7 = await client.get('/api/v1/tenancies?page_size=3')
+            print('7. Tenancies Total:', r7.json()['meta']['total'], 'Contract:', r7.json()['data'][0]['contract_number'])
+
+            # 8. Executive Dashboard
+            r8 = await client.get('/api/v1/reports/executive')
+            print('8. Executive KPIs:', r8.json()['data']['kpis'])
+
+asyncio.run(test())
+"`)
+Ran command: Test validation error and customer 360 (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            # 1. Customer 360
+            cust_res = await client.get('/api/v1/customers?page_size=1')
+            cust_id = cust_res.json()['data'][0]['customer_id']
+            c360_res = await client.get(f'/api/v1/customers/{cust_id}/360')
+            print('1. Customer 360:', c360_res.status_code, 'Profile:', c360_res.json()['data']['profile']['full_name'])
+            
+            # 2. Validation error format test (invalid budget order: min > max)
+            bad_lead = await client.post('/api/v1/leads', json={
+                'first_name': 'Test',
+                'budget_min': 500000,
+                'budget_max': 100000
+            })
+            print('2. Validation Error Check (422):', bad_lead.status_code, bad_lead.json()['error'])
+
+            # 3. /me Endpoint
+            me_res = await client.get('/api/v1/me')
+            print('3. /me Current User:', me_res.status_code, me_res.json()['data']['full_name'], 'Org:', me_res.json()['data']['organization_name'])
+
+asyncio.run(test())
+"`)
+Viewed main.py:50-85
+Viewed main.py:80-100
+Edited main.py
+Ran command: Verify validation error envelope and customer 360 (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            # 1. Customer 360
+            cust_res = await client.get('/api/v1/customers?page_size=1')
+            cust_id = cust_res.json()['data'][0]['customer_id']
+            c360_res = await client.get(f'/api/v1/customers/{cust_id}/360')
+            print('1. Customer 360 Status:', c360_res.status_code, 'Profile Name:', c360_res.json()['data']['profile']['full_name'])
+            
+            # 2. Validation error format test (invalid budget order: min > max)
+            bad_lead = await client.post('/api/v1/leads', json={
+                'first_name': 'Test',
+                'budget_min': 500000,
+                'budget_max': 100000
+            })
+            print('2. Validation Error Response (422):', bad_lead.status_code, bad_lead.json())
+
+            # 3. /me Endpoint
+            me_res = await client.get('/api/v1/me')
+            print('3. Current User (/me):', me_res.status_code, me_res.json()['data']['full_name'], 'Org:', me_res.json()['data']['organization_name'])
+
+asyncio.run(test())
+"`)
+Ran command: Get roles column names (`PGPASSWORD='fAlnemari@1392' psql -h localhost -p 5432 -U postgres -d redb -c "
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'roles';
+"`)
+Edited auth.py
+Ran command: Verify /me endpoint output (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            me_res = await client.get('/api/v1/me')
+            print('Current User (/me):', me_res.status_code, 'User:', me_res.json()['data']['full_name'], 'Org:', me_res.json()['data']['organization_name'], 'Roles:', me_res.json()['data']['roles'])
+
+asyncio.run(test())
+"`)
+Ran command: Verify OpenAPI spec generation (`PYTHONPATH=src/backend .venv/bin/python -c "
+import asyncio
+import httpx
+from app.main import app
+
+async def test():
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+            res = await client.get('/openapi.json')
+            print('OpenAPI status:', res.status_code, 'Paths documented:', len(res.json()['paths']))
+
+asyncio.run(test())
+"`)
+Created run.py
+Viewed leads.html:80-125
+Viewed index.html:80-162
+Created index.html
+Viewed leads.html:1-60
+Created leads.html
+Viewed properties.html:15-40
+Viewed properties.html:60-142
+Created properties.html
+Ran command: Verify uvicorn loads app cleanly (`PYTHONPATH=src/backend .venv/bin/python -c "
+import uvicorn
+from app.main import app
+print('Uvicorn can load app.main:app without any errors!')
+"`)
+Ran command: Launch FastAPI server on port 8000 (`PYTHONPATH=src/backend .venv/bin/python src/backend/run.py`)
+Ran command: Check health endpoint via curl (`curl -s http://localhost:8000/health`)
+Ran command: Check executive report endpoint (`curl -s http://localhost:8000/api/v1/reports/executive | head -c 200`)
+Ran command: Check static UI endpoint (`curl -s http://localhost:8000/ui/index.html | head -n 10`)
+
+The **Python / FastAPI** backend for **RECRM** has been implemented, connected to PostgreSQL (`redb`), tested, and is now actively running.
+
+---
+
+### 🛠️ Summary of Actions & Architecture
+
+#### 1. Database Connection & Verification
+- **PostgreSQL Connection**: Successfully verified on `localhost:5432` with user `postgres` against database `redb`.
+- **Credential Handling**: Detected special characters in password (`@`) and implemented discrete keyword connection handling in `asyncpg` to eliminate URL-encoding parsing errors.
+- **Seeded Data**: Confirmed all 47 baseline tables are active and loaded with operational seed data (1 Org, 50 Users, 120 Customers, 120 Leads, 300 Units, 100 Opportunities, 50 Tenancies, 100 Tickets, 150 Collections).
+
+#### 2. FastAPI Backend Scaffolding ([`src/backend/`](file:///home/nemro/RECRM/src/backend/))
+- **Environment & Settings** ([`config.py`](file:///home/nemro/RECRM/src/backend/app/config.py)): Reads database credentials from [`.env`](file:///home/nemro/RECRM/.env).
+- **High-Performance Connection Pooling** ([`database.py`](file:///home/nemro/RECRM/src/backend/app/database.py)): Initialized an asynchronous `asyncpg` connection pool with lifespan hooks.
+- **Standard Envelopes & Error Handling** ([`schemas/common.py`](file:///home/nemro/RECRM/src/backend/app/schemas/common.py)): Implements the exact JSON response envelopes and RFC validation error structures specified in [`Docs/API.md`](file:///home/nemro/RECRM/Docs/API.md).
+- **REST Endpoints (`/api/v1`)**:
+  - `/api/v1/me` – Authenticated user session, organization details, and assigned roles.
+  - `/api/v1/leads` – Full CRM lead queue, SLA tracking, search, filtering, and `POST /qualify`.
+  - `/api/v1/customers` & `/customers/{id}/360` – Full Customer 360 view (profile, leads, opportunities, tenancies, owned units).
+  - `/api/v1/units` & `/projects` – Multi-criteria property search (price, area, bedrooms, project, status).
+  - `/api/v1/opportunities`, `/viewings`, `/reservations` – Sales pipeline stages and scheduling.
+  - `/api/v1/tenancies`, `/maintenance-tickets`, `/rent-collections` – Property management operations.
+  - `/api/v1/reports/executive` – Live executive dashboard metrics.
+  - `/api/v1/cities`, `/property-types`, `/lead-sources`, `/users` – Reference lookups.
+
+#### 3. Frontend & UI Synchronization ([`src/ui/`](file:///home/nemro/RECRM/src/ui/))
+- **Dashboard** ([`src/ui/index.html`](file:///home/nemro/RECRM/src/ui/index.html)): Connected to live `/api/v1/reports/executive` KPIs, featuring a full bilingual **Arabic RTL ↔ English LTR** toggle.
+- **Leads Screen** ([`src/ui/leads.html`](file:///home/nemro/RECRM/src/ui/leads.html)): Dynamically queries the database for all 120 leads with real-time text search, status filters, and one-click lead qualification.
+- **Properties Screen** ([`src/ui/properties.html`](file:///home/nemro/RECRM/src/ui/properties.html)): Dynamically renders property inventory cards directly from `redb`.
+
+---
+
+### 🌐 Accessing the Application
+
+The FastAPI server is running locally on port **`8000`**:
+
+| Interface | URL | Description |
+|---|---|---|
+| **Interactive API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | Test and inspect all 25 REST endpoints |
+| **Alternative Docs (ReDoc)** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Clean reference documentation |
+| **CRM Operations Dashboard** | [http://localhost:8000/ui/index.html](http://localhost:8000/ui/index.html) | Live KPI metrics & Arabic/English toggle |
+| **Leads Queue** | [http://localhost:8000/ui/leads.html](http://localhost:8000/ui/leads.html) | Live lead management with filtering & qualification |
+| **Property Inventory** | [http://localhost:8000/ui/properties.html](http://localhost:8000/ui/properties.html) | Live project and unit cards |
+
+To start the server manually at any time:
+```bash
+PYTHONPATH=src/backend .venv/bin/python src/backend/run.py
+```
+

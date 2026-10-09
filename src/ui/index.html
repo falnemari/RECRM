@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE CRM - Real Estate Management</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong, [dir="rtl"] .kpi-title, [dir="rtl"] .kpi-sub {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo {
+            font-size: 1.4em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .nav {
+            background-color: #0f172a;
+            padding: 0 16px;
+        }
+        .nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+        }
+        .content {
+            padding: 28px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            color: var(--text-main);
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 9999px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #16a34a;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .kpi-title {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .kpi-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .kpi-sub {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .module-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .module-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .module-icon {
+            font-size: 2.2em;
+            margin-bottom: 12px;
+        }
+        .module-title {
+            font-size: 1.2em;
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+        }
+        .module-desc {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        .btn {
+            background-color: var(--secondary);
+            color: white;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">KSA Baseline</span>
+        </div>
+        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <span id="user-greeting" style="font-size: 0.9em;">Connected as: <strong>Admin</strong></span>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" class="active" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs (Swagger)</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="dashboard-header">
+            <div>
+                <h1 data-i18n="title">Real Estate Operations Dashboard</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" data-i18n="subtitle">Live metrics synchronized with PostgreSQL (redb)</p>
+            </div>
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                <span id="db-status">PostgreSQL Connected</span>
+            </div>
+        </div>
+
+        <!-- Dynamic Live KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_leads">Active Leads</div>
+                <div class="kpi-value" id="kpi-leads">--</div>
+                <div class="kpi-sub" id="kpi-leads-sub">of -- total leads</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_customers">Customers 360</div>
+                <div class="kpi-value" id="kpi-customers">--</div>
+                <div class="kpi-sub" data-i18n="kpi_customers_sub">Buyers & Tenants</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_inventory">Available Units</div>
+                <div class="kpi-value" id="kpi-units">--</div>
+                <div class="kpi-sub" id="kpi-units-sub">of -- total inventory</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_pipeline">Pipeline Value</div>
+                <div class="kpi-value" id="kpi-pipeline">--</div>
+                <div class="kpi-sub" id="kpi-pipeline-sub">-- active opportunities</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_collections">Rent Collected</div>
+                <div class="kpi-value" id="kpi-rent">--</div>
+                <div class="kpi-sub" id="kpi-rent-sub">of -- total receivables</div>
+            </div>
+        </div>
+        
+        <div class="module-grid">
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">👥</div>
+                    <h3 class="module-title" data-i18n="m_cust_title">Customers 360</h3>
+                    <p class="module-desc" data-i18n="m_cust_desc">Directory of buyers, tenants, owners and investors with complete 360-degree relationship history.</p>
+                </div>
+                <a href="customers.html" class="btn" data-i18n="m_cust_btn">Manage Customers 360 →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">🎯</div>
+                    <h3 class="module-title" data-i18n="m_leads_title">Leads Management</h3>
+                    <p class="module-desc" data-i18n="m_leads_desc">Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.</p>
+                </div>
+                <a href="leads.html" class="btn" data-i18n="m_leads_btn">Open Leads Queue →</a>
+            </div>
+            
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">🏢</div>
+                    <h3 class="module-title" data-i18n="m_props_title">Property Inventory</h3>
+                    <p class="module-desc" data-i18n="m_props_desc">Manage projects, buildings and units hierarchy, status tracking, listings and criteria matching.</p>
+                </div>
+                <a href="properties.html" class="btn" data-i18n="m_props_btn">Explore Properties →</a>
+            </div>
+            
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">📊</div>
+                    <h3 class="module-title" data-i18n="m_sales_title">Sales Pipeline</h3>
+                    <p class="module-desc" data-i18n="m_sales_desc">Track opportunities, schedule viewings, record offers and manage unit reservations.</p>
+                </div>
+                <a href="sales.html" class="btn" data-i18n="m_sales_btn">View Pipeline Board →</a>
+            </div>
+            
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">🏠</div>
+                    <h3 class="module-title" data-i18n="m_pm_title">Property Management</h3>
+                    <p class="module-desc" data-i18n="m_pm_desc">Manage landlord contracts, tenancy agreements, maintenance tickets and rent collections.</p>
+                </div>
+                <a href="management.html" class="btn" data-i18n="m_pm_btn">Manage Tenancies →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">💳</div>
+                    <h3 class="module-title" data-i18n="m_fin_title">Finance & Contracts</h3>
+                    <p class="module-desc" data-i18n="m_fin_desc">Convert reservations, track installment receipts, monitor receivables and manage broker commissions.</p>
+                </div>
+                <a href="finance.html" class="btn" data-i18n="m_fin_btn">Open Finance Center →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">📋</div>
+                    <h3 class="module-title" data-i18n="m_tasks_title">Tasks & Activities</h3>
+                    <p class="module-desc" data-i18n="m_tasks_desc">Manage agent follow-up to-dos, SLA queues, call logs and client communication histories.</p>
+                </div>
+                <a href="tasks.html" class="btn" data-i18n="m_tasks_btn">Open Tasks Queue →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">📁</div>
+                    <h3 class="module-title" data-i18n="m_docs_title">Document Vault & Compliance</h3>
+                    <p class="module-desc" data-i18n="m_docs_desc">Secure repository for deeds, contracts, IDs, audit access tracking and expiration alerts.</p>
+                </div>
+                <a href="documents.html" class="btn" data-i18n="m_docs_btn">Open Document Vault →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">📢</div>
+                    <h3 class="module-title" data-i18n="m_marketing_title">Marketing & Campaigns</h3>
+                    <p class="module-desc" data-i18n="m_marketing_desc">Track advertising campaigns, lead sources, conversion funnels, event stream and customer acquisition costs.</p>
+                </div>
+                <a href="campaigns.html" class="btn" data-i18n="m_marketing_btn">Open Marketing Hub →</a>
+            </div>
+
+            <div class="module-card">
+                <div>
+                    <div class="module-icon">🏷️</div>
+                    <h3 class="module-title" data-i18n="m_listings_title">Property Listings & Syndication</h3>
+                    <p class="module-desc" data-i18n="m_listings_desc">Broadcast units to public portals, manage live listing pricing, photo galleries and expiration alerts.</p>
+                </div>
+                <a href="listings.html" class="btn" data-i18n="m_listings_btn">Open Listings Board →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const i18nData = {
+            en: {
+                nav_dashboard: "Dashboard",
+                nav_leads: "Leads",
+                nav_properties: "Properties",
+                nav_sales: "Sales Pipeline",
+                nav_customers: "Customers 360",
+                nav_finance: "Finance & Contracts",
+                nav_management: "Property Management",
+                nav_api: "API Docs (Swagger)",
+                title: "Real Estate Operations Dashboard",
+                subtitle: "Live metrics synchronized with PostgreSQL (redb)",
+                kpi_leads: "Active Leads",
+                kpi_customers: "Customers 360",
+                kpi_customers_sub: "Buyers & Tenants",
+                kpi_inventory: "Available Units",
+                kpi_pipeline: "Pipeline Value",
+                kpi_collections: "Rent Collected",
+                m_cust_title: "Customers 360",
+                m_cust_desc: "Directory of buyers, tenants, owners and investors with complete 360-degree relationship history.",
+                m_cust_btn: "Manage Customers 360 →",
+                m_leads_title: "Leads Management",
+                m_leads_desc: "Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.",
+                m_leads_btn: "Open Leads Queue →",
+                m_props_title: "Property Inventory",
+                m_props_desc: "Manage projects, buildings and units hierarchy, status tracking, listings and criteria matching.",
+                m_props_btn: "Explore Properties →",
+                m_sales_title: "Sales Pipeline",
+                m_sales_desc: "Track opportunities, schedule viewings, record offers and manage unit reservations.",
+                m_sales_btn: "View Pipeline Board →",
+                m_pm_title: "Property Management",
+                m_pm_desc: "Manage landlord contracts, tenancy agreements, maintenance tickets and rent collections.",
+                m_pm_btn: "Manage Tenancies →",
+                m_fin_title: "Finance & Contracts",
+                m_fin_desc: "Convert reservations, track installment receipts, monitor receivables and manage broker commissions.",
+                m_fin_btn: "Open Finance Center →",
+                nav_tasks: "Tasks & Activities",
+                m_tasks_title: "Tasks & Activities",
+                m_tasks_desc: "Manage agent follow-up to-dos, SLA queues, call logs and client communication histories.",
+                m_tasks_btn: "Open Tasks Queue →",
+                nav_documents: "Documents & Files",
+                m_docs_title: "Document Vault & Compliance",
+                m_docs_desc: "Secure repository for deeds, contracts, IDs, audit access tracking and expiration alerts.",
+                m_docs_btn: "Open Document Vault →",
+                nav_marketing: "Marketing & Campaigns",
+                m_marketing_title: "Marketing & Campaigns",
+                m_marketing_desc: "Track advertising campaigns, lead sources, conversion funnels, event stream and customer acquisition costs.",
+                m_marketing_btn: "Open Marketing Hub →",
+                nav_listings: "Property Listings",
+                m_listings_title: "Property Listings & Syndication",
+                m_listings_desc: "Broadcast units to public portals, manage live listing pricing, photo galleries and expiration alerts.",
+                m_listings_btn: "Open Listings Board →",
+                lang_label: "عربي"
+            },
+            ar: {
+                nav_dashboard: "لوحة التحكم",
+                nav_customers: "ملف العميل 360",
+                nav_leads: "إدارة العملاء المحتملين",
+                nav_properties: "المخزون العقاري",
+                nav_sales: "مسار المبيعات",
+                nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك",
+                nav_tasks: "المهام والأنشطة",
+                nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات",
+                nav_listings: "العروض والإعلانات",
+                nav_api: "توثيق واجهة البرمجة (Swagger)",
+                title: "لوحة العمليات العقارية",
+                subtitle: "مؤشرات مباشرة متزامنة مع قاعدة البيانات (redb)",
+                kpi_leads: "الطلبات النشطة",
+                kpi_customers: "ملف العميل 360",
+                kpi_customers_sub: "مشترين ومستأجرين",
+                kpi_inventory: "الوحدات المتاحة",
+                kpi_pipeline: "قيمة الفرص البيعية",
+                kpi_collections: "المبالغ المحصلة",
+                m_cust_title: "ملف العميل 360",
+                m_cust_desc: "دليل المشترين والمستأجرين والملاك والمطورين مع استعراض كامل لسجل التعاملات.",
+                m_cust_btn: "إدارة ملفات العملاء ←",
+                m_leads_title: "إدارة العملاء المحتملين",
+                m_leads_desc: "استقبال، تأهيل، وتعيين الطلبات ومتابعة اتفاقية مستوى الخدمة SLA.",
+                m_leads_btn: "فتح قائمة الطلبات ←",
+                m_props_title: "المخزون العقاري",
+                m_props_desc: "إدارة المشاريع والمباني والوحدات، وتتبع الحالات وتطابق المعايير.",
+                m_props_btn: "استعراض الوحدات ←",
+                m_sales_title: "مسار المبيعات",
+                m_sales_desc: "متابعة الفرص، جدولة المعاينات، تسجيل العروض، وحجز الوحدات.",
+                m_sales_btn: "عرض مسار المبيعات ←",
+                m_pm_title: "إدارة الأملاك",
+                m_pm_desc: "إدارة عقود الوساطة، عقود الإيجار، بلاغات الصيانة، وتحصيل الإيجارات.",
+                m_pm_btn: "إدارة التأجير والصيانة ←",
+                m_fin_title: "المالية والعقود",
+                m_fin_desc: "تحويل الحجوزات، تحصيل سندات القبض، متابعة المستحقات وإدارة عمولات الوسطاء.",
+                m_fin_btn: "فتح المركز المالي ←",
+                m_tasks_title: "المهام والأنشطة",
+                m_tasks_desc: "متابعة مهام الوكلاء وقوائم المتابعة وسجل المكالمات والرسائل والتواصل.",
+                m_tasks_btn: "فتح قائمة المهام ←",
+                m_docs_title: "خزينة المستندات والتحقق",
+                m_docs_desc: "خزينة آمنة للصكوك والعقود والهويات وسجلات تتبع الوصول وتنبيهات انتهاء الصلاحية.",
+                m_docs_btn: "فتح خزينة المستندات ←",
+                m_marketing_title: "التسويق والحملات الإعلانية",
+                m_marketing_desc: "تتبع الحملات الإعلانية ومصادر جذب العملاء ومعدلات التحويل وسجل التفاعلات وتكلفة الاكتساب.",
+                m_marketing_btn: "فتح مركز التسويق ←",
+                m_listings_title: "العروض العقارية والنشر الخارجي",
+                m_listings_desc: "بث وإدارة العروض على البوابات العقارية الخارجية وإدارة الصور والتسعير وحالات النشر.",
+                m_listings_btn: "فتح منصة العروض ←",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            const sel = document.getElementById('arabicFontSelect');
+            if (sel) sel.value = fontVal;
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            localStorage.setItem('recrm_lang', currentLang);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            const sel = document.getElementById('arabicFontSelect');
+            if (sel) {
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === savedFont) {
+                        sel.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            const savedLang = localStorage.getItem('recrm_lang');
+            if (savedLang && savedLang !== currentLang) {
+                applyLanguage(savedLang);
+            }
+        }
+
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        async function loadDashboardData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reports/executive`);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const kpis = json.data.kpis;
+
+                document.getElementById('kpi-leads').textContent = kpis.active_leads;
+                document.getElementById('kpi-leads-sub').textContent = `of ${kpis.total_leads} total inquiries`;
+
+                document.getElementById('kpi-customers').textContent = kpis.total_customers;
+
+                document.getElementById('kpi-units').textContent = kpis.available_units;
+                document.getElementById('kpi-units-sub').textContent = `of ${kpis.total_units} total units`;
+
+                document.getElementById('kpi-pipeline').textContent = (kpis.active_pipeline_value / 1000000).toFixed(1) + 'M SAR';
+                document.getElementById('kpi-pipeline-sub').textContent = `${kpis.total_opportunities} opportunities`;
+
+                document.getElementById('kpi-rent').textContent = (kpis.total_rent_collected / 1000000).toFixed(2) + 'M SAR';
+                document.getElementById('kpi-rent-sub').textContent = `of ${(kpis.total_rent_due / 1000000).toFixed(2)}M SAR due`;
+                document.getElementById('db-status').textContent = 'PostgreSQL Connected';
+                document.querySelector('.status-dot').style.background = '#16a34a';
+            } catch (err) {
+                console.warn('Could not load live dashboard data:', err);
+                document.getElementById('db-status').textContent = 'Backend Offline';
+                document.querySelector('.status-dot').style.background = '#ef4444';
+            }
+
+            try {
+                const meRes = await fetch(`${API_BASE}/api/v1/me`);
+                if (meRes.ok) {
+                    const meJson = await meRes.json();
+                    if (meJson.data && meJson.data.full_name) {
+                        document.getElementById('user-greeting').innerHTML = `Connected: <strong>${meJson.data.full_name}</strong> (${meJson.data.organization_name})`;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

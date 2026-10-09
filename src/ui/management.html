@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Management & Maintenance - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #2563eb;
+            --secondary: #0ea5e9;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0284c7;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .badge-header {
+            font-size: 0.8em;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--primary-light);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .kpi-card.urgent::before { background: var(--danger); }
+        .kpi-card.warning::before { background: var(--warning); }
+        .kpi-card.success::before { background: var(--success); }
+        .kpi-title { font-size: 0.85em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8em; font-weight: 700; margin: 8px 0 4px 0; color: var(--text-main); }
+        .kpi-sub { font-size: 0.8em; color: var(--text-muted); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--primary); }
+        .tab-btn.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary-light);
+        }
+
+        /* Action Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            width: 220px;
+        }
+        .select-filter {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+        }
+        .btn {
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: var(--primary); }
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; }
+
+        /* Tables */
+        .table-responsive {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        [dir="rtl"] table { text-align: right; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .badge-active, .badge-paid, .badge-resolved, .badge-completed { background: #dcfce7; color: #166534; }
+        .badge-due, .badge-open, .badge-draft, .badge-requested { background: #fef3c7; color: #92400e; }
+        .badge-overdue, .badge-expired, .badge-urgent, .badge-high { background: #fee2e2; color: #991b1b; }
+        .badge-partial, .badge-in_progress, .badge-approved { background: #e0f2fe; color: #075985; }
+        .badge-low, .badge-normal { background: #f1f5f9; color: #475569; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 580px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .modal-header h3 { margin: 0; }
+        .close-btn { background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text-muted); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="badge-header" data-i18n="badge_pm">Property Operations & PM</span>
+        </div>
+                    <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+    </div>
+
+    <!-- Main Navigation -->
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" class="active" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+
+    <div class="content">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card success">
+                <div class="kpi-title" data-i18n="kpi_active_tenancies">Active Leases</div>
+                <div class="kpi-value" id="kpi-tenancies">--</div>
+                <div class="kpi-sub" data-i18n="kpi_tenancies_sub">Operational lease agreements</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_annual_rent">Active Annual Rent</div>
+                <div class="kpi-value" id="kpi-rent">-- SAR</div>
+                <div class="kpi-sub" data-i18n="kpi_rent_sub">Annual recurring rental value</div>
+            </div>
+            <div class="kpi-card urgent">
+                <div class="kpi-title" data-i18n="kpi_open_tickets">Open Maintenance Tickets</div>
+                <div class="kpi-value" id="kpi-tickets">--</div>
+                <div class="kpi-sub" data-i18n="kpi_tickets_sub">Urgent & ongoing repairs</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-title" data-i18n="kpi_overdue_collections">Overdue Rent Collections</div>
+                <div class="kpi-value" id="kpi-overdue">--</div>
+                <div class="kpi-sub" data-i18n="kpi_overdue_sub">Unpaid past-due installments</div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tenancies')" data-i18n="tab_tenancies">Tenancies & Leases</button>
+            <button class="tab-btn" onclick="switchTab('maintenance')" data-i18n="tab_maintenance">Maintenance & Tickets</button>
+            <button class="tab-btn" onclick="switchTab('rent')" data-i18n="tab_rent">Rent Collections</button>
+            <button class="tab-btn" onclick="switchTab('vendors')" data-i18n="tab_vendors">Service Vendors</button>
+            <button class="tab-btn" onclick="switchTab('pm_contracts')" data-i18n="tab_pm_contracts">Owner PM Contracts</button>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: Tenancies & Leases -->
+        <!-- ============================================================== -->
+        <div id="pane-tenancies" class="tab-pane active">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="tenancy-search" class="search-input" placeholder="Search contract, tenant, unit..." onkeyup="filterTenancies()">
+                    <select id="tenancy-status" class="select-filter" onchange="loadTenancies()">
+                        <option value="" data-i18n="opt_all_status">All Statuses</option>
+                        <option value="ACTIVE" data-i18n="opt_active">Active</option>
+                        <option value="EXPIRED" data-i18n="opt_expired">Expired</option>
+                        <option value="TERMINATED" data-i18n="opt_terminated">Terminated</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="openNewTenancyModal()" data-i18n="btn_new_tenancy">+ New Lease Agreement</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_contract">Contract No</th>
+                            <th data-i18n="th_unit">Unit</th>
+                            <th data-i18n="th_tenant">Tenant</th>
+                            <th data-i18n="th_start">Start Date</th>
+                            <th data-i18n="th_end">End Date</th>
+                            <th data-i18n="th_rent">Rent Amount</th>
+                            <th data-i18n="th_freq">Frequency</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenancy-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading tenancies...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: Maintenance & Tickets -->
+        <!-- ============================================================== -->
+        <div id="pane-maintenance" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="ticket-search" class="search-input" placeholder="Search description, unit..." onkeyup="filterTickets()">
+                    <select id="ticket-status" class="select-filter" onchange="loadTickets()">
+                        <option value="" data-i18n="opt_all_status">All Statuses</option>
+                        <option value="OPEN" data-i18n="opt_open">Open</option>
+                        <option value="IN_PROGRESS" data-i18n="opt_in_progress">In Progress</option>
+                        <option value="CLOSED" data-i18n="opt_closed">Closed</option>
+                    </select>
+                    <select id="ticket-priority" class="select-filter" onchange="loadTickets()">
+                        <option value="" data-i18n="opt_all_priority">All Priorities</option>
+                        <option value="URGENT" data-i18n="opt_urgent">Urgent</option>
+                        <option value="HIGH" data-i18n="opt_high">High</option>
+                        <option value="NORMAL" data-i18n="opt_normal">Normal</option>
+                        <option value="LOW" data-i18n="opt_low">Low</option>
+                    </select>
+                    <select id="ticket-category" class="select-filter" onchange="loadTickets()">
+                        <option value="" data-i18n="opt_all_categories">All Categories</option>
+                        <option value="PLUMBING">Plumbing (سباكة)</option>
+                        <option value="ELECTRICAL">Electrical (كهرباء)</option>
+                        <option value="HVAC">HVAC (تكييف)</option>
+                        <option value="GENERAL">General (عام)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="openNewTicketModal()" data-i18n="btn_new_ticket">+ Open Maintenance Ticket</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_ticket_id">Ticket</th>
+                            <th data-i18n="th_unit">Unit</th>
+                            <th data-i18n="th_reporter">Reported By</th>
+                            <th data-i18n="th_category">Category</th>
+                            <th data-i18n="th_priority">Priority</th>
+                            <th data-i18n="th_description">Description</th>
+                            <th data-i18n="th_opened">Opened At</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticket-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading maintenance tickets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: Rent Collections -->
+        <!-- ============================================================== -->
+        <div id="pane-rent" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <select id="rent-status" class="select-filter" onchange="loadRentCollections()">
+                        <option value="" data-i18n="opt_all_status">All Statuses</option>
+                        <option value="DUE" data-i18n="opt_due">Due</option>
+                        <option value="PARTIAL" data-i18n="opt_partial">Partial</option>
+                        <option value="PAID" data-i18n="opt_paid">Paid</option>
+                    </select>
+                    <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="rent-overdue-only" onchange="loadRentCollections()">
+                        <span data-i18n="lbl_overdue_only">Show Overdue Only</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_contract">Contract No</th>
+                            <th data-i18n="th_unit">Unit</th>
+                            <th data-i18n="th_tenant">Tenant</th>
+                            <th data-i18n="th_due_date">Due Date</th>
+                            <th data-i18n="th_amount_due">Amount Due</th>
+                            <th data-i18n="th_amount_paid">Amount Paid</th>
+                            <th data-i18n="th_remaining">Remaining</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rent-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading rent collections...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 4: Service Vendors -->
+        <!-- ============================================================== -->
+        <div id="pane-vendors" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="vendor-search" class="search-input" placeholder="Search vendor name, tax no..." onkeyup="filterVendors()">
+                </div>
+                <button class="btn" onclick="openNewVendorModal()" data-i18n="btn_new_vendor">+ Add Service Vendor</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_vendor_name">Vendor Name</th>
+                            <th data-i18n="th_phone">Phone</th>
+                            <th data-i18n="th_email">Email</th>
+                            <th data-i18n="th_tax_no">Tax ID (VAT)</th>
+                            <th data-i18n="th_work_orders">Work Orders</th>
+                            <th data-i18n="th_status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-tbody">
+                        <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading vendors...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 5: Owner Management Contracts -->
+        <!-- ============================================================== -->
+        <div id="pane-pm_contracts" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="pmc-search" class="search-input" placeholder="Search contract, owner..." onkeyup="filterPMContracts()">
+                </div>
+                <button class="btn" onclick="openNewPMCModal()" data-i18n="btn_new_pmc">+ New Management Contract</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_contract">Contract No</th>
+                            <th data-i18n="th_owner">Property Owner</th>
+                            <th data-i18n="th_start">Start Date</th>
+                            <th data-i18n="th_end">End Date</th>
+                            <th data-i18n="th_fee">Management Fee</th>
+                            <th data-i18n="th_managed_units">Managed Units</th>
+                            <th data-i18n="th_status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pmc-tbody">
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading management contracts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODALS -->
+    <!-- ============================================================== -->
+
+    <!-- 1. Modal: New Tenancy -->
+    <div id="modal-tenancy" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_tenancy_title">New Lease Agreement</h3>
+                <button class="close-btn" onclick="closeModal('modal-tenancy')">&times;</button>
+            </div>
+            <form id="tenancy-form" onsubmit="handleCreateTenancy(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_unit">Select Unit *</label>
+                    <select id="t-unit" required>
+                        <option value="">Loading units...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_tenant">Select Tenant *</label>
+                    <select id="t-tenant" required>
+                        <option value="">Loading customers...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_start_date">Start Date *</label>
+                        <input type="date" id="t-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_end_date">End Date *</label>
+                        <input type="date" id="t-end" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_rent_amount">Rent Amount (SAR) *</label>
+                        <input type="number" id="t-rent" step="100" min="1000" placeholder="e.g. 45000" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_deposit">Security Deposit (SAR)</label>
+                        <input type="number" id="t-deposit" step="100" min="0" placeholder="e.g. 3000" value="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_freq">Payment Frequency</label>
+                        <select id="t-freq" onchange="adjustInstallmentCount()">
+                            <option value="ANNUAL">Annual (دفعة سنوية)</option>
+                            <option value="SEMI_ANNUAL">Semi-Annual (دفعتان - 6 أشهر)</option>
+                            <option value="QUARTERLY" selected>Quarterly (أربع دفعات - ربع سنوي)</option>
+                            <option value="MONTHLY">Monthly (شهري - 12 دفعة)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_installments">Generate Installments</label>
+                        <input type="number" id="t-installments-count" min="1" max="12" value="4">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-tenancy')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_tenancy">Create Lease Agreement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Modal: New Maintenance Ticket -->
+    <div id="modal-ticket" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_ticket_title">Open Maintenance Ticket</h3>
+                <button class="close-btn" onclick="closeModal('modal-ticket')">&times;</button>
+            </div>
+            <form id="ticket-form" onsubmit="handleCreateTicket(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_unit">Select Unit *</label>
+                    <select id="mt-unit" required>
+                        <option value="">Loading units...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_tenant_reporter">Reported By (Tenant / Customer)</label>
+                    <select id="mt-customer">
+                        <option value="">Select customer (optional)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_category">Category *</label>
+                        <select id="mt-category" required>
+                            <option value="PLUMBING">Plumbing (سباكة)</option>
+                            <option value="ELECTRICAL">Electrical (كهرباء)</option>
+                            <option value="HVAC">HVAC (تكييف وتبريد)</option>
+                            <option value="GENERAL">General Repair (صيانة عامة)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_priority">Priority *</label>
+                        <select id="mt-priority" required>
+                            <option value="NORMAL">Normal (عادي)</option>
+                            <option value="HIGH">High (هام)</option>
+                            <option value="URGENT">Urgent (طارئ)</option>
+                            <option value="LOW">Low (منخفض)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_description">Issue Description *</label>
+                    <textarea id="mt-desc" rows="3" placeholder="Describe the maintenance issue..." required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-ticket')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_ticket">Open Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Modal: Record Rent Payment -->
+    <div id="modal-rent-pay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_rent_pay_title">Record Rent Payment Receipt</h3>
+                <button class="close-btn" onclick="closeModal('modal-rent-pay')">&times;</button>
+            </div>
+            <form id="rent-pay-form" onsubmit="handleRecordRentPayment(event)">
+                <input type="hidden" id="rp-collection-id">
+                <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 14px; font-size: 0.9em;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span data-i18n="lbl_contract">Contract:</span> <strong id="rp-contract">--</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span data-i18n="lbl_due_date">Due Date:</span> <span id="rp-date">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span data-i18n="lbl_total_due">Amount Due:</span> <span id="rp-due">0.00 SAR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: var(--danger);">
+                        <span data-i18n="lbl_remaining_due">Remaining Balance:</span> <strong id="rp-remaining">0.00 SAR</strong>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_payment_amount">Payment Received (SAR) *</label>
+                    <input type="number" id="rp-amount" step="50" min="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-rent-pay')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_confirm_pay">Confirm & Record Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Modal: Create Work Order -->
+    <div id="modal-wo" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_wo_title">Dispatch Work Order to Vendor</h3>
+                <button class="close-btn" onclick="closeModal('modal-wo')">&times;</button>
+            </div>
+            <form id="wo-form" onsubmit="handleCreateWorkOrder(event)">
+                <input type="hidden" id="wo-ticket-id">
+                <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 14px; font-size: 0.9em;">
+                    <div style="margin-bottom: 4px;"><strong>Ticket Description:</strong> <span id="wo-ticket-desc">--</span></div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_vendor">Select Service Vendor *</label>
+                    <select id="wo-vendor" required>
+                        <option value="">Loading vendors...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_quoted_amount">Quoted Cost (SAR)</label>
+                    <input type="number" id="wo-quote" step="50" min="0" placeholder="e.g. 500">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-wo')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_dispatch_wo">Dispatch Work Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Modal: New Vendor -->
+    <div id="modal-vendor" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_vendor_title">Register Service Vendor</h3>
+                <button class="close-btn" onclick="closeModal('modal-vendor')">&times;</button>
+            </div>
+            <form id="vendor-form" onsubmit="handleCreateVendor(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_vendor_name">Vendor / Contractor Name *</label>
+                    <input type="text" id="v-name" placeholder="e.g. Al-Bawani Plumbing Services" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_phone">Phone *</label>
+                        <input type="text" id="v-phone" placeholder="+966500000000">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_email">Email</label>
+                        <input type="email" id="v-email" placeholder="vendor@domain.sa">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_tax_no">Tax ID (VAT Number)</label>
+                    <input type="text" id="v-tax" placeholder="300000000000003">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-vendor')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_vendor">Register Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. Modal: Tenancy Collections Viewer -->
+    <div id="modal-tenancy-view" class="modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="tv-title">Lease Agreement Details</h3>
+                <button class="close-btn" onclick="closeModal('modal-tenancy-view')">&times;</button>
+            </div>
+            <div id="tv-body" style="font-size: 0.9em;">
+                Loading details...
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-tenancy-view')" data-i18n="btn_close">Close</button>
+            </div>
+        </div>
+    <!-- 7. Modal: New Management Contract -->
+    <div id="modal-pmc" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_pmc_title">New Owner Management Contract</h3>
+                <button class="close-btn" onclick="closeModal('modal-pmc')">&times;</button>
+            </div>
+            <form id="pmc-form" onsubmit="handleCreatePMC(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_owner">Select Property Owner *</label>
+                    <select id="pmc-owner" required>
+                        <option value="">Loading owners...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_start_date">Start Date *</label>
+                        <input type="date" id="pmc-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_end_date">End Date</label>
+                        <input type="date" id="pmc-end">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_fee_type">Fee Type</label>
+                        <select id="pmc-fee-type">
+                            <option value="PERCENT">Percentage (%)</option>
+                            <option value="FIXED">Fixed Amount (SAR)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_fee_rate">Management Fee Rate *</label>
+                        <input type="number" id="pmc-fee-rate" step="0.5" min="0" value="5.0" required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-pmc')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_pmc">Create PM Contract</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ============================================================== -->
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                badge_pm: "Property Operations & PM",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                kpi_active_tenancies: "Active Leases", kpi_tenancies_sub: "Operational lease agreements",
+                kpi_annual_rent: "Active Annual Rent", kpi_rent_sub: "Annual recurring rental value",
+                kpi_open_tickets: "Open Maintenance Tickets", kpi_tickets_sub: "Urgent & ongoing repairs",
+                kpi_overdue_collections: "Overdue Rent Collections", kpi_overdue_sub: "Unpaid past-due installments",
+                tab_tenancies: "Tenancies & Leases", tab_maintenance: "Maintenance & Tickets",
+                tab_rent: "Rent Collections", tab_vendors: "Service Vendors", tab_pm_contracts: "Owner PM Contracts",
+                opt_all_status: "All Statuses", opt_active: "Active", opt_expired: "Expired", opt_terminated: "Terminated",
+                opt_open: "Open", opt_in_progress: "In Progress", opt_closed: "Closed",
+                opt_all_priority: "All Priorities", opt_urgent: "Urgent", opt_high: "High", opt_normal: "Normal", opt_low: "Low",
+                opt_all_categories: "All Categories", opt_due: "Due", opt_partial: "Partial", opt_paid: "Paid",
+                lbl_overdue_only: "Show Overdue Only",
+                btn_new_tenancy: "+ New Lease Agreement", btn_new_ticket: "+ Open Maintenance Ticket",
+                btn_new_vendor: "+ Add Service Vendor", btn_new_pmc: "+ New Management Contract",
+                th_contract: "Contract No", th_unit: "Unit", th_tenant: "Tenant",
+                th_start: "Start Date", th_end: "End Date", th_rent: "Rent Amount",
+                th_freq: "Frequency", th_status: "Status", th_actions: "Actions",
+                th_ticket_id: "Ticket", th_reporter: "Reported By", th_category: "Category",
+                th_priority: "Priority", th_description: "Description", th_opened: "Opened At",
+                th_due_date: "Due Date", th_amount_due: "Amount Due", th_amount_paid: "Amount Paid",
+                th_remaining: "Remaining", th_vendor_name: "Vendor Name", th_phone: "Phone",
+                th_email: "Email", th_tax_no: "Tax ID (VAT)", th_work_orders: "Work Orders",
+                th_owner: "Property Owner", th_fee: "Management Fee", th_managed_units: "Managed Units",
+                modal_tenancy_title: "New Lease Agreement", modal_ticket_title: "Open Maintenance Ticket",
+                modal_rent_pay_title: "Record Rent Payment Receipt", modal_wo_title: "Dispatch Work Order to Vendor",
+                modal_vendor_title: "Register Service Vendor",
+                lbl_unit: "Select Unit *", lbl_tenant: "Select Tenant *", lbl_start_date: "Start Date *",
+                lbl_end_date: "End Date *", lbl_rent_amount: "Rent Amount (SAR) *", lbl_deposit: "Security Deposit (SAR)",
+                lbl_installments: "Generate Installments", lbl_tenant_reporter: "Reported By (Tenant / Customer)",
+                lbl_priority: "Priority *", lbl_description: "Issue Description *",
+                lbl_payment_amount: "Payment Received (SAR) *", lbl_vendor: "Select Service Vendor *",
+                lbl_quoted_amount: "Quoted Cost (SAR)", lbl_vendor_name: "Vendor / Contractor Name *",
+                lbl_contract: "Contract:", lbl_total_due: "Amount Due:", lbl_remaining_due: "Remaining Balance:",
+                btn_cancel: "Cancel", btn_close: "Close", btn_save_tenancy: "Create Lease Agreement",
+                btn_save_ticket: "Open Ticket", btn_confirm_pay: "Confirm & Record Receipt",
+                btn_dispatch_wo: "Dispatch Work Order", btn_save_vendor: "Register Vendor",
+                modal_pmc_title: "New Owner Management Contract", lbl_owner: "Select Property Owner *",
+                lbl_fee_type: "Fee Type", lbl_fee_rate: "Management Fee Rate *", btn_save_pmc: "Create PM Contract",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_pm: "تشغيل وإدارة الأملاك",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                kpi_active_tenancies: "عقود الإيجار السارية", kpi_tenancies_sub: "العقود النشطة بالوحدات",
+                kpi_annual_rent: "إجمالي الإيجار السنوي", kpi_rent_sub: "القيمة الإيجارية الدورية",
+                kpi_open_tickets: "تذاكر الصيانة النشطة", kpi_tickets_sub: "بلاغات وإصلاحات جارية",
+                kpi_overdue_collections: "دفعات الإيجار المتأخرة", kpi_overdue_sub: "أقساط متأخرة عن موعدها",
+                tab_tenancies: "عقود الإيجار والوحدات", tab_maintenance: "الصيانة وبلاغات الأعطال",
+                tab_rent: "تحصيل الإيجارات", tab_vendors: "مقاولو ومزودو الخدمة", tab_pm_contracts: "عقود إدارة الأملاك",
+                opt_all_status: "جميع الحالات", opt_active: "ساري", opt_expired: "منتهي", opt_terminated: "ملغى",
+                opt_open: "مفتوحة", opt_in_progress: "قيد التنفيذ", opt_closed: "مغلقة",
+                opt_all_priority: "جميع الأولويات", opt_urgent: "طارئ", opt_high: "هام", opt_normal: "عادي", opt_low: "منخفض",
+                opt_all_categories: "جميع التصنيفات", opt_due: "مستحقة", opt_partial: "مدفوعة جزئياً", opt_paid: "مسددة بالكامل",
+                lbl_overdue_only: "عرض المتأخرات فقط",
+                btn_new_tenancy: "+ عقد إيجار جديد", btn_new_ticket: "+ فتح تذكرة صيانة",
+                btn_new_vendor: "+ إضافة مقاول / مورد", btn_new_pmc: "+ عقد إدارة أملاك جديد",
+                th_contract: "رقم العقد", th_unit: "الوحدة", th_tenant: "المستأجر",
+                th_start: "تاريخ البدء", th_end: "تاريخ الانتهاء", th_rent: "قيمة الإيجار",
+                th_freq: "دورية الدفع", th_status: "الحالة", th_actions: "إجراءات",
+                th_ticket_id: "رقم التذكرة", th_reporter: "مقدم البلاغ", th_category: "التصنيف",
+                th_priority: "الأولوية", th_description: "وصف العطل", th_opened: "تاريخ البلاغ",
+                th_due_date: "تاريخ الاستحقاق", th_amount_due: "المبلغ المستحق", th_amount_paid: "المسدد",
+                th_remaining: "المتبقي", th_vendor_name: "اسم المقاول / المورد", th_phone: "الهاتف",
+                th_email: "البريد", th_tax_no: "الرقم الضريبي", th_work_orders: "أوامر العمل",
+                th_owner: "مالك العقار", th_fee: "أتعاب الإدارة", th_managed_units: "الوحدات المدارة",
+                modal_tenancy_title: "تسجيل عقد إيجار جديد", modal_ticket_title: "فتح بلاغ / تذكرة صيانة",
+                modal_rent_pay_title: "تسجيل سند قبض إيجار", modal_wo_title: "تكليف مقاول بأمر عمل",
+                modal_vendor_title: "تسجيل مقاول / مورد جديد",
+                lbl_unit: "الوحدة المؤجرة *", lbl_tenant: "المستأجر *", lbl_start_date: "تاريخ البداية *",
+                lbl_end_date: "تاريخ النهاية *", lbl_rent_amount: "قيمة الإيجار (ر.س) *", lbl_deposit: "مبلغ التأمين (ر.س)",
+                lbl_installments: "توليد أقساط الإيجار", lbl_tenant_reporter: "المستأجر مقدم البلاغ",
+                lbl_priority: "الأولوية *", lbl_description: "وصف البلاغ أو العطل *",
+                lbl_payment_amount: "المبلغ المحصل (ر.س) *", lbl_vendor: "المقاول المنفذ *",
+                lbl_quoted_amount: "تكلفة العرض (ر.س)", lbl_vendor_name: "اسم الشركة / المقاول *",
+                lbl_contract: "العقد:", lbl_total_due: "المستحق:", lbl_remaining_due: "المتبقي:",
+                btn_cancel: "إلغاء", btn_close: "إغلاق", btn_save_tenancy: "حفظ وتفعيل عقد الإيجار",
+                btn_save_ticket: "تسجيل التذكرة", btn_confirm_pay: "تأكيد واستخراج السند",
+                btn_dispatch_wo: "إصدار أمر العمل", btn_save_vendor: "تسجيل المقاول",
+                modal_pmc_title: "تسجيل عقد إدارة أملاك جديد", lbl_owner: "مالك العقار *",
+                lbl_fee_type: "نوع الأتعاب", lbl_fee_rate: "نسبة / قيمة الأتعاب *", btn_save_pmc: "حفظ عقد الإدارة",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let tenanciesData = [];
+        let ticketsData = [];
+        let rentData = [];
+        let vendorsData = [];
+        let pmcData = [];
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function initTypography() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('recrm_lang', lang);
+            document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+        }
+
+        function toggleLanguage() {
+            setLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (btn) btn.classList.add('active');
+
+            const pane = document.getElementById(`pane-${tabId}`);
+            if (pane) pane.classList.add('active');
+
+            if (tabId === 'tenancies') loadTenancies();
+            else if (tabId === 'maintenance') loadTickets();
+            else if (tabId === 'rent') loadRentCollections();
+            else if (tabId === 'vendors') loadVendors();
+            else if (tabId === 'pm_contracts') loadPMContracts();
+            loadSummary();
+        }
+
+        // --- Summary KPIs ---
+        async function loadSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/management/summary`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const d = json.data;
+                document.getElementById('kpi-tenancies').textContent = d.active_tenancies;
+                document.getElementById('kpi-rent').textContent = Number(d.total_active_rent_amount || 0).toLocaleString() + ' SAR';
+                document.getElementById('kpi-tickets').textContent = d.open_maintenance_tickets;
+                document.getElementById('kpi-overdue').textContent = d.overdue_rent_collections;
+            } catch (err) {
+                console.error("Error loading summary:", err);
+            }
+        }
+
+        // --- Tab 1: Tenancies ---
+        async function loadTenancies() {
+            const status = document.getElementById('tenancy-status').value;
+            const url = `${API_BASE}/api/v1/tenancies?page_size=50${status ? `&status=${status}` : ''}`;
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                tenanciesData = json.data || [];
+                renderTenancies(tenanciesData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tenancy-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load tenancies.</td></tr>';
+            }
+        }
+
+        function renderTenancies(items) {
+            const tbody = document.getElementById('tenancy-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 24px;">No tenancies found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(t => {
+                const badgeCls = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'EXPIRED' ? 'badge-expired' : 'badge-low');
+                return `
+                    <tr>
+                        <td><strong>${t.contract_number}</strong></td>
+                        <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
+                        <td>
+                            <strong>${t.tenant_name || 'N/A'}</strong><br>
+                            <span style="font-size:0.8em; color:var(--text-muted);">${t.tenant_mobile || ''}</span>
+                        </td>
+                        <td>${t.start_date}</td>
+                        <td>${t.end_date || 'Open-ended'}</td>
+                        <td><strong>${Number(t.rent_amount || 0).toLocaleString()} SAR</strong></td>
+                        <td><span style="font-size:0.85em;">${t.payment_frequency || 'ANNUAL'}</span></td>
+                        <td><span class="badge ${badgeCls}">${t.status}</span></td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" onclick="viewTenancyDetails('${t.tenancy_id}')">Details</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTenancies() {
+            const term = document.getElementById('tenancy-search').value.toLowerCase();
+            const filtered = tenanciesData.filter(t => 
+                t.contract_number.toLowerCase().includes(term) ||
+                (t.tenant_name && t.tenant_name.toLowerCase().includes(term)) ||
+                (t.unit_number && t.unit_number.toLowerCase().includes(term))
+            );
+            renderTenancies(filtered);
+        }
+
+        async function viewTenancyDetails(tenancyId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tenancies/${tenancyId}`);
+                const json = await res.json();
+                const d = json.data;
+                const t = d.tenancy;
+                const cols = d.collections || [];
+
+                document.getElementById('tv-title').textContent = `Contract: ${t.contract_number} (Unit ${t.unit_number})`;
+                let html = `
+                    <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                        <div><strong>Tenant:</strong> ${t.tenant_name} (${t.tenant_mobile || 'No phone'})</div>
+                        <div><strong>Rent Amount:</strong> ${Number(t.rent_amount || 0).toLocaleString()} SAR / ${t.payment_frequency}</div>
+                        <div><strong>Period:</strong> ${t.start_date} to ${t.end_date || 'N/A'}</div>
+                        <div><strong>Security Deposit:</strong> ${t.deposit_amount ? Number(t.deposit_amount).toLocaleString() + ' SAR' : '0.00 SAR'}</div>
+                    </div>
+                    <h4>Rent Installments Schedule</h4>
+                    <table style="width:100%; border-collapse: collapse; font-size: 0.85em;">
+                        <thead>
+                            <tr style="background:#e2e8f0;">
+                                <th style="padding:6px;">Due Date</th>
+                                <th style="padding:6px;">Amount Due</th>
+                                <th style="padding:6px;">Amount Paid</th>
+                                <th style="padding:6px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                if (cols.length === 0) {
+                    html += `<tr><td colspan="4" style="text-align:center; padding:12px;">No scheduled installments.</td></tr>`;
+                } else {
+                    cols.forEach(c => {
+                        const bCls = c.status === 'PAID' ? 'badge-paid' : (c.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
+                        html += `
+                            <tr>
+                                <td style="padding:6px;">${c.due_date}</td>
+                                <td style="padding:6px;">${Number(c.amount_due || 0).toLocaleString()} SAR</td>
+                                <td style="padding:6px;">${Number(c.amount_paid || 0).toLocaleString()} SAR</td>
+                                <td style="padding:6px;"><span class="badge ${bCls}">${c.status}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+                html += `</tbody></table>`;
+                document.getElementById('tv-body').innerHTML = html;
+                openModal('modal-tenancy-view');
+            } catch (err) {
+                alert("Failed to load details: " + err);
+            }
+        }
+
+        // --- Tab 2: Maintenance Tickets ---
+        async function loadTickets() {
+            const status = document.getElementById('ticket-status').value;
+            const priority = document.getElementById('ticket-priority').value;
+            const category = document.getElementById('ticket-category').value;
+            let url = `${API_BASE}/api/v1/maintenance-tickets?page_size=50`;
+            if (status) url += `&status=${status}`;
+            if (priority) url += `&priority=${priority}`;
+            if (category) url += `&category=${category}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                ticketsData = json.data || [];
+                renderTickets(ticketsData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('ticket-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load tickets.</td></tr>';
+            }
+        }
+
+        function renderTickets(items) {
+            const tbody = document.getElementById('ticket-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 24px;">No maintenance tickets found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(t => {
+                const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
+                const sCls = t.status === 'CLOSED' ? 'badge-completed' : (t.status === 'IN_PROGRESS' ? 'badge-in_progress' : 'badge-open');
+                const openDate = new Date(t.opened_at).toLocaleDateString();
+                return `
+                    <tr>
+                        <td><strong>#${t.ticket_id.substring(0, 8)}</strong></td>
+                        <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
+                        <td>${t.reported_by_name || 'Tenant'}</td>
+                        <td><strong>${t.category || 'GENERAL'}</strong></td>
+                        <td><span class="badge ${pCls}">${t.priority}</span></td>
+                        <td>${t.description}</td>
+                        <td>${openDate}</td>
+                        <td><span class="badge ${sCls}">${t.status}</span></td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                ${t.status !== 'CLOSED' ? `<button class="btn btn-outline btn-sm" onclick="openDispatchWOModal('${t.ticket_id}', '${t.description.replace(/'/g, "\\'")}')">+ Work Order</button>` : ''}
+                                ${t.status !== 'CLOSED' ? `<button class="btn btn-success btn-sm" onclick="closeTicketDirectly('${t.ticket_id}')">Close</button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTickets() {
+            const term = document.getElementById('ticket-search').value.toLowerCase();
+            const filtered = ticketsData.filter(t =>
+                t.description.toLowerCase().includes(term) ||
+                (t.unit_number && t.unit_number.toLowerCase().includes(term))
+            );
+            renderTickets(filtered);
+        }
+
+        async function closeTicketDirectly(ticketId) {
+            if (!confirm("Close this maintenance ticket?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/maintenance-tickets/${ticketId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'CLOSED' })
+                });
+                if (res.ok) {
+                    loadTickets();
+                    loadSummary();
+                } else {
+                    alert("Failed to close ticket");
+                }
+            } catch (err) {
+                alert("Error: " + err);
+            }
+        }
+
+        // --- Tab 3: Rent Collections ---
+        async function loadRentCollections() {
+            const status = document.getElementById('rent-status').value;
+            const overdue = document.getElementById('rent-overdue-only').checked;
+            let url = `${API_BASE}/api/v1/rent-collections?page_size=50`;
+            if (status) url += `&status=${status}`;
+            if (overdue) url += `&is_overdue=true`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                rentData = json.data || [];
+                renderRentCollections(rentData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('rent-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load rent collections.</td></tr>';
+            }
+        }
+
+        function renderRentCollections(items) {
+            const tbody = document.getElementById('rent-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 24px;">No rent collections found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(r => {
+                const due = Number(r.amount_due || 0);
+                const paid = Number(r.amount_paid || 0);
+                const remaining = Math.max(0, due - paid);
+                const bCls = r.status === 'PAID' ? 'badge-paid' : (r.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
+                return `
+                    <tr>
+                        <td><strong>${r.contract_number || 'N/A'}</strong></td>
+                        <td>${r.unit_number ? 'Unit ' + r.unit_number : 'N/A'}</td>
+                        <td>${r.tenant_name || 'N/A'}</td>
+                        <td>${r.due_date}</td>
+                        <td><strong>${due.toLocaleString()} SAR</strong></td>
+                        <td style="color:var(--success); font-weight:600;">${paid.toLocaleString()} SAR</td>
+                        <td style="color:${remaining > 0 ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:700;">${remaining.toLocaleString()} SAR</td>
+                        <td><span class="badge ${bCls}">${r.status}</span></td>
+                        <td>
+                            ${remaining > 0 ? `
+                                <button class="btn btn-success btn-sm" onclick="openRecordRentPayModal('${r.rent_collection_id}', '${r.contract_number}', '${r.due_date}', ${due}, ${remaining})">
+                                    Record Receipt
+                                </button>
+                            ` : `<span style="color:var(--success); font-size:0.85em;">✔ Settled</span>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- Tab 4: Vendors ---
+        async function loadVendors() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/vendors?page_size=50`);
+                const json = await res.json();
+                vendorsData = json.data || [];
+                renderVendors(vendorsData);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderVendors(items) {
+            const tbody = document.getElementById('vendor-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 24px;">No vendors registered.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(v => `
+                <tr>
+                    <td><strong>${v.vendor_name}</strong></td>
+                    <td>${v.phone || 'N/A'}</td>
+                    <td>${v.email || 'N/A'}</td>
+                    <td><code>${v.tax_number || 'N/A'}</code></td>
+                    <td><span class="badge badge-normal">${v.work_orders_count || 0} orders</span></td>
+                    <td><span class="badge badge-active">${v.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function filterVendors() {
+            const term = document.getElementById('vendor-search').value.toLowerCase();
+            const filtered = vendorsData.filter(v =>
+                v.vendor_name.toLowerCase().includes(term) ||
+                (v.tax_number && v.tax_number.includes(term))
+            );
+            renderVendors(filtered);
+        }
+
+        // --- Tab 5: Owner Management Contracts ---
+        async function loadPMContracts() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/management-contracts?page_size=50`);
+                const json = await res.json();
+                pmcData = json.data || [];
+                renderPMContracts(pmcData);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderPMContracts(items) {
+            const tbody = document.getElementById('pmc-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No owner management contracts found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(m => `
+                <tr>
+                    <td><strong>${m.contract_number}</strong></td>
+                    <td><strong>${m.owner_name}</strong></td>
+                    <td>${m.start_date}</td>
+                    <td>${m.end_date || 'Open-ended'}</td>
+                    <td>${m.fee_rate}% (${m.fee_type})</td>
+                    <td><span class="badge badge-partial">${m.managed_units_count} units</span></td>
+                    <td><span class="badge badge-active">${m.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function filterPMContracts() {
+            const term = document.getElementById('pmc-search').value.toLowerCase();
+            const filtered = pmcData.filter(m =>
+                m.contract_number.toLowerCase().includes(term) ||
+                (m.owner_name && m.owner_name.toLowerCase().includes(term))
+            );
+            renderPMContracts(filtered);
+        }
+
+        // --- Modal Helpers ---
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function openNewTenancyModal() {
+            // Load available units
+            try {
+                const uRes = await fetch(`${API_BASE}/api/v1/units?status=AVAILABLE&page_size=100`);
+                const uJson = await uRes.json();
+                const uSelect = document.getElementById('t-unit');
+                uSelect.innerHTML = (uJson.data || []).map(u => 
+                    `<option value="${u.unit_id}">Unit ${u.unit_number} - ${u.asking_price || u.rent_price || 'N/A'} SAR (${u.bedrooms || 0} Beds)</option>`
+                ).join('') || '<option value="">No available units</option>';
+
+                // Load customers
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                const cSelect = document.getElementById('t-tenant');
+                cSelect.innerHTML = (cJson.data || []).map(c => {
+                    const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                    return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
+                }).join('') || '<option value="">No customers found</option>';
+
+                // Default dates
+                const today = new Date().toISOString().split('T')[0];
+                const nextYear = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+                document.getElementById('t-start').value = today;
+                document.getElementById('t-end').value = nextYear;
+
+                openModal('modal-tenancy');
+            } catch (err) {
+                alert("Error preparing form: " + err);
+            }
+        }
+
+        function adjustInstallmentCount() {
+            const freq = document.getElementById('t-freq').value;
+            const cntInput = document.getElementById('t-installments-count');
+            if (freq === 'ANNUAL') cntInput.value = 1;
+            else if (freq === 'SEMI_ANNUAL') cntInput.value = 2;
+            else if (freq === 'QUARTERLY') cntInput.value = 4;
+            else if (freq === 'MONTHLY') cntInput.value = 12;
+        }
+
+        async function handleCreateTenancy(e) {
+            e.preventDefault();
+            const payload = {
+                unit_id: document.getElementById('t-unit').value,
+                tenant_customer_id: document.getElementById('t-tenant').value,
+                start_date: document.getElementById('t-start').value,
+                end_date: document.getElementById('t-end').value,
+                rent_amount: parseFloat(document.getElementById('t-rent').value),
+                deposit_amount: parseFloat(document.getElementById('t-deposit').value || 0),
+                payment_frequency: document.getElementById('t-freq').value,
+                generate_installments: true,
+                installments_count: parseInt(document.getElementById('t-installments-count').value || 4)
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tenancies`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Creation failed');
+                }
+                closeModal('modal-tenancy');
+                loadTenancies();
+                loadSummary();
+                alert("Lease agreement created successfully and installments generated!");
+            } catch (err) {
+                alert("Failed to create lease: " + err.message);
+            }
+        }
+
+        async function openNewTicketModal() {
+            try {
+                // Load units
+                const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                const uJson = await uRes.json();
+                document.getElementById('mt-unit').innerHTML = (uJson.data || []).map(u => 
+                    `<option value="${u.unit_id}">Unit ${u.unit_number} (${u.status})</option>`
+                ).join('');
+
+                // Load customers
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('mt-customer').innerHTML = '<option value="">No specific reporter</option>' + 
+                    (cJson.data || []).map(c => {
+                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                        return `<option value="${c.customer_id}">${name}</option>`;
+                    }).join('');
+
+                openModal('modal-ticket');
+            } catch (err) {
+                alert("Error loading data: " + err);
+            }
+        }
+
+        async function handleCreateTicket(e) {
+            e.preventDefault();
+            const custId = document.getElementById('mt-customer').value;
+            const payload = {
+                unit_id: document.getElementById('mt-unit').value,
+                reported_by_customer_id: custId || null,
+                category: document.getElementById('mt-category').value,
+                priority: document.getElementById('mt-priority').value,
+                description: document.getElementById('mt-desc').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/maintenance-tickets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Ticket creation failed');
+                closeModal('modal-ticket');
+                loadTickets();
+                loadSummary();
+                alert("Maintenance ticket registered successfully!");
+            } catch (err) {
+                alert("Failed: " + err.message);
+            }
+        }
+
+        function openRecordRentPayModal(collectionId, contractNumber, dueDate, amountDue, remaining) {
+            document.getElementById('rp-collection-id').value = collectionId;
+            document.getElementById('rp-contract').textContent = contractNumber;
+            document.getElementById('rp-date').textContent = dueDate;
+            document.getElementById('rp-due').textContent = amountDue.toLocaleString() + ' SAR';
+            document.getElementById('rp-remaining').textContent = remaining.toLocaleString() + ' SAR';
+            document.getElementById('rp-amount').value = remaining;
+            document.getElementById('rp-amount').max = remaining;
+            openModal('modal-rent-pay');
+        }
+
+        async function handleRecordRentPayment(e) {
+            e.preventDefault();
+            const collectionId = document.getElementById('rp-collection-id').value;
+            const amount = parseFloat(document.getElementById('rp-amount').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/rent-collections/${collectionId}/record-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount_paid: amount })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Payment record failed');
+                }
+                closeModal('modal-rent-pay');
+                loadRentCollections();
+                loadSummary();
+                alert("Rent payment receipt recorded successfully!");
+            } catch (err) {
+                alert("Payment error: " + err.message);
+            }
+        }
+
+        async function openDispatchWOModal(ticketId, desc) {
+            document.getElementById('wo-ticket-id').value = ticketId;
+            document.getElementById('wo-ticket-desc').textContent = desc;
+
+            // Load vendors
+            try {
+                const vRes = await fetch(`${API_BASE}/api/v1/vendors?page_size=100`);
+                const vJson = await vRes.json();
+                document.getElementById('wo-vendor').innerHTML = (vJson.data || []).map(v =>
+                    `<option value="${v.vendor_id}">${v.vendor_name} (${v.phone || 'No phone'})</option>`
+                ).join('') || '<option value="">No vendors available</option>';
+
+                openModal('modal-wo');
+            } catch (err) {
+                alert("Failed to load vendors: " + err);
+            }
+        }
+
+        async function handleCreateWorkOrder(e) {
+            e.preventDefault();
+            const ticketId = document.getElementById('wo-ticket-id').value;
+            const vendorId = document.getElementById('wo-vendor').value;
+            const quote = parseFloat(document.getElementById('wo-quote').value || 0);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/maintenance-tickets/${ticketId}/work-orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ticket_id: ticketId,
+                        vendor_id: vendorId,
+                        quoted_amount: quote,
+                        status: 'REQUESTED'
+                    })
+                });
+                if (!res.ok) throw new Error('Work order creation failed');
+                closeModal('modal-wo');
+                loadTickets();
+                alert("Work order successfully dispatched to vendor!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        function openNewVendorModal() {
+            openModal('modal-vendor');
+        }
+
+        async function handleCreateVendor(e) {
+            e.preventDefault();
+            const payload = {
+                vendor_name: document.getElementById('v-name').value,
+                phone: document.getElementById('v-phone').value || null,
+                email: document.getElementById('v-email').value || null,
+                tax_number: document.getElementById('v-tax').value || null,
+                status: 'ACTIVE'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/vendors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Failed to register vendor');
+                closeModal('modal-vendor');
+                loadVendors();
+                loadSummary();
+                alert("Vendor registered successfully!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function openNewPMCModal() {
+            try {
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('pmc-owner').innerHTML = (cJson.data || []).map(c => {
+                    const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                    return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
+                }).join('') || '<option value="">No customers found</option>';
+
+                const today = new Date().toISOString().split('T')[0];
+                const twoYears = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0];
+                document.getElementById('pmc-start').value = today;
+                document.getElementById('pmc-end').value = twoYears;
+                openModal('modal-pmc');
+            } catch (err) {
+                alert("Failed to load owners: " + err);
+            }
+        }
+
+        async function handleCreatePMC(e) {
+            e.preventDefault();
+            const payload = {
+                customer_id: document.getElementById('pmc-owner').value,
+                start_date: document.getElementById('pmc-start').value,
+                end_date: document.getElementById('pmc-end').value || null,
+                fee_type: document.getElementById('pmc-fee-type').value,
+                fee_rate: parseFloat(document.getElementById('pmc-fee-rate').value || 5.0),
+                status: 'ACTIVE'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/management-contracts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Contract creation failed');
+                closeModal('modal-pmc');
+                loadPMContracts();
+                loadSummary();
+                alert("Management contract created successfully!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // Init on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypography();
+            setLanguage(currentLang);
+            loadSummary();
+            loadTenancies();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leads Management - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+        }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .controls-bar {
+            background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+        }
+        .controls-bar input, .controls-bar select {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        }
+        .leads-table {
+            width: 100%; border-collapse: collapse; background: white; border-radius: 8px;
+            overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .leads-table th, .leads-table td {
+            padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9em;
+        }
+        [dir="rtl"] .leads-table th, [dir="rtl"] .leads-table td { text-align: right; }
+        .leads-table th {
+            background-color: #f1f5f9; color: var(--text-muted); font-weight: 600;
+            text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.5px;
+        }
+        .leads-table tr:hover { background-color: #f8fafc; }
+        
+        .badge {
+            padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700;
+            text-transform: uppercase; display: inline-block;
+        }
+        .badge-new { background: #fee2e2; color: #991b1b; }
+        .badge-contacted { background: #fef3c7; color: #92400e; }
+        .badge-qualified { background: #dcfce7; color: #166534; }
+        .badge-converted { background: #e0e7ff; color: #3730a3; }
+        .badge-lost { background: #f1f5f9; color: #475569; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8em; background: #f1f5f9; color: #475569; padding: 3px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all;
+        }
+        .btn-copy {
+            background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 5px;
+            cursor: pointer; font-size: 0.75em; margin-left: 4px; color: #64748b;
+        }
+        .btn-copy:hover { background: #e2e8f0; color: #0f172a; }
+
+        .btn {
+            background-color: var(--secondary); color: white; padding: 8px 14px; border: none;
+            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.85em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn:hover { background-color: #2563eb; }
+        .btn-success { background-color: var(--accent); }
+        .btn-success:hover { background-color: #059669; }
+        .btn-sm { padding: 4px 8px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-sm:hover { background: #cbd5e1; }
+        .btn-primary-sm { padding: 4px 10px; font-size: 0.8em; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary-sm:hover { background: #1d4ed8; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal {
+            background: white; border-radius: 12px; width: 90%; max-width: 750px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+        }
+        .modal-header {
+            padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); }
+
+        .search-customer-card {
+            background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88em;
+        }
+        .search-customer-card:hover { border-color: var(--secondary); background: #f8fafc; }
+
+        .id-display-box {
+            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+            padding: 10px 14px; font-size: 0.88em; margin-bottom: 16px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+
+        /* Toast notification */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #0f172a; color: #fff; text-align: center;
+            border-radius: 8px; padding: 12px 16px; position: fixed; z-index: 2000; right: 30px; bottom: 30px;
+            font-size: 0.9em; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Leads</span>
+        </div>
+        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" class="active" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 style="margin: 0;" data-i18n="page_title">Leads Management</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label">Loading inquiries...</p>
+            </div>
+            <button class="btn btn-success" onclick="openAddLeadModal()" data-i18n="new_lead_btn">+ Add Inbound Lead</button>
+        </div>
+
+        <div class="controls-bar">
+            <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." style="flex-grow: 1; min-width: 200px;" oninput="debounceFetch()">
+            <select id="status-select" onchange="fetchLeads()">
+                <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                <option value="NEW">NEW</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="QUALIFIED">QUALIFIED</option>
+                <option value="CONVERTED">CONVERTED</option>
+                <option value="LOST">LOST</option>
+            </select>
+            <select id="priority-select" onchange="fetchLeads()">
+                <option value="" data-i18n="opt_all_priorities">All Priorities</option>
+                <option value="HIGH">HIGH (عالي)</option>
+                <option value="MEDIUM">MEDIUM (متوسط)</option>
+                <option value="NORMAL">NORMAL (عادي)</option>
+                <option value="LOW">LOW (منخفض)</option>
+            </select>
+            <select id="inquiry-filter" onchange="fetchLeads()">
+                <option value="" data-i18n="opt_all_inquiry">All Inquiry Types</option>
+                <option value="BUY">BUY (شراء)</option>
+                <option value="RENT">RENT (إيجار)</option>
+                <option value="SALE">SALE (بيع)</option>
+                <option value="INVESTMENT">INVESTMENT (استثمار)</option>
+            </select>
+        </div>
+
+        <table class="leads-table">
+            <thead>
+                <tr>
+                    <th data-i18n="col_lead_id">Lead ID</th>
+                    <th data-i18n="col_customer">Customer</th>
+                    <th data-i18n="col_contact">Contact</th>
+                    <th data-i18n="col_inquiry">Type / Source</th>
+                    <th data-i18n="col_budget">Budget Range</th>
+                    <th data-i18n="col_status">Status</th>
+                    <th data-i18n="col_agent">Assigned Agent</th>
+                    <th data-i18n="col_actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="leads-tbody">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading live database records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MODAL: ADD INBOUND LEAD -->
+    <div class="modal-overlay" id="add-lead-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_add_lead_title">Create Inbound Lead</h3>
+                <button class="close-btn" onclick="closeAddLeadModal()">&times;</button>
+            </div>
+            <form id="add-lead-form" onsubmit="submitNewLead(event)">
+                <div class="modal-body">
+                    <!-- SECTION 1: CUSTOMER SELECTION & VERIFICATION -->
+                    <div style="border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--primary);" data-i18n="sec_customer_search">1. Customer Verification & Search</h4>
+                        <p style="margin: 0 0 10px 0; font-size: 0.85em; color: var(--text-muted);" data-i18n="sec_customer_sub">Search if this customer already exists before adding lead, or quickly add a new customer:</p>
+
+                        <!-- Search Inputs Grid -->
+                        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="srch-first-name" placeholder="First Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-last-name" placeholder="Last Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                                <input type="text" id="srch-cust-id" placeholder="Customer UUID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-email" placeholder="Email Address" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-national-id" placeholder="National ID / Iqama" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-primary-sm" onclick="performCustomerSearch()">🔍 <span data-i18n="btn_search_customer">Search Customer</span></button>
+                                    <button type="button" class="btn btn-sm" onclick="clearCustomerSearch()" data-i18n="btn_clear">Clear</button>
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm" onclick="openQuickAddCustomerModal()">+ <span data-i18n="btn_not_found_add">Customer Not Found? Add New</span></button>
+                            </div>
+                            <!-- Search Results List -->
+                            <div id="srch-results" style="margin-top: 10px; max-height: 180px; overflow-y: auto; display: none;"></div>
+                        </div>
+
+                        <!-- Selected Customer Confirmation Banner -->
+                        <div id="selected-customer-banner" style="display: none; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 12px 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="color: #047857; font-weight: 700;">✓ <span data-i18n="lbl_selected_customer">Selected Customer:</span></span>
+                                    <strong id="sel-cust-name" style="color: #065f46; margin-left: 6px;">--</strong>
+                                    <div style="font-size: 0.82em; color: #047857; margin-top: 3px;" id="sel-cust-details">--</div>
+                                </div>
+                                <button type="button" class="btn btn-sm" onclick="deselectCustomer()" data-i18n="btn_change_cust">Change</button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="lead-cust-id" required>
+                    </div>
+
+                    <!-- SECTION 2: INBOUND LEAD SPECIFICATIONS -->
+                    <h4 style="margin: 0 0 12px 0; color: var(--primary);" data-i18n="sec_lead_details">2. Lead Inbound Details & Preferences</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_inquiry_type">Inquiry Type *</label>
+                            <select id="lead-inquiry-type" required>
+                                <option value="BUY">BUY (شراء)</option>
+                                <option value="RENT">RENT (إيجار)</option>
+                                <option value="SALE">SALE (عرض عقار للبيع)</option>
+                                <option value="INVESTMENT">INVESTMENT (استثمار)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_priority">Priority *</label>
+                            <select id="lead-priority" required>
+                                <option value="MEDIUM">MEDIUM (متوسط)</option>
+                                <option value="NORMAL">NORMAL (عادي)</option>
+                                <option value="HIGH">HIGH (مرتفع)</option>
+                                <option value="LOW">LOW (منخفض)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_lead_source">Lead Channel / Source</label>
+                            <select id="lead-source">
+                                <option value="">-- Direct / Walk-in --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_assigned_agent">Assign to Agent</label>
+                            <select id="lead-assigned-user">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="lead-city">
+                                <option value="">-- Any City --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
+                            <select id="lead-prop-type">
+                                <option value="">-- Any Property Type --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_min">Budget Min (SAR)</label>
+                            <input type="number" id="lead-budget-min" placeholder="e.g. 500000" min="0" step="1000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_max">Budget Max (SAR)</label>
+                            <input type="number" id="lead-budget-max" placeholder="e.g. 1500000" min="0" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
+                            <input type="number" id="lead-bedrooms" placeholder="e.g. 3" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_area_min">Min Area (sqm)</label>
+                            <input type="number" id="lead-area-min" placeholder="e.g. 150" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeAddLeadModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_submit_lead">Create Inbound Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: QUICK ADD CUSTOMER (OVERLAY) -->
+    <div class="modal-overlay" id="quick-add-cust-modal" style="z-index: 1100;">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_quick_cust_title">Quick Add New Customer</h3>
+                <button class="close-btn" onclick="closeQuickAddCustomerModal()">&times;</button>
+            </div>
+            <form id="quick-cust-form" onsubmit="submitQuickCustomer(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_cust_type">Customer Type</label>
+                        <select id="qc-type" onchange="toggleQuickCompanyFields()">
+                            <option value="INDIVIDUAL">Individual (فرد)</option>
+                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" id="qc-ind-row">
+                        <div class="form-group">
+                            <label data-i18n="form_first_name">First Name *</label>
+                            <input type="text" id="qc-first-name" required placeholder="e.g. Sultan">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_last_name">Last Name *</label>
+                            <input type="text" id="qc-last-name" required placeholder="e.g. Al-Ghamdi">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="qc-comp-row" style="display: none;">
+                        <label data-i18n="form_company">Company Legal Name *</label>
+                        <input type="text" id="qc-company-name" placeholder="Company Name">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_mobile">Mobile Phone *</label>
+                            <input type="tel" id="qc-mobile" required placeholder="+966 50 000 0000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_email">Email Address</label>
+                            <input type="email" id="qc-email" placeholder="client@domain.sa">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_national_id">National ID / Iqama</label>
+                            <input type="text" id="qc-national-id" placeholder="10-digit ID">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_nationality">Nationality</label>
+                            <input type="text" id="qc-nationality" value="SA" maxlength="2">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeQuickAddCustomerModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_save_select_cust">Save & Select Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT LEAD -->
+    <div class="modal-overlay" id="edit-lead-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_edit_lead_title">Edit Lead Details</h3>
+                <button class="close-btn" onclick="closeEditLeadModal()">&times;</button>
+            </div>
+            <form id="edit-lead-form" onsubmit="submitEditLead(event)">
+                <input type="hidden" id="edit-lead-id">
+                <div class="modal-body">
+                    <div class="id-display-box">
+                        <span><strong data-i18n="col_lead_id">Lead ID:</strong> <span id="edit-lead-id-display" class="id-badge">--</span></span>
+                        <button type="button" class="btn-copy" onclick="copyId(document.getElementById('edit-lead-id-display').textContent)">📋 <span data-i18n="btn_copy">Copy ID</span></button>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.9em;">
+                        <span data-i18n="lbl_customer">Customer:</span> <strong id="edit-lead-cust-name">--</strong>
+                        <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="edit-lead-cust-info">--</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="col_status">Status *</label>
+                            <select id="edit-lead-status" required>
+                                <option value="NEW">NEW</option>
+                                <option value="CONTACTED">CONTACTED</option>
+                                <option value="QUALIFIED">QUALIFIED</option>
+                                <option value="CONVERTED">CONVERTED</option>
+                                <option value="LOST">LOST</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_priority">Priority *</label>
+                            <select id="edit-lead-priority" required>
+                                <option value="HIGH">HIGH</option>
+                                <option value="MEDIUM">MEDIUM</option>
+                                <option value="NORMAL">NORMAL</option>
+                                <option value="LOW">LOW</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_inquiry_type">Inquiry Type</label>
+                            <select id="edit-lead-inquiry">
+                                <option value="BUY">BUY</option>
+                                <option value="RENT">RENT</option>
+                                <option value="SALE">SALE</option>
+                                <option value="INVESTMENT">INVESTMENT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="col_agent">Assigned Agent</label>
+                            <select id="edit-lead-assigned">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_lead_source">Lead Channel / Source</label>
+                            <select id="edit-lead-source">
+                                <option value="">-- Direct / Walk-in --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="edit-lead-city">
+                                <option value="">-- Any City --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
+                            <select id="edit-lead-prop-type">
+                                <option value="">-- Any Property Type --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_min">Budget Min (SAR)</label>
+                            <input type="number" id="edit-lead-budget-min" step="1000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_max">Budget Max (SAR)</label>
+                            <input type="number" id="edit-lead-budget-max" step="1000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
+                            <input type="number" id="edit-lead-bedrooms" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_area_min">Min Area (sqm)</label>
+                            <input type="number" id="edit-lead-area-min" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeEditLeadModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_changes">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">Operation completed successfully!</div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        let currentLang = 'en';
+        let cachedLeads = [];
+        let refCities = [];
+        let refPropertyTypes = [];
+        let refLeadSources = [];
+        let refUsers = [];
+
+        const i18nData = {
+            en: {
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
+                nav_api: "API Docs", page_title: "Leads Management", new_lead_btn: "+ Add Inbound Lead",
+                col_lead_id: "Lead ID", col_customer: "Customer", col_contact: "Contact", col_inquiry: "Type / Source",
+                col_budget: "Budget Range", col_status: "Status", col_agent: "Assigned Agent", col_actions: "Actions",
+                opt_all_statuses: "All Statuses", opt_all_priorities: "All Priorities", opt_all_inquiry: "All Inquiry Types",
+                modal_add_lead_title: "Create Inbound Lead", modal_edit_lead_title: "Edit Lead Details",
+                modal_quick_cust_title: "Quick Add New Customer", sec_customer_search: "1. Customer Verification & Search",
+                sec_customer_sub: "Search if this customer already exists before adding lead, or quickly add a new customer:",
+                btn_search_customer: "Search Customer", btn_clear: "Clear", btn_not_found_add: "Customer Not Found? Add New",
+                lbl_selected_customer: "Selected Customer:", btn_change_cust: "Change", sec_lead_details: "2. Lead Inbound Details & Preferences",
+                lbl_inquiry_type: "Inquiry Type *", lbl_priority: "Priority *", lbl_lead_source: "Lead Channel / Source",
+                lbl_assigned_agent: "Assign to Agent", lbl_pref_city: "Preferred City", lbl_pref_prop_type: "Preferred Property Type",
+                lbl_budget_min: "Budget Min (SAR)", lbl_budget_max: "Budget Max (SAR)", lbl_bedrooms: "Min Bedrooms",
+                lbl_area_min: "Min Area (sqm)", btn_cancel: "Cancel", btn_submit_lead: "Create Inbound Lead",
+                lbl_cust_type: "Customer Type", form_first_name: "First Name *", form_last_name: "Last Name *",
+                form_company: "Company Legal Name *", form_mobile: "Mobile Phone *", form_email: "Email Address",
+                form_national_id: "National ID / Iqama", form_nationality: "Nationality", btn_save_select_cust: "Save & Select Customer",
+                btn_copy: "Copy ID", btn_edit: "Edit", btn_save_changes: "Save Changes", lbl_customer: "Customer:",
+                lang_label: "عربي"
+            },
+            ar: {
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
+                nav_api: "توثيق API", page_title: "إدارة العملاء المحتملين", new_lead_btn: "+ إضافة طلب وارد",
+                col_lead_id: "معرّف الطلب (Lead ID)", col_customer: "العميل", col_contact: "الاتصال", col_inquiry: "النوع / المصدر",
+                col_budget: "الميزانية المتوقعة", col_status: "الحالة", col_agent: "الوسيط المسؤول", col_actions: "الإجراءات",
+                opt_all_statuses: "جميع الحالات", opt_all_priorities: "جميع الأولويات", opt_all_inquiry: "جميع أنواع الطلبات",
+                modal_add_lead_title: "إنشاء طلب وارد جديد", modal_edit_lead_title: "تعديل بيانات الطلب",
+                modal_quick_cust_title: "إضافة عميل جديد سريعاً", sec_customer_search: "1. التحقق من العميل والبحث",
+                sec_customer_sub: "ابحث عما إذا كان هذا العميل مسجلاً مسبقاً، أو أضف عميلاً جديداً مباشرة:",
+                btn_search_customer: "بحث عن العميل", btn_clear: "مسح", btn_not_found_add: "العميل غير مسجل؟ أضف عميل جديد",
+                lbl_selected_customer: "العميل المختار:", btn_change_cust: "تغيير", sec_lead_details: "2. تفاصيل وتفضيلات الطلب",
+                lbl_inquiry_type: "نوع الطلب *", lbl_priority: "الأولوية *", lbl_lead_source: "قناة / مصدر الطلب",
+                lbl_assigned_agent: "تعيين للوسيط", lbl_pref_city: "المدينة المفضلة", lbl_pref_prop_type: "نوع العقار المفضل",
+                lbl_budget_min: "الحد الأدنى للميزانية (ريال)", lbl_budget_max: "الحد الأقصى للميزانية (ريال)", lbl_bedrooms: "أقل عدد غرف",
+                lbl_area_min: "أقل مساحة (م²)", btn_cancel: "إلغاء", btn_submit_lead: "تسجيل الطلب الوارد",
+                lbl_cust_type: "نوع العميل", form_first_name: "الاسم الأول *", form_last_name: "اسم العائلة *",
+                form_company: "اسم الشركة القانوني *", form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني",
+                form_national_id: "الهوية الوطنية / الإقامة", form_nationality: "الجنسية", btn_save_select_cust: "حفظ وتحديد العميل",
+                btn_copy: "نسخ المعرّف", btn_edit: "تعديل", btn_save_changes: "حفظ التعديلات", lbl_customer: "العميل:",
+                lang_label: "English"
+            }
+        };
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            localStorage.setItem('recrm_lang', currentLang);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+            const savedLang = localStorage.getItem('recrm_lang');
+            if (savedLang && savedLang !== currentLang) {
+                applyLanguage(savedLang);
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        function copyId(val) {
+            if (!val || val === '--') return;
+            navigator.clipboard.writeText(val.trim()).then(() => {
+                showToast(`Copied ID: ${val.trim()}`);
+            }).catch(() => {
+                showToast(`Copied: ${val.trim()}`);
+            });
+        }
+
+        let debounceTimer;
+        function debounceFetch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchLeads, 300);
+        }
+
+        function getStatusBadge(status) {
+            const s = (status || '').toUpperCase();
+            if (s === 'NEW') return `<span class="badge badge-new">${s}</span>`;
+            if (s === 'CONTACTED') return `<span class="badge badge-contacted">${s}</span>`;
+            if (s === 'QUALIFIED') return `<span class="badge badge-qualified">${s}</span>`;
+            if (s === 'CONVERTED') return `<span class="badge badge-converted">${s}</span>`;
+            return `<span class="badge badge-lost">${s}</span>`;
+        }
+
+        let refDataLoaded = false;
+        async function initReferenceData() {
+            if (refDataLoaded) return;
+            try {
+                const [cRes, ptRes, lsRes, uRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/cities`),
+                    fetch(`${API_BASE}/api/v1/property-types`),
+                    fetch(`${API_BASE}/api/v1/lead-sources`),
+                    fetch(`${API_BASE}/api/v1/users`)
+                ]);
+                if (cRes.ok) refCities = (await cRes.json()).data || [];
+                if (ptRes.ok) refPropertyTypes = (await ptRes.json()).data || [];
+                if (lsRes.ok) refLeadSources = (await lsRes.json()).data || [];
+                if (uRes.ok) refUsers = (await uRes.json()).data || [];
+
+                populateReferenceSelects();
+                refDataLoaded = true;
+            } catch (e) {
+                console.warn("Reference data load notice:", e);
+            }
+        }
+
+        function populateReferenceSelects() {
+            // Cities
+            const cityOpts = '<option value="">-- Any City --</option>' + 
+                refCities.map(c => `<option value="${c.city_id}">${c.name_en || c.name_ar} (${c.region_name || 'KSA'})</option>`).join('');
+            const leadCity = document.getElementById('lead-city');
+            if (leadCity) leadCity.innerHTML = cityOpts;
+            const editCity = document.getElementById('edit-lead-city');
+            if (editCity) editCity.innerHTML = cityOpts;
+
+            // Property Types
+            const ptOpts = '<option value="">-- Any Property Type --</option>' + 
+                refPropertyTypes.map(pt => `<option value="${pt.property_type_id}">${pt.name_en || pt.name_ar}</option>`).join('');
+            const leadPt = document.getElementById('lead-prop-type');
+            if (leadPt) leadPt.innerHTML = ptOpts;
+            const editPt = document.getElementById('edit-lead-prop-type');
+            if (editPt) editPt.innerHTML = ptOpts;
+
+            // Lead Sources
+            const lsOpts = '<option value="">-- Direct / Walk-in --</option>' + 
+                refLeadSources.map(ls => `<option value="${ls.lead_source_id}">${ls.name} (${ls.channel})</option>`).join('');
+            const leadSource = document.getElementById('lead-source');
+            if (leadSource) leadSource.innerHTML = lsOpts;
+            const editSource = document.getElementById('edit-lead-source');
+            if (editSource) editSource.innerHTML = lsOpts;
+
+            // Users
+            const uOpts = '<option value="">-- Unassigned --</option>' + 
+                refUsers.map(u => `<option value="${u.user_id}">${u.full_name} (${u.employee_no || 'Agent'})</option>`).join('');
+            const leadUser = document.getElementById('lead-assigned-user');
+            if (leadUser) leadUser.innerHTML = uOpts;
+            const editUser = document.getElementById('edit-lead-assigned');
+            if (editUser) editUser.innerHTML = uOpts;
+        }
+
+        async function fetchLeads() {
+            const search = document.getElementById('search-box')?.value || '';
+            const status = document.getElementById('status-select')?.value || '';
+            const priority = document.getElementById('priority-select')?.value || '';
+            const inquiry = document.getElementById('inquiry-filter')?.value || '';
+
+            let url = `${API_BASE}/api/v1/leads?page_size=60`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (priority) url += `&priority=${encodeURIComponent(priority)}`;
+            if (inquiry) url += `&inquiry_type=${encodeURIComponent(inquiry)}`;
+
+            const tbody = document.getElementById('leads-tbody');
+            if (cachedLeads.length === 0 && tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading database records...</td></tr>';
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+            try {
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                const json = await res.json();
+                const leads = json.data || [];
+                cachedLeads = leads;
+                const total = json.meta?.total || 0;
+
+                const counter = document.getElementById('counter-label');
+                if (counter) counter.textContent = `Showing ${leads.length} of ${total} inquiries in database`;
+
+                if (!tbody) return;
+                if (leads.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No matching leads found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leads.map(l => {
+                    const bMin = l.budget_min != null ? Number(l.budget_min) : null;
+                    const bMax = l.budget_max != null ? Number(l.budget_max) : null;
+                    let budget = 'Not specified';
+                    if (bMin != null && bMax != null) {
+                        budget = `${bMin.toLocaleString()} - ${bMax.toLocaleString()} SAR`;
+                    } else if (bMin != null) {
+                        budget = `From ${bMin.toLocaleString()} SAR`;
+                    } else if (bMax != null) {
+                        budget = `Up to ${bMax.toLocaleString()} SAR`;
+                    }
+                    const shortLeadId = (l.lead_id || '').substring(0, 8);
+                    const shortCustId = l.customer_id ? l.customer_id.substring(0, 8) + '...' : '--';
+
+                    return `
+                        <tr>
+                            <td>
+                                <span class="id-badge" title="${l.lead_id}">${shortLeadId}...</span>
+                                <button class="btn-copy" onclick="copyId('${l.lead_id}')" title="Copy Full Lead ID">📋</button>
+                            </td>
+                            <td>
+                                <strong>${l.customer_name || 'N/A'}</strong><br>
+                                <span style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">Cust: ${shortCustId}</span>
+                            </td>
+                            <td>
+                                ${l.customer_mobile || '--'}<br>
+                                <span style="font-size: 0.8em; color: var(--text-muted);">${l.customer_email || ''}</span>
+                            </td>
+                            <td>
+                                <strong>${l.inquiry_type || 'N/A'}</strong><br>
+                                <span style="font-size: 0.8em; color: var(--text-muted);">${l.lead_source_name || 'Direct'}</span>
+                            </td>
+                            <td>${budget}</td>
+                            <td>${getStatusBadge(l.status)}</td>
+                            <td>${l.assigned_user_name || 'Unassigned'}</td>
+                            <td>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')">✏️ Edit</button>
+                                    ${l.status !== 'QUALIFIED' ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')">Qualify</button>` : '<span style="color: #16a34a; font-size: 0.8em; font-weight: 600;">✓ Qualified</span>'}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.error("fetchLeads error:", err);
+                const counter = document.getElementById('counter-label');
+                if (counter) counter.textContent = 'Connection notice';
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="color: #ef4444; text-align: center; padding: 24px;">
+                                <div><strong>Unable to load live records:</strong> ${err.name === 'AbortError' ? 'Connection timed out' : (err.message || 'Network error')}</div>
+                                <div style="margin-top: 10px;">
+                                    <button class="btn btn-primary-sm" onclick="fetchLeads()">🔄 Retry Now</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+
+        async function qualifyLead(leadId) {
+            if (!confirm('Qualify this lead for sales pipeline?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/qualify`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Lead marked as QUALIFIED!');
+                    fetchLeads();
+                } else {
+                    alert('Could not qualify lead');
+                }
+            } catch (e) {
+                alert('Request failed');
+            }
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* ADD LEAD MODAL & CUSTOMER SEARCH / QUICK ADD                                */
+        /* -------------------------------------------------------------------------- */
+        async function openAddLeadModal() {
+            if (!refDataLoaded) await initReferenceData();
+            clearCustomerSearch();
+            deselectCustomer();
+            document.getElementById('add-lead-form').reset();
+            document.getElementById('add-lead-modal').style.display = 'flex';
+        }
+
+        function closeAddLeadModal() {
+            document.getElementById('add-lead-modal').style.display = 'none';
+        }
+
+        async function performCustomerSearch() {
+            const firstName = document.getElementById('srch-first-name').value.trim();
+            const lastName = document.getElementById('srch-last-name').value.trim();
+            const mobile = document.getElementById('srch-mobile').value.trim();
+            const custId = document.getElementById('srch-cust-id').value.trim();
+            const email = document.getElementById('srch-email').value.trim();
+            const nationalId = document.getElementById('srch-national-id').value.trim();
+
+            if (!firstName && !lastName && !mobile && !custId && !email && !nationalId) {
+                alert('Please enter at least one field (First Name, Last Name, Mobile, Customer ID, Email, or National ID) to search.');
+                return;
+            }
+
+            const resultsContainer = document.getElementById('srch-results');
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.88em;">Searching customer database...</div>';
+
+            let queryParams = [];
+            if (firstName) queryParams.push(`first_name=${encodeURIComponent(firstName)}`);
+            if (lastName) queryParams.push(`last_name=${encodeURIComponent(lastName)}`);
+            if (mobile) queryParams.push(`mobile=${encodeURIComponent(mobile)}`);
+            if (custId) queryParams.push(`customer_id=${encodeURIComponent(custId)}`);
+            if (email) queryParams.push(`email=${encodeURIComponent(email)}`);
+            if (nationalId) queryParams.push(`national_id=${encodeURIComponent(nationalId)}`);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/customers?${queryParams.join('&')}`);
+                if (!res.ok) throw new Error('Search failed');
+                const json = await res.json();
+                const customers = json.data || [];
+
+                if (customers.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div style="padding: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; color: #9f1239; font-size: 0.88em; display: flex; justify-content: space-between; align-items: center;">
+                            <span>No customer found matching criteria.</span>
+                            <button type="button" class="btn btn-success btn-sm" onclick="openQuickAddCustomerModal()">+ Register Customer Now</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultsContainer.innerHTML = customers.map(c => {
+                    const displayName = c.full_name || c.company_name || 'Individual';
+                    const payloadStr = encodeURIComponent(JSON.stringify(c));
+                    return `
+                        <div class="search-customer-card">
+                            <div>
+                                <strong>${displayName}</strong> 
+                                <span class="badge ${c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual'}">${c.customer_type}</span>
+                                <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 2px;">
+                                    📞 ${c.mobile || '--'} | ✉️ ${c.email || '--'} | ID: <span class="id-badge">${c.customer_id.substring(0, 8)}...</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm" onclick="selectLeadCustomer('${payloadStr}')">✓ Select Customer</button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                resultsContainer.innerHTML = `<div style="padding: 10px; color: red;">Error searching customers: ${err.message}</div>`;
+            }
+        }
+
+        function clearCustomerSearch() {
+            document.getElementById('srch-first-name').value = '';
+            document.getElementById('srch-last-name').value = '';
+            document.getElementById('srch-mobile').value = '';
+            document.getElementById('srch-cust-id').value = '';
+            document.getElementById('srch-email').value = '';
+            document.getElementById('srch-national-id').value = '';
+            const results = document.getElementById('srch-results');
+            results.innerHTML = '';
+            results.style.display = 'none';
+        }
+
+        function selectLeadCustomer(custDataStr) {
+            const cust = JSON.parse(decodeURIComponent(custDataStr));
+            document.getElementById('lead-cust-id').value = cust.customer_id;
+            document.getElementById('sel-cust-name').textContent = cust.full_name || cust.company_name || 'Customer';
+            document.getElementById('sel-cust-details').textContent = `Mobile: ${cust.mobile || '--'} | Email: ${cust.email || '--'} | Customer ID: ${cust.customer_id}`;
+            document.getElementById('selected-customer-banner').style.display = 'block';
+            document.getElementById('srch-results').style.display = 'none';
+            showToast(`Selected customer: ${cust.full_name || cust.company_name}`);
+        }
+
+        function deselectCustomer() {
+            document.getElementById('lead-cust-id').value = '';
+            document.getElementById('sel-cust-name').textContent = '--';
+            document.getElementById('sel-cust-details').textContent = '--';
+            document.getElementById('selected-customer-banner').style.display = 'none';
+        }
+
+        /* QUICK ADD CUSTOMER MODAL */
+        function openQuickAddCustomerModal() {
+            // Pre-fill from search inputs if typed
+            document.getElementById('qc-first-name').value = document.getElementById('srch-first-name').value.trim();
+            document.getElementById('qc-last-name').value = document.getElementById('srch-last-name').value.trim();
+            document.getElementById('qc-mobile').value = document.getElementById('srch-mobile').value.trim();
+            document.getElementById('qc-email').value = document.getElementById('srch-email').value.trim();
+            document.getElementById('qc-national-id').value = document.getElementById('srch-national-id').value.trim();
+
+            toggleQuickCompanyFields();
+            document.getElementById('quick-add-cust-modal').style.display = 'flex';
+        }
+
+        function closeQuickAddCustomerModal() {
+            document.getElementById('quick-add-cust-modal').style.display = 'none';
+        }
+
+        function toggleQuickCompanyFields() {
+            const type = document.getElementById('qc-type').value;
+            const indRow = document.getElementById('qc-ind-row');
+            const compRow = document.getElementById('qc-comp-row');
+            const fn = document.getElementById('qc-first-name');
+            const ln = document.getElementById('qc-last-name');
+            const cn = document.getElementById('qc-company-name');
+
+            if (type === 'COMPANY') {
+                indRow.style.display = 'none';
+                compRow.style.display = 'block';
+                fn.required = false; ln.required = false; cn.required = true;
+            } else {
+                indRow.style.display = 'flex';
+                compRow.style.display = 'none';
+                fn.required = true; ln.required = true; cn.required = false;
+            }
+        }
+
+        async function submitQuickCustomer(e) {
+            e.preventDefault();
+            const type = document.getElementById('qc-type').value;
+            const payload = {
+                customer_type: type,
+                first_name: type === 'INDIVIDUAL' ? document.getElementById('qc-first-name').value.trim() : null,
+                last_name: type === 'INDIVIDUAL' ? document.getElementById('qc-last-name').value.trim() : null,
+                company_name: type === 'COMPANY' ? document.getElementById('qc-company-name').value.trim() : null,
+                mobile: document.getElementById('qc-mobile').value.trim(),
+                email: document.getElementById('qc-email').value.trim() || null,
+                nationality_code: document.getElementById('qc-nationality').value.trim().toUpperCase() || 'SA',
+                national_id: document.getElementById('qc-national-id').value.trim() || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/customers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    const newCust = result.data;
+                    showToast(`Customer registered! ID: ${newCust.customer_id}`);
+                    closeQuickAddCustomerModal();
+                    // Select this newly added customer in lead creation
+                    selectLeadCustomer(encodeURIComponent(JSON.stringify(newCust)));
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to add customer: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+
+        async function submitNewLead(e) {
+            e.preventDefault();
+            const custId = document.getElementById('lead-cust-id').value;
+            if (!custId) {
+                alert('Please select or add a customer first before creating the lead.');
+                return;
+            }
+
+            const payload = {
+                customer_id: custId,
+                inquiry_type: document.getElementById('lead-inquiry-type').value,
+                priority: document.getElementById('lead-priority').value,
+                lead_source_id: document.getElementById('lead-source').value || null,
+                assigned_user_id: document.getElementById('lead-assigned-user').value || null,
+                preferred_city_id: document.getElementById('lead-city').value || null,
+                preferred_property_type_id: document.getElementById('lead-prop-type').value || null,
+                budget_min: parseFloat(document.getElementById('lead-budget-min').value) || null,
+                budget_max: parseFloat(document.getElementById('lead-budget-max').value) || null,
+                bedrooms_min: parseInt(document.getElementById('lead-bedrooms').value) || null,
+                area_min_sqm: parseFloat(document.getElementById('lead-area-min').value) || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast(`Lead created successfully! Lead ID: ${result.data.lead_id}`);
+                    closeAddLeadModal();
+                    fetchLeads();
+                } else {
+                    const err = await res.json();
+                    alert(`Error creating lead: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* EDIT LEAD MODAL                                                             */
+        /* -------------------------------------------------------------------------- */
+        async function openEditLeadModal(leadId) {
+            if (!refDataLoaded) await initReferenceData();
+            let lead = cachedLeads.find(l => l.lead_id === leadId);
+            if (!lead) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}`);
+                    if (res.ok) {
+                        lead = (await res.json()).data;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (!lead) {
+                alert('Lead details not found');
+                return;
+            }
+
+            document.getElementById('edit-lead-id').value = lead.lead_id;
+            document.getElementById('edit-lead-id-display').textContent = lead.lead_id;
+            document.getElementById('edit-lead-cust-name').textContent = lead.customer_name || 'N/A';
+            document.getElementById('edit-lead-cust-info').textContent = `Mobile: ${lead.customer_mobile || '--'} | Email: ${lead.customer_email || '--'} | Cust ID: ${lead.customer_id || '--'}`;
+
+            document.getElementById('edit-lead-status').value = lead.status || 'NEW';
+            document.getElementById('edit-lead-priority').value = lead.priority || 'MEDIUM';
+            document.getElementById('edit-lead-inquiry').value = lead.inquiry_type || 'BUY';
+            document.getElementById('edit-lead-assigned').value = lead.assigned_user_id || '';
+            document.getElementById('edit-lead-source').value = lead.lead_source_id || '';
+            document.getElementById('edit-lead-city').value = lead.preferred_city_id || '';
+            const editPt = document.getElementById('edit-lead-prop-type');
+            if (editPt) editPt.value = lead.preferred_property_type_id || '';
+            document.getElementById('edit-lead-budget-min').value = lead.budget_min ?? '';
+            document.getElementById('edit-lead-budget-max').value = lead.budget_max ?? '';
+            document.getElementById('edit-lead-bedrooms').value = lead.bedrooms_min ?? '';
+            document.getElementById('edit-lead-area-min').value = lead.area_min_sqm ?? '';
+
+            document.getElementById('edit-lead-modal').style.display = 'flex';
+        }
+
+        function closeEditLeadModal() {
+            document.getElementById('edit-lead-modal').style.display = 'none';
+        }
+
+        async function submitEditLead(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('edit-lead-id').value;
+            const payload = {
+                status: document.getElementById('edit-lead-status').value,
+                priority: document.getElementById('edit-lead-priority').value,
+                inquiry_type: document.getElementById('edit-lead-inquiry').value,
+                assigned_user_id: document.getElementById('edit-lead-assigned').value || null,
+                lead_source_id: document.getElementById('edit-lead-source').value || null,
+                preferred_city_id: document.getElementById('edit-lead-city').value || null,
+                preferred_property_type_id: document.getElementById('edit-lead-prop-type')?.value || null,
+                budget_min: parseFloat(document.getElementById('edit-lead-budget-min').value) || null,
+                budget_max: parseFloat(document.getElementById('edit-lead-budget-max').value) || null,
+                bedrooms_min: parseInt(document.getElementById('edit-lead-bedrooms').value) || null,
+                area_min_sqm: parseFloat(document.getElementById('edit-lead-area-min').value) || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showToast(`Lead ${leadId} updated successfully!`);
+                    closeEditLeadModal();
+                    fetchLeads();
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to update lead: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            fetchLeads(); // Priority 1: Immediate live data display
+            setTimeout(initReferenceData, 150); // Priority 2: Pre-fetch modal reference selects in background
+        });
+    </script>
+</body>
+</html>

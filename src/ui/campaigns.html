@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing & Campaigns - Real Estate CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --secondary: #0d9488;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0284c7;
+            --purple: #8b5cf6;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .badge-header {
+            font-size: 0.8em;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--primary-light);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .kpi-card.green::before { background: var(--success); }
+        .kpi-card.teal::before { background: var(--secondary); }
+        .kpi-card.purple::before { background: var(--purple); }
+
+        .kpi-title { font-size: 0.85em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .kpi-val { font-size: 1.8em; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
+        .kpi-sub { font-size: 0.8em; color: var(--text-muted); }
+
+        /* Channels breakdown grid */
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .channel-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .channel-icon {
+            font-size: 1.8em;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: white;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Controls bar */
+        .controls-bar {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .controls-bar input, .controls-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        /* Table */
+        .table-wrap {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-completed { background: #e2e8f0; color: #475569; }
+        .badge-paused { background: #fef3c7; color: #92400e; }
+
+        .badge-social { background: #e0e7ff; color: #3730a3; }
+        .badge-search { background: #fee2e2; color: #991b1b; }
+        .badge-portal { background: #ccfbf1; color: #115e59; }
+        .badge-email { background: #fef08a; color: #854d0e; }
+
+        .btn {
+            background-color: var(--secondary);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--primary); }
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* Timeline for Events */
+        .timeline {
+            position: relative;
+            padding: 10px 0 10px 30px;
+        }
+        [dir="rtl"] .timeline { padding: 10px 30px 10px 0; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 10px;
+            width: 2px;
+            background: var(--border);
+        }
+        [dir="rtl"] .timeline::before { left: auto; right: 10px; }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .timeline-dot {
+            position: absolute;
+            top: 18px;
+            left: -26px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            border: 2px solid white;
+        }
+        [dir="rtl"] .timeline-dot { left: auto; right: -26px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="badge-header" data-i18n="badge_marketing">Marketing & Campaigns</span>
+        </div>
+        <div>
+                        <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" class="active" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+
+    <div class="content">
+        <!-- Live KPI Grid -->
+        <div class="kpi-grid">
+            <div class="kpi-card teal">
+                <div class="kpi-title" data-i18n="kpi_active_campaigns">Active Campaigns</div>
+                <div class="kpi-val" id="kpi-active-camp">--</div>
+                <div class="kpi-sub" id="kpi-total-camp">Loading campaigns...</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_total_budget">Total Marketing Budget</div>
+                <div class="kpi-val" id="kpi-budget">-- SAR</div>
+                <div class="kpi-sub" data-i18n="kpi_budget_sub">Allocated for active & past runs</div>
+            </div>
+            <div class="kpi-card purple">
+                <div class="kpi-title" data-i18n="kpi_leads_captured">Attributed Inbound Leads</div>
+                <div class="kpi-val" id="kpi-leads">--</div>
+                <div class="kpi-sub" data-i18n="kpi_leads_sub">Generated via campaign channels</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-title" data-i18n="kpi_conversion_rate">Qualified Conversion Rate</div>
+                <div class="kpi-val" id="kpi-conv">--%</div>
+                <div class="kpi-sub" id="kpi-qual-count">Loading qualified leads...</div>
+            </div>
+        </div>
+
+        <!-- Channels Overview -->
+        <div class="channels-grid" id="channels-container">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('campaigns')" data-i18n="tab_campaigns">Marketing Campaigns</button>
+            <button class="tab-btn" onclick="switchTab('leads')" data-i18n="tab_leads">Attributed Leads & Clients</button>
+            <button class="tab-btn" onclick="switchTab('events')" data-i18n="tab_events">Lead Events Stream</button>
+        </div>
+
+        <!-- TAB 1: CAMPAIGNS -->
+        <div id="tab-campaigns" class="tab-content active">
+            <div class="controls-bar">
+                <input type="text" id="search-campaign" placeholder="Search campaign name..." style="flex-grow: 1; min-width: 220px;" oninput="debounceFetchCampaigns()">
+                <select id="filter-channel" onchange="fetchCampaigns()">
+                    <option value="" data-i18n="opt_all_channels">All Channels</option>
+                    <option value="SOCIAL">Social Media (SOCIAL)</option>
+                    <option value="SEARCH">Search Engines (SEARCH)</option>
+                    <option value="PORTAL">Property Portals (PORTAL)</option>
+                    <option value="EMAIL">Email Marketing (EMAIL)</option>
+                </select>
+                <select id="filter-status" onchange="fetchCampaigns()">
+                    <option value="" data-i18n="opt_all_status">All Statuses</option>
+                    <option value="ACTIVE">ACTIVE (سارية)</option>
+                    <option value="COMPLETED">COMPLETED (مكتملة)</option>
+                    <option value="PAUSED">PAUSED (متوقفة مؤقتاً)</option>
+                </select>
+                <button class="btn btn-primary" onclick="openNewCampaignModal()" data-i18n="btn_new_campaign">+ New Campaign</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_name">Campaign Name</th>
+                            <th data-i18n="th_channel">Channel</th>
+                            <th data-i18n="th_dates">Schedule Dates</th>
+                            <th data-i18n="th_budget">Budget (SAR)</th>
+                            <th data-i18n="th_leads">Leads</th>
+                            <th data-i18n="th_qualified">Qualified</th>
+                            <th data-i18n="th_cpl">Cost / Lead</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaigns-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading campaigns...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: ATTRIBUTED LEADS -->
+        <div id="tab-leads" class="tab-content">
+            <div class="controls-bar">
+                <select id="leads-filter-campaign" style="flex-grow: 1; min-width: 250px;" onchange="fetchAttributedLeads()">
+                    <option value="">All Campaigns (Showing first active)</option>
+                </select>
+                <button class="btn btn-primary" onclick="openAttachLeadModal()" data-i18n="btn_attach_lead">+ Attribute Lead</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_customer">Customer / Prospect</th>
+                            <th data-i18n="th_contact">Mobile & Email</th>
+                            <th data-i18n="th_campaign_source">Campaign / Channel</th>
+                            <th data-i18n="th_inquiry">Inquiry Type</th>
+                            <th data-i18n="th_lead_status">Lead Status</th>
+                            <th data-i18n="th_priority">Priority</th>
+                            <th data-i18n="th_agent">Assigned Agent</th>
+                            <th data-i18n="th_captured_at">Captured Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attributed-leads-tbody">
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Select campaign or loading leads...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: EVENTS STREAM -->
+        <div id="tab-events" class="tab-content">
+            <div class="controls-bar">
+                <select id="filter-event-type" onchange="fetchLeadEvents()">
+                    <option value="" data-i18n="opt_all_events">All Event Types</option>
+                    <option value="CREATED">CREATED (إنشاء طلب)</option>
+                    <option value="VIEWED_LISTING">VIEWED_LISTING (معاينة إعلان)</option>
+                    <option value="CONTACTED">CONTACTED (تم التواصل)</option>
+                    <option value="STATUS_CHANGED">STATUS_CHANGED (تحديث الحالة)</option>
+                    <option value="CAMPAIGN_ATTRIBUTED">CAMPAIGN_ATTRIBUTED (ربط بحملة)</option>
+                    <option value="OFFER_REQUESTED">OFFER_REQUESTED (طلب عرض سعر)</option>
+                </select>
+                <button class="btn btn-primary" onclick="openLogEventModal()" data-i18n="btn_log_event">+ Log Marketing Event</button>
+            </div>
+
+            <div class="timeline" id="events-timeline">
+                <p style="padding: 20px; color: var(--text-muted);">Loading events timeline...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NEW CAMPAIGN -->
+    <div class="modal-overlay" id="modal-campaign">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_new_camp_title">Launch New Marketing Campaign</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('modal-campaign')">&times;</button>
+            </div>
+            <form onsubmit="handleCreateCampaign(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_camp_name">Campaign Name *</label>
+                        <input type="text" id="fc-name" required placeholder="e.g. North Riyadh Luxury Villas Q4">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_channel">Marketing Channel *</label>
+                            <select id="fc-channel" required>
+                                <option value="SOCIAL">Social Media (Snapchat, Instagram, X)</option>
+                                <option value="SEARCH">Search Engine (Google Ads, SEO)</option>
+                                <option value="PORTAL">Property Portals (Aqar, Bayut)</option>
+                                <option value="EMAIL">Email & SMS Outreach</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget">Allocated Budget (SAR) *</label>
+                            <input type="number" id="fc-budget" step="100" min="0" required placeholder="50000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_start_date">Start Date</label>
+                            <input type="date" id="fc-start">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_end_date">End Date</label>
+                            <input type="date" id="fc-end">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_status">Campaign Status</label>
+                        <select id="fc-status">
+                            <option value="ACTIVE">ACTIVE (سارية فوراً)</option>
+                            <option value="PAUSED">PAUSED (مسودة / متوقفة)</option>
+                            <option value="COMPLETED">COMPLETED (مكتملة)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-campaign')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save_camp">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ATTRIBUTE LEAD -->
+    <div class="modal-overlay" id="modal-attach-lead">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_attach_title">Attribute Lead to Campaign</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('modal-attach-lead')">&times;</button>
+            </div>
+            <form onsubmit="handleAttachLead(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_select_camp">Select Marketing Campaign *</label>
+                        <select id="fa-campaign" required>
+                            <option value="">Loading campaigns...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_select_lead">Select Inbound Lead *</label>
+                        <select id="fa-lead" required>
+                            <option value="">Loading leads...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-attach-lead')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_confirm_attach">Attribute Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: LOG EVENT -->
+    <div class="modal-overlay" id="modal-log-event">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_log_event_title">Record Marketing / Lead Event</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('modal-log-event')">&times;</button>
+            </div>
+            <form onsubmit="handleLogEvent(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_select_lead">Select Inbound Lead *</label>
+                        <select id="fe-lead" required>
+                            <option value="">Loading leads...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_event_type">Event Type *</label>
+                        <select id="fe-type" required>
+                            <option value="VIEWED_LISTING">VIEWED_LISTING (معاينة إعلان)</option>
+                            <option value="CONTACTED">CONTACTED (تواصل مع العميل)</option>
+                            <option value="OFFER_REQUESTED">OFFER_REQUESTED (طلب عرض سعر)</option>
+                            <option value="STATUS_CHANGED">STATUS_CHANGED (تغيير مرحلة العميل)</option>
+                            <option value="CAMPAIGN_ATTRIBUTED">CAMPAIGN_ATTRIBUTED (ربط بحملة تسويقية)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_event_notes">Event Notes / Details</label>
+                        <input type="text" id="fe-notes" placeholder="e.g. Lead submitted brochure request on TikTok campaign">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-log-event')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save_event">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                badge_marketing: "Marketing & Attribution",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns", nav_api: "API Docs",
+                kpi_active_campaigns: "Active Campaigns", kpi_total_budget: "Total Marketing Budget",
+                kpi_budget_sub: "Allocated across campaigns", kpi_leads_captured: "Attributed Inbound Leads",
+                kpi_leads_sub: "Generated via campaign channels", kpi_conversion_rate: "Qualified Conversion Rate",
+                tab_campaigns: "Marketing Campaigns", tab_leads: "Attributed Leads & Clients", tab_events: "Lead Events Stream",
+                opt_all_channels: "All Channels", opt_all_status: "All Statuses", opt_all_events: "All Event Types",
+                btn_new_campaign: "+ New Campaign", btn_attach_lead: "+ Attribute Lead", btn_log_event: "+ Log Marketing Event",
+                th_name: "Campaign Name", th_channel: "Channel", th_dates: "Schedule Dates", th_budget: "Budget (SAR)",
+                th_leads: "Leads", th_qualified: "Qualified", th_cpl: "Cost / Lead", th_status: "Status", th_actions: "Actions",
+                th_customer: "Customer / Prospect", th_contact: "Mobile & Email", th_campaign_source: "Campaign / Channel",
+                th_inquiry: "Inquiry Type", th_lead_status: "Lead Status", th_priority: "Priority", th_agent: "Assigned Agent",
+                th_captured_at: "Captured Date", modal_new_camp_title: "Launch New Marketing Campaign",
+                lbl_camp_name: "Campaign Name *", lbl_channel: "Marketing Channel *", lbl_budget: "Allocated Budget (SAR) *",
+                lbl_start_date: "Start Date", lbl_end_date: "End Date", lbl_status: "Campaign Status",
+                btn_cancel: "Cancel", btn_save_camp: "Create Campaign", modal_attach_title: "Attribute Lead to Campaign",
+                lbl_select_camp: "Select Marketing Campaign *", lbl_select_lead: "Select Inbound Lead *",
+                btn_confirm_attach: "Attribute Lead", modal_log_event_title: "Record Marketing / Lead Event",
+                lbl_event_type: "Event Type *", lbl_event_notes: "Event Notes / Details", btn_save_event: "Save Event",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_marketing: "التسويق وتتبع مصادر الجذب",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات", nav_api: "توثيق API",
+                kpi_active_campaigns: "الحملات النشطة", kpi_total_budget: "إجمالي الميزانية التسويقية",
+                kpi_budget_sub: "إجمالي الميزانيات المرصودة", kpi_leads_captured: "العملاء المستقطبون",
+                kpi_leads_sub: "واردون عبر القنوات الإعلانية", kpi_conversion_rate: "نسبة التأهيل والتحويل",
+                tab_campaigns: "الحملات الإعلانية", tab_leads: "العملاء المستقطبون", tab_events: "سجل التفاعلات والأحداث",
+                opt_all_channels: "جميع القنوات الإعلانية", opt_all_status: "جميع الحالات", opt_all_events: "جميع أنواع الأحداث",
+                btn_new_campaign: "+ حملة جديدة", btn_attach_lead: "+ ربط عميل بحملة", btn_log_event: "+ تسجيل حدث تسويقي",
+                th_name: "اسم الحملة", th_channel: "القناة الإعلانية", th_dates: "فترة الحملة", th_budget: "الميزانية (ريال)",
+                th_leads: "الطلبات", th_qualified: "المؤهلون", th_cpl: "تكلفة الطلب (CPL)", th_status: "الحالة", th_actions: "الإجراءات",
+                th_customer: "العميل / مقدم الطلب", th_contact: "الجوال والبريد", th_campaign_source: "الحملة / القناة",
+                th_inquiry: "نوع الطلب", th_lead_status: "حالة الطلب", th_priority: "الأولوية", th_agent: "الوسيط المسؤول",
+                th_captured_at: "تاريخ الاستقطاب", modal_new_camp_title: "إطلاق حملة تسويقية جديدة",
+                lbl_camp_name: "اسم الحملة *", lbl_channel: "القناة التسويقية *", lbl_budget: "الميزانية المرصودة (ريال) *",
+                lbl_start_date: "تاريخ البدء", lbl_end_date: "تاريخ الانتهاء", lbl_status: "حالة الحملة",
+                btn_cancel: "إلغاء", btn_save_camp: "إنشاء الحملة", modal_attach_title: "ربط طلب عميل بحملة إعلانية",
+                lbl_select_camp: "اختر الحملة التسويقية *", lbl_select_lead: "اختر العميل الوارد *",
+                btn_confirm_attach: "تأكيد الربط", modal_log_event_title: "تسجيل حدث تسويقي / تفاعل",
+                lbl_event_type: "نوع الحدث *", lbl_event_notes: "ملاحظات وتفاصيل التفاعل", btn_save_event: "حفظ الحدث",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let cachedCampaigns = [];
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function initTypography() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('recrm_lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[lang][key]) el.textContent = i18nData[lang][key];
+            });
+
+            document.getElementById('lang-label').textContent = i18nData[lang].lang_label;
+        }
+
+        function toggleLanguage() {
+            setLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+            if (btn) btn.classList.add('active');
+            
+            const content = document.getElementById(`tab-${tabId}`);
+            if (content) content.classList.add('active');
+
+            if (tabId === 'leads' && cachedCampaigns.length > 0) {
+                fetchAttributedLeads();
+            } else if (tabId === 'events') {
+                fetchLeadEvents();
+            }
+            fetchMarketingSummary();
+        }
+
+        // Fetch Marketing Summary
+        async function fetchMarketingSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/marketing/summary`);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const d = json.data;
+
+                document.getElementById('kpi-active-camp').textContent = d.active_campaigns;
+                document.getElementById('kpi-total-camp').textContent = `${d.total_campaigns} Total Campaigns`;
+                document.getElementById('kpi-budget').textContent = `${Number(d.total_budget).toLocaleString()} SAR`;
+                document.getElementById('kpi-leads').textContent = d.total_leads_captured;
+                document.getElementById('kpi-conv').textContent = `${d.overall_conversion_rate}%`;
+                document.getElementById('kpi-qual-count').textContent = `${d.qualified_leads_count} Qualified Leads`;
+
+                // Render Channel Breakdown
+                const channelIcons = {
+                    'SOCIAL': '📱',
+                    'SEARCH': '🔍',
+                    'PORTAL': '🏢',
+                    'EMAIL': '✉️',
+                    'OTHER': '📢'
+                };
+                const channelsHtml = d.channel_breakdown.map(c => `
+                    <div class="channel-card">
+                        <div class="channel-icon">${channelIcons[c.channel] || '📊'}</div>
+                        <div style="flex-grow: 1;">
+                            <div style="font-weight: 700; font-size: 0.95em;">${c.channel}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted);">${c.total_leads} Leads (${c.qualified_leads} Qual.)</div>
+                            <div style="font-size: 0.8em; font-weight: 600; color: var(--primary);">${Number(c.total_budget).toLocaleString()} SAR</div>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('channels-container').innerHTML = channelsHtml;
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Fetch Campaigns List
+        let searchTimeout;
+        function debounceFetchCampaigns() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchCampaigns, 300);
+        }
+
+        async function fetchCampaigns() {
+            const search = document.getElementById('search-campaign').value.trim();
+            const channel = document.getElementById('filter-channel').value;
+            const status = document.getElementById('filter-status').value;
+
+            let url = `${API_BASE}/api/v1/campaigns?page=1&page_size=50`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (channel) url += `&channel=${encodeURIComponent(channel)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                cachedCampaigns = json.data;
+
+                // Populate campaigns dropdowns
+                populateCampaignSelects(cachedCampaigns);
+
+                const tbody = document.getElementById('campaigns-tbody');
+                if (cachedCampaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No campaigns found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = cachedCampaigns.map(c => {
+                    const statusClass = c.status === 'ACTIVE' ? 'badge-active' : (c.status === 'COMPLETED' ? 'badge-completed' : 'badge-paused');
+                    const channelClass = `badge-${(c.channel || 'social').toLowerCase()}`;
+                    const dates = c.start_date ? `${c.start_date} ${c.end_date ? '→ ' + c.end_date : ''}` : '--';
+                    const cpl = c.cost_per_lead ? `${Number(c.cost_per_lead).toLocaleString()} SAR` : '--';
+                    
+                    return `
+                        <tr>
+                            <td><strong>${c.name}</strong></td>
+                            <td><span class="badge ${channelClass}">${c.channel || 'OTHER'}</span></td>
+                            <td>${dates}</td>
+                            <td><strong>${Number(c.budget || 0).toLocaleString()} SAR</strong></td>
+                            <td><span class="badge" style="background: #e2e8f0;">${c.leads_count}</span></td>
+                            <td><span class="badge" style="background: #dcfce7; color: #166534;">${c.qualified_leads_count}</span></td>
+                            <td><strong>${cpl}</strong></td>
+                            <td><span class="badge ${statusClass}">${c.status}</span></td>
+                            <td>
+                                <button class="btn btn-outline btn-sm" onclick="filterLeadsForCampaign('${c.campaign_id}')">View Leads →</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('campaigns-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center; padding: 24px;">Failed to load campaigns from API.</td></tr>';
+            }
+        }
+
+        function populateCampaignSelects(campaigns) {
+            const leadsSelect = document.getElementById('leads-filter-campaign');
+            const attachSelect = document.getElementById('fa-campaign');
+            
+            const currentSelected = leadsSelect.value;
+            leadsSelect.innerHTML = '<option value="">All Campaigns (Showing first available)</option>' +
+                campaigns.map(c => `<option value="${c.campaign_id}">${c.name} (${c.channel})</option>`).join('');
+            if (currentSelected) leadsSelect.value = currentSelected;
+
+            attachSelect.innerHTML = '<option value="">-- Choose Campaign --</option>' +
+                campaigns.map(c => `<option value="${c.campaign_id}">${c.name} (${c.channel})</option>`).join('');
+        }
+
+        function filterLeadsForCampaign(campaignId) {
+            document.getElementById('leads-filter-campaign').value = campaignId;
+            switchTab('leads');
+            fetchAttributedLeads();
+        }
+
+        // Fetch Attributed Leads
+        async function fetchAttributedLeads() {
+            let campId = document.getElementById('leads-filter-campaign').value;
+            if (!campId && cachedCampaigns.length > 0) {
+                campId = cachedCampaigns[0].campaign_id;
+                document.getElementById('leads-filter-campaign').value = campId;
+            }
+
+            if (!campId) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/campaigns/${campId}/leads?page=1&page_size=50`);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const leads = json.data;
+
+                const tbody = document.getElementById('attributed-leads-tbody');
+                if (leads.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No leads attributed to this campaign yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leads.map(l => {
+                    const statusClass = l.lead_status === 'QUALIFIED' ? 'badge-active' : 'badge-social';
+                    const date = l.captured_at ? new Date(l.captured_at).toLocaleDateString() : '--';
+                    return `
+                        <tr>
+                            <td><strong>${l.customer_name || 'Prospect'}</strong></td>
+                            <td>${l.customer_mobile || '--'} <br><small style="color: var(--text-muted);">${l.customer_email || ''}</small></td>
+                            <td><strong>${l.campaign_name}</strong> <span class="badge badge-${(l.campaign_channel || 'social').toLowerCase()}">${l.campaign_channel}</span></td>
+                            <td>${l.inquiry_type || 'GENERAL'}</td>
+                            <td><span class="badge ${statusClass}">${l.lead_status}</span></td>
+                            <td><span class="badge" style="background: #f1f5f9;">${l.lead_priority}</span></td>
+                            <td>${l.assigned_agent_name || 'Unassigned'}</td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('attributed-leads-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center; padding: 24px;">Failed to load attributed leads.</td></tr>';
+            }
+        }
+
+        // Fetch Lead Events Timeline
+        async function fetchLeadEvents() {
+            const eventType = document.getElementById('filter-event-type').value;
+            let url = `${API_BASE}/api/v1/lead-events?page=1&page_size=40`;
+            if (eventType) url += `&event_type=${encodeURIComponent(eventType)}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const events = json.data;
+
+                const container = document.getElementById('events-timeline');
+                if (events.length === 0) {
+                    container.innerHTML = '<p style="padding: 20px; color: var(--text-muted);">No events found matching criteria.</p>';
+                    return;
+                }
+
+                const eventBadges = {
+                    'CREATED': 'badge-active',
+                    'VIEWED_LISTING': 'badge-portal',
+                    'CONTACTED': 'badge-social',
+                    'STATUS_CHANGED': 'badge-paused',
+                    'CAMPAIGN_ATTRIBUTED': 'badge-email',
+                    'OFFER_REQUESTED': 'badge-search'
+                };
+
+                container.innerHTML = events.map(e => {
+                    const badgeClass = eventBadges[e.event_type] || 'badge-social';
+                    const timeStr = new Date(e.event_at).toLocaleString();
+                    const metaStr = e.metadata_json ? JSON.stringify(e.metadata_json) : '';
+                    return `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                <div>
+                                    <span class="badge ${badgeClass}">${e.event_type}</span>
+                                    <strong style="margin-left: 8px;">${e.customer_name || 'Customer'}</strong>
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">(${e.customer_mobile || '--'})</span>
+                                </div>
+                                <span style="font-size: 0.8em; color: var(--text-muted);">${timeStr}</span>
+                            </div>
+                            <div style="font-size: 0.85em; color: var(--text-muted);">
+                                ${e.campaign_name ? `Campaign: <strong>${e.campaign_name}</strong> | ` : ''}
+                                Lead Status: <strong>${e.lead_status || 'NEW'}</strong>
+                            </div>
+                            ${metaStr ? `<div style="margin-top: 6px; font-size: 0.8em; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border); font-family: monospace;">${metaStr}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('events-timeline').innerHTML = '<p style="padding: 20px; color: red;">Failed to load events stream.</p>';
+            }
+        }
+
+        // Modals management
+        function openNewCampaignModal() {
+            document.getElementById('modal-campaign').style.display = 'flex';
+        }
+        function openAttachLeadModal() {
+            loadLeadsDropdown('fa-lead');
+            document.getElementById('modal-attach-lead').style.display = 'flex';
+        }
+        function openLogEventModal() {
+            loadLeadsDropdown('fe-lead');
+            document.getElementById('modal-log-event').style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function loadLeadsDropdown(selectId) {
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = '<option value="">Loading active leads...</option>';
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads?page=1&page_size=50`);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                sel.innerHTML = '<option value="">-- Choose Lead --</option>' +
+                    json.data.map(l => `<option value="${l.lead_id}">${l.customer_name || 'Lead'} - ${l.customer_mobile || ''} (${l.status})</option>`).join('');
+            } catch (err) {
+                sel.innerHTML = '<option value="">Failed to load leads</option>';
+            }
+        }
+
+        // Form handlers
+        async function handleCreateCampaign(e) {
+            e.preventDefault();
+            const body = {
+                name: document.getElementById('fc-name').value,
+                channel: document.getElementById('fc-channel').value,
+                budget: parseFloat(document.getElementById('fc-budget').value) || 0,
+                start_date: document.getElementById('fc-start').value || null,
+                end_date: document.getElementById('fc-end').value || null,
+                status: document.getElementById('fc-status').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/campaigns`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed to create campaign');
+                closeModal('modal-campaign');
+                fetchMarketingSummary();
+                fetchCampaigns();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function handleAttachLead(e) {
+            e.preventDefault();
+            const campId = document.getElementById('fa-campaign').value;
+            const leadId = document.getElementById('fa-lead').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/campaigns/${campId}/leads/${leadId}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) throw new Error('Failed to attribute lead');
+                closeModal('modal-attach-lead');
+                fetchMarketingSummary();
+                fetchCampaigns();
+                fetchAttributedLeads();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function handleLogEvent(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('fe-lead').value;
+            const eventType = document.getElementById('fe-type').value;
+            const notes = document.getElementById('fe-notes').value;
+
+            const body = {
+                lead_id: leadId,
+                event_type: eventType,
+                metadata_json: { notes: notes, logged_at_source: "marketing_ui" }
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/lead-events`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed to record event');
+                closeModal('modal-log-event');
+                fetchLeadEvents();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypography();
+            setLanguage(currentLang);
+            fetchMarketingSummary();
+            fetchCampaigns();
+        });
+    </script>
+</body>
+</html>
+

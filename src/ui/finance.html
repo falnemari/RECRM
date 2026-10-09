@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracts, Payments & Commissions - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary); color: white; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: white;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+        }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+        .content { padding: 24px; max-width: 1500px; margin: 0 auto; }
+        
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: white; border-radius: 8px; padding: 18px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .kpi-title { font-size: 0.8em; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+        .kpi-val { font-size: 1.6em; font-weight: 700; color: var(--primary); }
+        .kpi-sub { font-size: 0.8em; color: var(--text-muted); margin-top: 4px; }
+
+        /* Tabs */
+        .tab-nav {
+            display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px; border: none; background: none; font-size: 0.95em; font-weight: 600; color: var(--text-muted);
+            cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--secondary); border-bottom-color: var(--secondary); background: white; border-radius: 6px 6px 0 0;
+        }
+
+        .controls-bar {
+            background: white; padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+        }
+        .controls-bar input, .controls-bar select {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        }
+
+        .table-wrap {
+            background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+        th { background: #f1f5f9; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
+        .badge-signed, .badge-paid, .badge-approved { background: #dcfce7; color: #166534; }
+        .badge-due, .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-partial { background: #e0f2fe; color: #0369a1; }
+        .badge-overdue, .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+        .btn {
+            background-color: var(--secondary); color: white; padding: 8px 14px; border: none; border-radius: 6px;
+            cursor: pointer; text-decoration: none; font-size: 0.85em; font-weight: 600;
+        }
+        .btn:hover { background-color: #2563eb; }
+        .btn-success { background-color: var(--accent); }
+        .btn-success:hover { background-color: #059669; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; }
+        .btn-sm:hover { background: #cbd5e1; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal {
+            background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); border: 1px solid var(--border);
+        }
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Finance & Legal</span>
+        </div>
+        <div class="header-actions">
+                        <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" class="active" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <!-- Live Finance KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_contracts_val">Total Contracted Value</div>
+                <div class="kpi-val" id="kpi-total-val">--</div>
+                <div class="kpi-sub" id="kpi-total-contracts">Across -- signed contracts</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_collected">Total Payments Collected</div>
+                <div class="kpi-val" style="color: #16a34a;" id="kpi-collected">--</div>
+                <div class="kpi-sub" data-i18n="kpi_collected_sub">Confirmed receipts in bank</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_receivables">Outstanding Receivables</div>
+                <div class="kpi-val" style="color: #ea580c;" id="kpi-receivables">--</div>
+                <div class="kpi-sub" data-i18n="kpi_receivables_sub">Due on payment schedules</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_commissions">Broker Commissions</div>
+                <div class="kpi-val" id="kpi-commissions">--</div>
+                <div class="kpi-sub" id="kpi-commissions-sub">-- SAR pending approval</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" id="tab-btn-contracts" onclick="switchTab('contracts')" data-i18n="tab_contracts">Contracts & Sales Agreements</button>
+            <button class="tab-btn" id="tab-btn-payments" onclick="switchTab('payments')" data-i18n="tab_payments">Payment Schedules & Receivables</button>
+            <button class="tab-btn" id="tab-btn-commissions" onclick="switchTab('commissions')" data-i18n="tab_commissions">Broker Commission Payouts</button>
+        </div>
+
+        <!-- TAB 1: CONTRACTS -->
+        <div id="tab-contracts">
+            <div class="controls-bar">
+                <input type="text" id="contract-search" placeholder="Search by contract #, customer or unit..." style="flex-grow: 1; min-width: 250px;" oninput="fetchContracts()">
+                <select id="contract-status" onchange="fetchContracts()">
+                    <option value="">All Statuses</option>
+                    <option value="SIGNED">SIGNED</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                </select>
+                <button class="btn btn-success" onclick="openConvertModal()" data-i18n="btn_convert_res">+ Convert Reservation to Contract</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_con_num">Contract #</th>
+                            <th data-i18n="th_con_type">Type</th>
+                            <th data-i18n="th_con_customer">Customer</th>
+                            <th data-i18n="th_con_unit">Unit #</th>
+                            <th data-i18n="th_con_value">Value (SAR)</th>
+                            <th data-i18n="th_con_paid">Paid (SAR)</th>
+                            <th data-i18n="th_con_bal">Balance (SAR)</th>
+                            <th data-i18n="th_con_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contracts-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: PAYMENTS -->
+        <div id="tab-payments" style="display: none;">
+            <div class="controls-bar">
+                <select id="payment-status" onchange="fetchPayments()">
+                    <option value="">All Payment Statuses</option>
+                    <option value="DUE">DUE (مستحق)</option>
+                    <option value="PARTIAL">PARTIAL (جزئي)</option>
+                    <option value="PAID">PAID (مسدد)</option>
+                    <option value="OVERDUE">OVERDUE (متأخر)</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_pay_ref">Reference #</th>
+                            <th data-i18n="th_pay_due_date">Due Date</th>
+                            <th data-i18n="th_pay_amount_due">Amount Due</th>
+                            <th data-i18n="th_pay_amount_paid">Amount Paid</th>
+                            <th data-i18n="th_pay_balance">Remaining</th>
+                            <th data-i18n="th_pay_method">Method</th>
+                            <th data-i18n="th_pay_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-tbody">
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: COMMISSIONS -->
+        <div id="tab-commissions" style="display: none;">
+            <div class="controls-bar">
+                <select id="commission-status" onchange="fetchCommissions()">
+                    <option value="">All Commission Statuses</option>
+                    <option value="PENDING">PENDING (قيد الاعتماد)</option>
+                    <option value="APPROVED">APPROVED (معتمد)</option>
+                    <option value="PAID">PAID (مصروف)</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_comm_agent">Agent / Broker</th>
+                            <th data-i18n="th_comm_type">Type</th>
+                            <th data-i18n="th_comm_rate">Rate (%)</th>
+                            <th data-i18n="th_comm_amount">Commission Amount</th>
+                            <th data-i18n="th_comm_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="commissions-tbody">
+                        <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RECORD PAYMENT -->
+    <div class="modal-overlay" id="pay-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_pay_title">Record Payment Receipt</h3>
+                <button class="close-btn" onclick="closePayModal()">&times;</button>
+            </div>
+            <form id="record-pay-form" onsubmit="submitPayment(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="pay-id">
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_ref">Payment Reference</label>
+                        <input type="text" id="pay-ref" readonly style="background: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_due">Outstanding Balance (SAR)</label>
+                        <input type="text" id="pay-due" readonly style="background: #f1f5f9; font-weight: 700;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_amount">Payment Received Amount (SAR) *</label>
+                        <input type="number" id="pay-amount" step="0.01" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_method">Payment Method *</label>
+                        <select id="pay-method">
+                            <option value="BANK_TRANSFER">Bank Wire Transfer (تحويل بنكي)</option>
+                            <option value="CHEQUE">Certified Cheque (شيك مصرفي)</option>
+                            <option value="CARD">POS / Card (بطاقة مصرفية)</option>
+                            <option value="CASH">Cash Deposit (نقدي)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closePayModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_confirm_pay">Confirm & Record Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONVERT RESERVATION -->
+    <div class="modal-overlay" id="convert-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_convert_title">Convert Reservation to Contract</h3>
+                <button class="close-btn" onclick="closeConvertModal()">&times;</button>
+            </div>
+            <form id="convert-form" onsubmit="submitConvertReservation(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_select_res">Select Active Reservation *</label>
+                        <select id="conv-res-select" required onchange="populateReservationDetails()">
+                            <option value="">-- Choose active reservation --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_con_val">Contract Value (SAR) *</label>
+                        <input type="number" id="conv-value" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_con_type">Contract Type</label>
+                        <select id="conv-type">
+                            <option value="SALE">Final Sale & Purchase Agreement (عقد بيع نهائي)</option>
+                            <option value="LEASE">Lease Contract (عقد إيجار)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeConvertModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_execute_con">Generate Contract & Payment Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                kpi_contracts_val: "Total Contracted Value", kpi_collected: "Payments Collected",
+                kpi_collected_sub: "Confirmed receipts in bank", kpi_receivables: "Outstanding Receivables",
+                kpi_receivables_sub: "Due on payment schedules", kpi_commissions: "Broker Commissions",
+                tab_contracts: "Contracts & Sales Agreements", tab_payments: "Payment Schedules & Receivables",
+                tab_commissions: "Broker Commission Payouts", btn_convert_res: "+ Convert Reservation to Contract",
+                th_con_num: "Contract #", th_con_type: "Type", th_con_customer: "Customer", th_con_unit: "Unit #",
+                th_con_value: "Value (SAR)", th_con_paid: "Paid (SAR)", th_con_bal: "Balance (SAR)", th_con_status: "Status",
+                th_pay_ref: "Reference #", th_pay_due_date: "Due Date", th_pay_amount_due: "Amount Due",
+                th_pay_amount_paid: "Amount Paid", th_pay_balance: "Remaining", th_pay_method: "Method", th_pay_status: "Status",
+                th_comm_agent: "Agent / Broker", th_comm_type: "Type", th_comm_rate: "Rate (%)", th_comm_amount: "Amount (SAR)",
+                th_comm_status: "Status", th_actions: "Actions", modal_pay_title: "Record Payment Receipt",
+                modal_convert_title: "Convert Reservation to Contract", btn_confirm_pay: "Confirm & Record Receipt",
+                btn_execute_con: "Generate Contract & Payment Plan", lang_label: "عربي"
+            },
+            ar: {
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                kpi_contracts_val: "إجمالي قيمة العقود", kpi_collected: "المبالغ المحصلة",
+                kpi_collected_sub: "مدفوعات مؤكدة في الحساب", kpi_receivables: "المستحقات المتبقية",
+                kpi_receivables_sub: "أقساط مجدولة للتحصيل", kpi_commissions: "عمولات الوسطاء",
+                tab_contracts: "العقود والاتفاقيات", tab_payments: "جدول الدفعات والمستحقات",
+                tab_commissions: "عمولات المبيعات والوسطاء", btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
+                th_con_num: "رقم العقد", th_con_type: "النوع", th_con_customer: "العميل", th_con_unit: "رقم الوحدة",
+                th_con_value: "قيمة العقد (ريال)", th_con_paid: "المسدد (ريال)", th_con_bal: "المتبقي (ريال)", th_con_status: "الحالة",
+                th_pay_ref: "الرقم المرجعي", th_pay_due_date: "تاريخ الاستحقاق", th_pay_amount_due: "المبلغ المستحق",
+                th_pay_amount_paid: "المبلغ المسدد", th_pay_balance: "المتبقي", th_pay_method: "طريقة الدفع", th_pay_status: "الحالة",
+                th_comm_agent: "الوسيط / المسوق", th_comm_type: "النوع", th_comm_rate: "النسبة (%)", th_comm_amount: "مبلغ العمولة",
+                th_comm_status: "الحالة", th_actions: "الإجراءات", modal_pay_title: "تسجيل سند قبض دفعة",
+                modal_convert_title: "تحويل الحجز إلى عقد بيع", btn_confirm_pay: "تأكيد واستلام الدفعة",
+                btn_execute_con: "إصدار العقد وجدول الدفعات", lang_label: "English"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            localStorage.setItem('recrm_lang', currentLang);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+            const savedLang = localStorage.getItem('recrm_lang');
+            if (savedLang && savedLang !== currentLang) {
+                applyLanguage(savedLang);
+            }
+        }
+
+        function switchTab(tab) {
+            ['contracts', 'payments', 'commissions'].forEach(t => {
+                document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+                document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
+            });
+            if (tab === 'contracts') fetchContracts();
+            if (tab === 'payments') fetchPayments();
+            if (tab === 'commissions') fetchCommissions();
+        }
+
+        async function loadSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/finance/summary`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const d = json.data;
+
+                document.getElementById('kpi-total-val').textContent = (d.total_contract_value / 1000000).toFixed(2) + 'M SAR';
+                document.getElementById('kpi-total-contracts').textContent = `Across ${d.total_contracts} signed contracts`;
+
+                document.getElementById('kpi-collected').textContent = (d.total_payments_collected / 1000000).toFixed(2) + 'M SAR';
+                document.getElementById('kpi-receivables').textContent = (d.outstanding_receivables / 1000000).toFixed(2) + 'M SAR';
+
+                document.getElementById('kpi-commissions').textContent = (d.total_commissions_amount / 1000).toFixed(0) + 'K SAR';
+                document.getElementById('kpi-commissions-sub').textContent = `${(d.pending_commissions_amount / 1000).toFixed(0)}K SAR pending approval`;
+            } catch (e) {}
+        }
+
+        async function fetchContracts() {
+            const search = document.getElementById('contract-search')?.value || '';
+            const status = document.getElementById('contract-status')?.value || '';
+
+            let url = `${API_BASE}/api/v1/contracts?page_size=50`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                const items = json.data || [];
+
+                const tbody = document.getElementById('contracts-tbody');
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No contracts found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = items.map(c => `
+                    <tr>
+                        <td><strong>${c.contract_number}</strong></td>
+                        <td><span class="badge" style="background: #e2e8f0;">${c.contract_type}</span></td>
+                        <td>
+                            ${c.customer_name || 'N/A'}<br>
+                            <span style="font-size: 0.8em; color: var(--text-muted);">${c.customer_mobile || ''}</span>
+                        </td>
+                        <td><strong>${c.unit_number || 'N/A'}</strong></td>
+                        <td><strong>${Number(c.contract_value || 0).toLocaleString()} SAR</strong></td>
+                        <td style="color: #16a34a;">${Number(c.total_paid || 0).toLocaleString()} SAR</td>
+                        <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
+                        <td><span class="badge badge-signed">${c.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm" onclick="alert('Contract ${c.contract_number}\\nCustomer: ${c.customer_name}\\nValue: ${Number(c.contract_value || 0).toLocaleString()} SAR\\nTotal Paid: ${Number(c.total_paid || 0).toLocaleString()} SAR')">View Detail</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
+            }
+        }
+
+        async function fetchPayments() {
+            const status = document.getElementById('payment-status')?.value || '';
+            let url = `${API_BASE}/api/v1/payments?page_size=50`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                const items = json.data || [];
+
+                const tbody = document.getElementById('payments-tbody');
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No payments found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = items.map(p => {
+                    const stBadge = p.status === 'PAID' ? 'badge-paid' : (p.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
+                    return `
+                        <tr>
+                            <td><strong>${p.payment_reference || 'PAY-REF'}</strong></td>
+                            <td>${p.due_date || '--'}</td>
+                            <td><strong>${Number(p.amount_due || 0).toLocaleString()} SAR</strong></td>
+                            <td style="color: #16a34a;">${Number(p.amount_paid || 0).toLocaleString()} SAR</td>
+                            <td style="color: ${Number(p.remaining_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(p.remaining_balance || 0).toLocaleString()} SAR</td>
+                            <td>${p.method || 'PENDING'}</td>
+                            <td><span class="badge ${stBadge}">${p.status}</span></td>
+                            <td>
+                                ${p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">Record Receipt</button>` : '<span style="color: green;">✓ Settled</span>'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center;">Failed to load payments.</td></tr>';
+            }
+        }
+
+        async function fetchCommissions() {
+            const status = document.getElementById('commission-status')?.value || '';
+            let url = `${API_BASE}/api/v1/commissions?page_size=50`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                const items = json.data || [];
+
+                const tbody = document.getElementById('commissions-tbody');
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = items.map(c => {
+                    const stBadge = c.status === 'PAID' ? 'badge-paid' : (c.status === 'APPROVED' ? 'badge-approved' : 'badge-pending');
+                    return `
+                        <tr>
+                            <td><strong>${c.user_name || 'Agent'}</strong></td>
+                            <td>${c.commission_type}</td>
+                            <td>${c.rate ?? 2.5}%</td>
+                            <td><strong style="color: var(--primary);">${Number(c.amount || 0).toLocaleString()} SAR</strong></td>
+                            <td><span class="badge ${stBadge}">${c.status}</span></td>
+                            <td>
+                                ${c.status === 'PENDING' ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">Approve</button>` : ''}
+                                ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">Pay Out</button>` : ''}
+                                ${c.status === 'PAID' ? '<span style="color: green; font-size: 0.85em;">✓ Paid Out</span>' : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('commissions-tbody').innerHTML = '<tr><td colspan="6" style="color: red; text-align: center;">Failed to load commissions.</td></tr>';
+            }
+        }
+
+        function openPayModal(payId, ref, due) {
+            document.getElementById('pay-id').value = payId;
+            document.getElementById('pay-ref').value = ref;
+            document.getElementById('pay-due').value = `${Number(due || 0).toLocaleString()} SAR`;
+            document.getElementById('pay-amount').value = due;
+            document.getElementById('pay-modal').style.display = 'flex';
+        }
+        function closePayModal() {
+            document.getElementById('pay-modal').style.display = 'none';
+        }
+
+        async function submitPayment(e) {
+            e.preventDefault();
+            const payId = document.getElementById('pay-id').value;
+            const amount = parseFloat(document.getElementById('pay-amount').value);
+            const method = document.getElementById('pay-method').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/payments/${payId}/record-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, method })
+                });
+
+                if (res.ok) {
+                    alert('Payment receipt recorded successfully!');
+                    closePayModal();
+                    fetchPayments();
+                    loadSummary();
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to record payment: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        async function approveCommission(commId) {
+            if (!confirm('Approve this commission payout?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/commissions/${commId}/approve`, { method: 'POST' });
+                if (res.ok) {
+                    fetchCommissions();
+                    loadSummary();
+                }
+            } catch (e) {}
+        }
+
+        async function payoutCommission(commId) {
+            if (!confirm('Mark this commission as PAID?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/commissions/${commId}/payout`, { method: 'POST' });
+                if (res.ok) {
+                    fetchCommissions();
+                    loadSummary();
+                }
+            } catch (e) {}
+        }
+
+        let cachedReservations = [];
+        async function openConvertModal() {
+            document.getElementById('convert-modal').style.display = 'flex';
+            const sel = document.getElementById('conv-res-select');
+            sel.innerHTML = '<option value="">Loading active reservations...</option>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations?status=ACTIVE&page_size=50`);
+                const json = await res.json();
+                cachedReservations = json.data || [];
+
+                if (cachedReservations.length === 0) {
+                    sel.innerHTML = '<option value="">No active reservations available</option>';
+                    return;
+                }
+
+                sel.innerHTML = '<option value="">-- Choose active reservation --</option>' +
+                    cachedReservations.map(r => `<option value="${r.reservation_id}">#${r.reservation_number} - Unit ${r.unit_number || 'N/A'} (Deposit: ${(r.deposit_amount || 0).toLocaleString()} SAR)</option>`).join('');
+            } catch (e) {}
+        }
+        function closeConvertModal() {
+            document.getElementById('convert-modal').style.display = 'none';
+        }
+        function populateReservationDetails() {
+            const resId = document.getElementById('conv-res-select').value;
+            const item = cachedReservations.find(r => r.reservation_id === resId);
+            if (item) {
+                document.getElementById('conv-value').value = 500000;
+            }
+        }
+
+        async function submitConvertReservation(e) {
+            e.preventDefault();
+            const resId = document.getElementById('conv-res-select').value;
+            const val = parseFloat(document.getElementById('conv-value').value);
+            const type = document.getElementById('conv-type').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations/${resId}/convert-to-contract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contract_value: val, contract_type: type })
+                });
+
+                if (res.ok) {
+                    alert('Reservation successfully converted to Contract with payment schedule & commission!');
+                    closeConvertModal();
+                    fetchContracts();
+                    loadSummary();
+                } else {
+                    const err = await res.json();
+                    alert(`Conversion error: ${JSON.stringify(err)}`);
+                }
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            loadSummary();
+            fetchContracts();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,65 @@
+from datetime import datetime, date
+from typing import Optional
+from uuid import UUID
+from pydantic import BaseModel, Field
+
+class DocumentsSummaryOut(BaseModel):
+    total_documents: int
+    active_documents: int
+    expiring_soon_count: int
+    expired_count: int
+    total_access_events: int
+
+class DocumentTypeOut(BaseModel):
+    document_type_id: UUID
+    code: str
+    name: str
+    expiry_required: bool
+
+class DocumentOut(BaseModel):
+    document_id: UUID
+    organization_id: UUID
+    document_type_id: Optional[UUID] = None
+    document_type_code: Optional[str] = None
+    document_type_name: Optional[str] = None
+    customer_id: Optional[UUID] = None
+    customer_name: Optional[str] = None
+    unit_id: Optional[UUID] = None
+    unit_number: Optional[str] = None
+    contract_id: Optional[UUID] = None
+    contract_number: Optional[str] = None
+    file_name: str
+    storage_uri: str
+    file_hash: Optional[str] = None
+    version_no: int
+    issued_at: Optional[date] = None
+    expires_at: Optional[date] = None
+    status: str
+    uploaded_by_user_id: Optional[UUID] = None
+    uploaded_by_name: Optional[str] = None
+    created_at: datetime
+    is_expired: bool = False
+    is_expiring_soon: bool = False
+
+class DocumentCreateIn(BaseModel):
+    file_name: str = Field(..., min_length=3)
+    document_type_code: Optional[str] = "TITLE_DEED"
+    document_type_id: Optional[UUID] = None
+    customer_id: Optional[UUID] = None
+    unit_id: Optional[UUID] = None
+    contract_id: Optional[UUID] = None
+    storage_uri: Optional[str] = None
+    issued_at: Optional[date] = None
+    expires_at: Optional[date] = None
+    uploaded_by_user_id: Optional[UUID] = None
+    status: Optional[str] = "ACTIVE"
+
+class DocumentAccessLogOut(BaseModel):
+    document_access_id: UUID
+    document_id: UUID
+    user_id: UUID
+    user_name: Optional[str] = None
+    action: str
+    accessed_at: datetime
+    ip_address: Optional[str] = None
+

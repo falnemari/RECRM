@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Vault & Compliance - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #2563eb;
+            --secondary: #0ea5e9;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0284c7;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .badge-header {
+            font-size: 0.8em;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--primary-light);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .kpi-card.urgent::before { background: var(--danger); }
+        .kpi-card.warning::before { background: var(--warning); }
+        .kpi-card.success::before { background: var(--success); }
+        .kpi-title { font-size: 0.85em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8em; font-weight: 700; margin: 8px 0 4px 0; color: var(--text-main); }
+        .kpi-sub { font-size: 0.8em; color: var(--text-muted); }
+
+        /* Action Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            width: 250px;
+        }
+        .select-filter {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+        }
+        .btn {
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: var(--primary); }
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; }
+
+        /* Tables */
+        .table-responsive {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        [dir="rtl"] table { text-align: right; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-archived { background: #f1f5f9; color: #475569; }
+        .badge-expired { background: #fee2e2; color: #991b1b; }
+        .badge-expiring { background: #fef3c7; color: #92400e; }
+
+        .type-tag {
+            font-size: 0.8em;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #e0f2fe;
+            color: #0369a1;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .type-tag.legal { background: #f3e8ff; color: #6b21a8; }
+        .type-tag.id { background: #ecfdf5; color: #047857; }
+        .type-tag.fin { background: #fef9c3; color: #854d0e; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .modal-header h3 { margin: 0; }
+        .close-btn { background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text-muted); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="badge-header" data-i18n="badge_docs">Document Vault & Compliance</span>
+        </div>
+                    <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+    </div>
+
+    <!-- Main Navigation -->
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" class="active" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+
+    <div class="content">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card success">
+                <div class="kpi-title" data-i18n="kpi_total_docs">Total Documents</div>
+                <div class="kpi-value" id="kpi-total-docs">--</div>
+                <div class="kpi-sub" data-i18n="kpi_total_docs_sub">Stored in secure vault</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_active_docs">Active Compliant</div>
+                <div class="kpi-value" id="kpi-active-docs">--</div>
+                <div class="kpi-sub" data-i18n="kpi_active_docs_sub">Valid verified records</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-title" data-i18n="kpi_expiring_soon">Expiring Soon (30d)</div>
+                <div class="kpi-value" id="kpi-expiring-soon">--</div>
+                <div class="kpi-sub" data-i18n="kpi_expiring_sub">Requires renewal attention</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title" data-i18n="kpi_access_events">Audit Access Logs</div>
+                <div class="kpi-value" id="kpi-access-events">--</div>
+                <div class="kpi-sub" data-i18n="kpi_access_sub">Total views & downloads</div>
+            </div>
+        </div>
+
+        <!-- Toolbar & Filters -->
+        <div class="toolbar">
+            <div class="filters">
+                <input type="text" id="doc-search" class="search-input" placeholder="Search file, customer, unit, contract..." onkeyup="filterDocuments()">
+                <select id="doc-type-filter" class="select-filter" onchange="loadDocuments()">
+                    <option value="" data-i18n="opt_all_types">All Document Types</option>
+                    <option value="TITLE_DEED">Title Deed (صك عقاري)</option>
+                    <option value="NATIONAL_ID">National ID (الهوية الوطنية / الإقامة)</option>
+                    <option value="PASSPORT">Passport (جواز السفر)</option>
+                    <option value="LEASE">Lease Agreement (عقد إيجار)</option>
+                    <option value="SALE_CONTRACT">Sale Contract (عقد بيع)</option>
+                    <option value="MANAGEMENT_CONTRACT">Management Agreement (عقد إدارة أملاك)</option>
+                    <option value="INVOICE">Invoice (فاتورة ضريبية)</option>
+                    <option value="PAYMENT_RECEIPT">Payment Receipt (سند قبض)</option>
+                    <option value="PROPERTY_PHOTO">Property Photo / Plan (مخطط / صورة)</option>
+                </select>
+                <select id="doc-status-filter" class="select-filter" onchange="loadDocuments()">
+                    <option value="" data-i18n="opt_all_status">All Statuses</option>
+                    <option value="ACTIVE" data-i18n="opt_active">Active</option>
+                    <option value="ARCHIVED" data-i18n="opt_archived">Archived</option>
+                </select>
+                <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" id="doc-expiring-only" onchange="loadDocuments()">
+                    <span data-i18n="lbl_expiring_only">Expiring Soon Only</span>
+                </label>
+            </div>
+            <button class="btn" onclick="openUploadModal()" data-i18n="btn_upload">+ Upload / Attach Document</button>
+        </div>
+
+        <!-- Documents Table -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="th_file_name">Document File</th>
+                        <th data-i18n="th_doc_type">Type</th>
+                        <th data-i18n="th_linked_entity">Linked Entity</th>
+                        <th data-i18n="th_issue_date">Issued Date</th>
+                        <th data-i18n="th_expiry_date">Expiry Date</th>
+                        <th data-i18n="th_status">Status</th>
+                        <th data-i18n="th_actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="docs-tbody">
+                    <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading documents from vault...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODALS -->
+    <!-- ============================================================== -->
+
+    <!-- Modal 1: Upload / Attach Document -->
+    <div id="modal-upload" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 data-i18n="modal_upload_title">Upload / Attach Document</h3>
+                <button class="close-btn" onclick="closeModal('modal-upload')">&times;</button>
+            </div>
+            <form id="upload-form" onsubmit="handleCreateDocument(event)">
+                <div class="form-group">
+                    <label data-i18n="lbl_file_name">Document Name / File *</label>
+                    <input type="text" id="up-file-name" placeholder="e.g. Title_Deed_Villa_104.pdf" required>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_doc_type">Document Classification Type *</label>
+                    <select id="up-doc-type" required>
+                        <option value="TITLE_DEED">Title Deed (صك ملكية عقارية)</option>
+                        <option value="NATIONAL_ID">National ID (الهوية الوطنية / الإقامة)</option>
+                        <option value="PASSPORT">Passport (جواز السفر)</option>
+                        <option value="LEASE">Lease Agreement (عقد إيجار)</option>
+                        <option value="SALE_CONTRACT">Sale Contract (عقد بيع رسمي)</option>
+                        <option value="MANAGEMENT_CONTRACT">Management Agreement (عقد إدارة أملاك)</option>
+                        <option value="INVOICE">Tax Invoice (فاتورة ضريبية)</option>
+                        <option value="PAYMENT_RECEIPT">Payment Receipt (سند قبض)</option>
+                        <option value="PROPERTY_PHOTO">Property Photo / Plan (مخطط / صورة)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_issue_date">Issued Date</label>
+                        <input type="date" id="up-issue-date">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_expiry_date">Expiry Date</label>
+                        <input type="date" id="up-expiry-date">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_link_customer">Link Customer</label>
+                        <select id="up-cust">
+                            <option value="">Select Customer (optional)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_link_unit">Link Unit</label>
+                        <select id="up-unit">
+                            <option value="">Select Unit (optional)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_link_contract">Link Contract</label>
+                    <select id="up-contract">
+                        <option value="">Select Contract (optional)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-upload')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn" data-i18n="btn_save_doc">Save & Secure Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Access Log & Audit Trail -->
+    <div id="modal-audit" class="modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="audit-title">Document Security Audit Trail</h3>
+                <button class="close-btn" onclick="closeModal('modal-audit')">&times;</button>
+            </div>
+            <div id="audit-body" style="font-size: 0.9em;">
+                Loading audit trail...
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-audit')" data-i18n="btn_close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SCRIPT -->
+    <!-- ============================================================== -->
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                badge_docs: "Document Vault & Compliance",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities",
+                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                kpi_total_docs: "Total Documents", kpi_total_docs_sub: "Stored in secure vault",
+                kpi_active_docs: "Active Compliant", kpi_active_docs_sub: "Valid verified records",
+                kpi_expiring_soon: "Expiring Soon (30d)", kpi_expiring_sub: "Requires renewal attention",
+                kpi_access_events: "Audit Access Logs", kpi_access_sub: "Total views & downloads",
+                opt_all_types: "All Document Types", opt_all_status: "All Statuses",
+                opt_active: "Active", opt_archived: "Archived",
+                lbl_expiring_only: "Expiring Soon Only", btn_upload: "+ Upload / Attach Document",
+                th_file_name: "Document File", th_doc_type: "Type", th_linked_entity: "Linked Entity",
+                th_issue_date: "Issued Date", th_expiry_date: "Expiry Date", th_status: "Status", th_actions: "Actions",
+                modal_upload_title: "Upload / Attach Document",
+                lbl_file_name: "Document Name / File *", lbl_doc_type: "Document Classification Type *",
+                lbl_issue_date: "Issued Date", lbl_expiry_date: "Expiry Date",
+                lbl_link_customer: "Link Customer", lbl_link_unit: "Link Unit", lbl_link_contract: "Link Contract",
+                btn_cancel: "Cancel", btn_close: "Close", btn_save_doc: "Save & Secure Document",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_docs: "خزينة المستندات والتحقق",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة",
+                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                kpi_total_docs: "إجمالي المستندات", kpi_total_docs_sub: "المحفوظة في الخزينة الآمنة",
+                kpi_active_docs: "المستندات السارية", kpi_active_docs_sub: "وثائق سارية ومحققة",
+                kpi_expiring_soon: "قاربت على الانتهاء (30 يوم)", kpi_expiring_sub: "تتطلب تجديداً عاجلاً",
+                kpi_access_events: "سجلات تدقيق الوصول", kpi_access_sub: "إجمالي عمليات التحميل والمعاينة",
+                opt_all_types: "جميع تصنيفات المستندات", opt_all_status: "جميع الحالات",
+                opt_active: "ساري", opt_archived: "مؤرشف",
+                lbl_expiring_only: "المستندات المنتهية قريباً فقط", btn_upload: "+ إرفاق / رفع مستند جديد",
+                th_file_name: "اسم الملف / الوثيقة", th_doc_type: "التصنيف", th_linked_entity: "الجهة المرتبطة",
+                th_issue_date: "تاريخ الإصدار", th_expiry_date: "تاريخ الانتهاء", th_status: "الحالة", th_actions: "الإجراءات",
+                modal_upload_title: "إرفاق وتوثيق مستند جديد",
+                lbl_file_name: "اسم المستند / الملف *", lbl_doc_type: "تصنيف المستند القانوني *",
+                lbl_issue_date: "تاريخ الإصدار", lbl_expiry_date: "تاريخ الانتهاء",
+                lbl_link_customer: "ربط بعميل", lbl_link_unit: "ربط بوحدة عقارية", lbl_link_contract: "ربط بعقد",
+                btn_cancel: "إلغاء", btn_close: "إغلاق", btn_save_doc: "حفظ وتأمين المستند",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let docsData = [];
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function initTypography() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('recrm_lang', lang);
+            document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+        }
+
+        function toggleLanguage() {
+            setLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        async function loadSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/summary`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const d = json.data;
+                document.getElementById('kpi-total-docs').textContent = d.total_documents;
+                document.getElementById('kpi-active-docs').textContent = d.active_documents;
+                document.getElementById('kpi-expiring-soon').textContent = d.expiring_soon_count;
+                document.getElementById('kpi-access-events').textContent = d.total_access_events;
+            } catch (err) {
+                console.error("Summary error:", err);
+            }
+        }
+
+        async function loadDocuments() {
+            const type = document.getElementById('doc-type-filter').value;
+            const status = document.getElementById('doc-status-filter').value;
+            const expiringOnly = document.getElementById('doc-expiring-only').checked;
+
+            let url = `${API_BASE}/api/v1/documents?page_size=50`;
+            if (type) url += `&document_type=${type}`;
+            if (status) url += `&status=${status}`;
+            if (expiringOnly) url += `&is_expiring_soon=true`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                docsData = json.data || [];
+                renderDocuments(docsData);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('docs-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load documents.</td></tr>';
+            }
+        }
+
+        function renderDocuments(items) {
+            const tbody = document.getElementById('docs-tbody');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No documents found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(d => {
+                let linked = 'General';
+                if (d.customer_name) linked = `👤 ${d.customer_name}`;
+                else if (d.unit_number) linked = `🏠 Unit ${d.unit_number}`;
+                else if (d.contract_number) linked = `📄 ${d.contract_number}`;
+
+                let tagCls = 'type-tag';
+                const code = d.document_type_code || '';
+                if (code.includes('DEED') || code.includes('CONTRACT') || code.includes('LEASE')) tagCls += ' legal';
+                else if (code.includes('ID') || code.includes('PASSPORT')) tagCls += ' id';
+                else if (code.includes('INVOICE') || code.includes('RECEIPT')) tagCls += ' fin';
+
+                let statusBadge = `<span class="badge badge-active">${d.status}</span>`;
+                if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">Archived</span>`;
+                else if (d.is_expired) statusBadge = `<span class="badge badge-expired">Expired</span>`;
+                else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">Expiring Soon</span>`;
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">
+                                📄 ${d.file_name}
+                            </div>
+                            <span style="font-size:0.75em; color:var(--text-muted);">v${d.version_no} • ${d.storage_uri.substring(0, 32)}...</span>
+                        </td>
+                        <td><span class="${tagCls}">${d.document_type_name || code}</span></td>
+                        <td>${linked}</td>
+                        <td>${d.issued_at || '--'}</td>
+                        <td style="${d.is_expired ? 'color:var(--danger); font-weight:700;' : ''}">${d.expires_at || 'Never'}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <button class="btn btn-sm btn-outline" onclick="downloadDocument('${d.document_id}')">⬇ Download</button>
+                                <button class="btn btn-sm btn-outline" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">Audit</button>
+                                ${d.status === 'ACTIVE' ? `<button class="btn btn-sm btn-danger" onclick="archiveDoc('${d.document_id}')">Archive</button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterDocuments() {
+            const term = document.getElementById('doc-search').value.toLowerCase();
+            const filtered = docsData.filter(d =>
+                d.file_name.toLowerCase().includes(term) ||
+                (d.customer_name && d.customer_name.toLowerCase().includes(term)) ||
+                (d.unit_number && d.unit_number.toLowerCase().includes(term)) ||
+                (d.contract_number && d.contract_number.toLowerCase().includes(term))
+            );
+            renderDocuments(filtered);
+        }
+
+        async function downloadDocument(docId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/${docId}/access-url`, { method: 'POST' });
+                const json = await res.json();
+                const d = json.data;
+                loadSummary(); // Refresh access count
+                alert(`Secure Access URL generated!\n\n${d.access_url}\n\n(Signed token valid for 1 hour; Audit Log recorded)`);
+            } catch (err) {
+                alert("Download error: " + err);
+            }
+        }
+
+        async function viewAuditLog(docId, fileName) {
+            document.getElementById('audit-title').textContent = `Security Audit Log: ${fileName}`;
+            openModal('modal-audit');
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/${docId}/access-log`);
+                const json = await res.json();
+                const items = json.data || [];
+
+                if (items.length === 0) {
+                    document.getElementById('audit-body').innerHTML = '<p style="text-align:center; padding:20px;">No audit events recorded.</p>';
+                    return;
+                }
+
+                document.getElementById('audit-body').innerHTML = `
+                    <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+                        <thead>
+                            <tr style="background:#f1f5f9;">
+                                <th style="padding:6px;">Action</th>
+                                <th style="padding:6px;">User</th>
+                                <th style="padding:6px;">Accessed At</th>
+                                <th style="padding:6px;">IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(l => `
+                                <tr>
+                                    <td style="padding:6px;"><span class="badge badge-normal">${l.action}</span></td>
+                                    <td style="padding:6px;">${l.user_name || 'System User'}</td>
+                                    <td style="padding:6px;">${new Date(l.accessed_at).toLocaleString()}</td>
+                                    <td style="padding:6px;"><code>${l.ip_address || '127.0.0.1'}</code></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                document.getElementById('audit-body').innerHTML = `<p style="color:red;">Failed to load audit log: ${err}</p>`;
+            }
+        }
+
+        async function archiveDoc(docId) {
+            if (!confirm("Are you sure you want to archive this document?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/${docId}/archive`, { method: 'POST' });
+                if (res.ok) {
+                    loadDocuments();
+                    loadSummary();
+                    alert("Document archived successfully!");
+                }
+            } catch (err) {
+                alert("Archive error: " + err);
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function openUploadModal() {
+            try {
+                // Load customers
+                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                const cJson = await cRes.json();
+                document.getElementById('up-cust').innerHTML = '<option value="">Select Customer (optional)</option>' +
+                    (cJson.data || []).map(c => {
+                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                        return `<option value="${c.customer_id}">${name}</option>`;
+                    }).join('');
+
+                // Load units
+                const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                const uJson = await uRes.json();
+                document.getElementById('up-unit').innerHTML = '<option value="">Select Unit (optional)</option>' +
+                    (uJson.data || []).map(u => `<option value="${u.unit_id}">Unit ${u.unit_number}</option>`).join('');
+
+                // Load contracts
+                const conRes = await fetch(`${API_BASE}/api/v1/contracts?page_size=100`);
+                const conJson = await conRes.json();
+                document.getElementById('up-contract').innerHTML = '<option value="">Select Contract (optional)</option>' +
+                    (conJson.data || []).map(con => `<option value="${con.contract_id}">${con.contract_number}</option>`).join('');
+
+                openModal('modal-upload');
+            } catch (err) {
+                alert("Failed to load options: " + err);
+            }
+        }
+
+        async function handleCreateDocument(e) {
+            e.preventDefault();
+            const payload = {
+                file_name: document.getElementById('up-file-name').value,
+                document_type_code: document.getElementById('up-doc-type').value,
+                issued_at: document.getElementById('up-issue-date').value || null,
+                expires_at: document.getElementById('up-expiry-date').value || null,
+                customer_id: document.getElementById('up-cust').value || null,
+                unit_id: document.getElementById('up-unit').value || null,
+                contract_id: document.getElementById('up-contract').value || null,
+                status: 'ACTIVE'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Document creation failed');
+                closeModal('modal-upload');
+                loadDocuments();
+                loadSummary();
+                alert("Document successfully saved and verified in vault!");
+            } catch (err) {
+                alert("Upload error: " + err.message);
+            }
+        }
+
+        // Init on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypography();
+            setLanguage(currentLang);
+            loadSummary();
+            loadDocuments();
+        });
+    </script>
+</body>
+</html>
+

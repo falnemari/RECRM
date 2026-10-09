@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Pipeline - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+        
+        .content { padding: 24px; max-width: 1600px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .pipeline-container {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+        }
+        .column {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 14px;
+            flex: 1;
+            min-width: 250px;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 12px;
+        }
+        .column-title {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .column-badge {
+            background: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .column-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+            min-height: 200px;
+        }
+        .opportunity-card {
+            background: white;
+            border-radius: 6px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .opportunity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        }
+        .opp-title {
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+        .opp-customer {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .opp-price {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.95em;
+            margin-bottom: 4px;
+        }
+        .opp-meta {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 6px;
+            margin-top: 6px;
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 9999px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Pipeline</span>
+        </div>
+        <div class="header-actions">
+                        <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" class="active" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 style="margin: 0;" data-i18n="page_title">Sales Pipeline Board</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label">Loading opportunities...</p>
+            </div>
+            <div class="status-pill">
+                <span class="status-dot" id="conn-dot"></span>
+                <span id="conn-label">Backend Connected</span>
+            </div>
+        </div>
+
+        <div class="pipeline-container">
+            <!-- QUALIFIED -->
+            <div class="column">
+                <div class="column-header">
+                    <h3 class="column-title" data-i18n="col_qual">Qualification</h3>
+                    <span class="column-badge" id="count-QUALIFIED">0</span>
+                </div>
+                <div class="column-cards" id="cards-QUALIFIED"></div>
+            </div>
+
+            <!-- VIEWING -->
+            <div class="column">
+                <div class="column-header">
+                    <h3 class="column-title" data-i18n="col_viewing">Viewing</h3>
+                    <span class="column-badge" id="count-VIEWING">0</span>
+                </div>
+                <div class="column-cards" id="cards-VIEWING"></div>
+            </div>
+
+            <!-- OFFER / NEGOTIATION -->
+            <div class="column">
+                <div class="column-header">
+                    <h3 class="column-title" data-i18n="col_neg">Offer / Negotiation</h3>
+                    <span class="column-badge" id="count-NEGOTIATION">0</span>
+                </div>
+                <div class="column-cards" id="cards-NEGOTIATION"></div>
+            </div>
+
+            <!-- WON -->
+            <div class="column" style="background: #f0fdf4;">
+                <div class="column-header" style="border-bottom-color: #bbf7d0;">
+                    <h3 class="column-title" style="color: #166534;" data-i18n="col_won">Closed / Won</h3>
+                    <span class="column-badge" id="count-WON">0</span>
+                </div>
+                <div class="column-cards" id="cards-WON"></div>
+            </div>
+
+            <!-- LOST -->
+            <div class="column" style="background: #fef2f2;">
+                <div class="column-header" style="border-bottom-color: #fecaca;">
+                    <h3 class="column-title" style="color: #991b1b;" data-i18n="col_lost">Closed / Lost</h3>
+                    <span class="column-badge" id="count-LOST">0</span>
+                </div>
+                <div class="column-cards" id="cards-LOST"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Automatic API Base: handles file://, localhost:8000, and Live Server
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        const i18nData = {
+            en: {
+                nav_dashboard: "Dashboard",
+                nav_customers: "Customers 360",
+                nav_leads: "Leads",
+                nav_properties: "Properties",
+                nav_sales: "Sales Pipeline",
+                nav_finance: "Finance & Contracts",
+                nav_management: "Property Management",
+                nav_tasks: "Tasks & Activities",
+                nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns",
+                nav_listings: "Property Listings",
+                nav_api: "API Docs",
+                page_title: "Sales Pipeline Board",
+                col_qual: "Qualification",
+                col_viewing: "Viewing",
+                col_neg: "Offer / Negotiation",
+                col_won: "Closed / Won",
+                col_lost: "Closed / Lost",
+                lang_label: "عربي"
+            },
+            ar: {
+                nav_dashboard: "لوحة التحكم",
+                nav_customers: "ملف العميل 360",
+                nav_leads: "الطلبات",
+                nav_properties: "المخزون",
+                nav_sales: "مسار المبيعات",
+                nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك",
+                nav_tasks: "المهام والأنشطة",
+                nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات",
+                nav_listings: "العروض والإعلانات",
+                nav_api: "توثيق API",
+                page_title: "مسار المبيعات والصفقات",
+                col_qual: "مرحلة التأهيل",
+                col_viewing: "معاينة العقار",
+                col_neg: "تقديم العرض والتفاوض",
+                col_won: "تم الإغلاق بنجاح",
+                col_lost: "فرص ملغية",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            localStorage.setItem('recrm_lang', currentLang);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+            const savedLang = localStorage.getItem('recrm_lang');
+            if (savedLang && savedLang !== currentLang) {
+                applyLanguage(savedLang);
+            }
+        }
+
+        async function fetchOpportunities() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities?page_size=100`);
+                if (!res.ok) throw new Error('Network error');
+                const json = await res.json();
+                const opps = json.data || [];
+
+                document.getElementById('counter-label').textContent = `${opps.length} total active opportunities in pipeline`;
+                document.getElementById('conn-label').textContent = 'Backend Online (Port 8000)';
+
+                const groups = {
+                    'QUALIFIED': [],
+                    'VIEWING': [],
+                    'NEGOTIATION': [],
+                    'WON': [],
+                    'LOST': []
+                };
+
+                opps.forEach(o => {
+                    const st = (o.stage || '').toUpperCase();
+                    if (st === 'OFFER' || st === 'NEGOTIATION') {
+                        groups['NEGOTIATION'].push(o);
+                    } else if (st === 'WON' || st === 'CLOSED_WON') {
+                        groups['WON'].push(o);
+                    } else if (st === 'LOST' || st === 'CLOSED_LOST') {
+                        groups['LOST'].push(o);
+                    } else if (groups[st]) {
+                        groups[st].push(o);
+                    } else {
+                        groups['QUALIFIED'].push(o);
+                    }
+                });
+
+                Object.keys(groups).forEach(key => {
+                    const list = groups[key];
+                    const badge = document.getElementById(`count-${key}`);
+                    if (badge) badge.textContent = list.length;
+
+                    const container = document.getElementById(`cards-${key}`);
+                    if (!container) return;
+
+                    if (list.length === 0) {
+                        container.innerHTML = '<div style="color: #94a3b8; font-size: 0.85em; text-align: center; padding: 20px;">No deals in this stage</div>';
+                        return;
+                    }
+
+                    container.innerHTML = list.map(o => {
+                        const val = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : 'Valuation Pending';
+                        const closeDate = o.expected_close_date || 'Target date open';
+                        return `
+                            <div class="opportunity-card" onclick="alert('Deal Details: ${o.customer_name || 'Client'}\\nStage: ${o.stage}\\nValue: ${val}\\nAgent: ${o.assigned_user_name || 'Unassigned'}')">
+                                <div class="opp-title">${o.customer_name || 'Direct Inquirer'}</div>
+                                <div class="opp-customer">Contact: ${o.customer_mobile || '--'}</div>
+                                <div class="opp-price">${val}</div>
+                                <div class="opp-meta">
+                                    <span>Agent: <strong>${o.assigned_user_name || 'Unassigned'}</strong></span>
+                                    <span>Target: ${closeDate}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+            } catch (err) {
+                console.warn('Backend fetch failed:', err);
+                document.getElementById('conn-label').textContent = 'Backend Offline';
+                document.getElementById('conn-dot').style.background = '#ef4444';
+                document.getElementById('counter-label').innerHTML = '<span style="color: red;">Failed to load from backend API. Make sure FastAPI server is running on http://localhost:8000</span>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            fetchOpportunities();
+        });
+    </script>
+</body>
+</html>

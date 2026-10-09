@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers Directory & 360 - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        /* Top-Tier Professional Arabic Typography */
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font {
+            font-family: var(--ar-font) !important;
+        }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+        }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .controls-bar {
+            background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+        }
+        .controls-bar input, .controls-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; }
+        
+        /* Table Styles */
+        .table-wrap {
+            background: white; border-radius: 8px; border: 1px solid var(--border);
+            overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em; }
+        [dir="rtl"] table { text-align: right; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
+        .badge-individual { background: #e0f2fe; color: #0369a1; }
+        .badge-company { background: #fef3c7; color: #b45309; }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-inactive { background: #fee2e2; color: #b91c1c; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8em;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 3px 6px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            user-select: all;
+        }
+        .btn-copy {
+            background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 5px;
+            cursor: pointer; font-size: 0.75em; margin-left: 4px; color: #64748b;
+        }
+        .btn-copy:hover { background: #e2e8f0; color: #0f172a; }
+
+        .btn {
+            background-color: var(--secondary); color: white; padding: 8px 16px; border: none;
+            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.9em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn:hover { background-color: #2563eb; }
+        .btn-success { background-color: var(--accent); }
+        .btn-success:hover { background-color: #059669; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; }
+        .btn-sm:hover { background: #cbd5e1; }
+        .btn-primary-sm { padding: 4px 10px; font-size: 0.8em; background: #2563eb; color: #ffffff; }
+        .btn-primary-sm:hover { background: #1d4ed8; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal {
+            background: white; border-radius: 12px; width: 90%; max-width: 650px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+        }
+        .modal-header {
+            padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); }
+
+        .id-display-box {
+            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+            padding: 10px 14px; font-size: 0.88em; margin-bottom: 16px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+
+        /* Toast notification */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #0f172a; color: #fff; text-align: center;
+            border-radius: 8px; padding: 12px 16px; position: fixed; z-index: 2000; right: 30px; bottom: 30px;
+            font-size: 0.9em; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Customer 360</span>
+        </div>
+        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" class="active" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 style="margin: 0;" data-i18n="page_title">Customer Directory & 360 Profiles</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label">Loading customers...</p>
+            </div>
+            <button class="btn btn-success" onclick="openAddCustomerModal()" data-i18n="btn_add_customer">+ Add New Customer</button>
+        </div>
+
+        <div class="controls-bar">
+            <input type="text" id="search-box" placeholder="Search by name, customer_id, mobile, email or national ID..." style="flex-grow: 1; min-width: 250px;" oninput="debounceFetch()">
+            <select id="type-select" onchange="fetchCustomers()">
+                <option value="" data-i18n="opt_all_types">All Customer Types</option>
+                <option value="INDIVIDUAL" data-i18n="opt_individual">INDIVIDUAL (أفراد)</option>
+                <option value="COMPANY" data-i18n="opt_company">COMPANY (شركات)</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="th_id">Customer ID</th>
+                        <th data-i18n="th_name">Customer / Company</th>
+                        <th data-i18n="th_type">Type</th>
+                        <th data-i18n="th_mobile">Mobile Phone</th>
+                        <th data-i18n="th_email">Email</th>
+                        <th data-i18n="th_lang">Language</th>
+                        <th data-i18n="th_status">Status</th>
+                        <th data-i18n="th_actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customers-tbody">
+                    <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading customers from database...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CUSTOMER -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_add_title">Create New Customer Profile</h3>
+                <button class="close-btn" onclick="closeAddCustomerModal()">&times;</button>
+            </div>
+            <form id="add-customer-form" onsubmit="submitNewCustomer(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="form_type">Customer Type</label>
+                        <select id="f-type" onchange="toggleCompanyFields('add')">
+                            <option value="INDIVIDUAL">Individual (فرد)</option>
+                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" id="add-row-individual-name">
+                        <div class="form-group">
+                            <label data-i18n="form_first_name">First Name *</label>
+                            <input type="text" id="f-first-name" required placeholder="e.g. Mohammed">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_last_name">Last Name *</label>
+                            <input type="text" id="f-last-name" required placeholder="e.g. Al-Otaibi">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="add-row-company-name" style="display: none;">
+                        <label data-i18n="form_company">Company Legal Name *</label>
+                        <input type="text" id="f-company-name" placeholder="e.g. Riyadh Real Estate Development Co.">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_mobile">Mobile Phone *</label>
+                            <input type="tel" id="f-mobile" required placeholder="+966 50 123 4567">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_email">Email Address</label>
+                            <input type="email" id="f-email" placeholder="client@example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_national_id">National ID / Iqama / CR</label>
+                            <input type="text" id="f-national-id" placeholder="10-digit National ID or 700 CR">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_nationality">Nationality</label>
+                            <input type="text" id="f-nationality" value="SA" maxlength="2" placeholder="SA">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="form_language">Preferred Language</label>
+                        <select id="f-lang">
+                            <option value="ar">العربية (Arabic)</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeAddCustomerModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_save">Save Customer Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT CUSTOMER -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="margin: 0;" data-i18n="modal_edit_title">Edit Customer Profile</h3>
+                <button class="close-btn" onclick="closeEditCustomerModal()">&times;</button>
+            </div>
+            <form id="edit-customer-form" onsubmit="submitEditCustomer(event)">
+                <input type="hidden" id="edit-cust-id">
+                <div class="modal-body">
+                    <div class="id-display-box">
+                        <span><strong data-i18n="lbl_customer_id">Customer ID:</strong> <span id="edit-id-display" class="id-badge">--</span></span>
+                        <button type="button" class="btn-copy" onclick="copyId(document.getElementById('edit-id-display').textContent)">📋 <span data-i18n="btn_copy">Copy ID</span></button>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="form_type">Customer Type</label>
+                        <select id="edit-type" onchange="toggleCompanyFields('edit')">
+                            <option value="INDIVIDUAL">Individual (فرد)</option>
+                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" id="edit-row-individual-name">
+                        <div class="form-group">
+                            <label data-i18n="form_first_name">First Name *</label>
+                            <input type="text" id="edit-first-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_last_name">Last Name *</label>
+                            <input type="text" id="edit-last-name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="edit-row-company-name" style="display: none;">
+                        <label data-i18n="form_company">Company Legal Name *</label>
+                        <input type="text" id="edit-company-name">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_mobile">Mobile Phone *</label>
+                            <input type="tel" id="edit-mobile" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_email">Email Address</label>
+                            <input type="email" id="edit-email">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_national_id">National ID / Iqama / CR</label>
+                            <input type="text" id="edit-national-id" placeholder="Update ID number">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_nationality">Nationality</label>
+                            <input type="text" id="edit-nationality" maxlength="2">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="form_language">Preferred Language</label>
+                            <select id="edit-lang">
+                                <option value="ar">العربية (Arabic)</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_status">Account Status</label>
+                            <select id="edit-status">
+                                <option value="ACTIVE">ACTIVE (نشط)</option>
+                                <option value="INACTIVE">INACTIVE (غير نشط)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeEditCustomerModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_changes">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CUSTOMER 360 VIEW -->
+    <div class="modal-overlay" id="c360-modal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0;" id="c360-title">Customer 360 View</h3>
+                    <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 4px;" id="c360-id-subtitle">ID: --</div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-primary-sm" id="c360-edit-btn" onclick="openEditFrom360()">✏️ <span data-i18n="btn_edit">Edit</span></button>
+                    <button class="close-btn" onclick="closeC360Modal()">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" id="c360-body">
+                <p>Loading 360 history...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" onclick="closeC360Modal()" data-i18n="btn_close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Customer updated successfully!</div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        let current360CustomerId = null;
+        let cachedCustomers = [];
+
+        const i18nData = {
+            en: {
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
+                nav_api: "API Docs", page_title: "Customer Directory & 360 Profiles", btn_add_customer: "+ Add New Customer",
+                opt_all_types: "All Customer Types", opt_individual: "INDIVIDUAL (أفراد)", opt_company: "COMPANY (شركات)",
+                th_id: "Customer ID", th_name: "Customer / Company", th_type: "Type", th_mobile: "Mobile Phone", th_email: "Email",
+                th_lang: "Language", th_status: "Status", th_actions: "Actions",
+                modal_add_title: "Create New Customer Profile", modal_edit_title: "Edit Customer Profile",
+                lbl_customer_id: "Customer ID:", btn_copy: "Copy ID", btn_edit: "Edit", btn_view_360: "View 360", btn_close: "Close",
+                form_type: "Customer Type", form_first_name: "First Name *", form_last_name: "Last Name *", form_company: "Company Legal Name *",
+                form_mobile: "Mobile Phone *", form_email: "Email Address", form_national_id: "National ID / Iqama / CR",
+                form_nationality: "Nationality Code (e.g. SA)", form_language: "Preferred Language", form_status: "Account Status",
+                btn_cancel: "Cancel", btn_save: "Save Customer Profile", btn_save_changes: "Save Changes",
+                lang_label: "عربي"
+            },
+            ar: {
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
+                nav_api: "توثيق API", page_title: "دليل العملاء وملف العميل الشامل 360", btn_add_customer: "+ إضافة عميل جديد",
+                opt_all_types: "جميع أنواع العملاء", opt_individual: "أفراد (INDIVIDUAL)", opt_company: "شركات (COMPANY)",
+                th_id: "معرّف العميل (ID)", th_name: "الاسم / اسم الشركة", th_type: "النوع", th_mobile: "رقم الجوال", th_email: "البريد الإلكتروني",
+                th_lang: "اللغة", th_status: "الحالة", th_actions: "الإجراءات",
+                modal_add_title: "إنشاء ملف عميل جديد", modal_edit_title: "تعديل بيانات العميل",
+                lbl_customer_id: "معرّف العميل:", btn_copy: "نسخ المعرّف", btn_edit: "تعديل", btn_view_360: "عرض 360", btn_close: "إغلاق",
+                form_type: "نوع العميل", form_first_name: "الاسم الأول *", form_last_name: "اسم العائلة *", form_company: "اسم الشركة القانوني *",
+                form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني", form_national_id: "الهوية الوطنية / الإقامة / السجل",
+                form_nationality: "رمز الجنسية (مثال: SA)", form_language: "اللغة المفضلة", form_status: "حالة الحساب",
+                btn_cancel: "إلغاء", btn_save: "حفظ ملف العميل", btn_save_changes: "حفظ التغييرات",
+                lang_label: "English"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            localStorage.setItem('recrm_lang', currentLang);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+            const savedLang = localStorage.getItem('recrm_lang');
+            if (savedLang && savedLang !== currentLang) {
+                applyLanguage(savedLang);
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        function copyId(val) {
+            if (!val || val === '--') return;
+            navigator.clipboard.writeText(val.trim()).then(() => {
+                showToast(`Copied to clipboard: ${val.trim()}`);
+            }).catch(err => {
+                showToast(`Copied: ${val.trim()}`);
+            });
+        }
+
+        let debounceTimer;
+        function debounceFetch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchCustomers, 300);
+        }
+
+        async function fetchCustomers() {
+            const search = document.getElementById('search-box').value;
+            const type = document.getElementById('type-select').value;
+
+            let url = `${API_BASE}/api/v1/customers?page_size=60`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (type) url += `&customer_type=${encodeURIComponent(type)}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const customers = json.data || [];
+                cachedCustomers = customers;
+                const total = json.meta?.total || 0;
+
+                document.getElementById('counter-label').textContent = `Showing ${customers.length} of ${total} customers in database`;
+
+                const tbody = document.getElementById('customers-tbody');
+                if (customers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No customers found matching criteria.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = customers.map(c => {
+                    const badgeClass = c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual';
+                    const displayName = c.customer_type === 'COMPANY' ? (c.company_name || 'Company') : (c.full_name || 'Individual');
+                    const statusClass = c.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive';
+                    const shortId = c.customer_id.substring(0, 8);
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <span class="id-badge" title="${c.customer_id}">${shortId}...</span>
+                                <button class="btn-copy" onclick="copyId('${c.customer_id}')" title="Copy Full Customer ID">📋</button>
+                            </td>
+                            <td>
+                                <strong>${displayName}</strong>
+                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${c.customer_id}</div>
+                            </td>
+                            <td><span class="badge ${badgeClass}">${c.customer_type}</span></td>
+                            <td>${c.mobile || '--'}</td>
+                            <td>${c.email || '--'}</td>
+                            <td>${c.preferred_language?.toUpperCase() || 'AR'}</td>
+                            <td><span class="badge ${statusClass}">${c.status}</span></td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ Edit</button>
+                                    <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 360</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center; padding: 24px;">Failed to load customers from backend API.</td></tr>';
+            }
+        }
+
+        function toggleCompanyFields(mode) {
+            const isAdd = mode === 'add';
+            const typeSelect = document.getElementById(isAdd ? 'f-type' : 'edit-type');
+            const indRow = document.getElementById(isAdd ? 'add-row-individual-name' : 'edit-row-individual-name');
+            const compRow = document.getElementById(isAdd ? 'add-row-company-name' : 'edit-row-company-name');
+            const fFirstName = document.getElementById(isAdd ? 'f-first-name' : 'edit-first-name');
+            const fLastName = document.getElementById(isAdd ? 'f-last-name' : 'edit-last-name');
+            const fCompName = document.getElementById(isAdd ? 'f-company-name' : 'edit-company-name');
+
+            if (typeSelect.value === 'COMPANY') {
+                indRow.style.display = 'none';
+                compRow.style.display = 'block';
+                fFirstName.required = false;
+                fLastName.required = false;
+                fCompName.required = true;
+            } else {
+                indRow.style.display = 'flex';
+                compRow.style.display = 'none';
+                fFirstName.required = true;
+                fLastName.required = true;
+                fCompName.required = false;
+            }
+        }
+
+        function openAddCustomerModal() {
+            document.getElementById('add-modal').style.display = 'flex';
+            toggleCompanyFields('add');
+        }
+        function closeAddCustomerModal() {
+            document.getElementById('add-modal').style.display = 'none';
+            document.getElementById('add-customer-form').reset();
+            toggleCompanyFields('add');
+        }
+
+        async function submitNewCustomer(e) {
+            e.preventDefault();
+            const type = document.getElementById('f-type').value;
+            const payload = {
+                customer_type: type,
+                first_name: type === 'INDIVIDUAL' ? document.getElementById('f-first-name').value.trim() : null,
+                last_name: type === 'INDIVIDUAL' ? document.getElementById('f-last-name').value.trim() : null,
+                company_name: type === 'COMPANY' ? document.getElementById('f-company-name').value.trim() : null,
+                mobile: document.getElementById('f-mobile').value.trim(),
+                email: document.getElementById('f-email').value.trim() || null,
+                nationality_code: document.getElementById('f-nationality').value.trim().toUpperCase() || 'SA',
+                preferred_language: document.getElementById('f-lang').value || 'ar',
+                national_id: document.getElementById('f-national-id').value.trim() || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/customers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast(`Customer created! ID: ${result.data.customer_id}`);
+                    closeAddCustomerModal();
+                    fetchCustomers();
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to create customer: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+
+        async function openEditCustomerModal(customerId) {
+            // Find in cache or fetch
+            let customer = cachedCustomers.find(c => c.customer_id === customerId);
+            if (!customer) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/customers/${customerId}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        customer = json.data;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (!customer) {
+                alert('Customer data not found');
+                return;
+            }
+
+            document.getElementById('edit-cust-id').value = customer.customer_id;
+            document.getElementById('edit-id-display').textContent = customer.customer_id;
+            document.getElementById('edit-type').value = customer.customer_type || 'INDIVIDUAL';
+            document.getElementById('edit-first-name').value = customer.first_name || '';
+            document.getElementById('edit-last-name').value = customer.last_name || '';
+            document.getElementById('edit-company-name').value = customer.company_name || '';
+            document.getElementById('edit-mobile').value = customer.mobile || '';
+            document.getElementById('edit-email').value = customer.email || '';
+            document.getElementById('edit-nationality').value = customer.nationality_code || 'SA';
+            document.getElementById('edit-lang').value = customer.preferred_language || 'ar';
+            document.getElementById('edit-status').value = customer.status || 'ACTIVE';
+            document.getElementById('edit-national-id').value = '';
+
+            toggleCompanyFields('edit');
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditCustomerModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('edit-customer-form').reset();
+        }
+
+        async function submitEditCustomer(e) {
+            e.preventDefault();
+            const customerId = document.getElementById('edit-cust-id').value;
+            const type = document.getElementById('edit-type').value;
+
+            const payload = {
+                customer_type: type,
+                first_name: type === 'INDIVIDUAL' ? document.getElementById('edit-first-name').value.trim() : null,
+                last_name: type === 'INDIVIDUAL' ? document.getElementById('edit-last-name').value.trim() : null,
+                company_name: type === 'COMPANY' ? document.getElementById('edit-company-name').value.trim() : null,
+                mobile: document.getElementById('edit-mobile').value.trim(),
+                email: document.getElementById('edit-email').value.trim() || null,
+                nationality_code: document.getElementById('edit-nationality').value.trim().toUpperCase() || 'SA',
+                preferred_language: document.getElementById('edit-lang').value || 'ar',
+                status: document.getElementById('edit-status').value || 'ACTIVE'
+            };
+
+            const nid = document.getElementById('edit-national-id').value.trim();
+            if (nid) {
+                payload.national_id = nid;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/customers/${customerId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast(`Customer ${result.data.customer_id} updated successfully!`);
+                    closeEditCustomerModal();
+                    fetchCustomers();
+                    // If 360 is open, refresh it too
+                    if (current360CustomerId === customerId) {
+                        viewCustomer360(customerId);
+                    }
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to update customer: ${JSON.stringify(err)}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+
+        async function viewCustomer360(customerId) {
+            current360CustomerId = customerId;
+            document.getElementById('c360-modal').style.display = 'flex';
+            document.getElementById('c360-body').innerHTML = '<p>Loading customer 360 relationship data...</p>';
+            document.getElementById('c360-id-subtitle').textContent = `Customer ID: ${customerId}`;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/customers/${customerId}/360`);
+                if (!res.ok) throw new Error('API fetch error');
+                const json = await res.json();
+                const d = json.data || {};
+                const p = d.profile || {};
+                const leads = d.leads || [];
+                const opportunities = d.opportunities || [];
+                const tenancies = d.tenancies || [];
+                const ownedUnits = d.owned_units || [];
+
+                document.getElementById('c360-title').textContent = `Customer 360: ${p.full_name || p.company_name || 'Client'}`;
+                document.getElementById('c360-id-subtitle').innerHTML = `
+                    Customer ID: <strong class="id-badge">${p.customer_id || customerId}</strong>
+                    <button class="btn-copy" onclick="copyId('${p.customer_id || customerId}')">📋 Copy</button>
+                `;
+
+                document.getElementById('c360-body').innerHTML = `
+                    <div style="background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
+                        <div style="font-size: 1.1em; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                ${p.full_name || p.company_name || 'Customer'} 
+                                <span class="badge ${p.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual'}">${p.customer_type || 'INDIVIDUAL'}</span>
+                                <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}">${p.status || 'ACTIVE'}</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.9em; color: var(--text-muted); line-height: 1.6;">
+                            <div>📞 Mobile: <strong>${p.mobile || '--'}</strong> | ✉️ Email: <strong>${p.email || '--'}</strong></div>
+                            <div>🌐 Nationality: <strong>${p.nationality_code || 'SA'}</strong> | Language: <strong>${p.preferred_language?.toUpperCase() || 'AR'}</strong></div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 16px 0 8px 0;">Inbound Leads (${leads.length})</h4>
+                    ${leads.length ? leads.map(l => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Lead ID: <span class="id-badge">${l.lead_id}</span> | Status: <strong>${l.status}</strong> | Priority: <strong>${l.priority}</strong> | Type: ${l.inquiry_type}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No leads recorded.</p>'}
+
+                    <h4 style="margin: 16px 0 8px 0;">Sales Pipeline Deals (${opportunities.length})</h4>
+                    ${opportunities.length ? opportunities.map(o => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Stage: <strong>${o.stage}</strong> | Expected Value: <strong>${Number(o.expected_value || 0).toLocaleString()} SAR</strong> | Target Date: ${o.expected_close_date || '--'}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No pipeline opportunities.</p>'}
+
+                    <h4 style="margin: 16px 0 8px 0;">Leases & Tenancies (${tenancies.length})</h4>
+                    ${tenancies.length ? tenancies.map(t => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Contract: <strong>${t.contract_number}</strong> | Rent: <strong>${Number(t.rent_amount || 0).toLocaleString()} SAR</strong> | Status: ${t.status}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No tenancy agreements.</p>'}
+
+                    <h4 style="margin: 16px 0 8px 0;">Owned Units (${ownedUnits.length})</h4>
+                    ${ownedUnits.length ? ownedUnits.map(u => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Unit: <strong>${u.unit_number}</strong> | Status: ${u.status} | Asking: ${Number(u.asking_price || 0).toLocaleString()} SAR</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No units owned.</p>'}
+                `;
+            } catch (e) {
+                document.getElementById('c360-body').innerHTML = '<p style="color: red;">Failed to load Customer 360 data.</p>';
+            }
+        }
+
+        function openEditFrom360() {
+            if (current360CustomerId) {
+                openEditCustomerModal(current360CustomerId);
+            }
+        }
+
+        function closeC360Modal() {
+            document.getElementById('c360-modal').style.display = 'none';
+            current360CustomerId = null;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTypographyAndLang();
+            fetchCustomers();
+        });
+    </script>
+</body>
+</html>
