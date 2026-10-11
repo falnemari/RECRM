@@ -26,6 +26,8 @@ UNIT_SELECT_QUERY = """
         u.orientation,
         u.property_type_id,
         pt.name_en AS property_type_name,
+        pt.name_en AS property_type_name_en,
+        pt.name_ar AS property_type_name_ar,
         CAST(u.asking_price AS FLOAT) AS asking_price,
         CAST(u.rent_price AS FLOAT) AS rent_price,
         u.status,

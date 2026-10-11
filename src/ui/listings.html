@@ -827,16 +827,20 @@
         }
 
         async function loadUnitsDropdown() {
+            const isAr = currentLang === 'ar';
             const sel = document.getElementById('fl-unit');
-            sel.innerHTML = '<option value="">Loading units...</option>';
+            sel.innerHTML = `<option value="">${isAr ? 'جاري تحميل الوحدات...' : 'Loading units...'}</option>`;
             try {
                 const res = await fetch(`${API_BASE}/api/v1/units?page=1&page_size=100`);
                 if (!res.ok) throw new Error('API fetch error');
                 const json = await res.json();
-                sel.innerHTML = '<option value="">-- Choose Unit --</option>' +
-                    json.data.map(u => `<option value="${u.unit_id}">Unit ${u.unit_number} - ${u.property_type_name || ''} (${u.status})</option>`).join('');
+                sel.innerHTML = `<option value="">-- ${isAr ? 'اختر الوحدة' : 'Choose Unit'} --</option>` +
+                    json.data.map(u => {
+                        const ptName = isAr ? (u.property_type_name_ar || u.property_type_name || '') : (u.property_type_name_en || u.property_type_name || '');
+                        return `<option value="${u.unit_id}">${isAr ? 'الوحدة' : 'Unit'} ${u.unit_number} - ${ptName} (${u.status})</option>`;
+                    }).join('');
             } catch (err) {
-                sel.innerHTML = '<option value="">Failed to load units</option>';
+                sel.innerHTML = `<option value="">${isAr ? 'فشل تحميل الوحدات' : 'Failed to load units'}</option>`;
             }
         }
 

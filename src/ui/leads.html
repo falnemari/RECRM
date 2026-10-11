@@ -718,6 +718,8 @@
                     : 'Search by name, customer ID, phone or email...';
             }
             localStorage.setItem('recrm_lang', currentLang);
+            populateReferenceSelects();
+            renderLeads();
         }
 
         function toggleLanguage() {
@@ -795,37 +797,78 @@
         }
 
         function populateReferenceSelects() {
+            const isAr = currentLang === 'ar';
             // Cities
-            const cityOpts = '<option value="">-- Any City --</option>' + 
-                refCities.map(c => `<option value="${c.city_id}">${c.name_en || c.name_ar} (${c.region_name || 'KSA'})</option>`).join('');
+            const cityDefault = isAr ? '-- أي مدينة --' : '-- Any City --';
+            const cityOpts = `<option value="">${cityDefault}</option>` + 
+                refCities.map(c => {
+                    const cName = isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar);
+                    return `<option value="${c.city_id}">${cName} (${c.region_name || 'KSA'})</option>`;
+                }).join('');
             const leadCity = document.getElementById('lead-city');
-            if (leadCity) leadCity.innerHTML = cityOpts;
+            if (leadCity) {
+                const cur = leadCity.value;
+                leadCity.innerHTML = cityOpts;
+                if (cur) leadCity.value = cur;
+            }
             const editCity = document.getElementById('edit-lead-city');
-            if (editCity) editCity.innerHTML = cityOpts;
+            if (editCity) {
+                const cur = editCity.value;
+                editCity.innerHTML = cityOpts;
+                if (cur) editCity.value = cur;
+            }
 
             // Property Types
-            const ptOpts = '<option value="">-- Any Property Type --</option>' + 
-                refPropertyTypes.map(pt => `<option value="${pt.property_type_id}">${pt.name_en || pt.name_ar}</option>`).join('');
+            const ptDefault = isAr ? '-- أي نوع عقار --' : '-- Any Property Type --';
+            const ptOpts = `<option value="">${ptDefault}</option>` + 
+                refPropertyTypes.map(pt => {
+                    const ptName = isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar);
+                    return `<option value="${pt.property_type_id}">${ptName}</option>`;
+                }).join('');
             const leadPt = document.getElementById('lead-prop-type');
-            if (leadPt) leadPt.innerHTML = ptOpts;
+            if (leadPt) {
+                const cur = leadPt.value;
+                leadPt.innerHTML = ptOpts;
+                if (cur) leadPt.value = cur;
+            }
             const editPt = document.getElementById('edit-lead-prop-type');
-            if (editPt) editPt.innerHTML = ptOpts;
+            if (editPt) {
+                const cur = editPt.value;
+                editPt.innerHTML = ptOpts;
+                if (cur) editPt.value = cur;
+            }
 
             // Lead Sources
-            const lsOpts = '<option value="">-- Direct / Walk-in --</option>' + 
+            const lsOpts = `<option value="">-- ${isAr ? 'مباشر / زيارة' : 'Direct / Walk-in'} --</option>` + 
                 refLeadSources.map(ls => `<option value="${ls.lead_source_id}">${ls.name} (${ls.channel})</option>`).join('');
             const leadSource = document.getElementById('lead-source');
-            if (leadSource) leadSource.innerHTML = lsOpts;
+            if (leadSource) {
+                const cur = leadSource.value;
+                leadSource.innerHTML = lsOpts;
+                if (cur) leadSource.value = cur;
+            }
             const editSource = document.getElementById('edit-lead-source');
-            if (editSource) editSource.innerHTML = lsOpts;
+            if (editSource) {
+                const cur = editSource.value;
+                editSource.innerHTML = lsOpts;
+                if (cur) editSource.value = cur;
+            }
 
             // Users
-            const uOpts = '<option value="">-- Unassigned --</option>' + 
+            const uOpts = `<option value="">-- ${isAr ? 'غير مسند' : 'Unassigned'} --</option>` + 
                 refUsers.map(u => `<option value="${u.user_id}">${u.full_name} (${u.employee_no || 'Agent'})</option>`).join('');
             const leadUser = document.getElementById('lead-assigned-user');
-            if (leadUser) leadUser.innerHTML = uOpts;
+            if (leadUser) {
+                const cur = leadUser.value;
+                leadUser.innerHTML = uOpts;
+                if (cur) leadUser.value = cur;
+            }
             const editUser = document.getElementById('edit-lead-assigned');
-            if (editUser) editUser.innerHTML = uOpts;
+            if (editUser) {
+                const cur = editUser.value;
+                editUser.innerHTML = uOpts;
+                if (cur) editUser.value = cur;
+            }
         }
 
         let currentLeadsPage = 1;

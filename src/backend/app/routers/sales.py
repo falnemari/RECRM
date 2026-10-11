@@ -24,11 +24,23 @@ OPP_SELECT_QUERY = """
         o.stage,
         CAST(o.expected_value AS FLOAT) AS expected_value,
         o.expected_close_date,
+        l.inquiry_type,
+        CAST(l.budget_min AS FLOAT) AS budget_min,
+        CAST(l.budget_max AS FLOAT) AS budget_max,
+        l.bedrooms_min,
+        CAST(l.area_min_sqm AS FLOAT) AS area_min_sqm,
+        l.preferred_property_type_id,
+        pt.name_en AS preferred_property_type_name,
+        l.preferred_city_id,
+        ct.name_en AS preferred_city_name,
         o.created_at,
         o.updated_at
     FROM opportunities o
     LEFT JOIN customers c ON o.customer_id = c.customer_id
     LEFT JOIN users u ON o.assigned_user_id = u.user_id
+    LEFT JOIN leads l ON o.lead_id = l.lead_id
+    LEFT JOIN property_types pt ON l.preferred_property_type_id = pt.property_type_id
+    LEFT JOIN cities ct ON l.preferred_city_id = ct.city_id
 """
 
 @router.get("/opportunities", response_model=CollectionEnvelope[OpportunityOut])

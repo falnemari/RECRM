@@ -14,6 +14,15 @@ class OpportunityOut(BaseModel):
     stage: str
     expected_value: Optional[float] = None
     expected_close_date: Optional[date] = None
+    inquiry_type: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    bedrooms_min: Optional[int] = None
+    area_min_sqm: Optional[float] = None
+    preferred_property_type_id: Optional[str] = None
+    preferred_property_type_name: Optional[str] = None
+    preferred_city_id: Optional[str] = None
+    preferred_city_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

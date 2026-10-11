@@ -1051,10 +1051,9 @@
 
                 const unitTitle = `${t.lbl_unit} ${u.unit_number} - ${projectName}`;
 
-                let propTypeName = u.property_type_name || (currentLang === 'ar' ? 'شقة' : 'Apartment');
-                if (currentLang === 'ar' && propTypeMapAr[propTypeName]) {
-                    propTypeName = propTypeMapAr[propTypeName];
-                }
+                let propTypeName = (currentLang === 'ar')
+                    ? (u.property_type_name_ar || propTypeMapAr[u.property_type_name] || u.property_type_name || 'شقة')
+                    : (u.property_type_name_en || u.property_type_name || 'Apartment');
 
                 let orientationText = u.orientation || '--';
                 if (currentLang === 'ar' && orientationMapAr[u.orientation]) {
@@ -1245,16 +1244,25 @@
             if (addProjCity) addProjCity.innerHTML = cityOptions;
 
             // 3. Property Types in Add & Edit modals
-            const ptOptions = `<option value="">-- ${isAr ? 'افتراضي / شقة' : 'General / Apartment'} --</option>` +
+            const ptPlaceholder = isAr ? '-- اختر نوع العقار --' : '-- Select Property Type --';
+            const ptOptions = `<option value="">${ptPlaceholder}</option>` +
                 cachedPropertyTypes.map(pt => {
-                    const ptName = isAr ? (pt.name_ar || pt.name_en) : pt.name_en;
+                    const ptName = isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar);
                     return `<option value="${pt.property_type_id}">${ptName}</option>`;
                 }).join('');
 
             const addPt = document.getElementById('add-property-type-id');
-            if (addPt) addPt.innerHTML = ptOptions;
+            if (addPt) {
+                const prevAddVal = addPt.value;
+                addPt.innerHTML = ptOptions;
+                if (prevAddVal) addPt.value = prevAddVal;
+            }
             const editPt = document.getElementById('edit-property-type-id');
-            if (editPt) editPt.innerHTML = ptOptions;
+            if (editPt) {
+                const prevEditVal = editPt.value;
+                editPt.innerHTML = ptOptions;
+                if (prevEditVal) editPt.value = prevEditVal;
+            }
 
             // 4. Owner Customers in Add & Edit modals
             const custOptions = `<option value="">${t.opt_direct_agency}</option>` +
@@ -1377,7 +1385,12 @@
         }
 
         // ================= MODAL HANDLERS =================
-        function openAddUnitModal() {
+        async function openAddUnitModal() {
+            if (cachedPropertyTypes.length === 0 || cachedBuildings.length === 0) {
+                await loadReferenceData();
+            } else {
+                populateSelectOptions();
+            }
             document.getElementById('add-building-id').value = '';
             document.getElementById('add-unit-number').value = '';
             document.getElementById('add-property-type-id').value = '';
@@ -1439,6 +1452,11 @@
 
         async function openEditUnitModal(unitId) {
             try {
+                if (cachedPropertyTypes.length === 0 || cachedBuildings.length === 0) {
+                    await loadReferenceData();
+                } else {
+                    populateSelectOptions();
+                }
                 const res = await fetch(`${API_BASE}/api/v1/units/${unitId}`);
                 if (!res.ok) throw new Error('Unit not found');
                 const json = await res.json();
@@ -1567,8 +1585,9 @@
 
                 document.getElementById('det-building').textContent = `[${projectName}] ${u.building_id}`;
                 
-                let pType = u.property_type_name || (isAr ? 'شقة' : 'Apartment');
-                if (isAr && propTypeMapAr[pType]) pType = propTypeMapAr[pType];
+                let pType = isAr 
+                    ? (u.property_type_name_ar || propTypeMapAr[u.property_type_name] || u.property_type_name || 'شقة')
+                    : (u.property_type_name_en || u.property_type_name || 'Apartment');
                 document.getElementById('det-type').textContent = pType;
 
                 document.getElementById('det-area').textContent = u.area_sqm ? `${u.area_sqm} ${t.lbl_sqm}` : '--';

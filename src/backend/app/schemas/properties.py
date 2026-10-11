@@ -43,6 +43,8 @@ class UnitOut(BaseModel):
     orientation: Optional[str] = None
     property_type_id: Optional[str] = None
     property_type_name: Optional[str] = None
+    property_type_name_en: Optional[str] = None
+    property_type_name_ar: Optional[str] = None
     asking_price: Optional[float] = None
     rent_price: Optional[float] = None
     status: str

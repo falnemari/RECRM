@@ -314,6 +314,10 @@
             overflow: hidden;
             animation: modalFadeIn 0.2s ease-out;
         }
+        .modal-box.modal-box-lg {
+            max-width: 940px;
+            width: 95%;
+        }
         @keyframes modalFadeIn {
             from { opacity: 0; transform: scale(0.96); }
             to { opacity: 1; transform: scale(1); }
@@ -522,12 +526,12 @@
 
     <!-- Opportunity Units Modal -->
     <div class="modal-overlay" id="opp-units-modal">
-        <div class="modal-box">
+        <div class="modal-box modal-box-lg">
             <div class="modal-header">
                 <h3 id="opp-units-modal-title">Opportunity Units (الوحدات المرتبطة)</h3>
                 <button class="close-btn" onclick="closeOppUnitsModal()">&times;</button>
             </div>
-            <div class="modal-body" id="opp-units-modal-body">
+            <div class="modal-body" id="opp-units-modal-body" style="max-height: 82vh; overflow-y: auto;">
                 <div style="text-align: center; padding: 20px;">Loading linked units...</div>
             </div>
         </div>
@@ -807,15 +811,21 @@
         let allOpportunities = [];
         let refUsers = [];
         let refCustomers = [];
+        let cachedPropertyTypes = [];
+        let cachedInventoryUnits = [];
+        let currentOppInModal = null;
+        let currentModalOppUnits = [];
 
         async function initSalesData() {
             try {
-                const [uRes, cRes] = await Promise.all([
+                const [uRes, cRes, ptRes] = await Promise.all([
                     fetch(`${API_BASE}/api/v1/users`),
-                    fetch(`${API_BASE}/api/v1/customers?page_size=100`)
+                    fetch(`${API_BASE}/api/v1/customers?page_size=100`),
+                    fetch(`${API_BASE}/api/v1/property-types`)
                 ]);
                 if (uRes.ok) refUsers = (await uRes.json()).data || [];
                 if (cRes.ok) refCustomers = (await cRes.json()).data || [];
+                if (ptRes && ptRes.ok) cachedPropertyTypes = (await ptRes.json()).data || [];
             } catch (e) {
                 console.warn("Could not load users or customers:", e);
             }
@@ -908,6 +918,14 @@
                 container.innerHTML = list.map(o => {
                     const val = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : (currentLang === 'ar' ? 'القيمة غير محددة' : 'Valuation Pending');
                     const closeDate = o.expected_close_date || (currentLang === 'ar' ? 'تاريخ مفتوح' : 'Open target date');
+                    const reqTag = (o.preferred_property_type_name || o.bedrooms_min != null || o.inquiry_type) ? `
+                        <div style="margin-top: 4px; font-size: 0.74em; color: #0369a1; background: #f0f9ff; padding: 2px 6px; border-radius: 4px; display: inline-flex; gap: 4px; align-items: center; border: 1px solid #bae6fd;">
+                            <span>🎯</span>
+                            <span>${o.inquiry_type ? (o.inquiry_type === 'BUY' ? (currentLang === 'ar' ? 'شراء' : 'Buy') : (currentLang === 'ar' ? 'إيجار' : 'Rent')) : ''}</span>
+                            ${o.preferred_property_type_name ? `<span>• ${o.preferred_property_type_name}</span>` : ''}
+                            ${o.bedrooms_min != null ? `<span>• ${o.bedrooms_min}+ ${currentLang === 'ar' ? 'غرف' : 'Beds'}</span>` : ''}
+                        </div>
+                    ` : '';
                     return `
                         <div class="opportunity-card" onclick="openOpportunityDetailModal('${o.opportunity_id}')">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
@@ -915,7 +933,8 @@
                                 <span class="badge badge-primary" style="font-size: 0.7em;">${o.stage}</span>
                             </div>
                             <div class="opp-customer">📞 ${o.customer_mobile || '--'}</div>
-                            <div class="opp-price">${val}</div>
+                            ${reqTag}
+                            <div class="opp-price" style="margin-top: 4px;">${val}</div>
                             <div class="opp-meta">
                                 <span>👤 <strong>${o.assigned_user_name || 'Unassigned'}</strong></span>
                                 <span>📅 ${closeDate}</span>
@@ -1171,9 +1190,21 @@
             }).join('');
         }
 
-        let cachedInventoryUnits = [];
-        async function getInventoryUnits() {
-            if (cachedInventoryUnits.length > 0) return cachedInventoryUnits;
+        function formatBudgetDisplay(bMin, bMax, expVal, isAr) {
+            if (bMin != null && bMax != null) {
+                return `${Number(bMin).toLocaleString()} - ${Number(bMax).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (bMax != null) {
+                return `${isAr ? 'حتى' : 'Up to'} ${Number(bMax).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (bMin != null) {
+                return `${isAr ? 'من' : 'From'} ${Number(bMin).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (expVal != null && expVal > 0) {
+                return `~${Number(expVal).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            }
+            return isAr ? 'غير محدد' : 'Not specified';
+        }
+
+        async function getInventoryUnits(force = false) {
+            if (!force && cachedInventoryUnits && cachedInventoryUnits.length > 0) return cachedInventoryUnits;
             try {
                 const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 if (res.ok) {
@@ -1186,68 +1217,225 @@
             return cachedInventoryUnits;
         }
 
+        async function getPropertyTypes() {
+            if (cachedPropertyTypes && cachedPropertyTypes.length > 0) return cachedPropertyTypes;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/property-types`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedPropertyTypes = json.data || [];
+                }
+            } catch (e) {
+                console.warn('Failed to load property types:', e);
+            }
+            return cachedPropertyTypes;
+        }
+
         async function viewOpportunityUnits(oppId, oppTitle) {
             const modal = document.getElementById('opp-units-modal');
             const titleEl = document.getElementById('opp-units-modal-title');
             const bodyEl = document.getElementById('opp-units-modal-body');
+            const isAr = currentLang === 'ar';
 
-            titleEl.textContent = `${currentLang === 'ar' ? 'الوحدات المرتبطة بالفرصة' : 'Units Linked to Opportunity'}: ${oppTitle} (${oppId})`;
-            bodyEl.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'جاري التحميل...' : 'Loading linked units...'}</div>`;
+            titleEl.innerHTML = `<span>🏢</span> <span>${isAr ? 'تخصيص ومطابقة الوحدات للصفقة' : 'Assign & Match Property Units for Deal'}: <strong>${oppTitle}</strong> <span class="id-badge">${oppId}</span></span>`;
+            bodyEl.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);"><div style="font-size: 1.5em; margin-bottom: 8px;">⏳</div>${isAr ? 'جاري تحميل تفضيلات العميل ومخزون العقارات...' : 'Loading customer inquiry & inventory units...'}</div>`;
             modal.classList.add('show');
 
             try {
-                const [unitsRes, invUnits] = await Promise.all([
+                let opp = allOpportunities.find(o => o.opportunity_id === oppId);
+                const [unitsRes, invUnits, pTypes] = await Promise.all([
                     fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`),
-                    getInventoryUnits()
+                    getInventoryUnits(),
+                    getPropertyTypes()
                 ]);
+
+                if (!opp) {
+                    try {
+                        const oppRes = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`);
+                        if (oppRes.ok) {
+                            const oppJson = await oppRes.json();
+                            opp = oppJson.data;
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch single opportunity:', e);
+                    }
+                }
+                currentOppInModal = opp || { opportunity_id: oppId, title: oppTitle };
+
                 if (!unitsRes.ok) throw new Error('Units fetch failed');
                 const json = await unitsRes.json();
-                const units = json.data || [];
+                currentModalOppUnits = json.data || [];
 
-                const isAr = currentLang === 'ar';
-                const availableOpts = invUnits.map(u => {
-                    const price = u.asking_price ? `${Number(u.asking_price).toLocaleString()} SAR` : '';
-                    return `<option value="${u.unit_id}">${u.unit_number} - [${u.unit_id}] ${u.property_type_name || ''} ${price ? '(' + price + ')' : ''}</option>`;
-                }).join('');
+                // 1. Customer Inquiry & Desired Unit Specs Banner
+                const reqInquiry = currentOppInModal.inquiry_type 
+                    ? (currentOppInModal.inquiry_type === 'BUY' ? (isAr ? '🏷️ شراء (BUY)' : '🏷️ BUY') : (isAr ? '🔑 إيجار (RENT)' : '🔑 RENT')) 
+                    : `<span style="color: #94a3b8;">${isAr ? 'غير محدد' : 'Not specified'}</span>`;
 
-                const assignFormHtml = `
-                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 18px;">
-                        <h4 style="margin: 0 0 10px 0; font-size: 0.95em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
-                            <span>➕</span> <span>${isAr ? 'ربط وتعيين وحدة لهذه الصفقة' : 'Assign / Link Property Unit to Deal'}</span>
-                        </h4>
-                        <form onsubmit="submitAssignUnitToOpp(event, '${oppId}', '${encodeURIComponent(oppTitle)}')">
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                                <div style="flex: 2; min-width: 200px;">
-                                    <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'اختر الوحدة من المخزون *' : 'Select Inventory Unit *'}</label>
-                                    <select id="assign-unit-select" required style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                                        <option value="">-- ${isAr ? 'اختر الوحدة' : 'Select Unit'} --</option>
-                                        ${availableOpts}
-                                    </select>
-                                </div>
-                                <div style="flex: 1; min-width: 130px;">
-                                    <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'السعر المقترح (ريال)' : 'Offered Price (SAR)'}</label>
-                                    <input type="number" id="assign-unit-price" placeholder="e.g. 500000" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
-                                    <input type="checkbox" id="assign-unit-primary" checked style="cursor: pointer;">
-                                    <label for="assign-unit-primary" style="font-size: 0.82em; font-weight: 600; cursor: pointer;">${isAr ? 'الوحدة الرئيسية ★' : 'Primary Unit ★'}</label>
-                                </div>
-                                <div>
-                                    <button type="submit" class="btn-primary" style="padding: 8px 14px; font-size: 0.88em; border-radius: 6px;">
-                                        ${isAr ? '✓ ربط الوحدة' : '✓ Link Unit'}
-                                    </button>
-                                </div>
+                const reqType = currentOppInModal.preferred_property_type_name 
+                    ? `🏢 ${currentOppInModal.preferred_property_type_name}` 
+                    : `<span style="color: #94a3b8;">${isAr ? 'أي نوع عقار' : 'Any property type'}</span>`;
+
+                const reqBeds = currentOppInModal.bedrooms_min != null 
+                    ? `🛏️ ≥ ${currentOppInModal.bedrooms_min} ${isAr ? 'غرف' : 'Beds'}` 
+                    : `<span style="color: #94a3b8;">${isAr ? 'أي عدد' : 'Any'}</span>`;
+
+                const reqArea = currentOppInModal.area_min_sqm != null 
+                    ? `📐 ≥ ${currentOppInModal.area_min_sqm} m²` 
+                    : `<span style="color: #94a3b8;">--</span>`;
+
+                const reqCity = currentOppInModal.preferred_city_name 
+                    ? `📍 ${currentOppInModal.preferred_city_name}` 
+                    : '';
+
+                const budgetFormatted = formatBudgetDisplay(currentOppInModal.budget_min, currentOppInModal.budget_max, currentOppInModal.expected_value, isAr);
+
+                const inquiryBannerHtml = `
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%); border: 1.5px solid #bae6fd; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <div style="font-weight: 700; color: #0369a1; font-size: 0.95em; display: flex; align-items: center; gap: 6px;">
+                                <span>🎯</span>
+                                <span>${isAr ? 'مواصفات العقار المطلوب من العميل (بيانات الطلب)' : 'Customer Inquiry & Desired Unit Specs'}</span>
                             </div>
-                        </form>
+                            <div style="font-size: 0.85em; color: var(--navy); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <span>👤 ${currentOppInModal.customer_name || oppTitle}</span>
+                                ${currentOppInModal.customer_mobile ? `<span style="direction: ltr; color: var(--text-muted); font-size: 0.9em;">📞 ${currentOppInModal.customer_mobile}</span>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 0.84em;">
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'نوع العملية' : 'Inquiry Type'}</div>
+                                <div style="font-weight: 700; color: #0284c7;">${reqInquiry}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'نوع العقار المطلوب' : 'Property Type'}</div>
+                                <div style="font-weight: 700; color: var(--navy);">${reqType}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'عدد الغرف الأدنى' : 'Min Bedrooms'}</div>
+                                <div style="font-weight: 700; color: var(--navy);">${reqBeds}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'الميزانية المحددة' : 'Budget Range'}</div>
+                                <div style="font-weight: 700; color: #16a34a;">💰 ${budgetFormatted}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'المساحة والمدينة' : 'Area & City'}</div>
+                                <div style="font-weight: 700; color: var(--navy);">${reqArea} ${reqCity ? `• ${reqCity}` : ''}</div>
+                            </div>
+                        </div>
                     </div>
                 `;
 
+                // 2. Property Type options for search filter
+                const typeOptions = pTypes.map(pt => 
+                    `<option value="${pt.property_type_id}">${isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar)}</option>`
+                ).join('');
+
+                // 3. Smart Search & Assign Card
+                const searchAndAssignHtml = `
+                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <h4 style="margin: 0; font-size: 0.95em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                                <span>🔍</span>
+                                <span>${isAr ? 'البحث في مخزون العقارات ومطابقة طلب العميل' : 'Search Inventory & Match Customer Criteria'}</span>
+                            </h4>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-sm" onclick="autoMatchLeadFilters()" style="background: #0284c7; color: white; border: none; font-weight: 600; padding: 5px 12px; border-radius: 5px; cursor: pointer;" title="Autofill filters with customer inquiry requirements">
+                                    ⚡ ${isAr ? 'مطابقة تلقائية لطلب العميل' : 'Auto-Match Lead Criteria'}
+                                </button>
+                                <button type="button" class="btn-sm" onclick="resetUnitSearchFilters()" style="background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                                    🔄 ${isAr ? 'إلغاء الفلاتر' : 'Reset'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter inputs grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'بحث بالاسم / الرقم / المشروع' : 'Keyword / Unit # / Project'}</label>
+                                <input type="text" id="unit-filter-keyword" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'نوع العقار' : 'Property Type'}</label>
+                                <select id="unit-filter-type" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="">-- ${isAr ? 'الكل (جميع الأنواع)' : 'All Property Types'} --</option>
+                                    ${typeOptions}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'عدد الغرف الأدنى' : 'Bedrooms (Min)'}</label>
+                                <select id="unit-filter-beds" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="">-- ${isAr ? 'الكل' : 'Any Bedrooms'} --</option>
+                                    <option value="0">Studio (0)</option>
+                                    <option value="1">1+ ${isAr ? 'غرفة' : 'Bed'}</option>
+                                    <option value="2">2+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="3">3+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="4">4+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="5">5+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'أقصى ميزانية / سعر (ريال)' : 'Max Budget / Price (SAR)'}</label>
+                                <input type="number" id="unit-filter-maxprice" placeholder="${isAr ? 'مثال: 750000' : 'e.g. 750000'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                            </div>
+                        </div>
+
+                        <!-- Match stats badge and assign form -->
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span id="unit-match-count-badge" style="font-size: 0.8em; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">
+                                    ${isAr ? 'الوحدات المطابقة:' : 'Matching Units:'} ...
+                                </span>
+                                <span style="font-size: 0.78em; color: var(--text-muted);">
+                                    ${isAr ? 'اختر الوحدة المناسبة ثم اضغط على زر الربط' : 'Select matching unit and click Link Unit'}
+                                </span>
+                            </div>
+
+                            <form onsubmit="submitAssignUnitToOpp(event, '${oppId}', '${encodeURIComponent(oppTitle)}')">
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                                    <div style="flex: 3; min-width: 250px;">
+                                        <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'اختر الوحدة المطابقة من القائمة *' : 'Select Matching Unit *'}</label>
+                                        <select id="assign-unit-select" required onchange="onSelectedUnitChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                            <option value="">-- ${isAr ? 'جاري تحميل الوحدات...' : 'Loading units...'} --</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1.5; min-width: 130px;">
+                                        <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'السعر المقترح (ريال)' : 'Offered Price (SAR)'}</label>
+                                        <input type="number" id="assign-unit-price" placeholder="e.g. 500000" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
+                                        <input type="checkbox" id="assign-unit-primary" checked style="cursor: pointer;">
+                                        <label for="assign-unit-primary" style="font-size: 0.82em; font-weight: 600; cursor: pointer;">${isAr ? 'الوحدة الرئيسية ★' : 'Primary Unit ★'}</label>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.88em; border-radius: 6px; background: #0284c7; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> <span>${isAr ? 'ربط الوحدة بالصفقة' : 'Link Unit to Deal'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Selected Unit Preview Card -->
+                                <div id="selected-unit-preview" style="display: none; margin-top: 10px; background: #fff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; font-size: 0.83em;">
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                // 4. Currently Assigned Units Table
                 let tableHtml = '';
-                if (units.length === 0) {
-                    tableHtml = `<div style="text-align: center; padding: 25px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم النموذج أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the form above to assign a unit.'}</div>`;
+                if (currentModalOppUnits.length === 0) {
+                    tableHtml = `<div style="text-align: center; padding: 22px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم نموذج البحث أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the search form above to assign a unit.'}</div>`;
                 } else {
                     tableHtml = `
-                        <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy);">${isAr ? 'الوحدات المحددة حالياً لهذه الفرصة:' : 'Currently Assigned Units:'}</div>
+                        <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                            <span>🏢</span>
+                            <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
+                        </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
                             <thead>
                                 <tr style="background: #f1f5f9;">
@@ -1259,7 +1447,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${units.map(u => `
+                                ${currentModalOppUnits.map(u => `
                                     <tr>
                                         <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);"><span class="id-badge">${u.unit_id}</span></td>
                                         <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600;">${u.unit_number || u.unit_id}</td>
@@ -1279,10 +1467,225 @@
                     `;
                 }
 
-                bodyEl.innerHTML = assignFormHtml + tableHtml;
+                bodyEl.innerHTML = inquiryBannerHtml + searchAndAssignHtml + tableHtml;
+
+                // Initialize unit filters
+                applyUnitFilters();
+
             } catch (err) {
                 console.error(err);
                 bodyEl.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">Error loading opportunity units: ${err.message}</div>`;
+            }
+        }
+
+        function formatUnitOptionText(u, isAr, targetBudgetMax) {
+            const proj = isAr ? (u.project_name_ar || u.project_name_en || '') : (u.project_name_en || u.project_name_ar || '');
+            const projStr = proj ? `[${proj}] ` : '';
+            const ptObj = cachedPropertyTypes.find(p => p.property_type_id === u.property_type_id);
+            const type = isAr 
+                ? (u.property_type_name_ar || ptObj?.name_ar || u.property_type_name || 'عقار') 
+                : (u.property_type_name_en || ptObj?.name_en || u.property_type_name || 'Unit');
+            const beds = u.bedrooms != null ? ` | ${u.bedrooms} ${isAr ? 'غرف' : 'Beds'}` : '';
+            const area = u.area_sqm != null ? ` | ${u.area_sqm} m²` : '';
+            const priceVal = u.asking_price || u.rent_price || null;
+            const priceStr = priceVal ? ` | ${Number(priceVal).toLocaleString()} SAR` : '';
+            let budgetMatchStr = '';
+            if (targetBudgetMax && priceVal && priceVal <= targetBudgetMax) {
+                budgetMatchStr = isAr ? ' ✨ [ضمن الميزانية]' : ' ✨ [Within Budget]';
+            }
+            return `${projStr}#${u.unit_number} (${type}${beds}${area}${priceStr})${budgetMatchStr}`;
+        }
+
+        function applyUnitFilters() {
+            const kw = (document.getElementById('unit-filter-keyword')?.value || '').trim().toLowerCase();
+            const typeId = document.getElementById('unit-filter-type')?.value || '';
+            const minBedsVal = document.getElementById('unit-filter-beds')?.value;
+            const minBeds = minBedsVal !== '' && minBedsVal != null ? parseInt(minBedsVal, 10) : null;
+            const maxPrice = parseFloat(document.getElementById('unit-filter-maxprice')?.value) || null;
+
+            const isAr = currentLang === 'ar';
+            const isInquiryRent = currentOppInModal?.inquiry_type === 'RENT';
+
+            const filtered = cachedInventoryUnits.filter(u => {
+                if (kw) {
+                    const num = (u.unit_number || '').toLowerCase();
+                    const uid = (u.unit_id || '').toLowerCase();
+                    const projEn = (u.project_name_en || '').toLowerCase();
+                    const projAr = (u.project_name_ar || '').toLowerCase();
+                    const typeName = (u.property_type_name || '').toLowerCase();
+                    if (!num.includes(kw) && !uid.includes(kw) && !projEn.includes(kw) && !projAr.includes(kw) && !typeName.includes(kw)) {
+                        return false;
+                    }
+                }
+
+                if (typeId) {
+                    if (u.property_type_id !== typeId) {
+                        const pt = cachedPropertyTypes.find(p => p.property_type_id === typeId);
+                        if (!pt || pt.name_en !== u.property_type_name) {
+                            return false;
+                        }
+                    }
+                }
+
+                if (minBeds !== null) {
+                    const uBeds = u.bedrooms != null ? u.bedrooms : 0;
+                    if (uBeds < minBeds) return false;
+                }
+
+                if (maxPrice !== null) {
+                    const uPrice = (isInquiryRent && u.rent_price != null ? u.rent_price : u.asking_price) ?? u.asking_price ?? u.rent_price;
+                    if (uPrice != null && uPrice > maxPrice) return false;
+                }
+
+                return true;
+            });
+
+            const sel = document.getElementById('assign-unit-select');
+            const badge = document.getElementById('unit-match-count-badge');
+            if (badge) {
+                badge.textContent = `${isAr ? 'الوحدات المطابقة:' : 'Matching Units:'} ${filtered.length} / ${cachedInventoryUnits.length}`;
+                badge.style.background = filtered.length > 0 ? '#e0f2fe' : '#fee2e2';
+                badge.style.color = filtered.length > 0 ? '#0284c7' : '#991b1b';
+            }
+
+            if (!sel) return;
+
+            if (filtered.length === 0) {
+                sel.innerHTML = `<option value="">-- ${isAr ? 'لا توجد وحدات تطابق معايير البحث' : 'No units match search criteria'} --</option>`;
+                const preview = document.getElementById('selected-unit-preview');
+                if (preview) preview.style.display = 'none';
+                return;
+            }
+
+            const targetBudgetMax = currentOppInModal?.budget_max || currentOppInModal?.expected_value || null;
+            sel.innerHTML = `<option value="">-- ${isAr ? 'اختر الوحدة المناسبة من الوحدات المطابقة' : 'Select a matching unit'} (${filtered.length}) --</option>` +
+                filtered.map(u => {
+                    const optText = formatUnitOptionText(u, isAr, targetBudgetMax);
+                    return `<option value="${u.unit_id}">${optText}</option>`;
+                }).join('');
+
+            if (filtered.length === 1) {
+                sel.value = filtered[0].unit_id;
+                onSelectedUnitChange();
+            } else {
+                onSelectedUnitChange();
+            }
+        }
+
+        function autoMatchLeadFilters() {
+            if (!currentOppInModal) return;
+
+            const typeSelect = document.getElementById('unit-filter-type');
+            if (typeSelect && currentOppInModal.preferred_property_type_id) {
+                typeSelect.value = currentOppInModal.preferred_property_type_id;
+                if (!typeSelect.value && currentOppInModal.preferred_property_type_name) {
+                    for (let opt of typeSelect.options) {
+                        if (opt.text.toLowerCase().includes(currentOppInModal.preferred_property_type_name.toLowerCase())) {
+                            typeSelect.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const bedsSelect = document.getElementById('unit-filter-beds');
+            if (bedsSelect && currentOppInModal.bedrooms_min != null) {
+                const targetBeds = String(currentOppInModal.bedrooms_min);
+                let matched = false;
+                for (let opt of bedsSelect.options) {
+                    if (opt.value === targetBeds) {
+                        bedsSelect.value = opt.value;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched && currentOppInModal.bedrooms_min >= 5) {
+                    bedsSelect.value = "5";
+                }
+            }
+
+            const priceInput = document.getElementById('unit-filter-maxprice');
+            if (priceInput) {
+                const maxVal = currentOppInModal.budget_max || currentOppInModal.expected_value || null;
+                if (maxVal) {
+                    priceInput.value = maxVal;
+                }
+            }
+
+            applyUnitFilters();
+        }
+
+        function resetUnitSearchFilters() {
+            const kw = document.getElementById('unit-filter-keyword');
+            const type = document.getElementById('unit-filter-type');
+            const beds = document.getElementById('unit-filter-beds');
+            const price = document.getElementById('unit-filter-maxprice');
+            if (kw) kw.value = '';
+            if (type) type.value = '';
+            if (beds) beds.value = '';
+            if (price) price.value = '';
+            applyUnitFilters();
+        }
+
+        function onSelectedUnitChange() {
+            const sel = document.getElementById('assign-unit-select');
+            const unitId = sel ? sel.value : null;
+            const priceInput = document.getElementById('assign-unit-price');
+            const previewEl = document.getElementById('selected-unit-preview');
+            if (!unitId) {
+                if (previewEl) previewEl.style.display = 'none';
+                return;
+            }
+            const unit = cachedInventoryUnits.find(u => u.unit_id === unitId);
+            if (!unit) return;
+
+            const unitPrice = (currentOppInModal?.inquiry_type === 'RENT' && unit.rent_price != null ? unit.rent_price : unit.asking_price) ?? unit.asking_price ?? unit.rent_price;
+            if (unitPrice && priceInput && (!priceInput.value || priceInput.dataset.autofilled === 'true')) {
+                priceInput.value = unitPrice;
+                priceInput.dataset.autofilled = 'true';
+            }
+
+            if (previewEl) {
+                const isAr = currentLang === 'ar';
+                const project = isAr ? (unit.project_name_ar || unit.project_name_en || '--') : (unit.project_name_en || unit.project_name_ar || '--');
+                const beds = unit.bedrooms != null ? unit.bedrooms : '--';
+                const baths = unit.bathrooms != null ? unit.bathrooms : '--';
+                const area = unit.area_sqm != null ? `${unit.area_sqm} m²` : '--';
+                const asking = unit.asking_price ? `${Number(unit.asking_price).toLocaleString()} SAR` : '--';
+                const rent = unit.rent_price ? `${Number(unit.rent_price).toLocaleString()} SAR` : '--';
+                const statusBadge = unit.status === 'AVAILABLE' 
+                    ? '<span class="badge badge-success">AVAILABLE</span>' 
+                    : `<span class="badge badge-muted">${unit.status || 'UNKNOWN'}</span>`;
+
+                const targetBudgetMax = currentOppInModal?.budget_max || currentOppInModal?.expected_value || null;
+                const priceNum = unit.asking_price || unit.rent_price;
+                const budgetMatchBadge = (targetBudgetMax && priceNum && priceNum <= targetBudgetMax)
+                    ? `<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">✅ ${isAr ? 'ضمن ميزانية العميل' : 'Within Customer Budget'}</span>`
+                    : '';
+
+                const selPtObj = cachedPropertyTypes.find(p => p.property_type_id === unit.property_type_id);
+                const selPtName = isAr 
+                    ? (unit.property_type_name_ar || selPtObj?.name_ar || unit.property_type_name || '') 
+                    : (unit.property_type_name_en || selPtObj?.name_en || unit.property_type_name || '');
+
+                previewEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <strong>${isAr ? 'الوحدة المحددة:' : 'Selected Unit:'}</strong> 
+                            <span style="color: var(--primary); font-weight: 700;">#${unit.unit_number}</span> 
+                            (${selPtName}) - <em>${project}</em>
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">${budgetMatchBadge} ${statusBadge}</div>
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-top: 6px; color: var(--text-muted); font-size: 0.9em; flex-wrap: wrap;">
+                        <span>🛏️ ${beds} ${isAr ? 'غرف' : 'Bedrooms'}</span>
+                        <span>🚿 ${baths} ${isAr ? 'حمامات' : 'Baths'}</span>
+                        <span>📐 ${area}</span>
+                        <span>💰 ${isAr ? 'سعر البيع:' : 'Sale Price:'} <strong>${asking}</strong></span>
+                        <span>🔑 ${isAr ? 'سعر الإيجار:' : 'Rent:'} <strong>${rent}</strong></span>
+                    </div>
+                `;
+                previewEl.style.display = 'block';
             }
         }
 
@@ -1294,7 +1697,7 @@
             const isPrimary = document.getElementById('assign-unit-primary').checked;
 
             if (!unitId) {
-                alert(currentLang === 'ar' ? 'يرجى اختيار الوحدة' : 'Please select a unit');
+                alert(currentLang === 'ar' ? 'يرجى اختيار الوحدة المطابقة أولاً' : 'Please select a matching unit first');
                 return;
             }
 
