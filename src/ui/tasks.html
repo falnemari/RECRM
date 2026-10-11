@@ -222,11 +222,17 @@
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
         [dir="rtl"] table { text-align: right; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+        }
 
         /* Badges */
         .badge {
@@ -347,6 +353,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -421,6 +428,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 100px;">Task ID</th>
                             <th data-i18n="th_task_title">Task Title</th>
                             <th data-i18n="th_priority">Priority</th>
                             <th data-i18n="th_due_date">Due Date</th>
@@ -431,7 +439,7 @@
                         </tr>
                     </thead>
                     <tbody id="tasks-tbody">
-                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -698,7 +706,7 @@
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities",
-                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_open_tasks: "Open Agent Tasks", kpi_open_tasks_sub: "Tasks requiring follow-up",
                 kpi_overdue_tasks: "Overdue Tasks", kpi_overdue_tasks_sub: "Past SLA deadline",
                 kpi_completed_tasks: "Completed Tasks", kpi_completed_tasks_sub: "Finished to-dos & actions",
@@ -728,7 +736,7 @@
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة",
-                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_open_tasks: "المهام الجارية", kpi_open_tasks_sub: "تتطلب متابعة من الوكلاء",
                 kpi_overdue_tasks: "المهام المتأخرة", kpi_overdue_tasks_sub: "تجاوزت الموعد المحدد",
                 kpi_completed_tasks: "المهام المنجزة", kpi_completed_tasks_sub: "متابعات تمت بنجاح",
@@ -854,7 +862,7 @@
         function renderTasks(items) {
             const tbody = document.getElementById('tasks-tbody');
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No tasks found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px;">No tasks found.</td></tr>';
                 return;
             }
             tbody.innerHTML = items.map(t => {
@@ -863,9 +871,10 @@
                 const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() : 'No date';
                 return `
                     <tr>
+                        <td><span class="id-badge">${t.task_id}</span></td>
                         <td>
                             <strong>${t.title}</strong>
-                            ${t.is_overdue ? '<span style="color:var(--danger); font-size:0.75em; margin-left:6px; font-weight:700;">[OVERDUE]</span>' : ''}
+                            ${t.is_overdue ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>' : ''}
                         </td>
                         <td><span class="badge ${pCls}">${t.priority}</span></td>
                         <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>

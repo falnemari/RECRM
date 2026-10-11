@@ -11,22 +11,22 @@ class DocumentsSummaryOut(BaseModel):
     total_access_events: int
 
 class DocumentTypeOut(BaseModel):
-    document_type_id: UUID
+    document_type_id: str
     code: str
     name: str
     expiry_required: bool
 
 class DocumentOut(BaseModel):
-    document_id: UUID
-    organization_id: UUID
-    document_type_id: Optional[UUID] = None
+    document_id: str
+    organization_id: str
+    document_type_id: Optional[str] = None
     document_type_code: Optional[str] = None
     document_type_name: Optional[str] = None
-    customer_id: Optional[UUID] = None
+    customer_id: Optional[str] = None
     customer_name: Optional[str] = None
-    unit_id: Optional[UUID] = None
+    unit_id: Optional[str] = None
     unit_number: Optional[str] = None
-    contract_id: Optional[UUID] = None
+    contract_id: Optional[str] = None
     contract_number: Optional[str] = None
     file_name: str
     storage_uri: str
@@ -35,7 +35,7 @@ class DocumentOut(BaseModel):
     issued_at: Optional[date] = None
     expires_at: Optional[date] = None
     status: str
-    uploaded_by_user_id: Optional[UUID] = None
+    uploaded_by_user_id: Optional[str] = None
     uploaded_by_name: Optional[str] = None
     created_at: datetime
     is_expired: bool = False
@@ -44,20 +44,20 @@ class DocumentOut(BaseModel):
 class DocumentCreateIn(BaseModel):
     file_name: str = Field(..., min_length=3)
     document_type_code: Optional[str] = "TITLE_DEED"
-    document_type_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    unit_id: Optional[UUID] = None
-    contract_id: Optional[UUID] = None
+    document_type_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    contract_id: Optional[str] = None
     storage_uri: Optional[str] = None
     issued_at: Optional[date] = None
     expires_at: Optional[date] = None
-    uploaded_by_user_id: Optional[UUID] = None
+    uploaded_by_user_id: Optional[str] = None
     status: Optional[str] = "ACTIVE"
 
 class DocumentAccessLogOut(BaseModel):
-    document_access_id: UUID
-    document_id: UUID
-    user_id: UUID
+    document_access_id: str
+    document_id: str
+    user_id: str
     user_name: Optional[str] = None
     action: str
     accessed_at: datetime

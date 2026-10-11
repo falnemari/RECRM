@@ -4,8 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 class PaymentOut(BaseModel):
-    payment_id: UUID
-    contract_id: UUID
+    payment_id: str
+    contract_id: str
     payment_reference: Optional[str] = None
     due_date: Optional[date] = None
     amount_due: float
@@ -26,9 +26,9 @@ class RecordPaymentIn(BaseModel):
     payment_reference: Optional[str] = None
 
 class CommissionOut(BaseModel):
-    commission_id: UUID
-    contract_id: UUID
-    user_id: UUID
+    commission_id: str
+    contract_id: str
+    user_id: str
     user_name: Optional[str] = None
     commission_type: str
     rate: Optional[float] = None
@@ -38,19 +38,19 @@ class CommissionOut(BaseModel):
     paid_at: Optional[datetime] = None
 
 class CommissionCreate(BaseModel):
-    user_id: UUID
+    user_id: str
     commission_type: str = "SALES"
     rate: Optional[float] = 2.5
     amount: float = Field(..., gt=0)
 
 class ContractOut(BaseModel):
-    contract_id: UUID
-    reservation_id: Optional[UUID] = None
+    contract_id: str
+    reservation_id: Optional[str] = None
     reservation_number: Optional[str] = None
-    customer_id: Optional[UUID] = None
+    customer_id: Optional[str] = None
     customer_name: Optional[str] = None
     customer_mobile: Optional[str] = None
-    unit_id: Optional[UUID] = None
+    unit_id: Optional[str] = None
     unit_number: Optional[str] = None
     contract_number: str
     contract_type: str
@@ -63,7 +63,7 @@ class ContractOut(BaseModel):
     outstanding_balance: float = 0.0
 
 class ContractCreate(BaseModel):
-    reservation_id: Optional[UUID] = None
+    reservation_id: Optional[str] = None
     contract_number: str
     contract_type: str = "SALE"
     start_date: Optional[date] = None

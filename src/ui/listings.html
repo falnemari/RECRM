@@ -197,11 +197,25 @@
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
         [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        .cell-truncate {
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+        }
 
         /* Badges */
         .badge {
@@ -348,6 +362,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" class="active" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -411,11 +426,12 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 100px;">Listing ID</th>
                         <th data-i18n="th_unit">Unit # & Type</th>
                         <th data-i18n="th_title">Listing Title</th>
                         <th data-i18n="th_project_city">Project & City</th>
                         <th data-i18n="th_pricing">Asking / Rent Price</th>
-                        <th data-i18n="th_specs">Specs (Beds/Area)</th>
+                        <th data-i18n="th_specs">Specs</th>
                         <th data-i18n="th_channel">Channel</th>
                         <th data-i18n="th_status">Status</th>
                         <th data-i18n="th_dates">Published Dates</th>
@@ -423,7 +439,7 @@
                     </tr>
                 </thead>
                 <tbody id="listings-tbody">
-                    <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading property listings...</td></tr>
+                    <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading property listings...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -522,7 +538,7 @@
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
-                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_published: "Live Published Listings", kpi_portal_syn: "Portal Syndication",
                 kpi_portal_sub: "Broadcasted to external channels", kpi_direct_web: "Direct Website Listings",
                 kpi_website_sub: "Published on corporate website", kpi_paused: "Paused / Drafts",
@@ -543,7 +559,7 @@
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
-                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_published: "العروض المنشورة والنشطة", kpi_portal_syn: "النشر على البوابات العقارية",
                 kpi_portal_sub: "مبثوثة عبر القنوات والمنصات الخارجية", kpi_direct_web: "عروض الموقع المباشرة",
                 kpi_website_sub: "منشورة عبر الموقع الإلكتروني المباشر", kpi_paused: "متوقفة / مسودات",
@@ -687,30 +703,17 @@
 
                     return `
                         <tr>
-                            <td>
-                                <strong>${l.unit_number}</strong><br>
-                                <small style="color: var(--text-muted);">${propType}</small>
-                            </td>
-                            <td>
-                                <strong>${displayTitle}</strong><br>
-                                <small style="color: var(--text-muted);">${l.external_listing_id || ''}</small>
-                            </td>
-                            <td>
-                                <strong>${project}</strong><br>
-                                <small style="color: var(--text-muted);">${city} - ${l.building_name || ''}</small>
-                            </td>
+                            <td><span class="id-badge">${l.listing_id}</span></td>
+                            <td><strong>${l.unit_number}</strong> <span style="font-size: 0.78em; color: var(--text-muted);">(${propType})</span></td>
+                            <td><span class="cell-truncate" title="${displayTitle}"><strong>${displayTitle}</strong></span></td>
+                            <td>${project} <span style="font-size: 0.78em; color: var(--text-muted);">• ${city}</span></td>
                             <td><strong>${priceStr}</strong></td>
-                            <td>
-                                🛏️ ${l.bedrooms || 0} Beds | 🚿 ${l.bathrooms || 0} Baths<br>
-                                <small style="color: var(--text-muted);">📐 ${l.area_sqm || '--'} m²</small>
-                            </td>
+                            <td>${l.bedrooms || 0}B / ${l.bathrooms || 0}Ba • ${l.area_sqm || '--'} m²</td>
                             <td><span class="badge ${channelClass}">${l.listing_source}</span></td>
                             <td><span class="badge ${statusClass}">${l.status}</span></td>
+                            <td>${pubDate}</td>
                             <td>
-                                <small>Pub: ${pubDate}<br>Exp: ${expDate}</small>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: 6px;">
+                                <div style="display: flex; gap: 4px;">
                                     <button class="btn btn-outline btn-sm" onclick="viewListingDetails('${l.listing_id}')">👁 View</button>
                                     ${toggleAction}
                                 </div>

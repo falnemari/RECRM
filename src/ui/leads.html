@@ -85,19 +85,36 @@
         .controls-bar input, .controls-bar select {
             padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
         }
+        .table-wrap {
+            background: white; border-radius: 8px; border: 1px solid var(--border);
+            overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
         .leads-table {
-            width: 100%; border-collapse: collapse; background: white; border-radius: 8px;
-            overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            width: 100%; border-collapse: collapse; background: white; font-size: 0.82rem;
         }
         .leads-table th, .leads-table td {
-            padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9em;
+            padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border);
+            vertical-align: middle; white-space: nowrap; font-size: 0.82rem;
         }
         [dir="rtl"] .leads-table th, [dir="rtl"] .leads-table td { text-align: right; }
         .leads-table th {
             background-color: #f1f5f9; color: var(--text-muted); font-weight: 600;
-            text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.5px;
+            text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; white-space: nowrap;
         }
         .leads-table tr:hover { background-color: #f8fafc; }
+
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: #fff; border-top: 1px solid var(--border);
+            font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+        }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-size-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 3px 8px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-num-display { font-weight: 600; padding: 0 4px; color: var(--text-main); }
         
         .badge {
             padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700;
@@ -215,6 +232,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -236,7 +254,7 @@
 
         <div class="controls-bar">
             <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." style="flex-grow: 1; min-width: 200px;" oninput="debounceFetch()">
-            <select id="status-select" onchange="fetchLeads()">
+            <select id="status-select" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_statuses">All Statuses</option>
                 <option value="NEW">NEW</option>
                 <option value="CONTACTED">CONTACTED</option>
@@ -244,14 +262,14 @@
                 <option value="CONVERTED">CONVERTED</option>
                 <option value="LOST">LOST</option>
             </select>
-            <select id="priority-select" onchange="fetchLeads()">
+            <select id="priority-select" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_priorities">All Priorities</option>
                 <option value="HIGH">HIGH (عالي)</option>
                 <option value="MEDIUM">MEDIUM (متوسط)</option>
                 <option value="NORMAL">NORMAL (عادي)</option>
                 <option value="LOW">LOW (منخفض)</option>
             </select>
-            <select id="inquiry-filter" onchange="fetchLeads()">
+            <select id="inquiry-filter" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_inquiry">All Inquiry Types</option>
                 <option value="BUY">BUY (شراء)</option>
                 <option value="RENT">RENT (إيجار)</option>
@@ -260,23 +278,39 @@
             </select>
         </div>
 
-        <table class="leads-table">
-            <thead>
-                <tr>
-                    <th data-i18n="col_lead_id">Lead ID</th>
-                    <th data-i18n="col_customer">Customer</th>
-                    <th data-i18n="col_contact">Contact</th>
-                    <th data-i18n="col_inquiry">Type / Source</th>
-                    <th data-i18n="col_budget">Budget Range</th>
-                    <th data-i18n="col_status">Status</th>
-                    <th data-i18n="col_agent">Assigned Agent</th>
-                    <th data-i18n="col_actions">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="leads-tbody">
-                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading live database records...</td></tr>
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table class="leads-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="col_lead_id">Lead ID</th>
+                        <th data-i18n="col_customer">Customer</th>
+                        <th data-i18n="col_inquiry">Type / Source</th>
+                        <th data-i18n="col_budget">Budget Range</th>
+                        <th data-i18n="col_status">Status & SLA</th>
+                        <th data-i18n="col_agent">Assigned Agent</th>
+                        <th data-i18n="col_actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leads-tbody">
+                    <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading live database records...</td></tr>
+                </tbody>
+            </table>
+            <div class="pagination-bar" id="leads-pagination-bar">
+                <div id="leads-pagination-info">Showing 0 of 0 inquiries</div>
+                <div class="pagination-controls">
+                    <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                    <select id="leads-page-size" class="page-size-select" onchange="changeLeadsPageSize(this.value)">
+                        <option value="15">15</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <button type="button" class="btn-page" id="leads-btn-prev" onclick="prevLeadsPage()" disabled>◀</button>
+                    <span class="page-num-display" id="leads-page-display">Page 1 of 1</span>
+                    <button type="button" class="btn-page" id="leads-btn-next" onclick="nextLeadsPage()" disabled>▶</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: ADD INBOUND LEAD -->
@@ -301,7 +335,7 @@
                                 <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                                <input type="text" id="srch-cust-id" placeholder="Customer UUID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-cust-id" placeholder="Customer ID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                                 <input type="text" id="srch-email" placeholder="Email Address" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                                 <input type="text" id="srch-national-id" placeholder="National ID / Iqama" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
@@ -611,7 +645,7 @@
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
-                nav_api: "API Docs", page_title: "Leads Management", new_lead_btn: "+ Add Inbound Lead",
+                nav_admin: "Admin & Governance", nav_api: "API Docs", page_title: "Leads Management", new_lead_btn: "+ Add Inbound Lead",
                 col_lead_id: "Lead ID", col_customer: "Customer", col_contact: "Contact", col_inquiry: "Type / Source",
                 col_budget: "Budget Range", col_status: "Status", col_agent: "Assigned Agent", col_actions: "Actions",
                 opt_all_statuses: "All Statuses", opt_all_priorities: "All Priorities", opt_all_inquiry: "All Inquiry Types",
@@ -635,7 +669,7 @@
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
                 nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
-                nav_api: "توثيق API", page_title: "إدارة العملاء المحتملين", new_lead_btn: "+ إضافة طلب وارد",
+                nav_admin: "الإدارة والأمان", nav_api: "توثيق API", page_title: "إدارة العملاء المحتملين", new_lead_btn: "+ إضافة طلب وارد",
                 col_lead_id: "معرّف الطلب (Lead ID)", col_customer: "العميل", col_contact: "الاتصال", col_inquiry: "النوع / المصدر",
                 col_budget: "الميزانية المتوقعة", col_status: "الحالة", col_agent: "الوسيط المسؤول", col_actions: "الإجراءات",
                 opt_all_statuses: "جميع الحالات", opt_all_priorities: "جميع الأولويات", opt_all_inquiry: "جميع أنواع الطلبات",
@@ -676,6 +710,12 @@
             const lbl = document.getElementById('lang-label');
             if (lbl && i18nData[currentLang]) {
                 lbl.textContent = i18nData[currentLang].lang_label;
+            }
+            const sBox = document.getElementById('search-box');
+            if (sBox) {
+                sBox.placeholder = currentLang === 'ar'
+                    ? 'البحث بالاسم، معرّف العميل، رقم الهاتف أو البريد الإلكتروني...'
+                    : 'Search by name, customer ID, phone or email...';
             }
             localStorage.setItem('recrm_lang', currentLang);
         }
@@ -720,7 +760,7 @@
         let debounceTimer;
         function debounceFetch() {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(fetchLeads, 300);
+            debounceTimer = setTimeout(() => fetchLeads(1), 300);
         }
 
         function getStatusBadge(status) {
@@ -788,13 +828,18 @@
             if (editUser) editUser.innerHTML = uOpts;
         }
 
-        async function fetchLeads() {
+        let currentLeadsPage = 1;
+        let leadsPageSize = 25;
+        let totalLeadsRecords = 0;
+
+        async function fetchLeads(page = null) {
+            if (page !== null) currentLeadsPage = page;
             const search = document.getElementById('search-box')?.value || '';
             const status = document.getElementById('status-select')?.value || '';
             const priority = document.getElementById('priority-select')?.value || '';
             const inquiry = document.getElementById('inquiry-filter')?.value || '';
 
-            let url = `${API_BASE}/api/v1/leads?page_size=60`;
+            let url = `${API_BASE}/api/v1/leads?page=${currentLeadsPage}&page_size=${leadsPageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (priority) url += `&priority=${encodeURIComponent(priority)}`;
@@ -802,7 +847,7 @@
 
             const tbody = document.getElementById('leads-tbody');
             if (cachedLeads.length === 0 && tbody) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading database records...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading database records...</td></tr>';
             }
 
             const controller = new AbortController();
@@ -815,56 +860,111 @@
                 const json = await res.json();
                 const leads = json.data || [];
                 cachedLeads = leads;
-                const total = json.meta?.total || 0;
+                totalLeadsRecords = json.meta?.total || leads.length;
+                const totalPages = Math.max(1, Math.ceil(totalLeadsRecords / leadsPageSize));
+                if (currentLeadsPage > totalPages) currentLeadsPage = totalPages;
+
+                const startIdx = totalLeadsRecords === 0 ? 0 : (currentLeadsPage - 1) * leadsPageSize + 1;
+                const endIdx = Math.min(totalLeadsRecords, (currentLeadsPage - 1) * leadsPageSize + leads.length);
 
                 const counter = document.getElementById('counter-label');
-                if (counter) counter.textContent = `Showing ${leads.length} of ${total} inquiries in database`;
+                if (counter) {
+                    counter.textContent = currentLang === 'ar'
+                        ? `إجمالي الطلبات في النظام: ${totalLeadsRecords} طلب`
+                        : `Total in database: ${totalLeadsRecords} inquiries`;
+                }
+
+                const pInfo = document.getElementById('leads-pagination-info');
+                if (pInfo) {
+                    pInfo.textContent = currentLang === 'ar'
+                        ? `عرض ${startIdx} - ${endIdx} من إجمالي ${totalLeadsRecords}`
+                        : `Showing ${startIdx} - ${endIdx} of ${totalLeadsRecords}`;
+                }
+
+                const pDisplay = document.getElementById('leads-page-display');
+                if (pDisplay) {
+                    pDisplay.textContent = currentLang === 'ar'
+                        ? `صفحة ${currentLeadsPage} من ${totalPages}`
+                        : `Page ${currentLeadsPage} of ${totalPages}`;
+                }
+
+                const btnPrev = document.getElementById('leads-btn-prev');
+                if (btnPrev) btnPrev.disabled = (currentLeadsPage <= 1);
+                const btnNext = document.getElementById('leads-btn-next');
+                if (btnNext) btnNext.disabled = (currentLeadsPage >= totalPages);
 
                 if (!tbody) return;
                 if (leads.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No matching leads found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No matching leads found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = leads.map(l => {
                     const bMin = l.budget_min != null ? Number(l.budget_min) : null;
                     const bMax = l.budget_max != null ? Number(l.budget_max) : null;
-                    let budget = 'Not specified';
+                    let budget = '--';
                     if (bMin != null && bMax != null) {
-                        budget = `${bMin.toLocaleString()} - ${bMax.toLocaleString()} SAR`;
+                        budget = `${(bMin/1000).toFixed(0)}k - ${(bMax/1000).toFixed(0)}k SAR`;
                     } else if (bMin != null) {
-                        budget = `From ${bMin.toLocaleString()} SAR`;
+                        budget = `≥ ${(bMin/1000).toFixed(0)}k SAR`;
                     } else if (bMax != null) {
-                        budget = `Up to ${bMax.toLocaleString()} SAR`;
+                        budget = `≤ ${(bMax/1000).toFixed(0)}k SAR`;
                     }
-                    const shortLeadId = (l.lead_id || '').substring(0, 8);
-                    const shortCustId = l.customer_id ? l.customer_id.substring(0, 8) + '...' : '--';
+
+                    // SLA First Contact Indicator
+                    let slaHtml = '';
+                    if (l.first_contact_at) {
+                        const cDate = new Date(l.first_contact_at);
+                        const cStr = cDate.toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                        slaHtml = `<span style="font-size: 0.72em; color: #15803d; margin-inline-start: 4px;" title="Contacted at: ${l.first_contact_at}">✓ ${cStr}</span>`;
+                    } else if (l.first_contact_due_at) {
+                        const dueDate = new Date(l.first_contact_due_at);
+                        const isOverdue = new Date() > dueDate;
+                        const dueStr = dueDate.toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                        if (isOverdue) {
+                            slaHtml = `<span style="font-size: 0.72em; color: #dc2626; font-weight: 600; margin-inline-start: 4px;" title="SLA Overdue! Due was: ${l.first_contact_due_at}">⚠️ SLA Overdue</span>`;
+                        } else {
+                            slaHtml = `<span style="font-size: 0.72em; color: #2563eb; margin-inline-start: 4px;" title="First contact due: ${l.first_contact_due_at}">⏰ ${dueStr}</span>`;
+                        }
+                    }
+
+                    const contactTooltip = (l.customer_mobile || l.customer_email)
+                        ? `${l.customer_name || ''} | ${l.customer_mobile || ''} ${l.customer_email ? '• ' + l.customer_email : ''}`
+                        : (l.customer_name || '');
+                    const contactIcon = l.customer_mobile 
+                        ? `<span style="font-size: 0.75em; color: #64748b; margin-inline-start: 4px; cursor: help;" title="${l.customer_mobile}${l.customer_email ? ' • ' + l.customer_email : ''}">📞</span>`
+                        : '';
 
                     return `
                         <tr>
                             <td>
-                                <span class="id-badge" title="${l.lead_id}">${shortLeadId}...</span>
-                                <button class="btn-copy" onclick="copyId('${l.lead_id}')" title="Copy Full Lead ID">📋</button>
+                                <span class="id-badge">${l.lead_id}</span>
+                                <button class="btn-copy" onclick="copyId('${l.lead_id}')" title="Copy Lead ID">📋</button>
+                            </td>
+                            <td title="${contactTooltip}">
+                                <strong>${l.customer_name || 'N/A'}</strong>
+                                <span style="font-size: 0.75em; color: var(--text-muted); margin-inline-start: 4px;">(${l.customer_id || '--'})</span>
+                                ${contactIcon}
                             </td>
                             <td>
-                                <strong>${l.customer_name || 'N/A'}</strong><br>
-                                <span style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">Cust: ${shortCustId}</span>
-                            </td>
-                            <td>
-                                ${l.customer_mobile || '--'}<br>
-                                <span style="font-size: 0.8em; color: var(--text-muted);">${l.customer_email || ''}</span>
-                            </td>
-                            <td>
-                                <strong>${l.inquiry_type || 'N/A'}</strong><br>
-                                <span style="font-size: 0.8em; color: var(--text-muted);">${l.lead_source_name || 'Direct'}</span>
+                                <strong>${l.inquiry_type || 'N/A'}</strong>
+                                <span style="font-size: 0.78em; color: var(--text-muted);">• ${l.lead_source_name || 'Direct'}</span>
                             </td>
                             <td>${budget}</td>
-                            <td>${getStatusBadge(l.status)}</td>
+                            <td>
+                                ${getStatusBadge(l.status)}
+                                ${slaHtml}
+                            </td>
                             <td>${l.assigned_user_name || 'Unassigned'}</td>
                             <td>
-                                <div style="display: flex; gap: 6px; align-items: center;">
-                                    <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')">✏️ Edit</button>
-                                    ${l.status !== 'QUALIFIED' ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')">Qualify</button>` : '<span style="color: #16a34a; font-size: 0.8em; font-weight: 600;">✓ Qualified</span>'}
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details">✏️ Edit</button>
+                                    ${l.status === 'NEW' 
+                                        ? `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;" onclick="markContacted('${l.lead_id}')" title="Mark as Contacted (records first contact time)">📞 Contacted</button>` 
+                                        : ''}
+                                    ${l.status !== 'QUALIFIED' && l.status !== 'CONVERTED' 
+                                        ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')" title="Qualify & send to Sales Pipeline">⭐ Qualify</button>` 
+                                        : `<a href="sales.html" class="btn btn-sm" style="background: #dcfce7; color: #166534; text-decoration: none;" title="View deal on Sales Pipeline board">📊 Pipeline</a>`}
                                 </div>
                             </td>
                         </tr>
@@ -890,12 +990,45 @@
             }
         }
 
+        function prevLeadsPage() {
+            if (currentLeadsPage > 1) {
+                fetchLeads(currentLeadsPage - 1);
+            }
+        }
+
+        function nextLeadsPage() {
+            const totalPages = Math.ceil(totalLeadsRecords / leadsPageSize);
+            if (currentLeadsPage < totalPages) {
+                fetchLeads(currentLeadsPage + 1);
+            }
+        }
+
+        function changeLeadsPageSize(size) {
+            leadsPageSize = parseInt(size, 10);
+            fetchLeads(1);
+        }
+
+        async function markContacted(leadId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/contact`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Customer marked as CONTACTED! First contact timestamp recorded.');
+                    fetchLeads();
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to update status: ${JSON.stringify(err)}`);
+                }
+            } catch (e) {
+                alert('Request failed');
+            }
+        }
+
         async function qualifyLead(leadId) {
-            if (!confirm('Qualify this lead for sales pipeline?')) return;
+            if (!confirm('Qualify this lead and add as active opportunity to sales pipeline?')) return;
             try {
                 const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/qualify`, { method: 'POST' });
                 if (res.ok) {
-                    showToast('Lead marked as QUALIFIED!');
+                    showToast('Lead marked as QUALIFIED & added to Sales Pipeline!');
                     fetchLeads();
                 } else {
                     alert('Could not qualify lead');
@@ -970,7 +1103,7 @@
                                 <strong>${displayName}</strong> 
                                 <span class="badge ${c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual'}">${c.customer_type}</span>
                                 <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 2px;">
-                                    📞 ${c.mobile || '--'} | ✉️ ${c.email || '--'} | ID: <span class="id-badge">${c.customer_id.substring(0, 8)}...</span>
+                                    📞 ${c.mobile || '--'} | ✉️ ${c.email || '--'} | ID: <span class="id-badge">${c.customer_id}</span>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-success btn-sm" onclick="selectLeadCustomer('${payloadStr}')">✓ Select Customer</button>

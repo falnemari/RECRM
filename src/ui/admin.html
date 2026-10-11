@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration, Security & Governance - RE CRM</title>
+    <!-- Professional Arabic Typography (High-Speed Local Assets) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --navy: #0f172a;
+            --primary-dark: #1e293b;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
+            font-family: var(--ar-font) !important;
+        }
+        [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea,
+        [dir="rtl"] .nav li a, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] th, [dir="rtl"] td,
+        [dir="rtl"] p, [dir="rtl"] span, [dir="rtl"] label, [dir="rtl"] strong {
+            font-family: var(--ar-font) !important;
+        }
+        .ar-font { font-family: var(--ar-font) !important; }
+        
+        .sub-nav-banner {
+            background: #0f172a; border-top: 1px solid #1e293b; border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0; padding: 7px 24px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .sub-nav-banner .banner-title { font-size: 1.15em; font-weight: 700; color: #60a5fa; letter-spacing: 0.3px; }
+        .sub-nav-banner .banner-subtitle { font-size: 0.8em; color: #94a3b8; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main);
+        }
+        .header {
+            background-color: var(--primary); color: white; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.4em; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .nav { background-color: #0f172a; padding: 0 16px; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
+
+        .content { padding: 24px; max-width: 1440px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+
+        /* KPI Strip */
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: white; border-radius: 10px; padding: 18px; border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .kpi-title { font-size: 0.85em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+        .kpi-val { font-size: 1.85em; font-weight: 800; color: var(--primary); }
+        .kpi-sub { font-size: 0.78em; color: var(--text-muted); margin-top: 4px; }
+
+        /* Tabs */
+        .tabs-header {
+            display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto;
+        }
+        .tab-btn {
+            background: none; border: none; padding: 10px 18px; font-size: 0.95em; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--secondary); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--secondary); background: rgba(59, 130, 246, 0.05); }
+
+        /* Section Panels */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Controls & Search */
+        .controls-bar {
+            background: white; padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 18px;
+        }
+        .controls-bar input, .controls-bar select {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; outline: none;
+        }
+        .controls-bar input:focus, .controls-bar select:focus { border-color: var(--secondary); }
+
+        /* Tables */
+        .table-wrap {
+            background: white; border-radius: 10px; border: 1px solid var(--border);
+            overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
+        [dir="rtl"] table { text-align: right; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th { background: #f8fafc; font-weight: 700; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges */
+        .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-inactive { background: #fee2e2; color: #b91c1c; }
+        .badge-role { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; margin: 2px; }
+        .badge-perm { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; margin: 2px; }
+        .badge-scope-global { background: #ede9fe; color: #6d28d9; font-weight: 700; }
+        .badge-scope-branch { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+        .badge-scope-team { background: #fef3c7; color: #b45309; font-weight: 700; }
+        .badge-scope-own { background: #f1f5f9; color: #475569; font-weight: 700; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8em; background: #f1f5f9; color: #475569; padding: 3px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn-copy {
+            background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 5px;
+            cursor: pointer; font-size: 0.75em; color: #64748b; line-height: 1;
+        }
+        .btn-copy:hover { background: #e2e8f0; color: #0f172a; }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--secondary); color: white; padding: 8px 16px; border: none;
+            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.88em; font-weight: 600;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s;
+        }
+        .btn:hover { background-color: #2563eb; }
+        .btn-success { background-color: var(--accent); }
+        .btn-success:hover { background-color: #059669; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; }
+        .btn-sm:hover { background: #cbd5e1; }
+        .btn-primary-sm { padding: 4px 10px; font-size: 0.8em; background: #2563eb; color: #ffffff; }
+        .btn-primary-sm:hover { background: #1d4ed8; }
+
+        /* Grid cards for branches & roles */
+        .card-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;
+        }
+        .entity-card {
+            background: white; border-radius: 10px; padding: 18px; border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .entity-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .entity-title { font-size: 1.1em; font-weight: 700; color: var(--primary); margin: 6px 0; }
+        .entity-meta { font-size: 0.85em; color: var(--text-muted); line-height: 1.6; margin: 10px 0; }
+        .entity-actions { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+
+        /* Scope Matrix Box */
+        .scope-matrix-card {
+            background: white; border-radius: 10px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px;
+        }
+        .scope-row {
+            display: grid; grid-template-columns: 140px 180px 1fr 220px; gap: 16px; padding: 14px 12px;
+            border-bottom: 1px solid var(--border); align-items: center;
+        }
+        .scope-row:last-child { border-bottom: none; }
+        @media (max-width: 860px) {
+            .scope-row { grid-template-columns: 1fr; }
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.65); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal {
+            background: white; border-radius: 12px; width: 92%; max-width: 720px; max-height: 90vh;
+            overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);
+            padding-bottom: 14px; margin-bottom: 18px;
+        }
+        .modal-title { font-size: 1.25em; font-weight: 700; color: var(--primary); margin: 0; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); line-height: 1; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .form-group label { font-size: 0.85em; font-weight: 600; color: var(--text-main); }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; outline: none;
+        }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border);
+            padding-top: 16px; margin-top: 20px;
+        }
+
+        /* Checkbox grid for permissions */
+        .perms-container {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 320px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #f8fafc;
+        }
+        .perm-item {
+            display: flex; align-items: flex-start; gap: 8px; font-size: 0.85em; background: white;
+            padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+        }
+        .perm-item input { margin-top: 3px; cursor: pointer; }
+
+        /* Toast */
+        #toast {
+            visibility: hidden; min-width: 260px; background-color: #0f172a; color: #fff;
+            text-align: center; border-radius: 8px; padding: 12px 20px; position: fixed;
+            z-index: 2000; bottom: 30px; left: 50%; transform: translateX(-50%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 0.9em; font-weight: 500;
+        }
+        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.7s; }
+        @keyframes fadein { from { bottom: 10px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 10px; opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo">RE CRM</div>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_admin">Administration & Governance</span>
+        </div>
+        <div class="header-actions">
+            <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
+                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                </select>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <ul>
+            <li><a href="index.html" data-i18n="nav_dashboard">Dashboard</a></li>
+            <li><a href="customers.html" data-i18n="nav_customers">Customers 360</a></li>
+            <li><a href="leads.html" data-i18n="nav_leads">Leads</a></li>
+            <li><a href="properties.html" data-i18n="nav_properties">Properties</a></li>
+            <li><a href="sales.html" data-i18n="nav_sales">Sales Pipeline</a></li>
+            <li><a href="finance.html" data-i18n="nav_finance">Finance & Contracts</a></li>
+            <li><a href="management.html" data-i18n="nav_management">Property Management</a></li>
+            <li><a href="tasks.html" data-i18n="nav_tasks">Tasks & Activities</a></li>
+            <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
+            <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
+            <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" class="active" data-i18n="nav_admin">Admin & Governance</a></li>
+            <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
+        </ul>
+    </div>
+    
+    <!-- Office Identity Strip Below Upper Tab -->
+    <div class="sub-nav-banner">
+        <div class="banner-title ar-font" data-i18n="banner_title">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+    </div>
+    
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 style="margin: 0;" data-i18n="page_title">Security, Roles & Organization Governance</h1>
+                <p style="margin: 4px 0 0 0; color: var(--text-muted);" data-i18n="page_subtitle">Manage branches, operational staff, RBAC permission matrices and data scopes</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-success" onclick="openActionForActiveTab()" id="btn-main-action">+ Add Record</button>
+            </div>
+        </div>
+
+        <!-- KPI Strip -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_branches">Branches</span>
+                <span class="kpi-val" id="kpi-branches">--</span>
+                <span class="kpi-sub" data-i18n="kpi_branches_sub">Active operational hubs</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_users">Total Staff</span>
+                <span class="kpi-val" id="kpi-users">--</span>
+                <span class="kpi-sub" id="kpi-users-sub">-- Active Users</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_roles">RBAC Roles</span>
+                <span class="kpi-val" id="kpi-roles">--</span>
+                <span class="kpi-sub" data-i18n="kpi_roles_sub">Configured permission roles</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_permissions">System Permissions</span>
+                <span class="kpi-val" id="kpi-permissions">--</span>
+                <span class="kpi-sub" data-i18n="kpi_permissions_sub">Granular access rights</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_audits">Audit Trail (30d)</span>
+                <span class="kpi-val" id="kpi-audits">--</span>
+                <span class="kpi-sub" data-i18n="kpi_audits_sub">Traceable governance events</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title" data-i18n="kpi_logins">Authentication Events</span>
+                <span class="kpi-val" id="kpi-logins">--</span>
+                <span class="kpi-sub" id="kpi-logins-sub">-- Successful / -- Failed</span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('branches')">🏢 <span data-i18n="tab_branches">Branches</span></button>
+            <button class="tab-btn" onclick="switchTab('users')">👥 <span data-i18n="tab_users">Users & Staff</span></button>
+            <button class="tab-btn" onclick="switchTab('roles')">🛡️ <span data-i18n="tab_roles">Roles & Permissions (RBAC)</span></button>
+            <button class="tab-btn" onclick="switchTab('scope')">🌐 <span data-i18n="tab_scope">Data Scope Matrix</span></button>
+            <button class="tab-btn" onclick="switchTab('audit')">📜 <span data-i18n="tab_audit">Audit Logs</span></button>
+            <button class="tab-btn" onclick="switchTab('login-events')">🔑 <span data-i18n="tab_login_events">Login History</span></button>
+        </div>
+
+        <!-- ================= TAB 1: BRANCHES ================= -->
+        <div class="tab-pane active" id="pane-branches">
+            <!-- Organization Profile Card -->
+            <div id="org-profile-card" style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.4em;">🏢</span>
+                        <h3 id="org-legal-name" style="margin: 0; font-size: 1.15em; font-weight: 700; color: var(--navy);">Demo Real Estate Company</h3>
+                        <span id="org-code-badge" class="badge badge-primary">DEMO-RE</span>
+                        <span class="badge badge-success">ORGANIZATION</span>
+                    </div>
+                    <div style="margin-top: 6px; font-size: 0.88em; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 16px;">
+                        <span><strong data-i18n="lbl_tax_no">Tax No:</strong> <span id="org-tax-no">300000000100003</span></span>
+                        <span><strong data-i18n="lbl_currency">Currency:</strong> <span id="org-currency">SAR</span></span>
+                        <span><strong data-i18n="lbl_timezone">Timezone:</strong> <span id="org-timezone">Asia/Riyadh</span></span>
+                        <span><strong data-i18n="lbl_country">Country:</strong> <span id="org-country">SA (المملكة العربية السعودية)</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-bar">
+                <input type="text" id="bld-search" placeholder="Search branches by code, name, id..." style="flex-grow: 1; min-width: 220px;" oninput="fetchBranches()">
+                <select id="bld-status" onchange="fetchBranches()">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="ACTIVE" data-i18n="opt_active">ACTIVE (نشط)</option>
+                    <option value="INACTIVE" data-i18n="opt_inactive">INACTIVE (غير نشط)</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchBranches()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+            <div class="card-grid" id="branches-container">
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);" data-i18n="loading">Loading branches...</div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: USERS & STAFF ================= -->
+        <div class="tab-pane" id="pane-users">
+            <div class="controls-bar">
+                <input type="text" id="user-search" placeholder="Search staff by name, email, employee #, user_id..." style="flex-grow: 1; min-width: 240px;" oninput="fetchUsers()">
+                <select id="user-branch-filter" onchange="fetchUsers()">
+                    <option value="" data-i18n="opt_all_branches">All Branches</option>
+                </select>
+                <select id="user-role-filter" onchange="fetchUsers()">
+                    <option value="" data-i18n="opt_all_roles">All Roles</option>
+                </select>
+                <select id="user-status-filter" onchange="fetchUsers()">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchUsers()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_user_id">User ID</th>
+                            <th data-i18n="th_name">Full Name</th>
+                            <th data-i18n="th_contact">Email & Mobile</th>
+                            <th data-i18n="th_branch">Branch</th>
+                            <th data-i18n="th_roles">Assigned Roles</th>
+                            <th data-i18n="th_scope">Data Scope</th>
+                            <th data-i18n="th_manager">Direct Manager</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr><td colspan="9" style="text-align: center; padding: 30px;" data-i18n="loading">Loading staff directory...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: ROLES & PERMISSIONS ================= -->
+        <div class="tab-pane" id="pane-roles">
+            <div class="card-grid" id="roles-container">
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);" data-i18n="loading">Loading roles & permissions...</div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: DATA SCOPE MATRIX ================= -->
+        <div class="tab-pane" id="pane-scope">
+            <div class="scope-matrix-card">
+                <h3 style="margin: 0 0 6px 0; color: var(--primary);" data-i18n="scope_overview_title">Enterprise Data Scope & Least Privilege Hierarchy</h3>
+                <p style="margin: 0 0 20px 0; color: var(--text-muted); font-size: 0.9em;" data-i18n="scope_overview_sub">
+                    Data Scope restricts operational records (leads, contracts, properties, tasks) based on organizational hierarchy:
+                </p>
+
+                <div id="scope-definitions-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Interactive Tester -->
+            <div class="scope-matrix-card">
+                <h3 style="margin: 0 0 10px 0; color: var(--primary);" data-i18n="scope_tester_title">🧪 Live User Scope & Access Inspector</h3>
+                <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.9em;" data-i18n="scope_tester_sub">
+                    Select any staff member to evaluate their live calculated data scope, supervising team, and resolved permissions:
+                </p>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+                    <select id="scope-user-select" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95em; min-width: 320px;" onchange="inspectUserScope()">
+                        <option value="">-- Select Staff Member --</option>
+                    </select>
+                </div>
+
+                <div id="scope-eval-result" style="display: none; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                    <!-- Results rendered dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: AUDIT LOGS ================= -->
+        <div class="tab-pane" id="pane-audit">
+            <div class="controls-bar">
+                <select id="audit-entity-filter" onchange="fetchAuditLogs()">
+                    <option value="" data-i18n="opt_all_entities">All Entities</option>
+                    <option value="USER">USER</option>
+                    <option value="BRANCH">BRANCH</option>
+                    <option value="ROLE">ROLE</option>
+                    <option value="CUSTOMER">CUSTOMER</option>
+                    <option value="LEAD">LEAD</option>
+                    <option value="CONTRACT">CONTRACT</option>
+                </select>
+                <select id="audit-action-filter" onchange="fetchAuditLogs()">
+                    <option value="" data-i18n="opt_all_actions">All Actions</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="DEACTIVATE">DEACTIVATE</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchAuditLogs()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_timestamp">Timestamp</th>
+                            <th data-i18n="th_actor">User / Actor</th>
+                            <th data-i18n="th_entity">Entity Type</th>
+                            <th data-i18n="th_entity_id">Entity ID</th>
+                            <th data-i18n="th_action">Action</th>
+                            <th data-i18n="th_ip">IP Address</th>
+                            <th data-i18n="th_details">Change Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table-body">
+                        <tr><td colspan="7" style="text-align: center; padding: 30px;" data-i18n="loading">Loading audit events...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 6: LOGIN & AUTHENTICATION EVENTS ================= -->
+        <div class="tab-pane" id="pane-login-events">
+            <div class="controls-bar">
+                <input type="text" id="login-search" placeholder="Search by user name, email, IP, event ID..." style="flex-grow: 1; min-width: 220px;" oninput="fetchLoginEvents()">
+                <select id="login-status-filter" onchange="fetchLoginEvents()">
+                    <option value="" data-i18n="opt_all_auth_status">All Auth Outcomes</option>
+                    <option value="true" data-i18n="opt_auth_success">SUCCESS (ناجح)</option>
+                    <option value="false" data-i18n="opt_auth_failed">FAILED (فاشل)</option>
+                </select>
+                <select id="login-type-filter" onchange="fetchLoginEvents()">
+                    <option value="" data-i18n="opt_all_event_types">All Event Types</option>
+                    <option value="LOGIN">LOGIN</option>
+                    <option value="LOGOUT">LOGOUT</option>
+                    <option value="FAILED_LOGIN">FAILED_LOGIN</option>
+                    <option value="PASSWORD_RESET">PASSWORD_RESET</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchLoginEvents()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_event_id">Event ID</th>
+                            <th data-i18n="th_timestamp">Timestamp</th>
+                            <th data-i18n="th_actor">User / Staff</th>
+                            <th data-i18n="th_event_type">Event Type</th>
+                            <th data-i18n="th_ip">IP Address</th>
+                            <th data-i18n="th_auth_status">Authentication Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="login-events-table-body">
+                        <tr><td colspan="6" style="text-align: center; padding: 30px;" data-i18n="loading">Loading login events...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- 1. ADD / EDIT BRANCH MODAL -->
+    <div class="modal-overlay" id="branch-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="branch-modal-title">+ Add Branch</h3>
+                <button type="button" class="close-btn" onclick="closeBranchModal()">&times;</button>
+            </div>
+            <form onsubmit="saveBranch(event)">
+                <input type="hidden" id="branch-form-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_branch_code">Branch Code *</label>
+                        <input type="text" id="branch-code" placeholder="e.g. BR-006" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_branch_name">Branch Name *</label>
+                        <input type="text" id="branch-name" placeholder="e.g. Al-Olaya Branch" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_city">City</label>
+                        <select id="branch-city"></select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_phone">Phone Number</label>
+                        <input type="text" id="branch-phone" placeholder="e.g. +966115000006">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_address">Address Line</label>
+                    <input type="text" id="branch-address" placeholder="e.g. King Fahd Road, Building 45">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_status">Status</label>
+                    <select id="branch-status">
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeBranchModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_save">Save Branch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. ADD / EDIT USER MODAL -->
+    <div class="modal-overlay" id="user-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="user-modal-title">+ Add User</h3>
+                <button type="button" class="close-btn" onclick="closeUserModal()">&times;</button>
+            </div>
+            <form onsubmit="saveUser(event)">
+                <input type="hidden" id="user-form-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_full_name">Full Name *</label>
+                        <input type="text" id="user-full-name" placeholder="e.g. Tariq Al-Otaibi" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_employee_no">Employee Number</label>
+                        <input type="text" id="user-emp-no" placeholder="e.g. EMP-0105">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_email">Email Address *</label>
+                        <input type="email" id="user-email" placeholder="e.g. user@recrm.sa" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_mobile">Mobile Number</label>
+                        <input type="text" id="user-mobile" placeholder="+9665...">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_branch">Assigned Branch</label>
+                        <select id="user-branch"></select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_manager">Direct Manager / Supervisor</label>
+                        <select id="user-manager"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_roles">Assigned Roles</label>
+                    <div id="user-roles-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 140px; overflow-y: auto; background: #f8fafc;">
+                        <!-- Roles checkboxes -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_status">Status</label>
+                    <select id="user-status">
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeUserModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_save">Save Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. ADD / EDIT ROLE MODAL -->
+    <div class="modal-overlay" id="role-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="role-modal-title">Configure Role & Permissions</h3>
+                <button type="button" class="close-btn" onclick="closeRoleModal()">&times;</button>
+            </div>
+            <form onsubmit="saveRole(event)">
+                <input type="hidden" id="role-form-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_role_code">Role Code *</label>
+                        <input type="text" id="role-code" placeholder="e.g. COMPLIANCE_OFFICER" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_role_name">Role Display Name *</label>
+                        <input type="text" id="role-name" placeholder="e.g. Compliance Officer" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_description">Description</label>
+                    <input type="text" id="role-desc" placeholder="Role responsibilities and scope">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_permissions">Granted Permissions (RBAC)</label>
+                    <div class="perms-container" id="role-perms-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeRoleModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_save">Save Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"></div>
+
+    <script>
+        const API_BASE = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000';
+            if (window.location.port === '8000' || window.location.port === '') return '';
+            const host = window.location.hostname || 'localhost';
+            return `${window.location.protocol}//${host}:8000`;
+        })();
+
+        let currentLang = 'en';
+        let activeTab = 'branches';
+
+        let cachedBranches = [];
+        let cachedUsers = [];
+        let cachedRoles = [];
+        let cachedPermissions = [];
+        let cachedCities = [];
+        let cachedScopes = [];
+
+        const i18nData = {
+            en: {
+                badge_admin: "Administration & Governance",
+                nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
+                nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Security", nav_api: "API Docs",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "Muath Khidr Al-Nemari Real Estate Services Office",
+                page_title: "Security, Roles & Organization Governance",
+                page_subtitle: "Manage branches, operational staff, RBAC permission matrices and data scopes",
+                kpi_branches: "Branches",
+                kpi_branches_sub: "Active operational hubs",
+                kpi_users: "Total Staff",
+                kpi_roles: "RBAC Roles",
+                kpi_roles_sub: "Configured permission roles",
+                kpi_permissions: "System Permissions",
+                kpi_permissions_sub: "Granular access rights",
+                kpi_audits: "Audit Trail (30d)",
+                kpi_audits_sub: "Traceable governance events",
+                kpi_logins: "Authentication Events",
+                kpi_logins_sub: "User login activity",
+                tab_branches: "Branches",
+                tab_users: "Users & Staff",
+                tab_roles: "Roles & Permissions (RBAC)",
+                tab_scope: "Data Scope Matrix",
+                tab_audit: "Audit Logs",
+                tab_login_events: "Login History",
+                opt_all_statuses: "All Statuses",
+                opt_all_branches: "All Branches",
+                opt_all_roles: "All Roles",
+                opt_all_entities: "All Entities",
+                opt_all_actions: "All Actions",
+                opt_all_auth_status: "All Auth Outcomes",
+                opt_auth_success: "SUCCESS (ناجح)",
+                opt_auth_failed: "FAILED (فاشل)",
+                opt_all_event_types: "All Event Types",
+                lbl_tax_no: "Tax No:",
+                lbl_currency: "Currency:",
+                lbl_timezone: "Timezone:",
+                lbl_country: "Country:",
+                btn_refresh: "Refresh",
+                btn_cancel: "Cancel",
+                btn_save: "Save Changes",
+                th_user_id: "User ID",
+                th_name: "Full Name",
+                th_contact: "Email & Mobile",
+                th_branch: "Branch",
+                th_roles: "Assigned Roles",
+                th_scope: "Data Scope",
+                th_manager: "Direct Manager",
+                th_status: "Status",
+                th_actions: "Actions",
+                th_timestamp: "Timestamp",
+                th_actor: "User / Actor",
+                th_entity: "Entity Type",
+                th_entity_id: "Entity ID",
+                th_action: "Action",
+                th_ip: "IP Address",
+                th_details: "Change Details",
+                th_event_id: "Event ID",
+                th_event_type: "Event Type",
+                th_auth_status: "Auth Status",
+                scope_overview_title: "Enterprise Data Scope & Least Privilege Hierarchy",
+                scope_overview_sub: "Data Scope restricts operational records (leads, contracts, properties, tasks) based on organizational hierarchy:",
+                scope_tester_title: "🧪 Live User Scope & Access Inspector",
+                scope_tester_sub: "Select any staff member to evaluate their live calculated data scope, supervising team, and resolved permissions:",
+                loading: "Loading data...",
+                lang_label: "عربي"
+            },
+            ar: {
+                badge_admin: "الإدارة والحوكمة والأمان",
+                nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
+                nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                page_title: "الأمان، الأدوار، وحوكمة المنظمة",
+                page_subtitle: "إدارة الفروع، الموظفين، مصفوفة الصلاحيات (RBAC) ونطاقات وصول البيانات",
+                kpi_branches: "الفروع والمراكز",
+                kpi_branches_sub: "المراكز التشغيلية النشطة",
+                kpi_users: "إجمالي الموظفين",
+                kpi_roles: "أدوار الصلاحيات (RBAC)",
+                kpi_roles_sub: "الأدوار الإدارية المعتمدة",
+                kpi_permissions: "الصلاحيات النظامية",
+                kpi_permissions_sub: "أذونات الوصول الدقيقة",
+                kpi_audits: "سجل العمليات (30 يوم)",
+                kpi_audits_sub: "عمليات التتبع والرقابة",
+                kpi_logins: "عمليات تسجيل الدخول",
+                kpi_logins_sub: "نشاط جلسات الموظفين",
+                tab_branches: "الفروع ومراكز الأعمال",
+                tab_users: "المستخدمون وفريق العمل",
+                tab_roles: "الأدوار والصلاحيات (RBAC)",
+                tab_scope: "نطاق البيانات ومستويات الوصول",
+                tab_audit: "سجل العمليات والرقابة",
+                tab_login_events: "سجل الدخول والمصادقة",
+                opt_all_statuses: "جميع الحالات",
+                opt_all_branches: "جميع الفروع",
+                opt_all_roles: "جميع الأدوار",
+                opt_all_entities: "جميع الكيانات",
+                opt_all_actions: "جميع العمليات",
+                opt_all_auth_status: "جميع نتائج المصادقة",
+                opt_auth_success: "ناجح (SUCCESS)",
+                opt_auth_failed: "فاشل (FAILED)",
+                opt_all_event_types: "جميع أنواع الأحداث",
+                lbl_tax_no: "الرقم الضريبي:",
+                lbl_currency: "العملة:",
+                lbl_timezone: "النطاق الزمني:",
+                lbl_country: "الدولة:",
+                btn_refresh: "تحديث",
+                btn_cancel: "إلغاء",
+                btn_save: "حفظ التغييرات",
+                th_user_id: "معرف المستخدم",
+                th_name: "الاسم الكامل",
+                th_contact: "البريد ورقم الجوال",
+                th_branch: "الفرع",
+                th_roles: "الأدوار المسندة",
+                th_scope: "نطاق البيانات",
+                th_manager: "المشرف المباشر",
+                th_status: "الحالة",
+                th_actions: "الإجراءات",
+                th_timestamp: "التوقيت",
+                th_actor: "المستخدم / المنفذ",
+                th_entity: "نوع الكيان",
+                th_entity_id: "معرف السجل",
+                th_action: "العملية",
+                th_ip: "عنوان IP",
+                th_details: "تفاصيل التعديل",
+                th_event_id: "معرف الحدث",
+                th_event_type: "نوع الحدث",
+                th_auth_status: "حالة المصادقة",
+                scope_overview_title: "نطاق البيانات وهرمية الصلاحيات الأدنى (Least Privilege)",
+                scope_overview_sub: "يحدد نطاق البيانات السجلات المسموح للموظف الاطلاع عليها وإدارتها (طلبات، عقود، وحدات):",
+                scope_tester_title: "🧪 فاحص نطاق البيانات الفعلي للموظف",
+                scope_tester_sub: "اختر أي موظف لمعاينة نطاق بياناته المحسوب تلقائياً، أعضاء فريقه الخاضعين لإشرافه، وكافة صلاحياته:",
+                loading: "جاري تحميل البيانات...",
+                lang_label: "English"
+            }
+        };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        function copyId(val) {
+            if (!val || val === '--') return;
+            navigator.clipboard.writeText(val.trim()).then(() => {
+                showToast(`Copied ID: ${val.trim()}`);
+            }).catch(() => {
+                showToast(`Copied: ${val.trim()}`);
+            });
+        }
+
+        function setGlobalArabicFont(fontVal) {
+            localStorage.setItem('recrm_ar_font', fontVal);
+            document.documentElement.style.setProperty('--ar-font', fontVal);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => el.value = fontVal);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+
+            const lbl = document.getElementById('lang-label');
+            if (lbl && i18nData[currentLang]) {
+                lbl.textContent = i18nData[currentLang].lang_label;
+            }
+
+            localStorage.setItem('recrm_lang', currentLang);
+            updateActionButtonText();
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+            // Re-render active tab
+            if (activeTab === 'branches') renderBranches();
+            else if (activeTab === 'users') renderUsers();
+            else if (activeTab === 'roles') renderRoles();
+            else if (activeTab === 'scope') renderDataScopes();
+        }
+
+        function initTypographyAndLang() {
+            const savedFont = localStorage.getItem('recrm_ar_font') || "'Cairo', 'Tajawal', 'Almarai', sans-serif";
+            document.documentElement.style.setProperty('--ar-font', savedFont);
+            document.querySelectorAll('.arabic-font-select, #arabicFontSelect').forEach(el => {
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === savedFont) {
+                        el.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+
+            const savedLang = localStorage.getItem('recrm_lang') || 'en';
+            applyLanguage(savedLang);
+        }
+
+        function switchTab(tabName) {
+            activeTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.onclick.toString().includes(tabName));
+            if (targetBtn) targetBtn.classList.add('active');
+
+            const pane = document.getElementById(`pane-${tabName}`);
+            if (pane) pane.classList.add('active');
+
+            updateActionButtonText();
+
+            if (tabName === 'branches') fetchBranches();
+            else if (tabName === 'users') fetchUsers();
+            else if (tabName === 'roles') fetchRoles();
+            else if (tabName === 'scope') fetchScopesAndSetupTester();
+            else if (tabName === 'audit') fetchAuditLogs();
+            else if (tabName === 'login-events') fetchLoginEvents();
+        }
+
+        function updateActionButtonText() {
+            const btn = document.getElementById('btn-main-action');
+            const isAr = currentLang === 'ar';
+            if (activeTab === 'branches') {
+                btn.style.display = 'inline-flex';
+                btn.textContent = isAr ? '+ إضافة فرع جديد' : '+ Add Branch';
+            } else if (activeTab === 'users') {
+                btn.style.display = 'inline-flex';
+                btn.textContent = isAr ? '+ إضافة موظف جديد' : '+ Add User';
+            } else if (activeTab === 'roles') {
+                btn.style.display = 'inline-flex';
+                btn.textContent = isAr ? '+ إضافة دور مخصص' : '+ Add Role';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function openActionForActiveTab() {
+            if (activeTab === 'branches') openAddBranchModal();
+            else if (activeTab === 'users') openAddUserModal();
+            else if (activeTab === 'roles') openAddRoleModal();
+        }
+
+        // ================= KPI SUMMARY =================
+        async function fetchSummary() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/admin/summary`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const d = json.data;
+                document.getElementById('kpi-branches').textContent = d.total_branches;
+                document.getElementById('kpi-users').textContent = d.total_users;
+                document.getElementById('kpi-users-sub').textContent = `${d.active_users} Active (${d.total_users - d.active_users} Inactive)`;
+                document.getElementById('kpi-roles').textContent = d.total_roles;
+                document.getElementById('kpi-permissions').textContent = d.total_permissions;
+                document.getElementById('kpi-audits').textContent = d.recent_audit_events_count;
+                if (document.getElementById('kpi-logins')) {
+                    document.getElementById('kpi-logins').textContent = d.total_login_events || 0;
+                    document.getElementById('kpi-logins-sub').textContent = `${d.successful_logins || 0} OK / ${d.failed_logins || 0} Failed`;
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        // ================= BRANCHES =================
+        async function fetchBranches() {
+            const search = document.getElementById('bld-search').value;
+            const status = document.getElementById('bld-status').value;
+            let url = `${API_BASE}/api/v1/admin/branches?`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                cachedBranches = json.data || [];
+                renderBranches();
+                populateBranchFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderBranches() {
+            const container = document.getElementById('branches-container');
+            if (cachedBranches.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No branches found.</div>`;
+                return;
+            }
+
+            container.innerHTML = cachedBranches.map(b => {
+                const isAr = currentLang === 'ar';
+                const stBadge = b.status === 'ACTIVE'
+                    ? '<span class="badge badge-active">ACTIVE</span>'
+                    : '<span class="badge badge-inactive">INACTIVE</span>';
+
+                return `
+                    <div class="entity-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="id-badge">${b.branch_id}</span>
+                                    <button class="btn-copy" onclick="copyId('${b.branch_id}')" title="Copy ID">📋</button>
+                                </div>
+                                ${stBadge}
+                            </div>
+                            <div class="entity-title">${b.branch_code} - ${b.name}</div>
+                            <div class="entity-meta">
+                                <div>📍 ${isAr ? 'المدينة' : 'City'}: <strong>${b.city_name || '--'}</strong></div>
+                                <div>🏢 ${isAr ? 'العنوان' : 'Address'}: <strong>${b.address_line || '--'}</strong></div>
+                                <div>📞 ${isAr ? 'الهاتف' : 'Phone'}: <strong>${b.phone || '--'}</strong></div>
+                                <div>👥 ${isAr ? 'فريق العمل' : 'Staff Count'}: <strong>${b.users_count} ${isAr ? 'موظف' : 'users'}</strong></div>
+                            </div>
+                        </div>
+                        <div class="entity-actions">
+                            <button class="btn btn-sm" onclick="editBranch('${b.branch_id}')">✏️ ${isAr ? 'تعديل' : 'Edit'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openAddBranchModal() {
+            document.getElementById('branch-modal-title').textContent = currentLang === 'ar' ? '+ إضافة فرع جديد' : '+ Add Branch';
+            document.getElementById('branch-form-id').value = '';
+            document.getElementById('branch-code').value = '';
+            document.getElementById('branch-name').value = '';
+            document.getElementById('branch-city').value = '';
+            document.getElementById('branch-phone').value = '';
+            document.getElementById('branch-address').value = '';
+            document.getElementById('branch-status').value = 'ACTIVE';
+            populateCitySelect('branch-city');
+            document.getElementById('branch-modal').style.display = 'flex';
+        }
+
+        function editBranch(bId) {
+            const b = cachedBranches.find(item => item.branch_id === bId);
+            if (!b) return;
+            document.getElementById('branch-modal-title').textContent = currentLang === 'ar' ? 'تعديل بيانات الفرع' : 'Edit Branch';
+            document.getElementById('branch-form-id').value = b.branch_id;
+            document.getElementById('branch-code').value = b.branch_code;
+            document.getElementById('branch-name').value = b.name;
+            populateCitySelect('branch-city');
+            document.getElementById('branch-city').value = b.city_id || '';
+            document.getElementById('branch-phone').value = b.phone || '';
+            document.getElementById('branch-address').value = b.address_line || '';
+            document.getElementById('branch-status').value = b.status || 'ACTIVE';
+            document.getElementById('branch-modal').style.display = 'flex';
+        }
+
+        function closeBranchModal() {
+            document.getElementById('branch-modal').style.display = 'none';
+        }
+
+        async function saveBranch(e) {
+            e.preventDefault();
+            const bId = document.getElementById('branch-form-id').value;
+            const payload = {
+                branch_code: document.getElementById('branch-code').value.trim(),
+                name: document.getElementById('branch-name').value.trim(),
+                city_id: document.getElementById('branch-city').value || null,
+                phone: document.getElementById('branch-phone').value.trim() || null,
+                address_line: document.getElementById('branch-address').value.trim() || null,
+                status: document.getElementById('branch-status').value
+            };
+
+            const url = bId ? `${API_BASE}/api/v1/admin/branches/${bId}` : `${API_BASE}/api/v1/admin/branches`;
+            const method = bId ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to save branch');
+                }
+                closeBranchModal();
+                showToast(`✓ Branch saved successfully!`);
+                await fetchBranches();
+                await fetchSummary();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        // ================= USERS & STAFF =================
+        async function fetchUsers() {
+            const search = document.getElementById('user-search').value;
+            const bId = document.getElementById('user-branch-filter').value;
+            const rId = document.getElementById('user-role-filter').value;
+            const status = document.getElementById('user-status-filter').value;
+
+            let url = `${API_BASE}/api/v1/admin/users?page_size=100`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (bId) url += `&branch_id=${encodeURIComponent(bId)}`;
+            if (rId) url += `&role_id=${encodeURIComponent(rId)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                cachedUsers = json.data || [];
+                renderUsers();
+                populateManagerSelect();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-table-body');
+            if (cachedUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">No staff records matching filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = cachedUsers.map(u => {
+                const stBadge = u.status === 'ACTIVE'
+                    ? '<span class="badge badge-active">ACTIVE</span>'
+                    : '<span class="badge badge-inactive">INACTIVE</span>';
+
+                const rolesHtml = u.roles.length > 0
+                    ? u.roles.map(r => `<span class="badge badge-role">${r.name}</span>`).join('')
+                    : '<span style="color: var(--text-muted); font-size: 0.8em;">No roles</span>';
+
+                let scopeBadgeClass = 'badge-scope-own';
+                if (u.effective_scope === 'GLOBAL') scopeBadgeClass = 'badge-scope-global';
+                else if (u.effective_scope === 'BRANCH') scopeBadgeClass = 'badge-scope-branch';
+                else if (u.effective_scope === 'TEAM') scopeBadgeClass = 'badge-scope-team';
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span class="id-badge">${u.user_id}</span>
+                                <button class="btn-copy" onclick="copyId('${u.user_id}')" title="Copy ID">📋</button>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>${u.full_name}</strong>
+                            <span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start:4px;">(${u.employee_no || '--'})</span>
+                        </td>
+                        <td>
+                            <span>${u.email}</span>
+                            ${u.mobile ? `<span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start:4px;">• ${u.mobile}</span>` : ''}
+                        </td>
+                        <td>${u.branch_name ? `<strong>${u.branch_name}</strong> (${u.branch_code})` : '<span style="color: var(--text-muted);">Unassigned</span>'}</td>
+                        <td>${rolesHtml}</td>
+                        <td><span class="badge ${scopeBadgeClass}">${u.effective_scope}</span></td>
+                        <td>${u.manager_name || '<span style="color: var(--text-muted);">--</span>'}</td>
+                        <td>${stBadge}</td>
+                        <td>
+                            <button class="btn btn-primary-sm" onclick="editUser('${u.user_id}')">✏️ Edit</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openAddUserModal() {
+            document.getElementById('user-modal-title').textContent = currentLang === 'ar' ? '+ إضافة موظف جديد' : '+ Add Staff User';
+            document.getElementById('user-form-id').value = '';
+            document.getElementById('user-full-name').value = '';
+            document.getElementById('user-emp-no').value = '';
+            document.getElementById('user-email').value = '';
+            document.getElementById('user-mobile').value = '';
+            populateBranchSelect('user-branch');
+            populateManagerSelect('user-manager');
+            renderUserRolesCheckboxes([]);
+            document.getElementById('user-status').value = 'ACTIVE';
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+
+        function editUser(uId) {
+            const u = cachedUsers.find(item => item.user_id === uId);
+            if (!u) return;
+            document.getElementById('user-modal-title').textContent = currentLang === 'ar' ? 'تعديل بيانات الموظف' : 'Edit Staff User';
+            document.getElementById('user-form-id').value = u.user_id;
+            document.getElementById('user-full-name').value = u.full_name;
+            document.getElementById('user-emp-no').value = u.employee_no || '';
+            document.getElementById('user-email').value = u.email;
+            document.getElementById('user-mobile').value = u.mobile || '';
+            populateBranchSelect('user-branch');
+            document.getElementById('user-branch').value = u.branch_id || '';
+            populateManagerSelect('user-manager', u.user_id);
+            document.getElementById('user-manager').value = u.manager_user_id || '';
+            renderUserRolesCheckboxes(u.roles.map(r => r.role_id));
+            document.getElementById('user-status').value = u.status || 'ACTIVE';
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+
+        function closeUserModal() {
+            document.getElementById('user-modal').style.display = 'none';
+        }
+
+        function renderUserRolesCheckboxes(selectedRoleIds) {
+            const container = document.getElementById('user-roles-checkboxes');
+            container.innerHTML = cachedRoles.map(r => {
+                const checked = selectedRoleIds.includes(r.role_id) ? 'checked' : '';
+                return `
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85em; cursor: pointer;">
+                        <input type="checkbox" name="user_role" value="${r.role_id}" ${checked}>
+                        <span><strong>${r.name}</strong> <span style="font-size: 0.8em; color: var(--text-muted);">(${r.role_code})</span></span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        async function saveUser(e) {
+            e.preventDefault();
+            const uId = document.getElementById('user-form-id').value;
+            const checkedRoles = Array.from(document.querySelectorAll('input[name="user_role"]:checked')).map(cb => cb.value);
+
+            const payload = {
+                full_name: document.getElementById('user-full-name').value.trim(),
+                employee_no: document.getElementById('user-emp-no').value.trim() || null,
+                email: document.getElementById('user-email').value.trim(),
+                mobile: document.getElementById('user-mobile').value.trim() || null,
+                branch_id: document.getElementById('user-branch').value || null,
+                manager_user_id: document.getElementById('user-manager').value || null,
+                role_ids: checkedRoles,
+                status: document.getElementById('user-status').value
+            };
+
+            const url = uId ? `${API_BASE}/api/v1/admin/users/${uId}` : `${API_BASE}/api/v1/admin/users`;
+            const method = uId ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to save user');
+                }
+                closeUserModal();
+                showToast(`✓ User saved successfully!`);
+                await fetchUsers();
+                await fetchSummary();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        // ================= ROLES & PERMISSIONS =================
+        async function fetchRoles() {
+            try {
+                const [rRes, pRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/admin/roles`),
+                    fetch(`${API_BASE}/api/v1/admin/permissions`)
+                ]);
+                const rJson = await rRes.json();
+                const pJson = await pRes.json();
+                cachedRoles = rJson.data || [];
+                cachedPermissions = pJson.data || [];
+                renderRoles();
+                populateRoleFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderRoles() {
+            const container = document.getElementById('roles-container');
+            const isAr = currentLang === 'ar';
+
+            container.innerHTML = cachedRoles.map(r => {
+                const permsBadges = r.permissions.map(p => `<span class="badge badge-perm">${p.name}</span>`).join('');
+                return `
+                    <div class="entity-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="id-badge">${r.role_id}</span>
+                                    <button class="btn-copy" onclick="copyId('${r.role_id}')" title="Copy ID">📋</button>
+                                </div>
+                                <span class="badge badge-scope-global">${r.default_scope} SCOPE</span>
+                            </div>
+                            <div class="entity-title">${r.name} <span style="font-size: 0.8em; color: var(--text-muted);">(${r.role_code})</span></div>
+                            <p style="font-size: 0.85em; color: var(--text-muted); margin: 6px 0 10px 0;">${r.description || 'No description'}</p>
+                            <div style="font-size: 0.82em; margin-bottom: 10px;">
+                                👥 <strong>${r.users_count}</strong> ${isAr ? 'موظفين معينين بهذا الدور' : 'assigned staff'}
+                            </div>
+                            <div style="border-top: 1px solid var(--border); padding-top: 10px;">
+                                <span style="font-size: 0.78em; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                                    ${isAr ? 'الأذونات المصرحة' : 'Granted Permissions'} (${r.permissions.length}):
+                                </span>
+                                <div style="margin-top: 6px; max-height: 110px; overflow-y: auto;">
+                                    ${permsBadges || '<span style="color: var(--text-muted); font-size: 0.8em;">No permissions assigned</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="entity-actions">
+                            <button class="btn btn-sm" onclick="editRole('${r.role_id}')">⚙️ ${isAr ? 'تعديل الصلاحيات' : 'Configure Permissions'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openAddRoleModal() {
+            document.getElementById('role-modal-title').textContent = currentLang === 'ar' ? '+ إضافة دور مخصص' : '+ Add Custom Role';
+            document.getElementById('role-form-id').value = '';
+            document.getElementById('role-code').value = '';
+            document.getElementById('role-code').removeAttribute('disabled');
+            document.getElementById('role-name').value = '';
+            document.getElementById('role-desc').value = '';
+            renderPermissionsCheckboxes([]);
+            document.getElementById('role-modal').style.display = 'flex';
+        }
+
+        function editRole(rId) {
+            const r = cachedRoles.find(item => item.role_id === rId);
+            if (!r) return;
+            document.getElementById('role-modal-title').textContent = `${currentLang === 'ar' ? 'تعديل صلاحيات الدور:' : 'Configure Permissions:'} ${r.name}`;
+            document.getElementById('role-form-id').value = r.role_id;
+            document.getElementById('role-code').value = r.role_code;
+            document.getElementById('role-code').setAttribute('disabled', 'true');
+            document.getElementById('role-name').value = r.name;
+            document.getElementById('role-desc').value = r.description || '';
+            renderPermissionsCheckboxes(r.permissions.map(p => p.permission_id));
+            document.getElementById('role-modal').style.display = 'flex';
+        }
+
+        function closeRoleModal() {
+            document.getElementById('role-modal').style.display = 'none';
+        }
+
+        function renderPermissionsCheckboxes(selectedPermIds) {
+            const container = document.getElementById('role-perms-list');
+            container.innerHTML = cachedPermissions.map(p => {
+                const checked = selectedPermIds.includes(p.permission_id) ? 'checked' : '';
+                return `
+                    <label class="perm-item">
+                        <input type="checkbox" name="role_perm" value="${p.permission_id}" ${checked}>
+                        <div>
+                            <strong>${p.name}</strong>
+                            <div style="font-size: 0.78em; color: var(--text-muted);">${p.code} (${p.module})</div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        async function saveRole(e) {
+            e.preventDefault();
+            const rId = document.getElementById('role-form-id').value;
+            const checkedPerms = Array.from(document.querySelectorAll('input[name="role_perm"]:checked')).map(cb => cb.value);
+
+            const payload = {
+                role_code: document.getElementById('role-code').value.trim(),
+                name: document.getElementById('role-name').value.trim(),
+                description: document.getElementById('role-desc').value.trim() || null,
+                permission_ids: checkedPerms
+            };
+
+            const url = rId ? `${API_BASE}/api/v1/admin/roles/${rId}` : `${API_BASE}/api/v1/admin/roles`;
+            const method = rId ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to save role');
+                }
+                closeRoleModal();
+                showToast(`✓ Role permissions saved!`);
+                await fetchRoles();
+                await fetchSummary();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        // ================= DATA SCOPES & INSPECTOR =================
+        async function fetchScopesAndSetupTester() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/admin/data-scopes`);
+                const json = await res.json();
+                cachedScopes = json.data || [];
+                renderDataScopes();
+
+                // Populate staff select in tester
+                const sel = document.getElementById('scope-user-select');
+                sel.innerHTML = '<option value="">-- Select Staff Member --</option>' +
+                    cachedUsers.map(u => `<option value="${u.user_id}">${u.full_name} (${u.roles.map(r=>r.name).join(', ') || 'No Role'}) - ${u.branch_name || 'No Branch'}</option>`).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderDataScopes() {
+            const container = document.getElementById('scope-definitions-list');
+            const isAr = currentLang === 'ar';
+
+            container.innerHTML = cachedScopes.map(sc => {
+                let badgeClass = 'badge-scope-own';
+                if (sc.scope_code === 'GLOBAL') badgeClass = 'badge-scope-global';
+                else if (sc.scope_code === 'BRANCH') badgeClass = 'badge-scope-branch';
+                else if (sc.scope_code === 'TEAM') badgeClass = 'badge-scope-team';
+
+                return `
+                    <div class="scope-row">
+                        <div><span class="badge ${badgeClass}" style="font-size: 0.9em;">${sc.scope_code}</span></div>
+                        <div><strong>${isAr ? sc.name_ar : sc.name_en}</strong></div>
+                        <div style="font-size: 0.88em; color: var(--text-muted);">${isAr ? sc.description_ar : sc.description_en}</div>
+                        <div>
+                            <span style="font-size: 0.75em; color: var(--text-muted); text-transform: uppercase;">Applicable Roles:</span>
+                            <div style="margin-top: 4px;">
+                                ${sc.applicable_roles.map(r => `<span class="badge badge-role" style="font-size: 0.7em;">${r}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function inspectUserScope() {
+            const uId = document.getElementById('scope-user-select').value;
+            const resDiv = document.getElementById('scope-eval-result');
+            if (!uId) {
+                resDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/admin/users/${uId}/scope`);
+                if (!res.ok) throw new Error('Scope evaluation failed');
+                const json = await res.json();
+                const d = json.data;
+
+                const isAr = currentLang === 'ar';
+                let badgeClass = 'badge-scope-own';
+                if (d.effective_scope === 'GLOBAL') badgeClass = 'badge-scope-global';
+                else if (d.effective_scope === 'BRANCH') badgeClass = 'badge-scope-branch';
+                else if (d.effective_scope === 'TEAM') badgeClass = 'badge-scope-team';
+
+                resDiv.style.display = 'block';
+                resDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+                        <div>
+                            <h4 style="margin: 0; color: var(--primary); font-size: 1.15em;">${d.full_name} (${d.user_id})</h4>
+                            <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 3px;">
+                                🏢 ${isAr ? 'الفرع التابع له:' : 'Branch:'} <strong>${d.branch_name || (isAr ? 'غير مسند لفرع' : 'Unassigned')}</strong>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 4px;">${isAr ? 'نطاق الوصول الفعلي:' : 'Effective Scope:'}</span>
+                            <span class="badge ${badgeClass}" style="font-size: 1em; padding: 6px 14px;">${d.effective_scope}</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h5 style="margin: 0 0 8px 0; color: var(--primary);">${isAr ? 'الأدوار الإدارية الممنوحة:' : 'Assigned Roles:'}</h5>
+                            <div>${d.roles.map(r => `<span class="badge badge-role">${r}</span>`).join('') || '<span style="color: var(--text-muted);">None</span>'}</div>
+                            
+                            <h5 style="margin: 16px 0 8px 0; color: var(--primary);">${isAr ? 'الموظفون الخاضعون لإشرافه (فريق العمل):' : 'Supervised Team Members:'}</h5>
+                            <div style="font-size: 0.88em; color: var(--text-muted);">
+                                ${d.team_user_ids.length > 0 
+                                    ? `<strong>${d.team_user_ids.length}</strong> subordinates: ` + d.team_user_ids.map(tid => `<span class="id-badge">${tid}</span>`).join(' ')
+                                    : (isAr ? 'لا يوجد موظفون تحت إشرافه المباشر' : 'No subordinate team members.')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h5 style="margin: 0 0 8px 0; color: var(--primary);">${isAr ? 'الأذونات والصلاحيات النظامية المحسوبة' : 'Resolved System Permissions'} (${d.permissions.length}):</h5>
+                            <div style="max-height: 160px; overflow-y: auto; background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+                                ${d.permissions.map(p => `<span class="badge badge-perm">${p}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        // ================= AUDIT LOGS =================
+        async function fetchAuditLogs() {
+            const entity = document.getElementById('audit-entity-filter').value;
+            const action = document.getElementById('audit-action-filter').value;
+            let url = `${API_BASE}/api/v1/admin/audit-logs?page_size=60`;
+            if (entity) url += `&entity_type=${encodeURIComponent(entity)}`;
+            if (action) url += `&action=${encodeURIComponent(action)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                renderAuditLogs(json.data || []);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderAuditLogs(logs) {
+            const tbody = document.getElementById('audit-table-body');
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">No audit logs found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = logs.map(l => {
+                let actionBadge = `<span class="badge badge-role">${l.action}</span>`;
+                if (l.action === 'CREATE') actionBadge = '<span class="badge badge-active">CREATE</span>';
+                else if (l.action === 'DELETE' || l.action === 'DEACTIVATE') actionBadge = '<span class="badge badge-inactive">DELETE</span>';
+                else if (l.action === 'UPDATE') actionBadge = '<span class="badge badge-scope-team">UPDATE</span>';
+
+                let detailsText = '--';
+                if (l.new_value_json) {
+                    try {
+                        detailsText = `<code style="font-size: 0.8em; color: #475569;">${JSON.stringify(l.new_value_json)}</code>`;
+                    } catch (e) {
+                        detailsText = String(l.new_value_json);
+                    }
+                }
+
+                return `
+                    <tr>
+                        <td style="font-size: 0.85em; color: var(--text-muted);">${new Date(l.created_at).toLocaleString()}</td>
+                        <td><strong>${l.user_name || 'System / Auto'}</strong></td>
+                        <td><span class="badge badge-scope-branch">${l.entity_type}</span></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span class="id-badge">${l.entity_id || '--'}</span>
+                                ${l.entity_id ? `<button class="btn-copy" onclick="copyId('${l.entity_id}')" title="Copy ID">📋</button>` : ''}
+                            </div>
+                        </td>
+                        <td>${actionBadge}</td>
+                        <td style="font-family: monospace; font-size: 0.85em;">${l.ip_address || '--'}</td>
+                        <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${detailsText}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ================= LOGIN & AUTHENTICATION EVENTS =================
+        async function fetchLoginEvents() {
+            const search = document.getElementById('login-search')?.value || '';
+            const statusVal = document.getElementById('login-status-filter')?.value || '';
+            const typeVal = document.getElementById('login-type-filter')?.value || '';
+            let url = `${API_BASE}/api/v1/admin/login-events?page_size=100`;
+            if (statusVal !== '') url += `&success=${statusVal}`;
+            if (typeVal !== '') url += `&event_type=${encodeURIComponent(typeVal)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                let events = json.data || [];
+                if (search) {
+                    const q = search.toLowerCase();
+                    events = events.filter(e => 
+                        (e.user_name && e.user_name.toLowerCase().includes(q)) ||
+                        (e.user_email && e.user_email.toLowerCase().includes(q)) ||
+                        (e.ip_address && e.ip_address.includes(q)) ||
+                        (e.login_event_id && e.login_event_id.toLowerCase().includes(q))
+                    );
+                }
+                renderLoginEvents(events);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderLoginEvents(events) {
+            const tbody = document.getElementById('login-events-table-body');
+            if (!tbody) return;
+            if (events.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'لا توجد سجلات دخول مطابقة' : 'No authentication events found'}</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = events.map(e => `
+                <tr>
+                    <td style="font-family: monospace; font-size: 0.85em; font-weight: 600;">
+                        <span class="id-badge">${e.login_event_id}</span>
+                        <button class="btn-copy" onclick="copyId('${e.login_event_id}')" title="Copy">📋</button>
+                    </td>
+                    <td style="font-size: 0.85em; white-space: nowrap; color: var(--text-muted);">${new Date(e.occurred_at).toLocaleString()}</td>
+                    <td>
+                        <div style="font-weight: 600;">${e.user_name || 'System / Auto'}</div>
+                        <div style="font-size: 0.8em; color: var(--text-muted);">${e.user_email || (e.user_id ? e.user_id : '--')}</div>
+                    </td>
+                    <td><span class="badge ${e.event_type.includes('FAIL') ? 'badge-danger' : 'badge-scope-branch'}">${e.event_type}</span></td>
+                    <td style="font-family: monospace; font-size: 0.85em;">${e.ip_address || '--'}</td>
+                    <td>
+                        ${e.success 
+                            ? `<span class="badge badge-success">✓ SUCCESS</span>` 
+                            : `<span class="badge badge-danger">✕ FAILED</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ================= ORGANIZATION PROFILE =================
+        async function fetchOrganization() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/admin/organization`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const org = json.data;
+                if (!org) return;
+
+                if (document.getElementById('org-legal-name')) {
+                    document.getElementById('org-legal-name').textContent = org.trade_name ? `${org.legal_name} (${org.trade_name})` : org.legal_name;
+                }
+                if (document.getElementById('org-code-badge')) {
+                    document.getElementById('org-code-badge').textContent = org.organization_code;
+                }
+                if (document.getElementById('org-tax-no')) {
+                    document.getElementById('org-tax-no').textContent = org.tax_number || '--';
+                }
+                if (document.getElementById('org-currency')) {
+                    document.getElementById('org-currency').textContent = org.currency_code;
+                }
+                if (document.getElementById('org-timezone')) {
+                    document.getElementById('org-timezone').textContent = org.timezone;
+                }
+                if (document.getElementById('org-country')) {
+                    document.getElementById('org-country').textContent = org.country_code === 'SA' ? 'SA (المملكة العربية السعودية)' : org.country_code;
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        // ================= HELPERS & DROPDOWNS =================
+        async function loadAllInitialReference() {
+            try {
+                const [cRes, bRes, rRes, pRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/cities`),
+                    fetch(`${API_BASE}/api/v1/admin/branches`),
+                    fetch(`${API_BASE}/api/v1/admin/roles`),
+                    fetch(`${API_BASE}/api/v1/admin/permissions`)
+                ]);
+                cachedCities = (await cRes.json()).data || [];
+                cachedBranches = (await bRes.json()).data || [];
+                cachedRoles = (await rRes.json()).data || [];
+                cachedPermissions = (await pRes.json()).data || [];
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        function populateCitySelect(selectId) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const isAr = currentLang === 'ar';
+            sel.innerHTML = `<option value="">-- ${isAr ? 'اختر المدينة' : 'Select City'} --</option>` +
+                cachedCities.map(c => `<option value="${c.city_id}">${isAr ? (c.name_ar || c.name_en) : c.name_en}</option>`).join('');
+        }
+
+        function populateBranchSelect(selectId) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            sel.innerHTML = '<option value="">-- Select Branch --</option>' +
+                cachedBranches.map(b => `<option value="${b.branch_id}">${b.branch_code} - ${b.name}</option>`).join('');
+        }
+
+        function populateBranchFilters() {
+            const sel = document.getElementById('user-branch-filter');
+            if (!sel) return;
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">All Branches</option>' +
+                cachedBranches.map(b => `<option value="${b.branch_id}">${b.branch_code} - ${b.name}</option>`).join('');
+            sel.value = curVal;
+        }
+
+        function populateRoleFilters() {
+            const sel = document.getElementById('user-role-filter');
+            if (!sel) return;
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">All Roles</option>' +
+                cachedRoles.map(r => `<option value="${r.role_id}">${r.name} (${r.role_code})</option>`).join('');
+            sel.value = curVal;
+        }
+
+        function populateManagerSelect(selectId = 'user-manager', excludeUserId = null) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">-- No Direct Supervisor --</option>' +
+                cachedUsers
+                    .filter(u => u.user_id !== excludeUserId)
+                    .map(u => `<option value="${u.user_id}">${u.full_name} (${u.user_id})</option>`).join('');
+            sel.value = curVal;
+        }
+
+        // ================= LIFECYCLE INITIALIZATION =================
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTypographyAndLang();
+            await loadAllInitialReference();
+            await fetchOrganization();
+            await fetchSummary();
+            await fetchBranches();
+            await fetchUsers();
+        });
+    </script>
+</body>
+</html>
+

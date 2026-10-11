@@ -1,9 +1,9 @@
 from typing import Optional, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
 from app.schemas.listings import (
     ListingsSummaryOut, ListingSourceMetric,
@@ -64,8 +64,8 @@ async def get_listings_summary(conn: asyncpg.Connection = Depends(get_db)):
 async def list_listings(
     source: Optional[str] = Query(None, description="Filter by listing channel (WEBSITE, PORTAL_A, PORTAL_B)"),
     status_filter: Optional[str] = Query(None, alias="status", description="Filter by status (PUBLISHED, PAUSED, EXPIRED)"),
-    city_id: Optional[UUID] = Query(None, description="Filter by city"),
-    property_type_id: Optional[UUID] = Query(None, description="Filter by property type"),
+    city_id: Optional[str] = Query(None, description="Filter by city"),
+    property_type_id: Optional[str] = Query(None, description="Filter by property type"),
     search: Optional[str] = Query(None, description="Search title, unit number or project"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
@@ -149,7 +149,7 @@ async def list_listings(
 # Single Listing Operations
 # ---------------------------------------------------------
 @router.get("/listings/{listing_id}", response_model=ResponseEnvelope[ListingOut])
-async def get_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_listing(listing_id: str, conn: asyncpg.Connection = Depends(get_db)):
     row = await conn.fetchrow("""
         SELECT 
             l.listing_id, l.unit_id, l.listing_source, l.external_listing_id,
@@ -197,8 +197,8 @@ async def create_listing(payload: ListingCreateIn, conn: asyncpg.Connection = De
     if not u:
         raise HTTPException(status_code=404, detail=f"Unit {payload.unit_id} not found.")
 
-    listing_id = uuid4()
-    ext_id = payload.external_listing_id or f"EXT-LIST-{str(uuid4())[:8].upper()}"
+    listing_id = await get_next_id(conn, "listings", "listing")
+    ext_id = payload.external_listing_id or f"EXT-LIST-{listing_id}"
     status_str = payload.status.upper() if payload.status else "PUBLISHED"
     published_at = datetime.now(timezone.utc) if status_str == "PUBLISHED" else None
 
@@ -220,7 +220,7 @@ async def create_listing(payload: ListingCreateIn, conn: asyncpg.Connection = De
 
 @router.patch("/listings/{listing_id}", response_model=ResponseEnvelope[ListingOut])
 async def update_listing(
-    listing_id: UUID,
+    listing_id: str,
     payload: ListingUpdateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -277,7 +277,7 @@ async def update_listing(
 # Action Endpoints per API.md
 # ---------------------------------------------------------
 @router.post("/listings/{listing_id}/publish", response_model=ResponseEnvelope[ListingOut])
-async def publish_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def publish_listing(listing_id: str, conn: asyncpg.Connection = Depends(get_db)):
     l = await conn.fetchrow("SELECT listing_id FROM listings WHERE listing_id = $1", listing_id)
     if not l:
         raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found.")
@@ -291,7 +291,7 @@ async def publish_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(g
 
 
 @router.post("/listings/{listing_id}/pause", response_model=ResponseEnvelope[ListingOut])
-async def pause_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def pause_listing(listing_id: str, conn: asyncpg.Connection = Depends(get_db)):
     l = await conn.fetchrow("SELECT listing_id FROM listings WHERE listing_id = $1", listing_id)
     if not l:
         raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found.")
@@ -301,7 +301,7 @@ async def pause_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(get
 
 
 @router.post("/listings/{listing_id}/expire", response_model=ResponseEnvelope[ListingOut])
-async def expire_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def expire_listing(listing_id: str, conn: asyncpg.Connection = Depends(get_db)):
     l = await conn.fetchrow("SELECT listing_id FROM listings WHERE listing_id = $1", listing_id)
     if not l:
         raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found.")
@@ -318,7 +318,7 @@ async def expire_listing(listing_id: UUID, conn: asyncpg.Connection = Depends(ge
 # Unit Listings Endpoints per API.md: /units/{id}/listings
 # ---------------------------------------------------------
 @router.get("/units/{unit_id}/listings", response_model=CollectionEnvelope[ListingOut])
-async def get_unit_listings(unit_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_unit_listings(unit_id: str, conn: asyncpg.Connection = Depends(get_db)):
     u = await conn.fetchrow("SELECT unit_id FROM units WHERE unit_id = $1", unit_id)
     if not u:
         raise HTTPException(status_code=404, detail=f"Unit {unit_id} not found.")
@@ -362,7 +362,7 @@ async def get_unit_listings(unit_id: UUID, conn: asyncpg.Connection = Depends(ge
 
 @router.post("/units/{unit_id}/listings", response_model=ResponseEnvelope[ListingOut], status_code=status.HTTP_201_CREATED)
 async def create_unit_listing(
-    unit_id: UUID,
+    unit_id: str,
     payload: ListingCreateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):

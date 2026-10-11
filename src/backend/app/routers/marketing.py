@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import json
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
 from app.schemas.marketing import (
     MarketingSummaryOut, ChannelMetric,
@@ -177,7 +177,7 @@ async def create_campaign(
     if not org_id:
         raise HTTPException(status_code=500, detail="No active organization found in system.")
 
-    campaign_id = uuid4()
+    campaign_id = await get_next_id(conn, "campaigns", "campaign")
     channel = payload.channel.upper() if payload.channel else "SOCIAL"
     campaign_status = payload.status.upper() if payload.status else "ACTIVE"
 
@@ -206,7 +206,7 @@ async def create_campaign(
 
 
 @router.get("/campaigns/{campaign_id}", response_model=ResponseEnvelope[CampaignOut])
-async def get_campaign(campaign_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_campaign(campaign_id: str, conn: asyncpg.Connection = Depends(get_db)):
     row = await conn.fetchrow("""
         SELECT 
             c.campaign_id,
@@ -257,7 +257,7 @@ async def get_campaign(campaign_id: UUID, conn: asyncpg.Connection = Depends(get
 
 @router.patch("/campaigns/{campaign_id}", response_model=ResponseEnvelope[CampaignOut])
 async def update_campaign(
-    campaign_id: UUID,
+    campaign_id: str,
     payload: CampaignUpdateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -304,7 +304,7 @@ async def update_campaign(
 # ---------------------------------------------------------
 @router.get("/campaigns/{campaign_id}/leads", response_model=CollectionEnvelope[CampaignLeadOut])
 async def get_campaign_leads(
-    campaign_id: UUID,
+    campaign_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     conn: asyncpg.Connection = Depends(get_db)
@@ -351,8 +351,8 @@ async def get_campaign_leads(
 
 @router.post("/campaigns/{campaign_id}/leads/{lead_id}", response_model=ResponseEnvelope[CampaignLeadOut], status_code=status.HTTP_201_CREATED)
 async def attach_lead_to_campaign_path(
-    campaign_id: UUID,
-    lead_id: UUID,
+    campaign_id: str,
+    lead_id: str,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     # Check campaign and lead exist
@@ -372,11 +372,12 @@ async def attach_lead_to_campaign_path(
     """, campaign_id, lead_id, captured_at)
 
     # Automatically add a lead event to lead_events
+    lead_event_id = await get_next_id(conn, "lead_events", "lead_event")
     meta_json = json.dumps({"campaign_id": str(campaign_id), "campaign_name": c["name"], "channel": c["channel"]})
     await conn.execute("""
         INSERT INTO lead_events (lead_event_id, lead_id, event_type, event_at, metadata_json)
         VALUES ($1, $2, 'CAMPAIGN_ATTRIBUTED', $3, $4::jsonb)
-    """, uuid4(), lead_id, captured_at, meta_json)
+    """, lead_event_id, lead_id, captured_at, meta_json)
 
     # Fetch and return complete lead info
     row = await conn.fetchrow("""
@@ -407,7 +408,7 @@ async def attach_lead_to_campaign_path(
 
 @router.post("/campaigns/{campaign_id}/leads", response_model=ResponseEnvelope[CampaignLeadOut], status_code=status.HTTP_201_CREATED)
 async def attach_lead_to_campaign_body(
-    campaign_id: UUID,
+    campaign_id: str,
     payload: CampaignLeadAttachIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -419,7 +420,7 @@ async def attach_lead_to_campaign_body(
 # ---------------------------------------------------------
 @router.get("/lead-events", response_model=CollectionEnvelope[LeadEventOut])
 async def list_lead_events(
-    lead_id: Optional[UUID] = Query(None, description="Filter by specific lead ID"),
+    lead_id: Optional[str] = Query(None, description="Filter by specific lead ID"),
     event_type: Optional[str] = Query(None, description="Filter by event type"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
@@ -493,7 +494,7 @@ async def record_lead_event(
     if not l:
         raise HTTPException(status_code=404, detail=f"Lead {payload.lead_id} not found.")
 
-    event_id = uuid4()
+    event_id = await get_next_id(conn, "lead_events", "lead_event")
     event_at = payload.event_at or datetime.now(timezone.utc)
     meta_json = json.dumps(payload.metadata_json or {})
 
@@ -533,7 +534,7 @@ async def record_lead_event(
 
 @router.get("/leads/{lead_id}/events", response_model=CollectionEnvelope[LeadEventOut])
 async def get_lead_events_timeline(
-    lead_id: UUID,
+    lead_id: str,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     l = await conn.fetchrow("SELECT lead_id FROM leads WHERE lead_id = $1", lead_id)
@@ -578,7 +579,7 @@ async def get_lead_events_timeline(
 
 @router.post("/leads/{lead_id}/events", response_model=ResponseEnvelope[LeadEventOut], status_code=status.HTTP_201_CREATED)
 async def create_event_for_lead(
-    lead_id: UUID,
+    lead_id: str,
     payload: LeadEventCreateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):

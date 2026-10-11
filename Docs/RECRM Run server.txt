@@ -1,7 +1,24 @@
-RECRM
-To start the server manually at any time:
-PYTHONPATH=src/backend .venv/bin/python src/backend/run.py
+==============================================================================
+RECRM - HOW TO RUN THE APPLICATION (أفضل وأسهل طريقة لتشغيل النظام)
+==============================================================================
 
+Option 1 (One-word shortcut from any terminal):
+    recrm
+
+Option 2 (Terminal in project directory):
+    ./start_server.sh
+
+Option 3 (Background daemon mode):
+    ./start_server.sh --daemon
+
+Option 4 (Desktop Shortcut):
+    Double-click the "RE CRM" icon on your Desktop.
+
+Useful Commands:
+    ./start_server.sh --status    # Check PostgreSQL & FastAPI health
+    ./start_server.sh --restart   # Restart server
+    ./stop_server.sh              # Stop running server
+==============================================================================
 Summary of Actions & Architecture
 1. Database Connection & Verification
 PostgreSQL Connection: Successfully verified on localhost:5432 with user postgres against database redb.

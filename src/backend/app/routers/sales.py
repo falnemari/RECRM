@@ -2,9 +2,13 @@ from typing import Optional, List
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
-from app.schemas.sales import OpportunityOut, OpportunityUpdate, ViewingOut, ReservationOut
+from app.schemas.sales import (
+    OpportunityOut, OpportunityUpdate, OpportunityCreateIn, ViewingOut, ReservationOut,
+    OfferOut, OfferCreateIn, OfferUpdateIn,
+    OpportunityUnitOut, OpportunityUnitCreateIn
+)
 
 router = APIRouter(tags=["Sales Pipeline"])
 
@@ -32,9 +36,28 @@ async def list_opportunities(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     stage: Optional[str] = None,
-    assigned_user_id: Optional[UUID] = None,
+    assigned_user_id: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    # Auto-sync any qualified leads that don't yet have an opportunity in the pipeline
+    unsynced = await conn.fetch("""
+        SELECT l.lead_id, l.customer_id, l.assigned_user_id, l.budget_max, l.budget_min
+        FROM leads l
+        LEFT JOIN opportunities o ON l.lead_id = o.lead_id
+        WHERE l.status IN ('QUALIFIED', 'CONVERTED')
+          AND l.customer_id IS NOT NULL
+          AND o.opportunity_id IS NULL
+    """)
+    for l in unsynced:
+        opp_id = await get_next_id(conn, "opportunities", "opportunity")
+        val = float(l["budget_max"] or l["budget_min"] or 0.0)
+        await conn.execute("""
+            INSERT INTO opportunities (
+                opportunity_id, lead_id, customer_id, assigned_user_id,
+                stage, expected_value, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
+        """, opp_id, l["lead_id"], l["customer_id"], l["assigned_user_id"], val)
+
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -69,7 +92,7 @@ async def list_opportunities(
     )
 
 @router.get("/opportunities/{opp_id}", response_model=ResponseEnvelope[OpportunityOut])
-async def get_opportunity(opp_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_opportunity(opp_id: str, conn: asyncpg.Connection = Depends(get_db)):
     query = f"{OPP_SELECT_QUERY} WHERE o.opportunity_id = $1"
     row = await conn.fetchrow(query, opp_id)
     if not row:
@@ -77,7 +100,7 @@ async def get_opportunity(opp_id: UUID, conn: asyncpg.Connection = Depends(get_d
     return ResponseEnvelope(data=OpportunityOut(**dict(row)), meta=BaseMeta())
 
 @router.patch("/opportunities/{opp_id}", response_model=ResponseEnvelope[OpportunityOut])
-async def update_opportunity(opp_id: UUID, payload: OpportunityUpdate, conn: asyncpg.Connection = Depends(get_db)):
+async def update_opportunity(opp_id: str, payload: OpportunityUpdate, conn: asyncpg.Connection = Depends(get_db)):
     updates = []
     params = []
     p_idx = 1
@@ -107,11 +130,73 @@ async def update_opportunity(opp_id: UUID, payload: OpportunityUpdate, conn: asy
         params.append(opp_id)
         await conn.execute(f"UPDATE opportunities SET {', '.join(updates)} WHERE opportunity_id = ${p_idx}", *params)
 
+        # Reflect opportunity stage back into the linked lead in leads table
+        if payload.stage is not None:
+            new_stage = payload.stage.upper()
+            if new_stage == "WON":
+                await conn.execute("""
+                    UPDATE leads SET status = 'CONVERTED', updated_at = now()
+                    WHERE lead_id = (SELECT lead_id FROM opportunities WHERE opportunity_id = $1)
+                      AND lead_id IS NOT NULL
+                """, opp_id)
+            elif new_stage == "LOST":
+                await conn.execute("""
+                    UPDATE leads SET status = 'LOST', updated_at = now()
+                    WHERE lead_id = (SELECT lead_id FROM opportunities WHERE opportunity_id = $1)
+                      AND lead_id IS NOT NULL
+                """, opp_id)
+            elif new_stage in ("QUALIFIED", "VIEWING", "NEGOTIATION"):
+                await conn.execute("""
+                    UPDATE leads SET status = 'QUALIFIED', updated_at = now()
+                    WHERE lead_id = (SELECT lead_id FROM opportunities WHERE opportunity_id = $1)
+                      AND lead_id IS NOT NULL AND status IN ('NEW', 'CONTACTED')
+                """, opp_id)
+
     query = f"{OPP_SELECT_QUERY} WHERE o.opportunity_id = $1"
     row = await conn.fetchrow(query, opp_id)
     if not row:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     return ResponseEnvelope(data=OpportunityOut(**dict(row)), meta=BaseMeta())
+
+@router.post("/opportunities", response_model=ResponseEnvelope[OpportunityOut], status_code=status.HTTP_201_CREATED)
+async def create_opportunity(payload: OpportunityCreateIn, conn: asyncpg.Connection = Depends(get_db)):
+    opp_id = await get_next_id(conn, "opportunities", "opportunity")
+    stage = (payload.stage or "QUALIFIED").upper()
+    await conn.execute("""
+        INSERT INTO opportunities (
+            opportunity_id, lead_id, customer_id, assigned_user_id,
+            stage, expected_value, expected_close_date, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
+    """, opp_id, payload.lead_id, payload.customer_id, payload.assigned_user_id,
+       stage, payload.expected_value or 0.0, payload.expected_close_date)
+
+    query = f"{OPP_SELECT_QUERY} WHERE o.opportunity_id = $1"
+    row = await conn.fetchrow(query, opp_id)
+    return ResponseEnvelope(data=OpportunityOut(**dict(row)), meta=BaseMeta())
+
+@router.post("/opportunities/sync-qualified-leads", response_model=ResponseEnvelope[dict])
+@router.post("/sales/opportunities/sync-qualified-leads", response_model=ResponseEnvelope[dict], include_in_schema=False)
+async def sync_qualified_leads(conn: asyncpg.Connection = Depends(get_db)):
+    unsynced = await conn.fetch("""
+        SELECT l.lead_id, l.customer_id, l.assigned_user_id, l.budget_max, l.budget_min
+        FROM leads l
+        LEFT JOIN opportunities o ON l.lead_id = o.lead_id
+        WHERE l.status IN ('QUALIFIED', 'CONVERTED')
+          AND l.customer_id IS NOT NULL
+          AND o.opportunity_id IS NULL
+    """)
+    synced_count = 0
+    for l in unsynced:
+        opp_id = await get_next_id(conn, "opportunities", "opportunity")
+        val = float(l["budget_max"] or l["budget_min"] or 0.0)
+        await conn.execute("""
+            INSERT INTO opportunities (
+                opportunity_id, lead_id, customer_id, assigned_user_id,
+                stage, expected_value, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
+        """, opp_id, l["lead_id"], l["customer_id"], l["assigned_user_id"], val)
+        synced_count += 1
+    return ResponseEnvelope(data={"synced_count": synced_count, "message": f"Successfully synced {synced_count} qualified leads into active opportunities."})
 
 @router.get("/viewings", response_model=CollectionEnvelope[ViewingOut])
 async def list_viewings(
@@ -205,4 +290,216 @@ async def list_reservations(
         data=data,
         meta=CollectionMeta(page=page, page_size=page_size, total=total)
     )
+
+
+# =============================================================
+# Offers Management (offers table)
+# =============================================================
+@router.get("/offers", response_model=CollectionEnvelope[OfferOut])
+@router.get("/sales/offers", response_model=CollectionEnvelope[OfferOut], include_in_schema=False)
+async def list_offers(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    opportunity_id: Optional[str] = None,
+    unit_id: Optional[str] = None,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    offset = (page - 1) * page_size
+    conditions = ["1=1"]
+    params = []
+    p_idx = 1
+
+    if status_filter:
+        conditions.append(f"o.status = ${p_idx}")
+        params.append(status_filter.upper())
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"o.opportunity_id = ${p_idx}")
+        params.append(opportunity_id)
+        p_idx += 1
+
+    if unit_id:
+        conditions.append(f"o.unit_id = ${p_idx}")
+        params.append(unit_id)
+        p_idx += 1
+
+    where_clause = " AND ".join(conditions)
+    total = await conn.fetchval(f"SELECT count(*) FROM offers o WHERE {where_clause}", *params)
+
+    query = f"""
+        SELECT 
+            o.offer_id,
+            o.opportunity_id,
+            o.unit_id,
+            u.unit_number,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            CAST(o.offer_amount AS FLOAT) AS offer_amount,
+            o.submitted_at,
+            o.valid_until,
+            o.status
+        FROM offers o
+        LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
+        LEFT JOIN customers c ON opp.customer_id = c.customer_id
+        WHERE {where_clause}
+        ORDER BY o.submitted_at DESC
+        LIMIT ${p_idx} OFFSET ${p_idx + 1}
+    """
+    params.extend([page_size, offset])
+    rows = await conn.fetch(query, *params)
+    data = [OfferOut(**dict(r)) for r in rows]
+
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+    )
+
+@router.get("/offers/{offer_id}", response_model=ResponseEnvelope[OfferOut])
+async def get_offer(offer_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    row = await conn.fetchrow("""
+        SELECT 
+            o.offer_id,
+            o.opportunity_id,
+            o.unit_id,
+            u.unit_number,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            CAST(o.offer_amount AS FLOAT) AS offer_amount,
+            o.submitted_at,
+            o.valid_until,
+            o.status
+        FROM offers o
+        LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
+        LEFT JOIN customers c ON opp.customer_id = c.customer_id
+        WHERE o.offer_id = $1
+    """, offer_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    return ResponseEnvelope(data=OfferOut(**dict(row)), meta=BaseMeta())
+
+@router.post("/offers", response_model=ResponseEnvelope[OfferOut], status_code=status.HTTP_201_CREATED)
+async def create_offer(payload: OfferCreateIn, conn: asyncpg.Connection = Depends(get_db)):
+    offer_id = await get_next_id(conn, "offers", "offer")
+    await conn.execute("""
+        INSERT INTO offers (offer_id, opportunity_id, unit_id, offer_amount, submitted_at, valid_until, status)
+        VALUES ($1, $2, $3, $4, now(), $5, $6)
+    """, offer_id, payload.opportunity_id, payload.unit_id, payload.offer_amount, payload.valid_until, payload.status.upper())
+
+    row = await conn.fetchrow("""
+        SELECT 
+            o.offer_id,
+            o.opportunity_id,
+            o.unit_id,
+            u.unit_number,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            CAST(o.offer_amount AS FLOAT) AS offer_amount,
+            o.submitted_at,
+            o.valid_until,
+            o.status
+        FROM offers o
+        LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
+        LEFT JOIN customers c ON opp.customer_id = c.customer_id
+        WHERE o.offer_id = $1
+    """, offer_id)
+    return ResponseEnvelope(data=OfferOut(**dict(row)), meta=BaseMeta())
+
+@router.patch("/offers/{offer_id}", response_model=ResponseEnvelope[OfferOut])
+async def update_offer(offer_id: str, payload: OfferUpdateIn, conn: asyncpg.Connection = Depends(get_db)):
+    updates = []
+    params = []
+    p_idx = 1
+    if payload.offer_amount is not None:
+        updates.append(f"offer_amount = ${p_idx}")
+        params.append(payload.offer_amount)
+        p_idx += 1
+    if payload.valid_until is not None:
+        updates.append(f"valid_until = ${p_idx}")
+        params.append(payload.valid_until)
+        p_idx += 1
+    if payload.status is not None:
+        updates.append(f"status = ${p_idx}")
+        params.append(payload.status.upper())
+        p_idx += 1
+    if updates:
+        params.append(offer_id)
+        await conn.execute(f"UPDATE offers SET {', '.join(updates)} WHERE offer_id = ${p_idx}", *params)
+
+    row = await conn.fetchrow("""
+        SELECT 
+            o.offer_id,
+            o.opportunity_id,
+            o.unit_id,
+            u.unit_number,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            CAST(o.offer_amount AS FLOAT) AS offer_amount,
+            o.submitted_at,
+            o.valid_until,
+            o.status
+        FROM offers o
+        LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
+        LEFT JOIN customers c ON opp.customer_id = c.customer_id
+        WHERE o.offer_id = $1
+    """, offer_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    return ResponseEnvelope(data=OfferOut(**dict(row)), meta=BaseMeta())
+
+
+# =============================================================
+# Opportunity Units Mapping (opportunity_units table)
+# =============================================================
+@router.get("/opportunities/{opp_id}/units", response_model=CollectionEnvelope[OpportunityUnitOut])
+@router.get("/sales/opportunities/{opp_id}/units", response_model=CollectionEnvelope[OpportunityUnitOut], include_in_schema=False)
+async def list_opportunity_units(opp_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    rows = await conn.fetch("""
+        SELECT 
+            ou.opportunity_id,
+            ou.unit_id,
+            u.unit_number,
+            ou.is_primary,
+            CAST(ou.offered_price AS FLOAT) AS offered_price
+        FROM opportunity_units ou
+        JOIN units u ON ou.unit_id = u.unit_id
+        WHERE ou.opportunity_id = $1
+        ORDER BY ou.is_primary DESC, u.unit_number ASC
+    """, opp_id)
+    data = [OpportunityUnitOut(**dict(r)) for r in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+@router.post("/opportunities/{opp_id}/units", response_model=ResponseEnvelope[OpportunityUnitOut], status_code=status.HTTP_201_CREATED)
+@router.post("/sales/opportunities/{opp_id}/units", response_model=ResponseEnvelope[OpportunityUnitOut], include_in_schema=False, status_code=status.HTTP_201_CREATED)
+async def add_opportunity_unit(opp_id: str, payload: OpportunityUnitCreateIn, conn: asyncpg.Connection = Depends(get_db)):
+    await conn.execute("""
+        INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (opportunity_id, unit_id) DO UPDATE 
+        SET is_primary = EXCLUDED.is_primary, offered_price = EXCLUDED.offered_price
+    """, opp_id, payload.unit_id, payload.is_primary, payload.offered_price)
+
+    row = await conn.fetchrow("""
+        SELECT 
+            ou.opportunity_id,
+            ou.unit_id,
+            u.unit_number,
+            ou.is_primary,
+            CAST(ou.offered_price AS FLOAT) AS offered_price
+        FROM opportunity_units ou
+        JOIN units u ON ou.unit_id = u.unit_id
+        WHERE ou.opportunity_id = $1 AND ou.unit_id = $2
+    """, opp_id, payload.unit_id)
+    return ResponseEnvelope(data=OpportunityUnitOut(**dict(row)), meta=BaseMeta())
+
+@router.delete("/opportunities/{opp_id}/units/{unit_id}", response_model=ResponseEnvelope[dict])
+@router.delete("/sales/opportunities/{opp_id}/units/{unit_id}", response_model=ResponseEnvelope[dict], include_in_schema=False)
+async def remove_opportunity_unit(opp_id: str, unit_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    await conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1 AND unit_id = $2", opp_id, unit_id)
+    return ResponseEnvelope(data={"deleted": True, "opportunity_id": opp_id, "unit_id": unit_id}, meta=BaseMeta())
+
 

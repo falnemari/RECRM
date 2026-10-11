@@ -226,11 +226,17 @@
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
         [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+        }
 
         /* Badges */
         .badge {
@@ -391,6 +397,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" class="active" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -462,6 +469,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 100px;">Campaign ID</th>
                             <th data-i18n="th_name">Campaign Name</th>
                             <th data-i18n="th_channel">Channel</th>
                             <th data-i18n="th_dates">Schedule Dates</th>
@@ -474,7 +482,7 @@
                         </tr>
                     </thead>
                     <tbody id="campaigns-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading campaigns...</td></tr>
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading campaigns...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -668,7 +676,7 @@
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
-                nav_marketing: "Marketing & Campaigns", nav_api: "API Docs",
+                nav_marketing: "Marketing & Campaigns", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_active_campaigns: "Active Campaigns", kpi_total_budget: "Total Marketing Budget",
                 kpi_budget_sub: "Allocated across campaigns", kpi_leads_captured: "Attributed Inbound Leads",
                 kpi_leads_sub: "Generated via campaign channels", kpi_conversion_rate: "Qualified Conversion Rate",
@@ -693,7 +701,7 @@
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
-                nav_marketing: "التسويق والحملات", nav_api: "توثيق API",
+                nav_marketing: "التسويق والحملات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_active_campaigns: "الحملات النشطة", kpi_total_budget: "إجمالي الميزانية التسويقية",
                 kpi_budget_sub: "إجمالي الميزانيات المرصودة", kpi_leads_captured: "العملاء المستقطبون",
                 kpi_leads_sub: "واردون عبر القنوات الإعلانية", kpi_conversion_rate: "نسبة التأهيل والتحويل",
@@ -853,6 +861,7 @@
                     
                     return `
                         <tr>
+                            <td><span class="id-badge">${c.campaign_id}</span></td>
                             <td><strong>${c.name}</strong></td>
                             <td><span class="badge ${channelClass}">${c.channel || 'OTHER'}</span></td>
                             <td>${dates}</td>

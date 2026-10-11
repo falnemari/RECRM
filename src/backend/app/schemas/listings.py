@@ -18,14 +18,14 @@ class ListingsSummaryOut(BaseModel):
     sources: List[ListingSourceMetric]
 
 class ListingMediaOut(BaseModel):
-    media_id: UUID
+    media_id: str
     storage_uri: str
     media_type: str
     sort_order: int
 
 class ListingOut(BaseModel):
-    listing_id: UUID
-    unit_id: UUID
+    listing_id: str
+    unit_id: str
     unit_number: str
     listing_source: str
     external_listing_id: Optional[str] = None
@@ -52,7 +52,7 @@ class ListingOut(BaseModel):
     media: List[ListingMediaOut] = []
 
 class ListingCreateIn(BaseModel):
-    unit_id: UUID
+    unit_id: str
     listing_source: str = Field("WEBSITE", description="Listing channel: WEBSITE, PORTAL_A, PORTAL_B, etc.")
     external_listing_id: Optional[str] = None
     title_ar: Optional[str] = None

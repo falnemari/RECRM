@@ -198,11 +198,17 @@
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
         [dir="rtl"] table { text-align: right; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
+            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+        }
 
         /* Badges */
         .badge {
@@ -319,6 +325,7 @@
             <li><a href="documents.html" class="active" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -389,6 +396,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 100px;">Doc ID</th>
                         <th data-i18n="th_file_name">Document File</th>
                         <th data-i18n="th_doc_type">Type</th>
                         <th data-i18n="th_linked_entity">Linked Entity</th>
@@ -399,7 +407,7 @@
                     </tr>
                 </thead>
                 <tbody id="docs-tbody">
-                    <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading documents from vault...</td></tr>
+                    <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading documents from vault...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -507,7 +515,7 @@
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities",
-                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_total_docs: "Total Documents", kpi_total_docs_sub: "Stored in secure vault",
                 kpi_active_docs: "Active Compliant", kpi_active_docs_sub: "Valid verified records",
                 kpi_expiring_soon: "Expiring Soon (30d)", kpi_expiring_sub: "Requires renewal attention",
@@ -529,7 +537,7 @@
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة",
-                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_total_docs: "إجمالي المستندات", kpi_total_docs_sub: "المحفوظة في الخزينة الآمنة",
                 kpi_active_docs: "المستندات السارية", kpi_active_docs_sub: "وثائق سارية ومحققة",
                 kpi_expiring_soon: "قاربت على الانتهاء (30 يوم)", kpi_expiring_sub: "تتطلب تجديداً عاجلاً",
@@ -628,7 +636,7 @@
         function renderDocuments(items) {
             const tbody = document.getElementById('docs-tbody');
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No documents found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px;">No documents found.</td></tr>';
                 return;
             }
 
@@ -651,11 +659,10 @@
 
                 return `
                     <tr>
+                        <td><span class="id-badge">${d.document_id}</span></td>
                         <td>
-                            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">
-                                📄 ${d.file_name}
-                            </div>
-                            <span style="font-size:0.75em; color:var(--text-muted);">v${d.version_no} • ${d.storage_uri.substring(0, 32)}...</span>
+                            <strong>📄 ${d.file_name}</strong>
+                            <span style="font-size:0.75em; color:var(--text-muted); margin-inline-start:4px;">(v${d.version_no})</span>
                         </td>
                         <td><span class="${tagCls}">${d.document_type_name || code}</span></td>
                         <td>${linked}</td>

@@ -43,3 +43,31 @@ async def list_users(conn: asyncpg.Connection = Depends(get_db)):
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
     )
 
+@router.get("/loss-reasons", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_loss_reasons(conn: asyncpg.Connection = Depends(get_db)):
+    rows = await conn.fetch("SELECT loss_reason_id, code, name FROM loss_reasons ORDER BY name")
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+@router.get("/activity-types", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_activity_types(conn: asyncpg.Connection = Depends(get_db)):
+    rows = await conn.fetch("SELECT activity_type_id, code, name FROM activity_types ORDER BY name")
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+@router.get("/document-types", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_document_types(conn: asyncpg.Connection = Depends(get_db)):
+    rows = await conn.fetch("SELECT document_type_id, code, name, expiry_required FROM document_types ORDER BY name")
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+

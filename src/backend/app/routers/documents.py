@@ -1,10 +1,10 @@
 from typing import Optional, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime, date, timezone
 import hashlib
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
 from app.schemas.documents import (
     DocumentsSummaryOut,
@@ -66,9 +66,9 @@ async def list_documents(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     document_type: Optional[str] = None,
-    customer_id: Optional[UUID] = None,
-    unit_id: Optional[UUID] = None,
-    contract_id: Optional[UUID] = None,
+    customer_id: Optional[str] = None,
+    unit_id: Optional[str] = None,
+    contract_id: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status"),
     is_expired: Optional[bool] = None,
     is_expiring_soon: Optional[bool] = None,
@@ -196,7 +196,7 @@ async def create_document(
             doc_type_id = dt["document_type_id"]
             doc_type_name = dt["name"]
 
-    doc_id = uuid4()
+    doc_id = await get_next_id(conn, "documents", "document")
     now = datetime.now(timezone.utc)
     storage_uri = payload.storage_uri or f"s3://recrm-documents/{org_id}/{doc_id}/{payload.file_name}"
     
@@ -252,10 +252,10 @@ async def create_document(
         await conn.execute(
             """
             INSERT INTO document_access_log (
-                document_access_id, document_id, user_id, action, accessed_at, ip_address
-            ) VALUES ($1, $2, $3, 'UPLOAD', $4, $5)
+                document_id, user_id, action, accessed_at, ip_address
+            ) VALUES ($1, $2, 'UPLOAD', $3, $4)
             """,
-            uuid4(), doc_id, user_id, now, client_ip
+            doc_id, user_id, now, client_ip
         )
 
     is_exp = bool(payload.expires_at and payload.expires_at < date.today())
@@ -289,7 +289,7 @@ async def create_document(
 
 @router.get("/documents/{document_id}", response_model=ResponseEnvelope[DocumentOut])
 async def get_document(
-    document_id: UUID,
+    document_id: str,
     request: Request,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -340,17 +340,17 @@ async def get_document(
     await conn.execute(
         """
         INSERT INTO document_access_log (
-            document_access_id, document_id, user_id, action, accessed_at, ip_address
-        ) VALUES ($1, $2, $3, 'VIEW', NOW(), $4)
+            document_id, user_id, action, accessed_at, ip_address
+        ) VALUES ($1, $2, 'VIEW', NOW(), $3)
         """,
-        uuid4(), document_id, user_id, client_ip
+        document_id, user_id, client_ip
     )
 
     return ResponseEnvelope(data=DocumentOut(**dict(row)))
 
 @router.post("/documents/{document_id}/access-url", response_model=ResponseEnvelope[dict])
 async def generate_access_url(
-    document_id: UUID,
+    document_id: str,
     request: Request,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -359,17 +359,17 @@ async def generate_access_url(
         raise HTTPException(status_code=404, detail="Document not found")
 
     default_user = await conn.fetchrow("SELECT user_id FROM users WHERE status = 'ACTIVE' LIMIT 1")
-    user_id = default_user["user_id"] if default_user else uuid4()
+    user_id = default_user["user_id"] if default_user else "user-1"
     client_ip = request.client.host if request.client else "127.0.0.1"
 
     # Log download action
     await conn.execute(
         """
         INSERT INTO document_access_log (
-            document_access_id, document_id, user_id, action, accessed_at, ip_address
-        ) VALUES ($1, $2, $3, 'DOWNLOAD', NOW(), $4)
+            document_id, user_id, action, accessed_at, ip_address
+        ) VALUES ($1, $2, 'DOWNLOAD', NOW(), $3)
         """,
-        uuid4(), document_id, user_id, client_ip
+        document_id, user_id, client_ip
     )
 
     signed_token = uuid4().hex
@@ -384,7 +384,7 @@ async def generate_access_url(
 
 @router.get("/documents/{document_id}/access-log", response_model=CollectionEnvelope[DocumentAccessLogOut])
 async def get_document_access_log(
-    document_id: UUID,
+    document_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     conn: asyncpg.Connection = Depends(get_db)
@@ -419,7 +419,7 @@ async def get_document_access_log(
 
 @router.post("/documents/{document_id}/archive", response_model=ResponseEnvelope[dict])
 async def archive_document(
-    document_id: UUID,
+    document_id: str,
     request: Request,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -428,7 +428,7 @@ async def archive_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     default_user = await conn.fetchrow("SELECT user_id FROM users WHERE status = 'ACTIVE' LIMIT 1")
-    user_id = default_user["user_id"] if default_user else uuid4()
+    user_id = default_user["user_id"] if default_user else "user-1"
     client_ip = request.client.host if request.client else "127.0.0.1"
 
     async with conn.transaction():
@@ -436,10 +436,10 @@ async def archive_document(
         await conn.execute(
             """
             INSERT INTO document_access_log (
-                document_access_id, document_id, user_id, action, accessed_at, ip_address
-            ) VALUES ($1, $2, $3, 'ARCHIVE', NOW(), $4)
+                document_id, user_id, action, accessed_at, ip_address
+            ) VALUES ($1, $2, 'ARCHIVE', NOW(), $3)
             """,
-            uuid4(), document_id, user_id, client_ip
+            document_id, user_id, client_ip
         )
 
     return ResponseEnvelope(data={"document_id": str(document_id), "status": "ARCHIVED"})

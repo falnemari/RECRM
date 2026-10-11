@@ -223,12 +223,47 @@
             overflow-x: auto;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
         [dir="rtl"] table { text-align: right; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: 600; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        .cell-truncate {
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.78rem;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            user-select: all;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: #fff; border-top: 1px solid var(--border);
+            font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+        }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-size-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 3px 8px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-num-display { font-weight: 600; padding: 0 4px; color: var(--text-main); }
 
         /* Badges */
         .badge {
@@ -334,6 +369,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -807,6 +843,8 @@
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-tenancy-view')" data-i18n="btn_close">Close</button>
             </div>
         </div>
+    </div>
+
     <!-- 7. Modal: New Management Contract -->
     <div id="modal-pmc" class="modal-overlay">
         <div class="modal">
@@ -844,6 +882,13 @@
                         <input type="number" id="pmc-fee-rate" step="0.5" min="0" value="5.0" required>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_managed_units_select">Managed Units (Optional)</label>
+                    <select id="pmc-units" multiple size="4" style="height: auto;">
+                        <option value="">Loading units...</option>
+                    </select>
+                    <small style="color: var(--text-muted); display: block; margin-top: 4px;" data-i18n="lbl_multiselect_hint">Hold Ctrl (Cmd on Mac) to select multiple units</small>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-pmc')" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn" data-i18n="btn_save_pmc">Create PM Contract</button>
@@ -868,7 +913,7 @@
                 badge_pm: "Property Operations & PM",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
-                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_api: "API Docs",
+                nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files", nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_active_tenancies: "Active Leases", kpi_tenancies_sub: "Operational lease agreements",
                 kpi_annual_rent: "Active Annual Rent", kpi_rent_sub: "Annual recurring rental value",
                 kpi_open_tickets: "Open Maintenance Tickets", kpi_tickets_sub: "Urgent & ongoing repairs",
@@ -906,13 +951,15 @@
                 btn_dispatch_wo: "Dispatch Work Order", btn_save_vendor: "Register Vendor",
                 modal_pmc_title: "New Owner Management Contract", lbl_owner: "Select Property Owner *",
                 lbl_fee_type: "Fee Type", lbl_fee_rate: "Management Fee Rate *", btn_save_pmc: "Create PM Contract",
+                lbl_managed_units_select: "Managed Units (Optional)",
+                lbl_multiselect_hint: "Hold Ctrl (Cmd on Mac) to select multiple units",
                 lang_label: "عربي"
             },
             ar: {
                 badge_pm: "تشغيل وإدارة الأملاك",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
-                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_api: "توثيق API",
+                nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_active_tenancies: "عقود الإيجار السارية", kpi_tenancies_sub: "العقود النشطة بالوحدات",
                 kpi_annual_rent: "إجمالي الإيجار السنوي", kpi_rent_sub: "القيمة الإيجارية الدورية",
                 kpi_open_tickets: "تذاكر الصيانة النشطة", kpi_tickets_sub: "بلاغات وإصلاحات جارية",
@@ -950,6 +997,8 @@
                 btn_dispatch_wo: "إصدار أمر العمل", btn_save_vendor: "تسجيل المقاول",
                 modal_pmc_title: "تسجيل عقد إدارة أملاك جديد", lbl_owner: "مالك العقار *",
                 lbl_fee_type: "نوع الأتعاب", lbl_fee_rate: "نسبة / قيمة الأتعاب *", btn_save_pmc: "حفظ عقد الإدارة",
+                lbl_managed_units_select: "الوحدات المدارة (اختياري)",
+                lbl_multiselect_hint: "اضغط مع الاستمرار على Ctrl لتحديد أكثر من وحدة",
                 lang_label: "English"
             }
         };
@@ -1058,11 +1107,11 @@
                 const badgeCls = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'EXPIRED' ? 'badge-expired' : 'badge-low');
                 return `
                     <tr>
-                        <td><strong>${t.contract_number}</strong></td>
+                        <td><span class="id-badge">${t.contract_number}</span></td>
                         <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
                         <td>
-                            <strong>${t.tenant_name || 'N/A'}</strong><br>
-                            <span style="font-size:0.8em; color:var(--text-muted);">${t.tenant_mobile || ''}</span>
+                            <strong>${t.tenant_name || 'N/A'}</strong>
+                            ${t.tenant_mobile ? `<span style="font-size:0.78em; color:var(--text-muted); margin-inline-start:4px;">• ${t.tenant_mobile}</span>` : ''}
                         </td>
                         <td>${t.start_date}</td>
                         <td>${t.end_date || 'Open-ended'}</td>
@@ -1171,17 +1220,17 @@
                 const openDate = new Date(t.opened_at).toLocaleDateString();
                 return `
                     <tr>
-                        <td><strong>#${t.ticket_id.substring(0, 8)}</strong></td>
+                        <td><span class="id-badge">${t.ticket_id}</span></td>
                         <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
                         <td>${t.reported_by_name || 'Tenant'}</td>
                         <td><strong>${t.category || 'GENERAL'}</strong></td>
                         <td><span class="badge ${pCls}">${t.priority}</span></td>
-                        <td>${t.description}</td>
+                        <td><span class="cell-truncate" title="${(t.description||'').replace(/"/g, '&quot;')}">${t.description || '--'}</span></td>
                         <td>${openDate}</td>
                         <td><span class="badge ${sCls}">${t.status}</span></td>
                         <td>
                             <div style="display:flex; gap:4px;">
-                                ${t.status !== 'CLOSED' ? `<button class="btn btn-outline btn-sm" onclick="openDispatchWOModal('${t.ticket_id}', '${t.description.replace(/'/g, "\\'")}')">+ Work Order</button>` : ''}
+                                ${t.status !== 'CLOSED' ? `<button class="btn btn-outline btn-sm" onclick="openDispatchWOModal('${t.ticket_id}', '${(t.description||'').replace(/'/g, "\\'")}')">+ Work Order</button>` : ''}
                                 ${t.status !== 'CLOSED' ? `<button class="btn btn-success btn-sm" onclick="closeTicketDirectly('${t.ticket_id}')">Close</button>` : ''}
                             </div>
                         </td>
@@ -1588,12 +1637,23 @@
 
         async function openNewPMCModal() {
             try {
+                // Fetch property owners (customers)
                 const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
                 const cJson = await cRes.json();
                 document.getElementById('pmc-owner').innerHTML = (cJson.data || []).map(c => {
-                    const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
+                    const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.company_name || c.customer_id;
                     return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
                 }).join('') || '<option value="">No customers found</option>';
+
+                // Fetch units for management linkage
+                const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                const uJson = await uRes.json();
+                const uSelect = document.getElementById('pmc-units');
+                if (uSelect) {
+                    uSelect.innerHTML = (uJson.data || []).map(u => 
+                        `<option value="${u.unit_id}">Unit ${u.unit_number || u.unit_id} - ${u.property_name || 'Property'} (${u.status})</option>`
+                    ).join('') || '<option value="">No units found</option>';
+                }
 
                 const today = new Date().toISOString().split('T')[0];
                 const twoYears = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0];
@@ -1601,18 +1661,24 @@
                 document.getElementById('pmc-end').value = twoYears;
                 openModal('modal-pmc');
             } catch (err) {
-                alert("Failed to load owners: " + err);
+                alert("Failed to load owners or units: " + err.message);
             }
         }
 
         async function handleCreatePMC(e) {
             e.preventDefault();
+            const uSelect = document.getElementById('pmc-units');
+            const selectedUnitIds = uSelect 
+                ? Array.from(uSelect.selectedOptions).map(opt => opt.value).filter(Boolean)
+                : [];
+
             const payload = {
                 customer_id: document.getElementById('pmc-owner').value,
                 start_date: document.getElementById('pmc-start').value,
                 end_date: document.getElementById('pmc-end').value || null,
                 fee_type: document.getElementById('pmc-fee-type').value,
                 fee_rate: parseFloat(document.getElementById('pmc-fee-rate').value || 5.0),
+                unit_ids: selectedUnitIds,
                 status: 'ACTIVE'
             };
 
@@ -1622,13 +1688,20 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!res.ok) throw new Error('Contract creation failed');
+                if (!res.ok) {
+                    let errMsg = 'Contract creation failed';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {}
+                    throw new Error(errMsg);
+                }
                 closeModal('modal-pmc');
                 loadPMContracts();
                 loadSummary();
-                alert("Management contract created successfully!");
+                alert(currentLang === 'ar' ? 'تم تسجيل وتفعيل عقد إدارة الأملاك بنجاح!' : 'Management contract created successfully!');
             } catch (err) {
-                alert("Error: " + err.message);
+                alert((currentLang === 'ar' ? 'خطأ في إنشاء العقد: ' : 'Error: ') + err.message);
             }
         }
 

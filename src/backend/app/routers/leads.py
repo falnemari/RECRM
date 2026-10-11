@@ -2,7 +2,7 @@ from typing import Optional, List
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.leads import LeadOut, LeadCreate, LeadUpdate, LeadNoteOut, LeadNoteCreate
 
@@ -51,7 +51,7 @@ async def list_leads(
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = None,
     inquiry_type: Optional[str] = None,
-    assigned_user_id: Optional[UUID] = None,
+    assigned_user_id: Optional[str] = None,
     customer_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
@@ -96,13 +96,31 @@ async def list_leads(
 
     if search and search.strip():
         s = search.strip()
-        conditions.append(
-            f"(c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx} "
-            f"OR c.mobile ILIKE ${p_idx} OR c.email ILIKE ${p_idx} "
-            f"OR CAST(l.lead_id AS TEXT) ILIKE ${p_idx} OR CAST(l.customer_id AS TEXT) ILIKE ${p_idx})"
-        )
-        params.append(f"%{s}%")
-        p_idx += 1
+        clean_digits = "".join(filter(str.isdigit, s))
+        core_digits = clean_digits
+        if core_digits.startswith("966"):
+            core_digits = core_digits[3:]
+        core_digits = core_digits.lstrip("0")
+
+        if len(core_digits) >= 4:
+            conditions.append(
+                f"(c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx} "
+                f"OR c.mobile ILIKE ${p_idx} "
+                f"OR regexp_replace(COALESCE(c.mobile, ''), '\\D', '', 'g') ILIKE ${p_idx + 1} "
+                f"OR c.email ILIKE ${p_idx} "
+                f"OR CAST(l.lead_id AS TEXT) ILIKE ${p_idx} OR CAST(l.customer_id AS TEXT) ILIKE ${p_idx})"
+            )
+            params.append(f"%{s}%")
+            params.append(f"%{core_digits}%")
+            p_idx += 2
+        else:
+            conditions.append(
+                f"(c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx} "
+                f"OR c.mobile ILIKE ${p_idx} OR c.email ILIKE ${p_idx} "
+                f"OR CAST(l.lead_id AS TEXT) ILIKE ${p_idx} OR CAST(l.customer_id AS TEXT) ILIKE ${p_idx})"
+            )
+            params.append(f"%{s}%")
+            p_idx += 1
 
     where_clause = " AND ".join(conditions)
 
@@ -125,7 +143,7 @@ async def list_leads(
     )
 
 @router.get("/{lead_id}", response_model=ResponseEnvelope[LeadOut])
-async def get_lead(lead_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
     if not row:
@@ -156,9 +174,16 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
         INSERT INTO leads (
             organization_id, customer_id, lead_source_id, assigned_user_id,
             status, priority, inquiry_type, budget_min, budget_max,
-            bedrooms_min, area_min_sqm, preferred_city_id, preferred_property_type_id
+            bedrooms_min, area_min_sqm, preferred_city_id, preferred_property_type_id,
+            first_contact_due_at
         ) VALUES (
-            $1, $2, $3, $4, 'NEW', $5, $6, $7, $8, $9, $10, $11, $12
+            $1, $2, $3, $4, 'NEW', $5, $6, $7, $8, $9, $10, $11, $12,
+            CASE 
+                WHEN UPPER($5) = 'URGENT' THEN now() + interval '1 hour'
+                WHEN UPPER($5) = 'HIGH' THEN now() + interval '2 hours'
+                WHEN UPPER($5) = 'LOW' THEN now() + interval '48 hours'
+                ELSE now() + interval '24 hours'
+            END
         ) RETURNING lead_id
         """,
         org_id, customer_id, payload.lead_source_id, payload.assigned_user_id,
@@ -171,7 +196,7 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
     return ResponseEnvelope(data=LeadOut(**dict(row)), meta=BaseMeta())
 
 @router.patch("/{lead_id}", response_model=ResponseEnvelope[LeadOut])
-async def update_lead(lead_id: UUID, payload: LeadUpdate, conn: asyncpg.Connection = Depends(get_db)):
+async def update_lead(lead_id: str, payload: LeadUpdate, conn: asyncpg.Connection = Depends(get_db)):
     updates = []
     params = []
     p_idx = 1
@@ -187,9 +212,12 @@ async def update_lead(lead_id: UUID, payload: LeadUpdate, conn: asyncpg.Connecti
         p_idx += 1
 
     if payload.status is not None:
+        st_upper = payload.status.upper()
         updates.append(f"status = ${p_idx}")
-        params.append(payload.status.upper())
+        params.append(st_upper)
         p_idx += 1
+        if st_upper == 'CONTACTED' and payload.first_contact_at is None:
+            updates.append("first_contact_at = COALESCE(first_contact_at, now())")
 
     if payload.priority is not None:
         updates.append(f"priority = ${p_idx}")
@@ -247,6 +275,40 @@ async def update_lead(lead_id: UUID, payload: LeadUpdate, conn: asyncpg.Connecti
         update_query = f"UPDATE leads SET {', '.join(updates)} WHERE lead_id = ${p_idx}"
         await conn.execute(update_query, *params)
 
+        # Sync with Sales Pipeline opportunities if status changed
+        if payload.status is not None:
+            st = payload.status.upper()
+            if st in ("QUALIFIED", "CONVERTED"):
+                existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
+                if not existing_opp:
+                    lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min FROM leads WHERE lead_id = $1", lead_id)
+                    if lead_row and lead_row["customer_id"]:
+                        opp_id = await get_next_id(conn, "opportunities", "opportunity")
+                        val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
+                        await conn.execute("""
+                            INSERT INTO opportunities (
+                                opportunity_id, lead_id, customer_id, assigned_user_id,
+                                stage, expected_value, created_at, updated_at
+                            ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
+                        """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
+            elif st == "LOST":
+                await conn.execute("UPDATE opportunities SET stage = 'LOST', updated_at = now() WHERE lead_id = $1 AND stage NOT IN ('WON', 'LOST')", lead_id)
+
+    query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
+    row = await conn.fetchrow(query, lead_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return ResponseEnvelope(data=LeadOut(**dict(row)), meta=BaseMeta())
+
+@router.post("/{lead_id}/contact", response_model=ResponseEnvelope[LeadOut])
+async def mark_lead_contacted(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    await conn.execute("""
+        UPDATE leads 
+        SET status = 'CONTACTED',
+            first_contact_at = COALESCE(first_contact_at, now()),
+            updated_at = now()
+        WHERE lead_id = $1
+    """, lead_id)
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
     if not row:
@@ -254,8 +316,23 @@ async def update_lead(lead_id: UUID, payload: LeadUpdate, conn: asyncpg.Connecti
     return ResponseEnvelope(data=LeadOut(**dict(row)), meta=BaseMeta())
 
 @router.post("/{lead_id}/qualify", response_model=ResponseEnvelope[LeadOut])
-async def qualify_lead(lead_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def qualify_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
     await conn.execute("UPDATE leads SET status = 'QUALIFIED', updated_at = now() WHERE lead_id = $1", lead_id)
+
+    # Automatically create/link active opportunity in Sales Pipeline
+    existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
+    if not existing_opp:
+        lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min FROM leads WHERE lead_id = $1", lead_id)
+        if lead_row and lead_row["customer_id"]:
+            opp_id = await get_next_id(conn, "opportunities", "opportunity")
+            val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
+            await conn.execute("""
+                INSERT INTO opportunities (
+                    opportunity_id, lead_id, customer_id, assigned_user_id,
+                    stage, expected_value, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
+            """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
+
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
     if not row:
@@ -263,7 +340,7 @@ async def qualify_lead(lead_id: UUID, conn: asyncpg.Connection = Depends(get_db)
     return ResponseEnvelope(data=LeadOut(**dict(row)), meta=BaseMeta())
 
 @router.get("/{lead_id}/notes", response_model=CollectionEnvelope[LeadNoteOut])
-async def list_lead_notes(lead_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def list_lead_notes(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
     query = """
         SELECT 
             ln.note_id,
@@ -285,7 +362,7 @@ async def list_lead_notes(lead_id: UUID, conn: asyncpg.Connection = Depends(get_
     )
 
 @router.post("/{lead_id}/notes", response_model=ResponseEnvelope[LeadNoteOut], status_code=status.HTTP_201_CREATED)
-async def add_lead_note(lead_id: UUID, payload: LeadNoteCreate, conn: asyncpg.Connection = Depends(get_db)):
+async def add_lead_note(lead_id: str, payload: LeadNoteCreate, conn: asyncpg.Connection = Depends(get_db)):
     user_id = await conn.fetchval("SELECT user_id FROM users LIMIT 1")
     note_id = await conn.fetchval(
         """

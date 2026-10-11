@@ -20,8 +20,8 @@ class MarketingSummaryOut(BaseModel):
     channel_breakdown: List[ChannelMetric]
 
 class CampaignOut(BaseModel):
-    campaign_id: UUID
-    organization_id: UUID
+    campaign_id: str
+    organization_id: str
     name: str
     channel: Optional[str] = None
     start_date: Optional[date] = None
@@ -51,12 +51,12 @@ class CampaignUpdateIn(BaseModel):
     status: Optional[str] = None
 
 class CampaignLeadOut(BaseModel):
-    campaign_id: UUID
+    campaign_id: str
     campaign_name: Optional[str] = None
     campaign_channel: Optional[str] = None
-    lead_id: UUID
+    lead_id: str
     captured_at: datetime
-    customer_id: Optional[UUID] = None
+    customer_id: Optional[str] = None
     customer_name: Optional[str] = None
     customer_mobile: Optional[str] = None
     customer_email: Optional[str] = None
@@ -66,12 +66,12 @@ class CampaignLeadOut(BaseModel):
     assigned_agent_name: Optional[str] = None
 
 class CampaignLeadAttachIn(BaseModel):
-    lead_id: UUID
+    lead_id: str
     captured_at: Optional[datetime] = None
 
 class LeadEventOut(BaseModel):
-    lead_event_id: UUID
-    lead_id: UUID
+    lead_event_id: str
+    lead_id: str
     event_type: str
     event_at: datetime
     metadata_json: Optional[Dict[str, Any]] = None
@@ -81,7 +81,7 @@ class LeadEventOut(BaseModel):
     campaign_name: Optional[str] = None
 
 class LeadEventCreateIn(BaseModel):
-    lead_id: Optional[UUID] = None
+    lead_id: Optional[str] = None
     event_type: str = Field(..., min_length=2, description="Type of event (CONTACTED, STATUS_CHANGED, VIEWED_LISTING, CREATED, NOTE_ADDED)")
     event_at: Optional[datetime] = None
     metadata_json: Optional[Dict[str, Any]] = None

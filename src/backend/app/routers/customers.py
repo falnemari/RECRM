@@ -116,7 +116,7 @@ async def list_customers(
     )
 
 @router.get("/{customer_id}", response_model=ResponseEnvelope[CustomerOut])
-async def get_customer(customer_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_customer(customer_id: str, conn: asyncpg.Connection = Depends(get_db)):
     query = f"{CUSTOMER_SELECT_QUERY} WHERE customer_id = $1"
     row = await conn.fetchrow(query, customer_id)
     if not row:
@@ -124,7 +124,7 @@ async def get_customer(customer_id: UUID, conn: asyncpg.Connection = Depends(get
     return ResponseEnvelope(data=CustomerOut(**dict(row)), meta=BaseMeta())
 
 @router.get("/{customer_id}/360", response_model=ResponseEnvelope[Customer360Out])
-async def get_customer_360(customer_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_customer_360(customer_id: str, conn: asyncpg.Connection = Depends(get_db)):
     # 1. Profile
     c_row = await conn.fetchrow(f"{CUSTOMER_SELECT_QUERY} WHERE customer_id = $1", customer_id)
     if not c_row:
@@ -202,7 +202,7 @@ async def create_customer(payload: CustomerCreate, conn: asyncpg.Connection = De
     return ResponseEnvelope(data=CustomerOut(**dict(row)), meta=BaseMeta())
 
 @router.patch("/{customer_id}", response_model=ResponseEnvelope[CustomerOut])
-async def update_customer(customer_id: UUID, payload: CustomerUpdate, conn: asyncpg.Connection = Depends(get_db)):
+async def update_customer(customer_id: str, payload: CustomerUpdate, conn: asyncpg.Connection = Depends(get_db)):
     existing = await conn.fetchrow("SELECT customer_id FROM customers WHERE customer_id = $1", customer_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Customer not found")

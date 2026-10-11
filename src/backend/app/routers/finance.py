@@ -116,7 +116,7 @@ async def list_contracts(
     )
 
 @router.get("/contracts/{contract_id}", response_model=ResponseEnvelope[ContractDetailOut])
-async def get_contract_detail(contract_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_contract_detail(contract_id: str, conn: asyncpg.Connection = Depends(get_db)):
     c_row = await conn.fetchrow(f"{CONTRACT_SELECT_QUERY} WHERE c.contract_id = $1", contract_id)
     if not c_row:
         raise HTTPException(status_code=404, detail="Contract not found")
@@ -183,7 +183,7 @@ async def create_contract(payload: ContractCreate, conn: asyncpg.Connection = De
 
 @router.post("/reservations/{reservation_id}/convert-to-contract", response_model=ResponseEnvelope[ContractOut], status_code=status.HTTP_201_CREATED)
 async def convert_reservation_to_contract(
-    reservation_id: UUID,
+    reservation_id: str,
     payload: ConvertReservationIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -282,7 +282,7 @@ async def list_payments(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    contract_id: Optional[UUID] = None,
+    contract_id: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
@@ -325,7 +325,7 @@ async def list_payments(
     )
 
 @router.post("/payments/{payment_id}/record-payment", response_model=ResponseEnvelope[PaymentOut])
-async def record_payment(payment_id: UUID, payload: RecordPaymentIn, conn: asyncpg.Connection = Depends(get_db)):
+async def record_payment(payment_id: str, payload: RecordPaymentIn, conn: asyncpg.Connection = Depends(get_db)):
     pay = await conn.fetchrow("SELECT amount_due, amount_paid FROM payments WHERE payment_id = $1", payment_id)
     if not pay:
         raise HTTPException(status_code=404, detail="Payment record not found")
@@ -370,7 +370,7 @@ async def list_commissions(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    user_id: Optional[UUID] = None,
+    user_id: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
@@ -415,7 +415,7 @@ async def list_commissions(
     )
 
 @router.post("/commissions/{commission_id}/approve", response_model=ResponseEnvelope[CommissionOut])
-async def approve_commission(commission_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def approve_commission(commission_id: str, conn: asyncpg.Connection = Depends(get_db)):
     await conn.execute("UPDATE commissions SET status = 'APPROVED', approved_at = now() WHERE commission_id = $1", commission_id)
     row = await conn.fetchrow(
         """
@@ -435,7 +435,7 @@ async def approve_commission(commission_id: UUID, conn: asyncpg.Connection = Dep
     return ResponseEnvelope(data=CommissionOut(**dict(row)), meta=BaseMeta())
 
 @router.post("/commissions/{commission_id}/payout", response_model=ResponseEnvelope[CommissionOut])
-async def payout_commission(commission_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def payout_commission(commission_id: str, conn: asyncpg.Connection = Depends(get_db)):
     await conn.execute("UPDATE commissions SET status = 'PAID', paid_at = now() WHERE commission_id = $1", commission_id)
     row = await conn.fetchrow(
         """

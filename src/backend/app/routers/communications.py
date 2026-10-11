@@ -1,9 +1,9 @@
 from typing import Optional, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
 from app.schemas.communications import (
     TasksSummaryOut,
@@ -43,8 +43,8 @@ async def list_tasks(
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = None,
-    assigned_user_id: Optional[UUID] = None,
-    customer_id: Optional[UUID] = None,
+    assigned_user_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
@@ -130,7 +130,7 @@ async def list_tasks(
 
 @router.post("/tasks", response_model=ResponseEnvelope[TaskOut], status_code=status.HTTP_201_CREATED)
 async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(get_db)):
-    task_id = uuid4()
+    task_id = await get_next_id(conn, "tasks", "task")
     pri = (payload.priority or "NORMAL").upper()
     st = (payload.status or "OPEN").upper()
 
@@ -179,7 +179,7 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
     return ResponseEnvelope(data=out)
 
 @router.get("/tasks/{task_id}", response_model=ResponseEnvelope[TaskOut])
-async def get_task(task_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_task(task_id: str, conn: asyncpg.Connection = Depends(get_db)):
     row = await conn.fetchrow(
         """
         SELECT 
@@ -207,7 +207,7 @@ async def get_task(task_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
     return ResponseEnvelope(data=TaskOut(**dict(row)))
 
 @router.patch("/tasks/{task_id}", response_model=ResponseEnvelope[dict])
-async def update_task(task_id: UUID, payload: TaskUpdateIn, conn: asyncpg.Connection = Depends(get_db)):
+async def update_task(task_id: str, payload: TaskUpdateIn, conn: asyncpg.Connection = Depends(get_db)):
     t = await conn.fetchrow("SELECT task_id, status FROM tasks WHERE task_id = $1", task_id)
     if not t:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -249,7 +249,7 @@ async def update_task(task_id: UUID, payload: TaskUpdateIn, conn: asyncpg.Connec
     return ResponseEnvelope(data={"task_id": str(task_id), "updated": True})
 
 @router.post("/tasks/{task_id}/complete", response_model=ResponseEnvelope[dict])
-async def complete_task(task_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def complete_task(task_id: str, conn: asyncpg.Connection = Depends(get_db)):
     t = await conn.fetchrow("SELECT task_id, title, customer_id, assigned_user_id FROM tasks WHERE task_id = $1", task_id)
     if not t:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -262,6 +262,7 @@ async def complete_task(task_id: UUID, conn: asyncpg.Connection = Depends(get_db
         act_type = await conn.fetchrow("SELECT activity_type_id FROM activity_types WHERE code = 'FOLLOW_UP' LIMIT 1")
         act_type_id = act_type["activity_type_id"] if act_type else None
         
+        completed_act_id = await get_next_id(conn, "activities", "activity")
         await conn.execute(
             """
             INSERT INTO activities (
@@ -269,7 +270,7 @@ async def complete_task(task_id: UUID, conn: asyncpg.Connection = Depends(get_db
                 subject, description, completed_at, status
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'COMPLETED')
             """,
-            uuid4(), t["assigned_user_id"], t["customer_id"], act_type_id,
+            completed_act_id, t["assigned_user_id"], t["customer_id"], act_type_id,
             f"Completed Task: {t['title']}", f"Task marked completed at {now.strftime('%Y-%m-%d %H:%M')}",
             now
         )
@@ -285,9 +286,9 @@ async def list_activities(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     activity_type: Optional[str] = None,
-    user_id: Optional[UUID] = None,
-    customer_id: Optional[UUID] = None,
-    lead_id: Optional[UUID] = None,
+    user_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
@@ -375,7 +376,7 @@ async def list_activities(
 
 @router.post("/activities", response_model=ResponseEnvelope[ActivityOut], status_code=status.HTTP_201_CREATED)
 async def create_activity(payload: ActivityCreateIn, conn: asyncpg.Connection = Depends(get_db)):
-    act_id = uuid4()
+    act_id = await get_next_id(conn, "activities", "activity")
     act_type_id = payload.activity_type_id
     code = (payload.activity_type_code or "CALL").upper()
     act_type_name = "Activity"
@@ -435,7 +436,7 @@ async def create_activity(payload: ActivityCreateIn, conn: asyncpg.Connection = 
     return ResponseEnvelope(data=out)
 
 @router.post("/activities/{activity_id}/complete", response_model=ResponseEnvelope[dict])
-async def complete_activity(activity_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def complete_activity(activity_id: str, conn: asyncpg.Connection = Depends(get_db)):
     act = await conn.fetchrow("SELECT activity_id FROM activities WHERE activity_id = $1", activity_id)
     if not act:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -454,8 +455,8 @@ async def list_communications(
     page_size: int = Query(50, ge=1, le=100),
     channel: Optional[str] = None,
     direction: Optional[str] = None,
-    customer_id: Optional[UUID] = None,
-    lead_id: Optional[UUID] = None,
+    customer_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -523,7 +524,7 @@ async def list_communications(
 
 @router.post("/communications", response_model=ResponseEnvelope[CommunicationOut], status_code=status.HTTP_201_CREATED)
 async def create_communication(payload: CommunicationCreateIn, conn: asyncpg.Connection = Depends(get_db)):
-    comm_id = uuid4()
+    comm_id = await get_next_id(conn, "communications", "communication")
     now = payload.sent_at or datetime.now(timezone.utc)
     ch = payload.channel.upper()
     dir_clean = payload.direction.upper()

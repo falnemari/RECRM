@@ -89,11 +89,24 @@
             background: white; border-radius: 8px; border: 1px solid var(--border);
             overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
         [dir="rtl"] table { text-align: right; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: #fff; border-top: 1px solid var(--border);
+            font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+        }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-size-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 3px 8px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-num-display { font-weight: 600; padding: 0 4px; color: var(--text-main); }
 
         /* Badges */
         .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
@@ -207,6 +220,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -253,6 +267,21 @@
                     <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading customers from database...</td></tr>
                 </tbody>
             </table>
+            <div class="pagination-bar" id="pagination-bar">
+                <div id="pagination-info">Showing 0 of 0 customers</div>
+                <div class="pagination-controls">
+                    <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                    <select id="page-size-select" class="page-size-select" onchange="changePageSize(this.value)">
+                        <option value="15">15</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <button type="button" class="btn-page" id="btn-prev-page" onclick="prevPage()" disabled>◀</button>
+                    <span class="page-num-display" id="page-num-display">Page 1 of 1</span>
+                    <button type="button" class="btn-page" id="btn-next-page" onclick="nextPage()" disabled>▶</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -454,7 +483,7 @@
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
-                nav_api: "API Docs", page_title: "Customer Directory & 360 Profiles", btn_add_customer: "+ Add New Customer",
+                nav_admin: "Admin & Governance", nav_api: "API Docs", page_title: "Customer Directory & 360 Profiles", btn_add_customer: "+ Add New Customer",
                 opt_all_types: "All Customer Types", opt_individual: "INDIVIDUAL (أفراد)", opt_company: "COMPANY (شركات)",
                 th_id: "Customer ID", th_name: "Customer / Company", th_type: "Type", th_mobile: "Mobile Phone", th_email: "Email",
                 th_lang: "Language", th_status: "Status", th_actions: "Actions",
@@ -471,7 +500,7 @@
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
                 nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
-                nav_api: "توثيق API", page_title: "دليل العملاء وملف العميل الشامل 360", btn_add_customer: "+ إضافة عميل جديد",
+                nav_admin: "الإدارة والأمان", nav_api: "توثيق API", page_title: "دليل العملاء وملف العميل الشامل 360", btn_add_customer: "+ إضافة عميل جديد",
                 opt_all_types: "جميع أنواع العملاء", opt_individual: "أفراد (INDIVIDUAL)", opt_company: "شركات (COMPANY)",
                 th_id: "معرّف العميل (ID)", th_name: "الاسم / اسم الشركة", th_type: "النوع", th_mobile: "رقم الجوال", th_email: "البريد الإلكتروني",
                 th_lang: "اللغة", th_status: "الحالة", th_actions: "الإجراءات",
@@ -554,11 +583,16 @@
             debounceTimer = setTimeout(fetchCustomers, 300);
         }
 
-        async function fetchCustomers() {
+        let currentPage = 1;
+        let pageSize = 25;
+        let totalRecords = 0;
+
+        async function fetchCustomers(page = null) {
+            if (page !== null) currentPage = page;
             const search = document.getElementById('search-box').value;
             const type = document.getElementById('type-select').value;
 
-            let url = `${API_BASE}/api/v1/customers?page_size=60`;
+            let url = `${API_BASE}/api/v1/customers?page=${currentPage}&page_size=${pageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (type) url += `&customer_type=${encodeURIComponent(type)}`;
 
@@ -568,13 +602,39 @@
                 const json = await res.json();
                 const customers = json.data || [];
                 cachedCustomers = customers;
-                const total = json.meta?.total || 0;
+                totalRecords = json.meta?.total || customers.length;
+                const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+                if (currentPage > totalPages) currentPage = totalPages;
 
-                document.getElementById('counter-label').textContent = `Showing ${customers.length} of ${total} customers in database`;
+                const startIdx = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+                const endIdx = Math.min(totalRecords, (currentPage - 1) * pageSize + customers.length);
+
+                document.getElementById('counter-label').textContent = currentLang === 'ar'
+                    ? `إجمالي المسجلين: ${totalRecords} عميل`
+                    : `Total in database: ${totalRecords} customers`;
+
+                const pInfo = document.getElementById('pagination-info');
+                if (pInfo) {
+                    pInfo.textContent = currentLang === 'ar'
+                        ? `عرض ${startIdx} - ${endIdx} من إجمالي ${totalRecords}`
+                        : `Showing ${startIdx} - ${endIdx} of ${totalRecords}`;
+                }
+
+                const pDisplay = document.getElementById('page-num-display');
+                if (pDisplay) {
+                    pDisplay.textContent = currentLang === 'ar'
+                        ? `صفحة ${currentPage} من ${totalPages}`
+                        : `Page ${currentPage} of ${totalPages}`;
+                }
+
+                const btnPrev = document.getElementById('btn-prev-page');
+                if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+                const btnNext = document.getElementById('btn-next-page');
+                if (btnNext) btnNext.disabled = (currentPage >= totalPages);
 
                 const tbody = document.getElementById('customers-tbody');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No customers found matching criteria.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No customers found matching criteria.</td></tr>';
                     return;
                 }
 
@@ -582,25 +642,21 @@
                     const badgeClass = c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual';
                     const displayName = c.customer_type === 'COMPANY' ? (c.company_name || 'Company') : (c.full_name || 'Individual');
                     const statusClass = c.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive';
-                    const shortId = c.customer_id.substring(0, 8);
                     
                     return `
                         <tr>
                             <td>
-                                <span class="id-badge" title="${c.customer_id}">${shortId}...</span>
-                                <button class="btn-copy" onclick="copyId('${c.customer_id}')" title="Copy Full Customer ID">📋</button>
+                                <span class="id-badge">${c.customer_id}</span>
+                                <button class="btn-copy" onclick="copyId('${c.customer_id}')" title="Copy Customer ID">📋</button>
                             </td>
-                            <td>
-                                <strong>${displayName}</strong>
-                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${c.customer_id}</div>
-                            </td>
+                            <td><strong>${displayName}</strong></td>
                             <td><span class="badge ${badgeClass}">${c.customer_type}</span></td>
                             <td>${c.mobile || '--'}</td>
                             <td>${c.email || '--'}</td>
                             <td>${c.preferred_language?.toUpperCase() || 'AR'}</td>
                             <td><span class="badge ${statusClass}">${c.status}</span></td>
                             <td>
-                                <div style="display: flex; gap: 6px;">
+                                <div style="display: flex; gap: 4px;">
                                     <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ Edit</button>
                                     <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 360</button>
                                 </div>
@@ -612,6 +668,24 @@
                 console.error(err);
                 document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center; padding: 24px;">Failed to load customers from backend API.</td></tr>';
             }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                fetchCustomers(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(totalRecords / pageSize);
+            if (currentPage < totalPages) {
+                fetchCustomers(currentPage + 1);
+            }
+        }
+
+        function changePageSize(size) {
+            pageSize = parseInt(size, 10);
+            fetchCustomers(1);
         }
 
         function toggleCompanyFields(mode) {

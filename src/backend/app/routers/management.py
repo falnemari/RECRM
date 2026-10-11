@@ -4,7 +4,7 @@ from datetime import datetime, date, timezone, timedelta
 import random
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 import asyncpg
-from app.database import get_db
+from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.management import (
     ManagementSummaryOut,
@@ -66,8 +66,8 @@ async def list_tenancies(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    unit_id: Optional[UUID] = None,
-    customer_id: Optional[UUID] = None,
+    unit_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -157,7 +157,7 @@ async def create_tenancy(payload: TenancyCreateIn, conn: asyncpg.Connection = De
         rnd = random.randint(1000, 9999)
         contract_number = f"TEN-{payload.start_date.strftime('%Y%m')}-{rnd}"
 
-    tenancy_id = uuid4()
+    tenancy_id = await get_next_id(conn, "tenancies", "tenancy")
 
     async with conn.transaction():
         # Insert tenancy
@@ -204,13 +204,14 @@ async def create_tenancy(payload: TenancyCreateIn, conn: asyncpg.Connection = De
 
             for i in range(count):
                 due_d = cur_due + timedelta(days=i * days_step) if i > 0 else cur_due
+                rc_id = await get_next_id(conn, "rent_collections", "rent_collection")
                 await conn.execute(
                     """
                     INSERT INTO rent_collections (
                         rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status
                     ) VALUES ($1, $2, $3, $4, 0, 'DUE')
                     """,
-                    uuid4(), tenancy_id, due_d, amount_per_installment
+                    rc_id, tenancy_id, due_d, amount_per_installment
                 )
 
     tenant_name = (f"{cust['first_name'] or ''} {cust['last_name'] or ''}").strip() or cust['company_name']
@@ -232,7 +233,7 @@ async def create_tenancy(payload: TenancyCreateIn, conn: asyncpg.Connection = De
     return ResponseEnvelope(data=out)
 
 @router.get("/tenancies/{tenancy_id}")
-async def get_tenancy_detail(tenancy_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_tenancy_detail(tenancy_id: str, conn: asyncpg.Connection = Depends(get_db)):
     row = await conn.fetchrow(
         """
         SELECT 
@@ -284,7 +285,7 @@ async def get_tenancy_detail(tenancy_id: UUID, conn: asyncpg.Connection = Depend
 
 @router.patch("/tenancies/{tenancy_id}", response_model=ResponseEnvelope[dict])
 async def update_tenancy_status(
-    tenancy_id: UUID,
+    tenancy_id: str,
     status_update: str = Query(..., alias="status"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -315,7 +316,7 @@ async def list_rent_collections(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    tenancy_id: Optional[UUID] = None,
+    tenancy_id: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -378,7 +379,7 @@ async def list_rent_collections(
 
 @router.post("/tenancies/{tenancy_id}/rent-collections", response_model=ResponseEnvelope[RentCollectionOut], status_code=status.HTTP_201_CREATED)
 async def create_rent_collection_installment(
-    tenancy_id: UUID,
+    tenancy_id: str,
     payload: RentCollectionCreateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -395,7 +396,7 @@ async def create_rent_collection_installment(
     if not tenancy:
         raise HTTPException(status_code=404, detail="Tenancy not found")
 
-    new_id = uuid4()
+    new_id = await get_next_id(conn, "rent_collections", "rent_collection")
     await conn.execute(
         """
         INSERT INTO rent_collections (rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status)
@@ -420,7 +421,7 @@ async def create_rent_collection_installment(
 
 @router.post("/rent-collections/{rent_collection_id}/record-payment", response_model=ResponseEnvelope[RentCollectionOut])
 async def record_rent_payment(
-    rent_collection_id: UUID,
+    rent_collection_id: str,
     payload: RentCollectionPaymentIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -488,7 +489,7 @@ async def list_maintenance_tickets(
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = None,
     category: Optional[str] = None,
-    unit_id: Optional[UUID] = None,
+    unit_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -591,7 +592,7 @@ async def create_maintenance_ticket(
         if user:
             assigned_user_name = user["full_name"]
 
-    ticket_id = uuid4()
+    ticket_id = await get_next_id(conn, "maintenance_tickets", "ticket")
     now = datetime.now(timezone.utc)
     priority = (payload.priority or "NORMAL").upper()
     category = (payload.category or "GENERAL").upper()
@@ -628,7 +629,7 @@ async def create_maintenance_ticket(
     return ResponseEnvelope(data=out)
 
 @router.get("/maintenance-tickets/{ticket_id}")
-async def get_maintenance_ticket_detail(ticket_id: UUID, conn: asyncpg.Connection = Depends(get_db)):
+async def get_maintenance_ticket_detail(ticket_id: str, conn: asyncpg.Connection = Depends(get_db)):
     t = await conn.fetchrow(
         """
         SELECT 
@@ -687,7 +688,7 @@ async def get_maintenance_ticket_detail(ticket_id: UUID, conn: asyncpg.Connectio
 
 @router.patch("/maintenance-tickets/{ticket_id}", response_model=ResponseEnvelope[dict])
 async def update_maintenance_ticket(
-    ticket_id: UUID,
+    ticket_id: str,
     payload: MaintenanceTicketUpdateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -742,8 +743,8 @@ async def list_work_orders(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    ticket_id: Optional[UUID] = None,
-    vendor_id: Optional[UUID] = None,
+    ticket_id: Optional[str] = None,
+    vendor_id: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
@@ -806,7 +807,7 @@ async def list_work_orders(
 
 @router.post("/maintenance-tickets/{ticket_id}/work-orders", response_model=ResponseEnvelope[WorkOrderOut], status_code=status.HTTP_201_CREATED)
 async def create_work_order(
-    ticket_id: UUID,
+    ticket_id: str,
     payload: WorkOrderCreateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -834,7 +835,7 @@ async def create_work_order(
         if u:
             user_name = u["full_name"]
 
-    wo_id = uuid4()
+    wo_id = await get_next_id(conn, "maintenance_work_orders", "work_order")
     st = (payload.status or "REQUESTED").upper()
 
     async with conn.transaction():
@@ -872,7 +873,7 @@ async def create_work_order(
 
 @router.post("/work-orders/{work_order_id}/approve", response_model=ResponseEnvelope[dict])
 async def approve_work_order(
-    work_order_id: UUID,
+    work_order_id: str,
     approved_amount: Optional[float] = Query(None),
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -890,7 +891,7 @@ async def approve_work_order(
 
 @router.post("/work-orders/{work_order_id}/complete", response_model=ResponseEnvelope[dict])
 async def complete_work_order(
-    work_order_id: UUID,
+    work_order_id: str,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     wo = await conn.fetchrow("SELECT work_order_id, ticket_id, status FROM maintenance_work_orders WHERE work_order_id = $1", work_order_id)
@@ -970,7 +971,7 @@ async def create_vendor(
         org = await conn.fetchrow("SELECT organization_id FROM organizations LIMIT 1")
     org_id = org["organization_id"]
 
-    vendor_id = uuid4()
+    vendor_id = await get_next_id(conn, "vendors", "vendor")
     st = (payload.status or "ACTIVE").upper()
 
     await conn.execute(
@@ -1002,7 +1003,7 @@ async def list_management_contracts(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
-    customer_id: Optional[UUID] = None,
+    customer_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -1079,7 +1080,7 @@ async def create_management_contract(
         rnd = random.randint(1000, 9999)
         contract_number = f"PMC-{payload.start_date.strftime('%Y%m')}-{rnd}"
 
-    mc_id = uuid4()
+    mc_id = await get_next_id(conn, "management_contracts", "management_contract")
     st = (payload.status or "ACTIVE").upper()
 
     async with conn.transaction():

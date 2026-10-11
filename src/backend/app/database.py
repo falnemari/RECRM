@@ -39,3 +39,10 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     async with pool.acquire() as conn:
         yield conn
 
+async def get_next_id(conn: asyncpg.Connection, table_name: str, prefix: str) -> str:
+    """Generate next sequential ID for table using PostgreSQL sequence, e.g. customer-125."""
+    seq_name = f"seq_{table_name}_id"
+    val = await conn.fetchval(f"SELECT nextval('{seq_name}')")
+    return f"{prefix}-{val}"
+
+

@@ -9,6 +9,7 @@
     <style>
         :root {
             --primary: #1e3a8a;
+            --navy: #0f172a;
             --secondary: #3b82f6;
             --bg: #f8fafc;
             --card-bg: #ffffff;
@@ -185,6 +186,183 @@
             font-weight: 600;
         }
         .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+
+        /* Tabs & Views */
+        .tab-btn {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+        .tab-btn.active {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.25);
+        }
+        .tab-btn.active span {
+            color: #ffffff !important;
+        }
+
+        /* Controls & Tables */
+        .controls-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            background: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls-bar input, .controls-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            outline: none;
+        }
+        .controls-bar input:focus, .controls-bar select:focus {
+            border-color: var(--primary);
+        }
+        .table-wrap {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+        table { width: 100%; border-collapse: collapse; text-align: start; font-size: 0.9em; }
+        th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.78em;
+            font-weight: 700;
+        }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-primary { background: #e0e7ff; color: #3730a3; }
+        .badge-muted { background: #f1f5f9; color: #475569; }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.82em;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--navy);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { background: #f1f5f9; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(2px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 650px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-header {
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.1em; color: var(--navy); }
+        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85em; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .modal-footer {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-primary {
+            background: var(--navy);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background: var(--secondary); }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -221,6 +399,7 @@
             <li><a href="documents.html" data-i18n="nav_documents">Documents & Files</a></li>
             <li><a href="campaigns.html" data-i18n="nav_marketing">Marketing & Campaigns</a></li>
             <li><a href="listings.html" data-i18n="nav_listings">Property Listings</a></li>
+            <li><a href="admin.html" data-i18n="nav_admin">Admin & Governance</a></li>
             <li><a href="/docs" target="_blank" data-i18n="nav_api">API Docs</a></li>
         </ul>
     </div>
@@ -243,51 +422,234 @@
             </div>
         </div>
 
-        <div class="pipeline-container">
-            <!-- QUALIFIED -->
-            <div class="column">
-                <div class="column-header">
-                    <h3 class="column-title" data-i18n="col_qual">Qualification</h3>
-                    <span class="column-badge" id="count-QUALIFIED">0</span>
-                </div>
-                <div class="column-cards" id="cards-QUALIFIED"></div>
+        <!-- Sales Navigation Tabs & Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-tab-pipeline" class="tab-btn active" onclick="switchSalesTab('pipeline')">📊 <span data-i18n="tab_pipeline">Pipeline Board</span></button>
+                <button id="btn-tab-offers" class="tab-btn" onclick="switchSalesTab('offers')">📑 <span data-i18n="tab_offers">Purchase & Lease Offers</span></button>
             </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="opp-search" placeholder="Search deals, clients, agents..." style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88em; min-width: 220px;" oninput="filterOpportunities()">
+                <button class="btn-sm" style="padding: 8px 14px; font-weight: 600;" onclick="fetchOpportunities()">🔄 <span data-i18n="btn_refresh">Refresh Pipeline</span></button>
+                <button class="btn-primary" style="padding: 8px 14px; font-size: 0.88em;" onclick="openNewOppModal()">+ <span data-i18n="btn_new_opp">New Opportunity</span></button>
+            </div>
+        </div>
 
-            <!-- VIEWING -->
-            <div class="column">
-                <div class="column-header">
-                    <h3 class="column-title" data-i18n="col_viewing">Viewing</h3>
-                    <span class="column-badge" id="count-VIEWING">0</span>
+        <!-- 1. Pipeline Board View -->
+        <div id="view-pipeline">
+            <div class="pipeline-container">
+                <!-- QUALIFIED -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3 class="column-title" data-i18n="col_qual">Qualification</h3>
+                        <span class="column-badge" id="count-QUALIFIED">0</span>
+                    </div>
+                    <div class="column-cards" id="cards-QUALIFIED"></div>
                 </div>
-                <div class="column-cards" id="cards-VIEWING"></div>
-            </div>
 
-            <!-- OFFER / NEGOTIATION -->
-            <div class="column">
-                <div class="column-header">
-                    <h3 class="column-title" data-i18n="col_neg">Offer / Negotiation</h3>
-                    <span class="column-badge" id="count-NEGOTIATION">0</span>
+                <!-- VIEWING -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3 class="column-title" data-i18n="col_viewing">Viewing</h3>
+                        <span class="column-badge" id="count-VIEWING">0</span>
+                    </div>
+                    <div class="column-cards" id="cards-VIEWING"></div>
                 </div>
-                <div class="column-cards" id="cards-NEGOTIATION"></div>
-            </div>
 
-            <!-- WON -->
-            <div class="column" style="background: #f0fdf4;">
-                <div class="column-header" style="border-bottom-color: #bbf7d0;">
-                    <h3 class="column-title" style="color: #166534;" data-i18n="col_won">Closed / Won</h3>
-                    <span class="column-badge" id="count-WON">0</span>
+                <!-- OFFER / NEGOTIATION -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3 class="column-title" data-i18n="col_neg">Offer / Negotiation</h3>
+                        <span class="column-badge" id="count-NEGOTIATION">0</span>
+                    </div>
+                    <div class="column-cards" id="cards-NEGOTIATION"></div>
                 </div>
-                <div class="column-cards" id="cards-WON"></div>
-            </div>
 
-            <!-- LOST -->
-            <div class="column" style="background: #fef2f2;">
-                <div class="column-header" style="border-bottom-color: #fecaca;">
-                    <h3 class="column-title" style="color: #991b1b;" data-i18n="col_lost">Closed / Lost</h3>
-                    <span class="column-badge" id="count-LOST">0</span>
+                <!-- WON -->
+                <div class="column" style="background: #f0fdf4;">
+                    <div class="column-header" style="border-bottom-color: #bbf7d0;">
+                        <h3 class="column-title" style="color: #166534;" data-i18n="col_won">Closed / Won</h3>
+                        <span class="column-badge" id="count-WON">0</span>
+                    </div>
+                    <div class="column-cards" id="cards-WON"></div>
                 </div>
-                <div class="column-cards" id="cards-LOST"></div>
+
+                <!-- LOST -->
+                <div class="column" style="background: #fef2f2;">
+                    <div class="column-header" style="border-bottom-color: #fecaca;">
+                        <h3 class="column-title" style="color: #991b1b;" data-i18n="col_lost">Closed / Lost</h3>
+                        <span class="column-badge" id="count-LOST">0</span>
+                    </div>
+                    <div class="column-cards" id="cards-LOST"></div>
+                </div>
             </div>
+        </div>
+
+        <!-- 2. Purchase & Lease Offers View -->
+        <div id="view-offers" style="display: none;">
+            <div class="controls-bar">
+                <input type="text" id="offer-search" placeholder="Search by offer ID, customer, unit #..." style="flex-grow: 1; min-width: 220px;" oninput="filterOffers()">
+                <select id="offer-status-filter" onchange="fetchOffers()">
+                    <option value="" data-i18n="opt_all_offers">All Offer Statuses</option>
+                    <option value="ACCEPTED">ACCEPTED (مقبول)</option>
+                    <option value="SUBMITTED">SUBMITTED (مقدّم)</option>
+                    <option value="REJECTED">REJECTED (مرفوض)</option>
+                    <option value="COUNTER">COUNTER (عرض مضاد)</option>
+                </select>
+                <button class="btn-sm" onclick="fetchOffers()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_offer_id">Offer ID</th>
+                            <th data-i18n="th_opp">Opportunity / Customer</th>
+                            <th data-i18n="th_unit">Target Unit #</th>
+                            <th data-i18n="th_amount">Offer Amount (SAR)</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_submitted">Submitted Date</th>
+                            <th data-i18n="th_valid">Valid Until</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="offers-table-body">
+                        <tr><td colspan="8" style="text-align: center; padding: 30px;" data-i18n="loading">Loading offers...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opportunity Units Modal -->
+    <div class="modal-overlay" id="opp-units-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="opp-units-modal-title">Opportunity Units (الوحدات المرتبطة)</h3>
+                <button class="close-btn" onclick="closeOppUnitsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="opp-units-modal-body">
+                <div style="text-align: center; padding: 20px;">Loading linked units...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opportunity Details & Stage Progression Modal -->
+    <div class="modal-overlay" id="opp-detail-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="opp-detail-title" data-i18n="modal_opp_detail_title">Opportunity Details & Stage Progression</h3>
+                <button class="close-btn" onclick="closeOppDetailModal()">&times;</button>
+            </div>
+            <form id="opp-detail-form" onsubmit="submitUpdateOpportunity(event)">
+                <input type="hidden" id="opp-detail-id">
+                <div class="modal-body">
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <strong id="opp-detail-cust-name" style="font-size: 1.05em; color: var(--navy);">--</strong>
+                            <span class="badge badge-primary" id="opp-detail-stage-badge">--</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: var(--text-muted);">
+                            <span>📞 <span id="opp-detail-cust-mobile">--</span></span> |
+                            <span>🆔 <span id="opp-detail-id-display" style="font-family: monospace;">--</span></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="lbl_opp_stage">Pipeline Stage *</label>
+                        <select id="opp-detail-stage" required>
+                            <option value="QUALIFIED">1. Qualification (تأهيل الطلب)</option>
+                            <option value="VIEWING">2. Viewing (المعاينات والزيارات)</option>
+                            <option value="NEGOTIATION">3. Offer & Negotiation (تقديم العروض والتفاوض)</option>
+                            <option value="WON">4. Closed / Won (إتمام البيع بنجاح 🏆)</option>
+                            <option value="LOST">5. Closed / Lost (صفقة خاسرة أو ملغاة ❌)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 6px;">Quick Transition / انتقال سريع:</span>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn-sm" onclick="setDetailStage('QUALIFIED')">1. Qualification</button>
+                            <button type="button" class="btn-sm" onclick="setDetailStage('VIEWING')">2. Viewing</button>
+                            <button type="button" class="btn-sm" onclick="setDetailStage('NEGOTIATION')">3. Negotiation</button>
+                            <button type="button" class="btn-sm" style="background: #dcfce7; color: #166534;" onclick="setDetailStage('WON')">🏆 Won</button>
+                            <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b;" onclick="setDetailStage('LOST')">❌ Lost</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_expected_val">Expected Deal Value (SAR)</label>
+                            <input type="number" id="opp-detail-val" step="5000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_close_date">Expected Close Date</label>
+                            <input type="date" id="opp-detail-close">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="lbl_opp_agent">Assigned Sales Agent</label>
+                        <select id="opp-detail-agent">
+                            <option value="">-- Unassigned --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeOppDetailModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="button" class="btn-sm" id="btn-detail-view-units" onclick="openLinkedUnitsFromDetail()">🏢 View Units</button>
+                    <button type="submit" class="btn-primary" data-i18n="btn_save_changes">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- New Opportunity Modal -->
+    <div class="modal-overlay" id="new-opp-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="modal_new_opp_title">New Sales Opportunity</h3>
+                <button class="close-btn" onclick="closeNewOppModal()">&times;</button>
+            </div>
+            <form id="new-opp-form" onsubmit="submitNewOpportunity(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label data-i18n="lbl_select_customer">Customer *</label>
+                        <select id="new-opp-customer" required>
+                            <option value="">Loading customers...</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_opp_stage">Initial Stage</label>
+                            <select id="new-opp-stage">
+                                <option value="QUALIFIED">1. Qualification</option>
+                                <option value="VIEWING">2. Viewing</option>
+                                <option value="NEGOTIATION">3. Offer / Negotiation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_opp_agent">Assigned Agent</label>
+                            <select id="new-opp-agent">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_expected_val">Expected Deal Value (SAR)</label>
+                            <input type="number" id="new-opp-val" step="5000" placeholder="e.g. 850000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_close_date">Expected Close Date</label>
+                            <input type="date" id="new-opp-close">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeNewOppModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" data-i18n="btn_create_opp">Create Opportunity</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -313,13 +675,38 @@
                 nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns",
                 nav_listings: "Property Listings",
-                nav_api: "API Docs",
+                nav_admin: "Admin & Governance", nav_api: "API Docs",
                 page_title: "Sales Pipeline Board",
+                tab_pipeline: "Pipeline Board",
+                tab_offers: "Purchase & Lease Offers",
                 col_qual: "Qualification",
                 col_viewing: "Viewing",
                 col_neg: "Offer / Negotiation",
                 col_won: "Closed / Won",
                 col_lost: "Closed / Lost",
+                th_offer_id: "Offer ID",
+                th_opp: "Opportunity / Customer",
+                th_unit: "Target Unit #",
+                th_amount: "Offer Amount (SAR)",
+                th_status: "Status",
+                th_submitted: "Submitted Date",
+                th_valid: "Valid Until",
+                th_actions: "Actions",
+                opt_all_offers: "All Offer Statuses",
+                btn_view_units: "View Units (الوحدات)",
+                btn_refresh: "Refresh Pipeline",
+                btn_new_opp: "New Opportunity",
+                modal_opp_detail_title: "Opportunity Details & Stage Progression",
+                modal_new_opp_title: "New Sales Opportunity",
+                lbl_select_customer: "Customer *",
+                lbl_opp_stage: "Pipeline Stage *",
+                lbl_opp_agent: "Assigned Sales Agent",
+                lbl_expected_val: "Expected Deal Value (SAR)",
+                lbl_close_date: "Expected Close Date",
+                btn_save_changes: "Save Changes",
+                btn_cancel: "Cancel",
+                btn_create_opp: "Create Opportunity",
+                loading: "Loading data...",
                 lang_label: "عربي"
             },
             ar: {
@@ -334,13 +721,38 @@
                 nav_documents: "المستندات والملفات",
                 nav_marketing: "التسويق والحملات",
                 nav_listings: "العروض والإعلانات",
-                nav_api: "توثيق API",
+                nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 page_title: "مسار المبيعات والصفقات",
+                tab_pipeline: "مسار الصفقات (Pipeline)",
+                tab_offers: "عروض الشراء والتفاوض",
                 col_qual: "مرحلة التأهيل",
                 col_viewing: "معاينة العقار",
                 col_neg: "تقديم العرض والتفاوض",
                 col_won: "تم الإغلاق بنجاح",
                 col_lost: "فرص ملغية",
+                th_offer_id: "معرف العرض",
+                th_opp: "الفرصة / العميل",
+                th_unit: "رقم الوحدة المستهدفة",
+                th_amount: "مبلغ العرض (ريال)",
+                th_status: "الحالة",
+                th_submitted: "تاريخ التقديم",
+                th_valid: "صالح حتى",
+                th_actions: "الإجراءات",
+                opt_all_offers: "جميع حالات العروض",
+                btn_view_units: "الوحدات المرتبطة",
+                btn_refresh: "تحديث المسار",
+                btn_new_opp: "فرصة جديدة",
+                modal_opp_detail_title: "تفاصيل الفرصة البيعية ومسار المرحلة",
+                modal_new_opp_title: "إنشاء فرصة بيعية جديدة",
+                lbl_select_customer: "اختيار العميل *",
+                lbl_opp_stage: "مرحلة الصفقة في المسار *",
+                lbl_opp_agent: "الوسيط المسؤول",
+                lbl_expected_val: "قيمة الصفقة المتوقعة (ريال)",
+                lbl_close_date: "تاريخ الإغلاق المتوقع",
+                btn_save_changes: "حفظ التعديلات",
+                btn_cancel: "إلغاء",
+                btn_create_opp: "إنشاء الفرصة",
+                loading: "جاري التحميل...",
                 lang_label: "English"
             }
         };
@@ -392,74 +804,536 @@
             }
         }
 
+        let allOpportunities = [];
+        let refUsers = [];
+        let refCustomers = [];
+
+        async function initSalesData() {
+            try {
+                const [uRes, cRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/users`),
+                    fetch(`${API_BASE}/api/v1/customers?page_size=100`)
+                ]);
+                if (uRes.ok) refUsers = (await uRes.json()).data || [];
+                if (cRes.ok) refCustomers = (await cRes.json()).data || [];
+            } catch (e) {
+                console.warn("Could not load users or customers:", e);
+            }
+        }
+
         async function fetchOpportunities() {
+            const counter = document.getElementById('counter-label');
+            if (counter) counter.textContent = currentLang === 'ar' ? 'جاري مزامنة وتحديث الفرص البيعية...' : 'Syncing and updating opportunities...';
             try {
                 const res = await fetch(`${API_BASE}/api/v1/opportunities?page_size=100`);
                 if (!res.ok) throw new Error('Network error');
                 const json = await res.json();
-                const opps = json.data || [];
+                allOpportunities = json.data || [];
 
-                document.getElementById('counter-label').textContent = `${opps.length} total active opportunities in pipeline`;
-                document.getElementById('conn-label').textContent = 'Backend Online (Port 8000)';
+                if (counter) {
+                    counter.textContent = currentLang === 'ar' 
+                        ? `${allOpportunities.length} فرصة بيعية نشطة بالمسار` 
+                        : `${allOpportunities.length} total active opportunities in pipeline`;
+                }
+                const connDot = document.getElementById('conn-dot');
+                if (connDot) connDot.style.background = '#16a34a';
+                const connLbl = document.getElementById('conn-label');
+                if (connLbl) connLbl.textContent = currentLang === 'ar' ? 'متصل بالخادم' : 'Backend Online (Port 8000)';
 
-                const groups = {
-                    'QUALIFIED': [],
-                    'VIEWING': [],
-                    'NEGOTIATION': [],
-                    'WON': [],
-                    'LOST': []
-                };
-
-                opps.forEach(o => {
-                    const st = (o.stage || '').toUpperCase();
-                    if (st === 'OFFER' || st === 'NEGOTIATION') {
-                        groups['NEGOTIATION'].push(o);
-                    } else if (st === 'WON' || st === 'CLOSED_WON') {
-                        groups['WON'].push(o);
-                    } else if (st === 'LOST' || st === 'CLOSED_LOST') {
-                        groups['LOST'].push(o);
-                    } else if (groups[st]) {
-                        groups[st].push(o);
-                    } else {
-                        groups['QUALIFIED'].push(o);
-                    }
-                });
-
-                Object.keys(groups).forEach(key => {
-                    const list = groups[key];
-                    const badge = document.getElementById(`count-${key}`);
-                    if (badge) badge.textContent = list.length;
-
-                    const container = document.getElementById(`cards-${key}`);
-                    if (!container) return;
-
-                    if (list.length === 0) {
-                        container.innerHTML = '<div style="color: #94a3b8; font-size: 0.85em; text-align: center; padding: 20px;">No deals in this stage</div>';
-                        return;
-                    }
-
-                    container.innerHTML = list.map(o => {
-                        const val = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : 'Valuation Pending';
-                        const closeDate = o.expected_close_date || 'Target date open';
-                        return `
-                            <div class="opportunity-card" onclick="alert('Deal Details: ${o.customer_name || 'Client'}\\nStage: ${o.stage}\\nValue: ${val}\\nAgent: ${o.assigned_user_name || 'Unassigned'}')">
-                                <div class="opp-title">${o.customer_name || 'Direct Inquirer'}</div>
-                                <div class="opp-customer">Contact: ${o.customer_mobile || '--'}</div>
-                                <div class="opp-price">${val}</div>
-                                <div class="opp-meta">
-                                    <span>Agent: <strong>${o.assigned_user_name || 'Unassigned'}</strong></span>
-                                    <span>Target: ${closeDate}</span>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                });
+                filterOpportunities();
             } catch (err) {
                 console.warn('Backend fetch failed:', err);
-                document.getElementById('conn-label').textContent = 'Backend Offline';
-                document.getElementById('conn-dot').style.background = '#ef4444';
-                document.getElementById('counter-label').innerHTML = '<span style="color: red;">Failed to load from backend API. Make sure FastAPI server is running on http://localhost:8000</span>';
+                const connLbl = document.getElementById('conn-label');
+                if (connLbl) connLbl.textContent = 'Backend Offline';
+                const connDot = document.getElementById('conn-dot');
+                if (connDot) connDot.style.background = '#ef4444';
+                if (counter) {
+                    counter.innerHTML = '<span style="color: red;">Failed to load from backend API. Make sure FastAPI server is running on http://localhost:8000</span>';
+                }
             }
+        }
+
+        function filterOpportunities() {
+            const q = (document.getElementById('opp-search')?.value || '').toLowerCase().trim();
+            if (!q) {
+                renderPipeline(allOpportunities);
+                return;
+            }
+            const filtered = allOpportunities.filter(o => 
+                (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
+                (o.opportunity_id && o.opportunity_id.toLowerCase().includes(q)) ||
+                (o.assigned_user_name && o.assigned_user_name.toLowerCase().includes(q)) ||
+                (o.customer_mobile && o.customer_mobile.includes(q))
+            );
+            renderPipeline(filtered);
+        }
+
+        function renderPipeline(opps) {
+            const groups = {
+                'QUALIFIED': [],
+                'VIEWING': [],
+                'NEGOTIATION': [],
+                'WON': [],
+                'LOST': []
+            };
+
+            opps.forEach(o => {
+                const st = (o.stage || '').toUpperCase();
+                if (st === 'OFFER' || st === 'NEGOTIATION') {
+                    groups['NEGOTIATION'].push(o);
+                } else if (st === 'WON' || st === 'CLOSED_WON') {
+                    groups['WON'].push(o);
+                } else if (st === 'LOST' || st === 'CLOSED_LOST') {
+                    groups['LOST'].push(o);
+                } else if (groups[st]) {
+                    groups[st].push(o);
+                } else {
+                    groups['QUALIFIED'].push(o);
+                }
+            });
+
+            Object.keys(groups).forEach(key => {
+                const list = groups[key];
+                const badge = document.getElementById(`count-${key}`);
+                if (badge) badge.textContent = list.length;
+
+                const container = document.getElementById(`cards-${key}`);
+                if (!container) return;
+
+                if (list.length === 0) {
+                    container.innerHTML = `<div style="color: #94a3b8; font-size: 0.85em; text-align: center; padding: 20px;">${currentLang === 'ar' ? 'لا توجد صفقات في هذه المرحلة' : 'No deals in this stage'}</div>`;
+                    return;
+                }
+
+                container.innerHTML = list.map(o => {
+                    const val = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : (currentLang === 'ar' ? 'القيمة غير محددة' : 'Valuation Pending');
+                    const closeDate = o.expected_close_date || (currentLang === 'ar' ? 'تاريخ مفتوح' : 'Open target date');
+                    return `
+                        <div class="opportunity-card" onclick="openOpportunityDetailModal('${o.opportunity_id}')">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                <div class="opp-title">${o.customer_name || 'Direct Inquirer'}</div>
+                                <span class="badge badge-primary" style="font-size: 0.7em;">${o.stage}</span>
+                            </div>
+                            <div class="opp-customer">📞 ${o.customer_mobile || '--'}</div>
+                            <div class="opp-price">${val}</div>
+                            <div class="opp-meta">
+                                <span>👤 <strong>${o.assigned_user_name || 'Unassigned'}</strong></span>
+                                <span>📅 ${closeDate}</span>
+                            </div>
+                            <div style="display: flex; gap: 4px; margin-top: 8px; justify-content: space-between; align-items: center;" onclick="event.stopPropagation()">
+                                <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')" title="View or assign units to this deal">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                                <div style="display: flex; gap: 4px;">
+                                    ${getStageMoveButtons(o)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        function getStageMoveButtons(o) {
+            const st = (o.stage || '').toUpperCase();
+            if (st === 'QUALIFIED') {
+                return `<button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Move to Viewing">👁️ ${currentLang === 'ar' ? 'معاينة ➔' : 'Viewing ➔'}</button>`;
+            } else if (st === 'VIEWING') {
+                return `
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Back to Qualified">◀</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'NEGOTIATION')" title="Move to Offer/Negotiation">📑 ${currentLang === 'ar' ? 'تفاوض ➔' : 'Offer ➔'}</button>
+                `;
+            } else if (st === 'OFFER' || st === 'NEGOTIATION') {
+                return `
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Back to Viewing">◀</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #dcfce7; color: #166534;" onclick="quickAdvanceStage('${o.opportunity_id}', 'WON')" title="Mark as Won">🏆 ${currentLang === 'ar' ? 'فوز' : 'Won'}</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #fee2e2; color: #991b1b;" onclick="quickAdvanceStage('${o.opportunity_id}', 'LOST')" title="Mark as Lost">❌</button>
+                `;
+            } else if (st === 'WON' || st === 'CLOSED_WON') {
+                return `<span style="font-size: 0.75em; color: #166534; font-weight: 700;">✓ ${currentLang === 'ar' ? 'صفقة رابحة' : 'WON'}</span>`;
+            } else {
+                return `<button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Re-open deal">🔄 ${currentLang === 'ar' ? 'إعادة فتح' : 'Re-open'}</button>`;
+            }
+        }
+
+        async function quickAdvanceStage(oppId, nextStage) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stage: nextStage })
+                });
+                if (!res.ok) throw new Error('Stage transition failed');
+                fetchOpportunities();
+            } catch (err) {
+                alert('Failed to update stage: ' + err.message);
+            }
+        }
+
+        async function openOpportunityDetailModal(oppId) {
+            if (refUsers.length === 0) await initSalesData();
+            const opp = allOpportunities.find(o => o.opportunity_id === oppId);
+            if (!opp) return;
+
+            document.getElementById('opp-detail-id').value = opp.opportunity_id;
+            document.getElementById('opp-detail-id-display').textContent = opp.opportunity_id;
+            document.getElementById('opp-detail-cust-name').textContent = opp.customer_name || 'Client';
+            document.getElementById('opp-detail-cust-mobile').textContent = opp.customer_mobile || '--';
+            document.getElementById('opp-detail-stage-badge').textContent = opp.stage;
+            document.getElementById('opp-detail-stage').value = opp.stage;
+            document.getElementById('opp-detail-val').value = opp.expected_value || '';
+            document.getElementById('opp-detail-close').value = opp.expected_close_date || '';
+
+            const agentSelect = document.getElementById('opp-detail-agent');
+            agentSelect.innerHTML = '<option value="">-- Unassigned --</option>' + 
+                refUsers.map(u => `<option value="${u.user_id}" ${u.user_id === opp.assigned_user_id ? 'selected' : ''}>${u.full_name}</option>`).join('');
+
+            document.getElementById('opp-detail-modal').classList.add('show');
+        }
+
+        function closeOppDetailModal() {
+            document.getElementById('opp-detail-modal').classList.remove('show');
+        }
+
+        function setDetailStage(stageVal) {
+            document.getElementById('opp-detail-stage').value = stageVal;
+        }
+
+        function openLinkedUnitsFromDetail() {
+            const oppId = document.getElementById('opp-detail-id').value;
+            const custName = document.getElementById('opp-detail-cust-name').textContent;
+            closeOppDetailModal();
+            viewOpportunityUnits(oppId, custName);
+        }
+
+        async function submitUpdateOpportunity(e) {
+            e.preventDefault();
+            const oppId = document.getElementById('opp-detail-id').value;
+            const payload = {
+                stage: document.getElementById('opp-detail-stage').value,
+                expected_value: parseFloat(document.getElementById('opp-detail-val').value) || null,
+                expected_close_date: document.getElementById('opp-detail-close').value || null,
+                assigned_user_id: document.getElementById('opp-detail-agent').value || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Update failed');
+                closeOppDetailModal();
+                fetchOpportunities();
+                alert(currentLang === 'ar' ? 'تم تحديث الفرصة البيعية بنجاح!' : 'Opportunity updated successfully!');
+            } catch (err) {
+                alert('Failed to update opportunity: ' + err.message);
+            }
+        }
+
+        async function openNewOppModal() {
+            if (refCustomers.length === 0 || refUsers.length === 0) await initSalesData();
+
+            const custSelect = document.getElementById('new-opp-customer');
+            custSelect.innerHTML = '<option value="">Select Customer *</option>' +
+                refCustomers.map(c => {
+                    const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.company_name || c.customer_id;
+                    return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
+                }).join('');
+
+            const agentSelect = document.getElementById('new-opp-agent');
+            agentSelect.innerHTML = '<option value="">-- Unassigned --</option>' +
+                refUsers.map(u => `<option value="${u.user_id}">${u.full_name}</option>`).join('');
+
+            document.getElementById('new-opp-modal').classList.add('show');
+        }
+
+        function closeNewOppModal() {
+            document.getElementById('new-opp-modal').classList.remove('show');
+        }
+
+        async function submitNewOpportunity(e) {
+            e.preventDefault();
+            const custId = document.getElementById('new-opp-customer').value;
+            if (!custId) {
+                alert('Please select a customer');
+                return;
+            }
+
+            const payload = {
+                customer_id: custId,
+                stage: document.getElementById('new-opp-stage').value || 'QUALIFIED',
+                assigned_user_id: document.getElementById('new-opp-agent').value || null,
+                expected_value: parseFloat(document.getElementById('new-opp-val').value) || 0.0,
+                expected_close_date: document.getElementById('new-opp-close').value || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Creation failed');
+                closeNewOppModal();
+                fetchOpportunities();
+                alert(currentLang === 'ar' ? 'تم إنشاء الفرصة البيعية بنجاح!' : 'Opportunity created successfully!');
+            } catch (err) {
+                alert('Error creating opportunity: ' + err.message);
+            }
+        }
+
+        let activeSalesTab = 'pipeline';
+        let cachedOffers = [];
+
+        function switchSalesTab(tabName) {
+            activeSalesTab = tabName;
+            const btnPipeline = document.getElementById('btn-tab-pipeline');
+            const btnOffers = document.getElementById('btn-tab-offers');
+            const viewPipeline = document.getElementById('view-pipeline');
+            const viewOffers = document.getElementById('view-offers');
+
+            if (tabName === 'pipeline') {
+                btnPipeline.classList.add('active');
+                btnOffers.classList.remove('active');
+                viewPipeline.style.display = 'block';
+                viewOffers.style.display = 'none';
+            } else {
+                btnOffers.classList.add('active');
+                btnPipeline.classList.remove('active');
+                viewOffers.style.display = 'block';
+                viewPipeline.style.display = 'none';
+                fetchOffers();
+            }
+        }
+
+        async function fetchOffers() {
+            const statusFilter = document.getElementById('offer-status-filter')?.value || '';
+            let url = `${API_BASE}/api/v1/sales/offers?page_size=100`;
+            if (statusFilter) url += `&status=${encodeURIComponent(statusFilter)}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Offers fetch error');
+                const json = await res.json();
+                cachedOffers = json.data || [];
+                filterOffers();
+            } catch (err) {
+                console.warn(err);
+                const tbody = document.getElementById('offers-table-body');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Failed to load offers from server.</td></tr>`;
+            }
+        }
+
+        function filterOffers() {
+            const q = (document.getElementById('offer-search')?.value || '').toLowerCase();
+            let list = cachedOffers;
+            if (q) {
+                list = list.filter(o => 
+                    (o.offer_id && o.offer_id.toLowerCase().includes(q)) ||
+                    (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
+                    (o.unit_number && o.unit_number.toLowerCase().includes(q))
+                );
+            }
+            renderOffers(list);
+        }
+
+        function renderOffers(list) {
+            const tbody = document.getElementById('offers-table-body');
+            if (!tbody) return;
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'لا توجد عروض مطابقة' : 'No offers found'}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(o => {
+                let badgeClass = 'badge-muted';
+                if (o.status === 'ACCEPTED') badgeClass = 'badge-success';
+                else if (o.status === 'REJECTED') badgeClass = 'badge-danger';
+                else if (o.status === 'COUNTER') badgeClass = 'badge-warning';
+                else if (o.status === 'SUBMITTED') badgeClass = 'badge-primary';
+
+                return `
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 600;">${o.offer_id}</td>
+                        <td>
+                            <div style="font-weight: 600;">${o.customer_name || 'Prospect'}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); font-family: monospace;">${o.opportunity_id}</div>
+                        </td>
+                        <td><strong>${o.unit_number || o.unit_id}</strong></td>
+                        <td style="font-weight: 700; color: var(--primary);">${Number(o.offer_amount).toLocaleString()} SAR</td>
+                        <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                        <td style="font-size: 0.85em; color: var(--text-muted);">${new Date(o.submitted_at).toLocaleDateString()}</td>
+                        <td style="font-size: 0.85em; color: var(--text-muted);">${o.valid_until ? new Date(o.valid_until).toLocaleDateString() : '--'}</td>
+                        <td>
+                            <button class="btn-sm" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        let cachedInventoryUnits = [];
+        async function getInventoryUnits() {
+            if (cachedInventoryUnits.length > 0) return cachedInventoryUnits;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedInventoryUnits = json.data || [];
+                }
+            } catch (e) {
+                console.warn('Failed to load inventory units:', e);
+            }
+            return cachedInventoryUnits;
+        }
+
+        async function viewOpportunityUnits(oppId, oppTitle) {
+            const modal = document.getElementById('opp-units-modal');
+            const titleEl = document.getElementById('opp-units-modal-title');
+            const bodyEl = document.getElementById('opp-units-modal-body');
+
+            titleEl.textContent = `${currentLang === 'ar' ? 'الوحدات المرتبطة بالفرصة' : 'Units Linked to Opportunity'}: ${oppTitle} (${oppId})`;
+            bodyEl.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'جاري التحميل...' : 'Loading linked units...'}</div>`;
+            modal.classList.add('show');
+
+            try {
+                const [unitsRes, invUnits] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`),
+                    getInventoryUnits()
+                ]);
+                if (!unitsRes.ok) throw new Error('Units fetch failed');
+                const json = await unitsRes.json();
+                const units = json.data || [];
+
+                const isAr = currentLang === 'ar';
+                const availableOpts = invUnits.map(u => {
+                    const price = u.asking_price ? `${Number(u.asking_price).toLocaleString()} SAR` : '';
+                    return `<option value="${u.unit_id}">${u.unit_number} - [${u.unit_id}] ${u.property_type_name || ''} ${price ? '(' + price + ')' : ''}</option>`;
+                }).join('');
+
+                const assignFormHtml = `
+                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 18px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                            <span>➕</span> <span>${isAr ? 'ربط وتعيين وحدة لهذه الصفقة' : 'Assign / Link Property Unit to Deal'}</span>
+                        </h4>
+                        <form onsubmit="submitAssignUnitToOpp(event, '${oppId}', '${encodeURIComponent(oppTitle)}')">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                                <div style="flex: 2; min-width: 200px;">
+                                    <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'اختر الوحدة من المخزون *' : 'Select Inventory Unit *'}</label>
+                                    <select id="assign-unit-select" required style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                        <option value="">-- ${isAr ? 'اختر الوحدة' : 'Select Unit'} --</option>
+                                        ${availableOpts}
+                                    </select>
+                                </div>
+                                <div style="flex: 1; min-width: 130px;">
+                                    <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'السعر المقترح (ريال)' : 'Offered Price (SAR)'}</label>
+                                    <input type="number" id="assign-unit-price" placeholder="e.g. 500000" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
+                                    <input type="checkbox" id="assign-unit-primary" checked style="cursor: pointer;">
+                                    <label for="assign-unit-primary" style="font-size: 0.82em; font-weight: 600; cursor: pointer;">${isAr ? 'الوحدة الرئيسية ★' : 'Primary Unit ★'}</label>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn-primary" style="padding: 8px 14px; font-size: 0.88em; border-radius: 6px;">
+                                        ${isAr ? '✓ ربط الوحدة' : '✓ Link Unit'}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                let tableHtml = '';
+                if (units.length === 0) {
+                    tableHtml = `<div style="text-align: center; padding: 25px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم النموذج أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the form above to assign a unit.'}</div>`;
+                } else {
+                    tableHtml = `
+                        <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy);">${isAr ? 'الوحدات المحددة حالياً لهذه الفرصة:' : 'Currently Assigned Units:'}</div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'معرف الوحدة' : 'Unit ID'}</th>
+                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'رقم الوحدة' : 'Unit Number'}</th>
+                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'الوحدة الرئيسية' : 'Primary Unit'}</th>
+                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'السعر المقترح' : 'Offered Price'}</th>
+                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${units.map(u => `
+                                    <tr>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);"><span class="id-badge">${u.unit_id}</span></td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600;">${u.unit_number || u.unit_id}</td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
+                                            ${u.is_primary ? '<span class="badge badge-success">★ PRIMARY</span>' : '<span class="badge badge-muted">SECONDARY</span>'}
+                                        </td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--primary);">
+                                            ${u.offered_price != null ? `${Number(u.offered_price).toLocaleString()} SAR` : '--'}
+                                        </td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">
+                                            <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b; padding: 2px 8px; font-size: 0.8em;" onclick="removeOpportunityUnit('${oppId}', '${u.unit_id}', '${encodeURIComponent(oppTitle)}')" title="Remove this unit link">🗑️ ${isAr ? 'فك الارتباط' : 'Remove'}</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                bodyEl.innerHTML = assignFormHtml + tableHtml;
+            } catch (err) {
+                console.error(err);
+                bodyEl.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">Error loading opportunity units: ${err.message}</div>`;
+            }
+        }
+
+        async function submitAssignUnitToOpp(e, oppId, encOppTitle) {
+            e.preventDefault();
+            const oppTitle = decodeURIComponent(encOppTitle);
+            const unitId = document.getElementById('assign-unit-select').value;
+            const price = parseFloat(document.getElementById('assign-unit-price').value) || null;
+            const isPrimary = document.getElementById('assign-unit-primary').checked;
+
+            if (!unitId) {
+                alert(currentLang === 'ar' ? 'يرجى اختيار الوحدة' : 'Please select a unit');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/units`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unit_id: unitId, is_primary: isPrimary, offered_price: price })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to assign unit');
+                }
+
+                alert(currentLang === 'ar' ? 'تم ربط وتعيين الوحدة بالفرصة بنجاح!' : 'Unit linked to opportunity successfully!');
+                viewOpportunityUnits(oppId, oppTitle);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function removeOpportunityUnit(oppId, unitId, encOppTitle) {
+            const oppTitle = decodeURIComponent(encOppTitle);
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من فك ارتباط هذه الوحدة بالفرصة؟' : 'Are you sure you want to unlink this unit from this opportunity?')) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/units/${unitId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error('Failed to unlink unit');
+                viewOpportunityUnits(oppId, oppTitle);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function closeOppUnitsModal() {
+            document.getElementById('opp-units-modal').classList.remove('show');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
