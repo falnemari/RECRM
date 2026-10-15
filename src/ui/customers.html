@@ -194,6 +194,12 @@
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Customer 360</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
@@ -659,6 +665,7 @@
                                 <div style="display: flex; gap: 4px;">
                                     <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ Edit</button>
                                     <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 360</button>
+                                    <a href="tasks.html?customer_id=${encodeURIComponent(c.customer_id)}&action=new_activity" class="btn btn-sm" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; text-decoration:none;" title="Log activity or task for this customer">📝 Act</a>
                                 </div>
                             </td>
                         </tr>
@@ -885,6 +892,22 @@
                         </div>
                     </div>
 
+                    <!-- Quick Interaction Action Buttons -->
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1;">
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_viewing" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Schedule a property viewing for this client">
+                            👁️ + Schedule Viewing
+                        </a>
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_activity" class="btn btn-sm" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Log a call, WhatsApp, viewing, meeting or internal note">
+                            📝 + Log Activity
+                        </a>
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_comm" class="btn btn-sm" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Record outbound/inbound communication message">
+                            💬 + Log Communication
+                        </a>
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_task" class="btn btn-sm" style="background: #fefce8; color: #854d0e; border: 1px solid #fde047; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Create follow-up task">
+                            📋 + New Task
+                        </a>
+                    </div>
+
                     <h4 style="margin: 16px 0 8px 0;">Inbound Leads (${leads.length})</h4>
                     ${leads.length ? leads.map(l => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Lead ID: <span class="id-badge">${l.lead_id}</span> | Status: <strong>${l.status}</strong> | Priority: <strong>${l.priority}</strong> | Type: ${l.inquiry_type}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No leads recorded.</p>'}
 
@@ -918,5 +941,6 @@
             fetchCustomers();
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>

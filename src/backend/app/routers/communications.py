@@ -1,10 +1,11 @@
 from typing import Optional, List
 from uuid import uuid4
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
+from app.routers.auth import check_user_scope_override
 from app.schemas.communications import (
     TasksSummaryOut,
     TaskOut, TaskCreateIn, TaskUpdateIn,
@@ -18,11 +19,36 @@ router = APIRouter(tags=["Tasks & Communications"])
 # Summary / KPIs
 # ---------------------------------------------------------
 @router.get("/tasks/summary", response_model=ResponseEnvelope[TasksSummaryOut])
-async def get_tasks_summary(conn: asyncpg.Connection = Depends(get_db)):
-    open_tasks = await conn.fetchval("SELECT count(*) FROM tasks WHERE status = 'OPEN'") or 0
-    overdue_tasks = await conn.fetchval("SELECT count(*) FROM tasks WHERE status = 'OPEN' AND due_at < NOW()") or 0
-    completed_tasks = await conn.fetchval("SELECT count(*) FROM tasks WHERE status = 'COMPLETED'") or 0
-    total_acts = await conn.fetchval("SELECT count(*) FROM activities") or 0
+async def get_tasks_summary(
+    assigned_user_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
+    ag_cond = ""
+    ag_params = []
+    if assigned_user_id:
+        ag_cond = " AND assigned_user_id = $1"
+        ag_params = [assigned_user_id]
+
+    open_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'OPEN'{ag_cond}", *ag_params) or 0
+    overdue_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'OPEN' AND due_at < NOW(){ag_cond}", *ag_params) or 0
+    completed_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'COMPLETED'{ag_cond}", *ag_params) or 0
+    
+    act_user_cond = f" WHERE user_id = $1" if assigned_user_id else ""
+    total_acts = await conn.fetchval(f"SELECT count(*) FROM activities{act_user_cond}", *ag_params) or 0
+    
+    viewing_act_cond = f" AND a.user_id = $1" if assigned_user_id else ""
+    v_acts = await conn.fetchval(f"""
+        SELECT count(*) FROM activities a
+        JOIN activity_types at ON a.activity_type_id = at.activity_type_id
+        WHERE at.code = 'VIEWING'{viewing_act_cond}
+    """, *ag_params) or 0
+    
+    viewing_tbl_cond = f" WHERE agent_user_id = $1" if assigned_user_id else ""
+    v_tbl = await conn.fetchval(f"SELECT count(*) FROM viewings{viewing_tbl_cond}", *ag_params) or 0
+    total_viewings = v_acts + v_tbl
+
     total_comms = await conn.fetchval("SELECT count(*) FROM communications") or 0
 
     return ResponseEnvelope(data=TasksSummaryOut(
@@ -30,7 +56,8 @@ async def get_tasks_summary(conn: asyncpg.Connection = Depends(get_db)):
         overdue_tasks=overdue_tasks,
         completed_tasks=completed_tasks,
         total_activities=total_acts,
-        total_communications=total_comms
+        total_communications=total_comms,
+        total_viewings=total_viewings
     ))
 
 
@@ -47,8 +74,10 @@ async def list_tasks(
     customer_id: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     search: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []

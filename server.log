@@ -1,2 +1,10 @@
 INFO:     Will watch for changes in these directories: ['/home/nemro/RECRM/src/backend/app']
-ERROR:    [Errno 98] Address already in use
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+WARNING:  --reload-include and --reload-exclude have no effect unless watchfiles is installed.
+INFO:     Started reloader process [32719] using StatReload
+/home/nemro/RECRM/src/backend/app/routers/reports.py:85: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  scope: str = Query("GLOBAL", regex="^(GLOBAL|BRANCH|TEAM|OWN)$"),
+INFO:     Started server process [32723]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:53040 - "GET /health HTTP/1.1" 200 OK

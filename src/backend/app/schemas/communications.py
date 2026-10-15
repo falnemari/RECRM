@@ -9,6 +9,7 @@ class TasksSummaryOut(BaseModel):
     completed_tasks: int
     total_activities: int
     total_communications: int
+    total_viewings: int = 0
 
 class TaskOut(BaseModel):
     task_id: str

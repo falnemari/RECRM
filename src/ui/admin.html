@@ -109,9 +109,24 @@
         }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
         [dir="rtl"] table { text-align: right; }
-        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.82rem; }
         th { background: #f8fafc; font-weight: 700; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
         tr:hover { background: #f8fafc; }
+
+        .cell-multiline, .cell-wrap {
+            white-space: normal !important;
+            word-break: break-word;
+            line-height: 1.35;
+            min-width: 120px;
+            max-width: 280px;
+        }
+        .badge-wrap-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-width: 240px;
+            white-space: normal;
+        }
 
         /* Badges */
         .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
@@ -235,7 +250,13 @@
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_admin">Administration & Governance</span>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
@@ -609,8 +630,14 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_roles">Assigned Roles</label>
-                    <div id="user-roles-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 140px; overflow-y: auto; background: #f8fafc;">
+                    <div id="user-roles-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 140px; overflow-y: auto; background: #f8fafc;" onchange="updateModalScopePreview()">
                         <!-- Roles checkboxes -->
+                    </div>
+                    <div id="modal-scope-preview-container" style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.85em; color: var(--text-muted); font-weight: 600;">Calculated Data Scope:</span>
+                        <div id="modal-scope-preview-badge">
+                            <span class="badge badge-scope-own">OWN</span>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1073,8 +1100,17 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Failed to save branch');
+                    let errMsg = 'Failed to save branch';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || (typeof err === 'string' ? err : JSON.stringify(err));
+                    } catch (_) {
+                        try {
+                            const txt = await res.text();
+                            if (txt) errMsg = txt;
+                        } catch (__) {}
+                    }
+                    throw new Error(errMsg);
                 }
                 closeBranchModal();
                 showToast(`✓ Branch saved successfully!`);
@@ -1139,15 +1175,23 @@
                             </div>
                         </td>
                         <td>
-                            <strong>${u.full_name}</strong>
-                            <span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start:4px;">(${u.employee_no || '--'})</span>
+                            <div class="cell-multiline" style="max-width: 170px;">
+                                <strong>${u.full_name}</strong>
+                                <div style="font-size: 0.78em; color: var(--text-muted);">${u.employee_no || '--'}</div>
+                            </div>
                         </td>
                         <td>
-                            <span>${u.email}</span>
-                            ${u.mobile ? `<span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start:4px;">• ${u.mobile}</span>` : ''}
+                            <div class="cell-multiline" style="max-width: 190px;">
+                                <span>${u.email}</span>
+                                ${u.mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${u.mobile}</div>` : ''}
+                            </div>
                         </td>
-                        <td>${u.branch_name ? `<strong>${u.branch_name}</strong> (${u.branch_code})` : '<span style="color: var(--text-muted);">Unassigned</span>'}</td>
-                        <td>${rolesHtml}</td>
+                        <td>
+                            <div class="cell-multiline" style="max-width: 160px;">
+                                ${u.branch_name ? `<strong>${u.branch_name}</strong> <span style="font-size: 0.78em; color: var(--text-muted);">(${u.branch_code})</span>` : '<span style="color: var(--text-muted);">Unassigned</span>'}
+                            </div>
+                        </td>
+                        <td><div class="badge-wrap-container">${rolesHtml}</div></td>
                         <td><span class="badge ${scopeBadgeClass}">${u.effective_scope}</span></td>
                         <td>${u.manager_name || '<span style="color: var(--text-muted);">--</span>'}</td>
                         <td>${stBadge}</td>
@@ -1169,6 +1213,7 @@
             populateBranchSelect('user-branch');
             populateManagerSelect('user-manager');
             renderUserRolesCheckboxes([]);
+            updateModalScopePreview();
             document.getElementById('user-status').value = 'ACTIVE';
             document.getElementById('user-modal').style.display = 'flex';
         }
@@ -1187,6 +1232,7 @@
             populateManagerSelect('user-manager', u.user_id);
             document.getElementById('user-manager').value = u.manager_user_id || '';
             renderUserRolesCheckboxes(u.roles.map(r => r.role_id));
+            updateModalScopePreview();
             document.getElementById('user-status').value = u.status || 'ACTIVE';
             document.getElementById('user-modal').style.display = 'flex';
         }
@@ -1195,13 +1241,56 @@
             document.getElementById('user-modal').style.display = 'none';
         }
 
+        function updateModalScopePreview() {
+            const checkedBoxes = Array.from(document.querySelectorAll('input[name="user_role"]:checked'));
+            const checkedCodes = checkedBoxes.map(cb => {
+                const r = cachedRoles.find(role => role.role_id === cb.value);
+                return r ? r.role_code.toUpperCase() : '';
+            });
+
+            let scope = 'GLOBAL';
+            const codes = new Set(checkedCodes);
+            if (codes.has('SYS_ADMIN') || codes.has('ADMIN') || codes.has('AUDITOR') || codes.has('VIEWER') || codes.has('EXECUTIVE')) {
+                scope = 'GLOBAL';
+            } else if (codes.has('SALES_MANAGER') || codes.has('BRANCH_MANAGER')) {
+                scope = 'BRANCH';
+            } else if (codes.has('SALES_DIRECTOR') || codes.has('TEAM_LEAD')) {
+                scope = 'TEAM';
+            } else if (codes.has('SALES_AGENT') || codes.has('LEASING_AGENT')) {
+                scope = 'OWN';
+            } else if (checkedCodes.length === 0) {
+                scope = 'OWN';
+            }
+
+            let badgeClass = 'badge-scope-own';
+            let desc = currentLang === 'ar' ? 'صلاحية على سجلاته الشخصية فقط' : 'Own assigned records only';
+            if (scope === 'GLOBAL') {
+                badgeClass = 'badge-scope-global';
+                desc = currentLang === 'ar' ? 'صلاحية شاملة على كامل المنظمة والفروع' : 'Full organization-wide access';
+            } else if (scope === 'BRANCH') {
+                badgeClass = 'badge-scope-branch';
+                desc = currentLang === 'ar' ? 'محصور بسجلات الفرع التابع له' : 'Restricted to assigned branch';
+            } else if (scope === 'TEAM') {
+                badgeClass = 'badge-scope-team';
+                desc = currentLang === 'ar' ? 'سجلاته وسجلات الموظفين التابعين له' : 'Own records + direct subordinates';
+            }
+
+            const badgeContainer = document.getElementById('modal-scope-preview-badge');
+            if (badgeContainer) {
+                badgeContainer.innerHTML = `
+                    <span class="badge ${badgeClass}" style="font-size: 0.85em;">${scope}</span>
+                    <span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start: 6px;">(${desc})</span>
+                `;
+            }
+        }
+
         function renderUserRolesCheckboxes(selectedRoleIds) {
             const container = document.getElementById('user-roles-checkboxes');
             container.innerHTML = cachedRoles.map(r => {
                 const checked = selectedRoleIds.includes(r.role_id) ? 'checked' : '';
                 return `
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85em; cursor: pointer;">
-                        <input type="checkbox" name="user_role" value="${r.role_id}" ${checked}>
+                        <input type="checkbox" name="user_role" value="${r.role_id}" ${checked} onchange="updateModalScopePreview()">
                         <span><strong>${r.name}</strong> <span style="font-size: 0.8em; color: var(--text-muted);">(${r.role_code})</span></span>
                     </label>
                 `;
@@ -1234,8 +1323,17 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Failed to save user');
+                    let errMsg = 'Failed to save user';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || (typeof err === 'string' ? err : JSON.stringify(err));
+                    } catch (_) {
+                        try {
+                            const txt = await res.text();
+                            if (txt) errMsg = txt;
+                        } catch (__) {}
+                    }
+                    throw new Error(errMsg);
                 }
                 closeUserModal();
                 showToast(`✓ User saved successfully!`);
@@ -1368,8 +1466,17 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Failed to save role');
+                    let errMsg = 'Failed to save role';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || (typeof err === 'string' ? err : JSON.stringify(err));
+                    } catch (_) {
+                        try {
+                            const txt = await res.text();
+                            if (txt) errMsg = txt;
+                        } catch (__) {}
+                    }
+                    throw new Error(errMsg);
                 }
                 closeRoleModal();
                 showToast(`✓ Role permissions saved!`);
@@ -1452,9 +1559,9 @@
                                 🏢 ${isAr ? 'الفرع التابع له:' : 'Branch:'} <strong>${d.branch_name || (isAr ? 'غير مسند لفرع' : 'Unassigned')}</strong>
                             </div>
                         </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 4px;">${isAr ? 'نطاق الوصول الفعلي:' : 'Effective Scope:'}</span>
+                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                             <span class="badge ${badgeClass}" style="font-size: 1em; padding: 6px 14px;">${d.effective_scope}</span>
+                            <button class="btn btn-sm btn-outline" onclick="editUser('${d.user_id}')" style="font-size: 0.82em; padding: 4px 10px;">✏️ ${isAr ? 'تعديل الدور والنطاق' : 'Edit Roles & Scope'}</button>
                         </div>
                     </div>
 
@@ -1517,7 +1624,7 @@
                 let detailsText = '--';
                 if (l.new_value_json) {
                     try {
-                        detailsText = `<code style="font-size: 0.8em; color: #475569;">${JSON.stringify(l.new_value_json)}</code>`;
+                        detailsText = JSON.stringify(l.new_value_json, null, 1);
                     } catch (e) {
                         detailsText = String(l.new_value_json);
                     }
@@ -1536,7 +1643,11 @@
                         </td>
                         <td>${actionBadge}</td>
                         <td style="font-family: monospace; font-size: 0.85em;">${l.ip_address || '--'}</td>
-                        <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${detailsText}</td>
+                        <td style="max-width: 340px;">
+                            <div class="cell-multiline" style="max-height: 75px; overflow-y: auto; font-family: monospace; font-size: 0.76em; background: #f8fafc; padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border); line-height: 1.35;">
+                                <pre style="margin: 0; white-space: pre-wrap; word-break: break-all;">${detailsText}</pre>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1585,8 +1696,10 @@
                     </td>
                     <td style="font-size: 0.85em; white-space: nowrap; color: var(--text-muted);">${new Date(e.occurred_at).toLocaleString()}</td>
                     <td>
-                        <div style="font-weight: 600;">${e.user_name || 'System / Auto'}</div>
-                        <div style="font-size: 0.8em; color: var(--text-muted);">${e.user_email || (e.user_id ? e.user_id : '--')}</div>
+                        <div class="cell-multiline" style="max-width: 190px;">
+                            <strong>${e.user_name || 'System / Auto'}</strong>
+                            <div style="font-size: 0.8em; color: var(--text-muted);">${e.user_email || (e.user_id ? e.user_id : '--')}</div>
+                        </div>
                     </td>
                     <td><span class="badge ${e.event_type.includes('FAIL') ? 'badge-danger' : 'badge-scope-branch'}">${e.event_type}</span></td>
                     <td style="font-family: monospace; font-size: 0.85em;">${e.ip_address || '--'}</td>
@@ -1703,6 +1816,7 @@
             await fetchUsers();
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>
 

@@ -1,9 +1,10 @@
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
+from app.routers.auth import check_user_scope_override
 from app.schemas.sales import (
     OpportunityOut, OpportunityUpdate, OpportunityCreateIn, ViewingOut, ReservationOut,
     OfferOut, OfferCreateIn, OfferUpdateIn,
@@ -49,8 +50,10 @@ async def list_opportunities(
     page_size: int = Query(50, ge=1, le=100),
     stage: Optional[str] = None,
     assigned_user_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
     # Auto-sync any qualified leads that don't yet have an opportunity in the pipeline
     unsynced = await conn.fetch("""
         SELECT l.lead_id, l.customer_id, l.assigned_user_id, l.budget_max, l.budget_min
@@ -257,11 +260,62 @@ async def list_viewings(
         meta=CollectionMeta(page=page, page_size=page_size, total=total)
     )
 
+RESERVATION_SELECT_QUERY = """
+    SELECT 
+        r.reservation_id,
+        r.opportunity_id,
+        r.unit_id,
+        u.unit_number,
+        r.reservation_number,
+        r.reserved_at,
+        r.expires_at,
+        CAST(r.deposit_amount AS FLOAT) AS deposit_amount,
+        r.status,
+        r.customer_id,
+        COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+        c.mobile AS customer_mobile,
+        c.email AS customer_email,
+        c.national_id_hash AS national_id,
+        p.name_en AS project_name,
+        b.name AS building_name,
+        pt.name_en AS property_type,
+        u.bedrooms,
+        u.bathrooms,
+        CAST(u.area_sqm AS FLOAT) AS area_sqm,
+        u.floor_no,
+        CAST(u.asking_price AS FLOAT) AS asking_price,
+        u.status AS unit_status,
+        opp.assigned_user_id AS assigned_agent_id,
+        ag.full_name AS assigned_agent_name,
+        con.contract_id,
+        con.contract_number,
+        CAST(con.contract_value AS FLOAT) AS contract_value
+    FROM reservations r
+    LEFT JOIN units u ON r.unit_id = u.unit_id
+    LEFT JOIN buildings b ON u.building_id = b.building_id
+    LEFT JOIN projects p ON b.project_id = p.project_id
+    LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+    LEFT JOIN customers c ON r.customer_id = c.customer_id
+    LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
+    LEFT JOIN users ag ON opp.assigned_user_id = ag.user_id
+    LEFT JOIN (
+        SELECT DISTINCT ON (reservation_id)
+            contract_id,
+            contract_number,
+            contract_value,
+            reservation_id
+        FROM contracts
+        WHERE reservation_id IS NOT NULL
+        ORDER BY reservation_id, signed_at DESC NULLS LAST, contract_id DESC
+    ) con ON r.reservation_id = con.reservation_id
+"""
+
 @router.get("/reservations", response_model=CollectionEnvelope[ReservationOut])
 async def list_reservations(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
+    search: Optional[str] = Query(None),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
@@ -274,22 +328,31 @@ async def list_reservations(
         params.append(status_filter.upper())
         p_idx += 1
 
-    where_clause = " AND ".join(conditions)
-    total = await conn.fetchval(f"SELECT count(*) FROM reservations r WHERE {where_clause}", *params)
+    if search:
+        search_pattern = f"%{search}%"
+        conditions.append(f"""(
+            r.reservation_number ILIKE ${p_idx} OR
+            u.unit_number ILIKE ${p_idx} OR
+            c.first_name ILIKE ${p_idx} OR
+            c.last_name ILIKE ${p_idx} OR
+            c.company_name ILIKE ${p_idx} OR
+            c.mobile ILIKE ${p_idx}
+        )""")
+        params.append(search_pattern)
+        p_idx += 1
 
-    query = f"""
-        SELECT 
-            r.reservation_id,
-            r.opportunity_id,
-            r.unit_id,
-            u.unit_number,
-            r.reservation_number,
-            r.reserved_at,
-            r.expires_at,
-            CAST(r.deposit_amount AS FLOAT) AS deposit_amount,
-            r.status
+    where_clause = " AND ".join(conditions)
+    count_query = f"""
+        SELECT count(*) 
         FROM reservations r
         LEFT JOIN units u ON r.unit_id = u.unit_id
+        LEFT JOIN customers c ON r.customer_id = c.customer_id
+        WHERE {where_clause}
+    """
+    total = await conn.fetchval(count_query, *params)
+
+    query = f"""
+        {RESERVATION_SELECT_QUERY}
         WHERE {where_clause}
         ORDER BY r.reserved_at DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -302,6 +365,13 @@ async def list_reservations(
         data=data,
         meta=CollectionMeta(page=page, page_size=page_size, total=total)
     )
+
+@router.get("/reservations/{reservation_id}", response_model=ResponseEnvelope[ReservationOut])
+async def get_reservation_detail(reservation_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    row = await conn.fetchrow(f"{RESERVATION_SELECT_QUERY} WHERE r.reservation_id = $1", reservation_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    return ResponseEnvelope(data=ReservationOut(**dict(row)), meta=BaseMeta())
 
 
 # =============================================================
@@ -397,7 +467,7 @@ async def create_offer(payload: OfferCreateIn, conn: asyncpg.Connection = Depend
     await conn.execute("""
         INSERT INTO offers (offer_id, opportunity_id, unit_id, offer_amount, submitted_at, valid_until, status)
         VALUES ($1, $2, $3, $4, now(), $5, $6)
-    """, offer_id, payload.opportunity_id, payload.unit_id, payload.offer_amount, payload.valid_until, payload.status.upper())
+    """, offer_id, payload.opportunity_id, payload.unit_id, payload.offer_amount, payload.valid_until, (payload.status or "SUBMITTED").upper())
 
     row = await conn.fetchrow("""
         SELECT 

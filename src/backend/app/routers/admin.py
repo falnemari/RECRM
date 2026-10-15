@@ -106,13 +106,22 @@ async def log_audit_event(
     ip: str = "127.0.0.1"
 ):
     audit_id = await get_next_id(conn, "audit_logs", "audit_log")
+    try:
+        old_json = json.dumps(old_val, default=str) if old_val is not None else None
+    except Exception:
+        old_json = str(old_val) if old_val is not None else None
+    try:
+        new_json = json.dumps(new_val, default=str) if new_val is not None else None
+    except Exception:
+        new_json = str(new_val) if new_val is not None else None
+
     await conn.execute("""
         INSERT INTO audit_logs (
             audit_log_id, organization_id, user_id, entity_type, entity_id, action,
             old_value_json, new_value_json, ip_address, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, now())
     """, audit_id, org_id, user_id, entity_type, str(entity_id) if entity_id else None,
-         action, json.dumps(old_val) if old_val else None, json.dumps(new_val) if new_val else None, ip)
+         action, old_json, new_json, ip)
 
 
 # =============================================================

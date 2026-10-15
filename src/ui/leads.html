@@ -206,6 +206,12 @@
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Leads</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
@@ -254,6 +260,13 @@
 
         <div class="controls-bar">
             <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." style="flex-grow: 1; min-width: 200px;" oninput="debounceFetch()">
+            <select id="agent-filter" onchange="fetchLeads(1)">
+                <option value="">All Agents (جميع الوسطاء)</option>
+            </select>
+            <div id="lead-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
+                <span id="lead-agent-scope-text">Showing user data only</span>
+                <button type="button" onclick="clearLeadAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
+            </div>
             <select id="status-select" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_statuses">All Statuses</option>
                 <option value="NEW">NEW</option>
@@ -329,15 +342,24 @@
 
                         <!-- Search Inputs Grid -->
                         <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                <input type="text" id="srch-first-name" placeholder="First Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-last-name" placeholder="Last Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
+                                <label style="font-size: 0.82em; font-weight: 600; color: var(--text-muted);">Customer Type / نوع العميل:</label>
+                                <select id="srch-cust-type" style="padding: 4px 8px; font-size: 0.85em; border-radius: 5px; border: 1px solid var(--border); background: #fff;" onchange="performCustomerSearch()">
+                                    <option value="ALL">All Customers (جميع العملاء)</option>
+                                    <option value="INDIVIDUAL">Individual (أفراد)</option>
+                                    <option value="COMPANY">Company / Corporate (شركات ومؤسسات)</option>
+                                </select>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                                <input type="text" id="srch-cust-id" placeholder="Customer ID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="srch-first-name" placeholder="First Name (الاسم الأول)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-last-name" placeholder="Last Name (اسم العائلة)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-company-name" placeholder="Company Name (اسم الشركة)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                                <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                                 <input type="text" id="srch-email" placeholder="Email Address" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-national-id" placeholder="National ID / Iqama" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-cust-id" placeholder="Customer ID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-national-id" placeholder="National ID / CR (هوية/سجل)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                                 <div style="display: flex; gap: 8px;">
@@ -526,9 +548,22 @@
                         <button type="button" class="btn-copy" onclick="copyId(document.getElementById('edit-lead-id-display').textContent)">📋 <span data-i18n="btn_copy">Copy ID</span></button>
                     </div>
 
-                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.9em;">
-                        <span data-i18n="lbl_customer">Customer:</span> <strong id="edit-lead-cust-name">--</strong>
-                        <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="edit-lead-cust-info">--</div>
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <span data-i18n="lbl_customer">Customer:</span> <strong id="edit-lead-cust-name">--</strong>
+                            <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="edit-lead-cust-info">--</div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="btn btn-sm" onclick="logViewingFromLeadModal()" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Schedule a property viewing for this lead">
+                                👁️ + Viewing
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="logActivityFromLeadModal()" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Log a call, WhatsApp, viewing or note">
+                                📝 + Activity
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="logCommFromLeadModal()" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Log communication / message">
+                                💬 + Message
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-row">
@@ -613,6 +648,98 @@
                             <input type="number" id="edit-lead-area-min" min="0">
                         </div>
                     </div>
+
+                    <!-- ================= INVENTORY SEARCH & MULTI-UNIT MATCHING ================= -->
+                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 8px;">
+                        <input type="hidden" id="edit-lead-unit-id">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <h4 style="margin: 0; font-size: 0.95em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                                <span>🔍</span>
+                                <span data-i18n="sec_unit_search_title">Search Inventory & Match Customer Criteria</span>
+                            </h4>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-sm" onclick="autoMatchLeadUnitCriteria()" style="background: #0284c7; color: white; border: none; font-weight: 600; padding: 5px 12px; border-radius: 5px; cursor: pointer;" title="Autofill filters with customer inquiry requirements">
+                                    ⚡ <span data-i18n="btn_automatch_criteria">Auto-Match Lead Criteria</span>
+                                </button>
+                                <button type="button" class="btn-sm" onclick="resetLeadUnitSearchFilters()" style="background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                                    🔄 <span data-i18n="btn_reset_filters">Reset Filters</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Shortlisted Units Container (Allows Multiple Units) -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <strong style="font-size: 0.85em; color: var(--navy);" data-i18n="lbl_shortlisted_units">Shortlisted Units for Lead:</strong>
+                                <span id="edit-lead-units-count" style="font-size: 0.8em; color: #0284c7; font-weight: 700;">0 units</span>
+                            </div>
+                            <div id="edit-lead-units-list">
+                                <!-- Dynamically rendered unit cards -->
+                            </div>
+                        </div>
+
+                        <!-- Search Filters Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_kw">Keyword / Unit # / Project</label>
+                                <input type="text" id="lead-unit-filter-keyword" placeholder="Search..." oninput="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_type">Property Type</label>
+                                <select id="lead-unit-filter-type" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                    <option value="">-- All Types --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_beds">Bedrooms (Min)</label>
+                                <select id="lead-unit-filter-beds" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                    <option value="">-- Any Beds --</option>
+                                    <option value="0">Studio (0)</option>
+                                    <option value="1">1+ Bed</option>
+                                    <option value="2">2+ Beds</option>
+                                    <option value="3">3+ Beds</option>
+                                    <option value="4">4+ Beds</option>
+                                    <option value="5">5+ Beds</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_maxprice">Max Price (SAR)</label>
+                                <input type="number" id="lead-unit-filter-maxprice" placeholder="e.g. 750000" oninput="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                            </div>
+                        </div>
+
+                        <!-- Zero Match Alert Banner (shown only when 0 units match) -->
+                        <div id="lead-unit-no-match-alert" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.84em; color: #92400e;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <span>⚠️ <strong>لا توجد وحدات تطابق هذه المعايير حالياً</strong> (0 وحدات). يمكنك تأهيل الطلب بدون وحدات، أو استعراض كل الوحدات:</span>
+                                </div>
+                                <button type="button" class="btn btn-sm" onclick="resetLeadUnitSearchFilters()" style="background: #f59e0b; color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 0.82em; cursor: pointer;">
+                                    🌐 <span data-i18n="btn_show_all_units">Show All Units</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Match Selection Row -->
+                        <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
+                            <div style="flex-grow: 1; min-width: 240px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <label style="font-size: 0.8em; font-weight: 600;" data-i18n="lbl_matching_units">Select Matching Unit:</label>
+                                    <span id="lead-unit-match-count" style="font-size: 0.76em; color: #0284c7; font-weight: 600;">0 matching units</span>
+                                </div>
+                                <select id="edit-lead-matching-units-select" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85em; background: white;">
+                                    <option value="">-- Select a unit --</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-sm" onclick="addSelectedUnitToLead()" style="background: #16a34a; color: white; border: none; font-weight: 600; padding: 7px 14px; border-radius: 6px; cursor: pointer; height: 35px;">
+                                ➕ <span data-i18n="btn_add_unit">Add Unit</span>
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="clearAllUnitsFromLead()" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; cursor: pointer; height: 35px;">
+                                🗑️ <span data-i18n="btn_clear_all_units">Clear All</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closeEditLeadModal()" data-i18n="btn_cancel">Cancel</button>
@@ -662,6 +789,25 @@
                 form_company: "Company Legal Name *", form_mobile: "Mobile Phone *", form_email: "Email Address",
                 form_national_id: "National ID / Iqama", form_nationality: "Nationality", btn_save_select_cust: "Save & Select Customer",
                 btn_copy: "Copy ID", btn_edit: "Edit", btn_save_changes: "Save Changes", lbl_customer: "Customer:",
+                lbl_shortlisted_units: "Shortlisted Units for Lead:",
+                btn_add_unit: "Add Unit",
+                btn_clear_all_units: "Clear All",
+                btn_show_all_units: "Show All Units",
+                btn_make_primary: "Set Primary",
+                badge_primary: "Primary",
+                lbl_no_shortlisted: "No units shortlisted yet. (Optional - you can qualify this lead with or without units)",
+                sec_unit_search_title: "Search Inventory & Match Customer Criteria",
+                btn_automatch_criteria: "Auto-Match Lead Criteria",
+                btn_reset_filters: "Reset Filters",
+                lbl_unit_search_kw: "Keyword / Unit # / Project",
+                lbl_unit_search_type: "Property Type",
+                lbl_unit_search_beds: "Bedrooms (Min)",
+                lbl_unit_search_maxprice: "Max Price (SAR)",
+                lbl_matching_units: "Select Matching Unit:",
+                btn_attach_unit: "Attach Unit",
+                btn_remove_unit: "Unlink",
+                unit_unassigned_msg: "No unit assigned to this lead. (Optional)",
+                unit_assigned_msg: "Assigned Unit:",
                 lang_label: "عربي"
             },
             ar: {
@@ -686,6 +832,25 @@
                 form_company: "اسم الشركة القانوني *", form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني",
                 form_national_id: "الهوية الوطنية / الإقامة", form_nationality: "الجنسية", btn_save_select_cust: "حفظ وتحديد العميل",
                 btn_copy: "نسخ المعرّف", btn_edit: "تعديل", btn_save_changes: "حفظ التعديلات", lbl_customer: "العميل:",
+                lbl_shortlisted_units: "الوحدات المختارة للطلب:",
+                btn_add_unit: "إضافة وحدة",
+                btn_clear_all_units: "مسح الكل",
+                btn_show_all_units: "عرض جميع الوحدات",
+                btn_make_primary: "تعيين كرئيسية",
+                badge_primary: "رئيسية",
+                lbl_no_shortlisted: "لم يتم اختيار أي وحدة بعد. (اختياري - يمكنك تأهيل الطلب مع أو بدون وحدات)",
+                sec_unit_search_title: "البحث في مخزون العقارات ومطابقة طلب العميل",
+                btn_automatch_criteria: "مطابقة تلقائية لطلب العميل",
+                btn_reset_filters: "إلغاء الفلاتر",
+                lbl_unit_search_kw: "بحث بالرقم / المشروع / المبنى",
+                lbl_unit_search_type: "نوع العقار",
+                lbl_unit_search_beds: "عدد الغرف الأدنى",
+                lbl_unit_search_maxprice: "أقصى سعر / ميزانية (ريال)",
+                lbl_matching_units: "اختر الوحدة المطابقة من المخزون:",
+                btn_attach_unit: "ربط الوحدة بالطلب",
+                btn_remove_unit: "إلغاء الربط",
+                unit_unassigned_msg: "لم يتم تعيين وحدة عقارية لهذا الطلب حتى الآن (اختياري).",
+                unit_assigned_msg: "الوحدة العقارية المعينة:",
                 lang_label: "English"
             }
         };
@@ -720,6 +885,10 @@
             localStorage.setItem('recrm_lang', currentLang);
             populateReferenceSelects();
             renderLeads();
+            if (document.getElementById('edit-lead-modal')?.style?.display === 'flex') {
+                renderLeadUnitsList();
+                filterLeadUnitsList();
+            }
         }
 
         function toggleLanguage() {
@@ -837,6 +1006,12 @@
                 editPt.innerHTML = ptOpts;
                 if (cur) editPt.value = cur;
             }
+            const unitFilterPt = document.getElementById('lead-unit-filter-type');
+            if (unitFilterPt) {
+                const cur = unitFilterPt.value;
+                unitFilterPt.innerHTML = ptOpts;
+                if (cur) unitFilterPt.value = cur;
+            }
 
             // Lead Sources
             const lsOpts = `<option value="">-- ${isAr ? 'مباشر / زيارة' : 'Direct / Walk-in'} --</option>` + 
@@ -869,6 +1044,23 @@
                 editUser.innerHTML = uOpts;
                 if (cur) editUser.value = cur;
             }
+            const filterUser = document.getElementById('agent-filter');
+            if (filterUser) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+                const cur = filterUser.value || urlAgent || '';
+                filterUser.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` +
+                    refUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                if (cur) filterUser.value = cur;
+            }
+        }
+
+        function clearLeadAgentScope() {
+            const filterUser = document.getElementById('agent-filter');
+            if (filterUser) {
+                filterUser.value = '';
+                fetchLeads(1);
+            }
         }
 
         let currentLeadsPage = 1;
@@ -878,12 +1070,31 @@
         async function fetchLeads(page = null) {
             if (page !== null) currentLeadsPage = page;
             const search = document.getElementById('search-box')?.value || '';
+            const agentId = document.getElementById('agent-filter')?.value || '';
             const status = document.getElementById('status-select')?.value || '';
             const priority = document.getElementById('priority-select')?.value || '';
             const inquiry = document.getElementById('inquiry-filter')?.value || '';
 
+            const badge = document.getElementById('lead-agent-scope-badge');
+            const badgeText = document.getElementById('lead-agent-scope-text');
+            const isAr = currentLang === 'ar';
+
+            if (agentId) {
+                if (badge && badgeText) {
+                    const selUser = refUsers.find(u => u.user_id === agentId);
+                    const agName = selUser ? selUser.full_name : agentId;
+                    badgeText.textContent = isAr 
+                        ? `عرض بيانات (${agName}) فقط - تم حجب باقي المستخدمين`
+                        : `Showing data for (${agName}) only - others hidden`;
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                if (badge) badge.style.display = 'none';
+            }
+
             let url = `${API_BASE}/api/v1/leads?page=${currentLeadsPage}&page_size=${leadsPageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (agentId) url += `&assigned_user_id=${encodeURIComponent(agentId)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (priority) url += `&priority=${encodeURIComponent(priority)}`;
             if (inquiry) url += `&inquiry_type=${encodeURIComponent(inquiry)}`;
@@ -912,9 +1123,15 @@
 
                 const counter = document.getElementById('counter-label');
                 if (counter) {
-                    counter.textContent = currentLang === 'ar'
-                        ? `إجمالي الطلبات في النظام: ${totalLeadsRecords} طلب`
-                        : `Total in database: ${totalLeadsRecords} inquiries`;
+                    if (agentId) {
+                        counter.innerHTML = isAr
+                            ? `<strong>${totalLeadsRecords}</strong> طلب معروض خاص بالوسيط المختار (تم حجب باقي الوسطاء)`
+                            : `<strong>${totalLeadsRecords}</strong> inquiries shown for selected agent (others hidden)`;
+                    } else {
+                        counter.textContent = currentLang === 'ar'
+                            ? `إجمالي الطلبات في النظام: ${totalLeadsRecords} طلب (جميع الوسطاء)`
+                            : `Total in database: ${totalLeadsRecords} inquiries (All agents)`;
+                    }
                 }
 
                 const pInfo = document.getElementById('leads-pagination-info');
@@ -978,6 +1195,15 @@
                         ? `<span style="font-size: 0.75em; color: #64748b; margin-inline-start: 4px; cursor: help;" title="${l.customer_mobile}${l.customer_email ? ' • ' + l.customer_email : ''}">📞</span>`
                         : '';
 
+                    let unitsBadgeHtml = '';
+                    if (l.units && l.units.length > 0) {
+                        const prim = l.units.find(u => u.is_primary) || l.units[0];
+                        const extra = l.units.length - 1;
+                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;">🏢 Unit ${prim.unit_number || prim.unit_id} ${extra > 0 ? `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 0.82em; font-weight: 600;">+${extra} more</span>` : ''}</div>`;
+                    } else if (l.unit_number) {
+                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;">🏢 Unit ${l.unit_number} <span style="font-size: 0.9em; color: var(--text-muted); font-weight: normal;">(${l.building_name || l.project_name || 'Assigned'})</span></div>`;
+                    }
+
                     return `
                         <tr>
                             <td>
@@ -992,6 +1218,7 @@
                             <td>
                                 <strong>${l.inquiry_type || 'N/A'}</strong>
                                 <span style="font-size: 0.78em; color: var(--text-muted);">• ${l.lead_source_name || 'Direct'}</span>
+                                ${unitsBadgeHtml}
                             </td>
                             <td>${budget}</td>
                             <td>
@@ -1002,12 +1229,14 @@
                             <td>
                                 <div style="display: flex; gap: 4px; align-items: center;">
                                     <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details">✏️ Edit</button>
+                                    <a href="tasks.html?lead_id=${encodeURIComponent(l.lead_id)}&customer_id=${encodeURIComponent(l.customer_id || '')}&action=new_viewing" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; text-decoration: none;" title="Schedule a property viewing for this lead">👁️ Viewing</a>
+                                    <a href="tasks.html?lead_id=${encodeURIComponent(l.lead_id)}&customer_id=${encodeURIComponent(l.customer_id || '')}&action=new_activity" class="btn btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; text-decoration: none;" title="Log activity / note for this lead">📝 Activity</a>
                                     ${l.status === 'NEW' 
                                         ? `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;" onclick="markContacted('${l.lead_id}')" title="Mark as Contacted (records first contact time)">📞 Contacted</button>` 
                                         : ''}
                                     ${l.status !== 'QUALIFIED' && l.status !== 'CONVERTED' 
                                         ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')" title="Qualify & send to Sales Pipeline">⭐ Qualify</button>` 
-                                        : `<a href="sales.html" class="btn btn-sm" style="background: #dcfce7; color: #166534; text-decoration: none;" title="View deal on Sales Pipeline board">📊 Pipeline</a>`}
+                                        : `<a href="sales.html?lead_id=${encodeURIComponent(l.lead_id)}" class="btn btn-sm" style="background: #dcfce7; color: #166534; text-decoration: none;" title="View deal on Sales Pipeline board">📊 Pipeline</a>`}
                                 </div>
                             </td>
                         </tr>
@@ -1097,15 +1326,17 @@
         }
 
         async function performCustomerSearch() {
-            const firstName = document.getElementById('srch-first-name').value.trim();
-            const lastName = document.getElementById('srch-last-name').value.trim();
-            const mobile = document.getElementById('srch-mobile').value.trim();
-            const custId = document.getElementById('srch-cust-id').value.trim();
-            const email = document.getElementById('srch-email').value.trim();
-            const nationalId = document.getElementById('srch-national-id').value.trim();
+            const custType = document.getElementById('srch-cust-type')?.value || 'ALL';
+            const firstName = document.getElementById('srch-first-name')?.value.trim();
+            const lastName = document.getElementById('srch-last-name')?.value.trim();
+            const companyName = document.getElementById('srch-company-name')?.value.trim();
+            const mobile = document.getElementById('srch-mobile')?.value.trim();
+            const custId = document.getElementById('srch-cust-id')?.value.trim();
+            const email = document.getElementById('srch-email')?.value.trim();
+            const nationalId = document.getElementById('srch-national-id')?.value.trim();
 
-            if (!firstName && !lastName && !mobile && !custId && !email && !nationalId) {
-                alert('Please enter at least one field (First Name, Last Name, Mobile, Customer ID, Email, or National ID) to search.');
+            if (!firstName && !lastName && !companyName && !mobile && !custId && !email && !nationalId && custType === 'ALL') {
+                alert('Please enter at least one field (First Name, Last Name, Company Name, Mobile, Customer ID, Email, or National ID/CR) to search.');
                 return;
             }
 
@@ -1114,8 +1345,10 @@
             resultsContainer.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.88em;">Searching customer database...</div>';
 
             let queryParams = [];
+            if (custType && custType !== 'ALL') queryParams.push(`customer_type=${encodeURIComponent(custType)}`);
             if (firstName) queryParams.push(`first_name=${encodeURIComponent(firstName)}`);
             if (lastName) queryParams.push(`last_name=${encodeURIComponent(lastName)}`);
+            if (companyName) queryParams.push(`company_name=${encodeURIComponent(companyName)}`);
             if (mobile) queryParams.push(`mobile=${encodeURIComponent(mobile)}`);
             if (custId) queryParams.push(`customer_id=${encodeURIComponent(custId)}`);
             if (email) queryParams.push(`email=${encodeURIComponent(email)}`);
@@ -1138,13 +1371,16 @@
                 }
 
                 resultsContainer.innerHTML = customers.map(c => {
-                    const displayName = c.full_name || c.company_name || 'Individual';
+                    const isCompany = c.customer_type === 'COMPANY';
+                    const displayName = isCompany 
+                        ? (c.company_name || c.full_name || 'Company') 
+                        : (c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Individual');
                     const payloadStr = encodeURIComponent(JSON.stringify(c));
                     return `
-                        <div class="search-customer-card">
+                        <div class="search-customer-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; margin-bottom: 6px; background: #fff; border: 1px solid var(--border); border-radius: 6px;">
                             <div>
                                 <strong>${displayName}</strong> 
-                                <span class="badge ${c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual'}">${c.customer_type}</span>
+                                <span class="badge ${isCompany ? 'badge-company' : 'badge-individual'}" style="${isCompany ? 'background: #eff6ff; color: #1d4ed8;' : 'background: #f1f5f9; color: #475569;'}">${c.customer_type}</span>
                                 <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 2px;">
                                     📞 ${c.mobile || '--'} | ✉️ ${c.email || '--'} | ID: <span class="id-badge">${c.customer_id}</span>
                                 </div>
@@ -1159,8 +1395,10 @@
         }
 
         function clearCustomerSearch() {
+            if (document.getElementById('srch-cust-type')) document.getElementById('srch-cust-type').value = 'ALL';
             document.getElementById('srch-first-name').value = '';
             document.getElementById('srch-last-name').value = '';
+            if (document.getElementById('srch-company-name')) document.getElementById('srch-company-name').value = '';
             document.getElementById('srch-mobile').value = '';
             document.getElementById('srch-cust-id').value = '';
             document.getElementById('srch-email').value = '';
@@ -1173,11 +1411,37 @@
         function selectLeadCustomer(custDataStr) {
             const cust = JSON.parse(decodeURIComponent(custDataStr));
             document.getElementById('lead-cust-id').value = cust.customer_id;
-            document.getElementById('sel-cust-name').textContent = cust.full_name || cust.company_name || 'Customer';
-            document.getElementById('sel-cust-details').textContent = `Mobile: ${cust.mobile || '--'} | Email: ${cust.email || '--'} | Customer ID: ${cust.customer_id}`;
+            const isCompany = cust.customer_type === 'COMPANY';
+            const displayName = isCompany 
+                ? (cust.company_name || cust.full_name || 'Company') 
+                : (cust.full_name || `${cust.first_name || ''} ${cust.last_name || ''}`.trim() || 'Customer');
+            document.getElementById('sel-cust-name').textContent = displayName;
+            document.getElementById('sel-cust-details').textContent = `[${cust.customer_type || 'INDIVIDUAL'}] Mobile: ${cust.mobile || '--'} | Email: ${cust.email || '--'} | Customer ID: ${cust.customer_id}`;
             document.getElementById('selected-customer-banner').style.display = 'block';
             document.getElementById('srch-results').style.display = 'none';
-            showToast(`Selected customer: ${cust.full_name || cust.company_name}`);
+            showToast(`Selected customer: ${displayName}`);
+
+            // Auto-select existing associated agent if available
+            const prevLead = cachedLeads.find(l => l.customer_id === cust.customer_id && l.assigned_user_id);
+            if (prevLead) {
+                const agentSelect = document.getElementById('lead-assigned-user');
+                if (agentSelect) {
+                    agentSelect.value = prevLead.assigned_user_id;
+                    showToast(`Auto-assigned to agent: ${prevLead.assigned_user_name || prevLead.assigned_user_id}`);
+                }
+            } else {
+                fetch(`${API_BASE}/api/v1/leads?customer_id=${encodeURIComponent(cust.customer_id)}&page_size=5`)
+                    .then(r => r.json())
+                    .then(res => {
+                        const leads = res.data || [];
+                        const match = leads.find(l => l.assigned_user_id);
+                        const agentSelect = document.getElementById('lead-assigned-user');
+                        if (match && agentSelect && !agentSelect.value) {
+                            agentSelect.value = match.assigned_user_id;
+                            showToast(`Auto-assigned to agent: ${match.assigned_user_name || match.assigned_user_id}`);
+                        }
+                    }).catch(() => {});
+            }
         }
 
         function deselectCustomer() {
@@ -1252,8 +1516,14 @@
                     // Select this newly added customer in lead creation
                     selectLeadCustomer(encodeURIComponent(JSON.stringify(newCust)));
                 } else {
-                    const err = await res.json();
-                    alert(`Failed to add customer: ${JSON.stringify(err)}`);
+                    let errDetail = 'Unknown error';
+                    try {
+                        const err = await res.json();
+                        errDetail = err.detail || (err.error && err.error.message) || JSON.stringify(err);
+                    } catch (_) {
+                        errDetail = await res.text();
+                    }
+                    alert(`Failed to add customer (${res.status}): ${errDetail}`);
                 }
             } catch (err) {
                 alert(`Network error: ${err.message}`);
@@ -1295,8 +1565,14 @@
                     closeAddLeadModal();
                     fetchLeads();
                 } else {
-                    const err = await res.json();
-                    alert(`Error creating lead: ${JSON.stringify(err)}`);
+                    let errDetail = 'Unknown error';
+                    try {
+                        const err = await res.json();
+                        errDetail = err.detail || (err.error && err.error.message) || JSON.stringify(err);
+                    } catch (_) {
+                        errDetail = await res.text();
+                    }
+                    alert(`Error creating lead (${res.status}): ${errDetail}`);
                 }
             } catch (err) {
                 alert(`Network error: ${err.message}`);
@@ -1304,10 +1580,240 @@
         }
 
         /* -------------------------------------------------------------------------- */
-        /* EDIT LEAD MODAL                                                             */
+        /* EDIT LEAD MODAL & MULTI-UNIT INVENTORY MATCHING                            */
         /* -------------------------------------------------------------------------- */
+        let cachedInventoryUnits = [];
+        let currentEditingLead = null;
+        let selectedUnitsForLead = [];
+
+        async function loadInventoryUnitsIfNeeded() {
+            if (cachedInventoryUnits.length > 0) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedInventoryUnits = json.data || [];
+                }
+            } catch (err) {
+                console.warn('Could not pre-fetch inventory units:', err);
+            }
+        }
+
+        function renderLeadUnitsList() {
+            const listEl = document.getElementById('edit-lead-units-list');
+            const countEl = document.getElementById('edit-lead-units-count');
+            const isAr = currentLang === 'ar';
+
+            if (countEl) {
+                countEl.textContent = `${selectedUnitsForLead.length} ${isAr ? 'وحدات مختارة' : 'units shortlisted'}`;
+            }
+
+            const primaryUnit = selectedUnitsForLead.find(u => u.is_primary) || selectedUnitsForLead[0];
+            const unitIdInput = document.getElementById('edit-lead-unit-id');
+            if (unitIdInput) {
+                unitIdInput.value = primaryUnit ? primaryUnit.unit_id : '';
+            }
+
+            if (!listEl) return;
+
+            if (selectedUnitsForLead.length === 0) {
+                listEl.innerHTML = `
+                    <div style="font-size: 0.85em; color: var(--text-muted); padding: 8px 4px;">
+                        ℹ️ ${isAr 
+                            ? 'لم يتم اختيار أي وحدة بعد. (اختياري - يمكنك تأهيل الطلب مع أو بدون وحدات، حيث يتم إنشاء صفقة في مسار المبيعات لتلبية طلب العميل)' 
+                            : 'No units shortlisted yet. (Optional - you can qualify this lead with or without units; an opportunity will be created in the Sales Pipeline for sourcing)'}
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    ${selectedUnitsForLead.map((u, idx) => {
+                        const isPrimary = !!u.is_primary;
+                        const priceFormatted = Number(u.unit_price || 0).toLocaleString();
+                        const pName = isAr ? (u.project_name_ar || u.project_name || u.project_name_en) : (u.project_name_en || u.project_name || u.project_name_ar);
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: ${isPrimary ? '#f0fdf4' : '#f8fafc'}; border: 1px solid ${isPrimary ? '#86efac' : '#e2e8f0'}; border-radius: 6px; padding: 8px 12px; gap: 10px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    ${isPrimary 
+                                        ? `<span style="background: #16a34a; color: white; font-size: 0.75em; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">⭐ ${isAr ? 'رئيسية' : 'Primary'}</span>`
+                                        : `<button type="button" onclick="setPrimaryUnitForLead('${u.unit_id}')" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; font-size: 0.75em; font-weight: 600; padding: 2px 8px; border-radius: 12px; cursor: pointer;" title="${isAr ? 'تعيين كوحدة رئيسية للطلب' : 'Set as primary unit'}">☆ ${isAr ? 'تعيين كرئيسية' : 'Set Primary'}</button>`
+                                    }
+                                    <div>
+                                        <span style="font-weight: 700; font-size: 0.9em; color: var(--navy);">🏢 Unit ${u.unit_number || u.unit_id}</span>
+                                        <span style="font-size: 0.82em; color: var(--text-muted); margin-inline-start: 6px;">${u.building_name ? u.building_name + ' • ' : ''}${pName || ''}</span>
+                                    </div>
+                                    <div style="font-size: 0.8em; color: #475569;">
+                                        ${u.bedrooms !== null && u.bedrooms !== undefined ? `<span>🛏️ ${u.bedrooms} Beds • </span>` : ''}
+                                        <span>💰 ${priceFormatted} SAR</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" onclick="removeUnitFromLead('${u.unit_id}')" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; font-size: 0.78em; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="${isAr ? 'إزالة من قائمة الطلب' : 'Remove unit from shortlist'}">
+                                        ❌ ${isAr ? 'إزالة' : 'Remove'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function filterLeadUnitsList() {
+            const isAr = currentLang === 'ar';
+            const kw = (document.getElementById('lead-unit-filter-keyword')?.value || '').toLowerCase().trim();
+            const typeId = document.getElementById('lead-unit-filter-type')?.value || '';
+            const minBeds = document.getElementById('lead-unit-filter-beds')?.value;
+            const maxPrice = parseFloat(document.getElementById('lead-unit-filter-maxprice')?.value) || 0;
+
+            let filtered = cachedInventoryUnits.filter(u => {
+                if (typeId && u.property_type_id !== typeId) return false;
+                if (minBeds !== '' && minBeds !== undefined && u.bedrooms < parseInt(minBeds)) return false;
+                if (maxPrice > 0) {
+                    const price = u.asking_price || u.rent_price || 0;
+                    if (price > maxPrice) return false;
+                }
+                if (kw) {
+                    const matchNum = (u.unit_number || '').toLowerCase().includes(kw);
+                    const matchBld = (u.building_name || '').toLowerCase().includes(kw);
+                    const matchPrjEn = (u.project_name_en || '').toLowerCase().includes(kw);
+                    const matchPrjAr = (u.project_name_ar || '').toLowerCase().includes(kw);
+                    if (!matchNum && !matchBld && !matchPrjEn && !matchPrjAr) return false;
+                }
+                return true;
+            });
+
+            const countBadge = document.getElementById('lead-unit-match-count');
+            if (countBadge) {
+                countBadge.textContent = `${filtered.length} ${isAr ? 'وحدات مطابقة' : 'matching units'}`;
+            }
+
+            const noMatchAlert = document.getElementById('lead-unit-no-match-alert');
+            if (noMatchAlert) {
+                noMatchAlert.style.display = (filtered.length === 0) ? 'block' : 'none';
+            }
+
+            const sel = document.getElementById('edit-lead-matching-units-select');
+            if (!sel) return;
+
+            if (filtered.length === 0) {
+                sel.innerHTML = `<option value="">-- ${isAr ? 'لا توجد وحدات مطابقة للمعايير' : 'No matching units found'} --</option>`;
+                return;
+            }
+
+            sel.innerHTML = `<option value="">-- ${isAr ? 'اختر وحدة لإضافتها للقائمة...' : 'Select unit to add to shortlist...'} (${filtered.length}) --</option>` +
+                filtered.map(u => {
+                    const pName = isAr ? (u.project_name_ar || u.project_name_en) : (u.project_name_en || u.project_name_ar);
+                    const price = Number(u.asking_price || u.rent_price || 0).toLocaleString();
+                    const isAlreadyAdded = selectedUnitsForLead.some(su => su.unit_id === u.unit_id);
+                    const suffix = isAlreadyAdded ? ` [${isAr ? 'مضافة بالفعل' : 'Added'}]` : '';
+                    return `<option value="${u.unit_id}">Unit ${u.unit_number} - ${pName || 'Property'} | ${u.bedrooms || 0} Beds | ${price} SAR [${u.status}]${suffix}</option>`;
+                }).join('');
+        }
+
+        function autoMatchLeadUnitCriteria() {
+            const editPt = document.getElementById('edit-lead-prop-type')?.value;
+            const editBeds = document.getElementById('edit-lead-bedrooms')?.value;
+            const editMaxPrice = document.getElementById('edit-lead-budget-max')?.value;
+
+            const filterType = document.getElementById('lead-unit-filter-type');
+            const filterBeds = document.getElementById('lead-unit-filter-beds');
+            const filterMaxPrice = document.getElementById('lead-unit-filter-maxprice');
+
+            if (filterType && editPt) filterType.value = editPt;
+            if (filterBeds && editBeds) filterBeds.value = editBeds;
+            if (filterMaxPrice && editMaxPrice) filterMaxPrice.value = editMaxPrice;
+
+            filterLeadUnitsList();
+            showToast(currentLang === 'ar' ? 'تمت مطابقة معايير العميل وتصفية الوحدات المتوفرة!' : 'Auto-matched lead criteria against inventory!');
+        }
+
+        function resetLeadUnitSearchFilters() {
+            const kw = document.getElementById('lead-unit-filter-keyword');
+            const type = document.getElementById('lead-unit-filter-type');
+            const beds = document.getElementById('lead-unit-filter-beds');
+            const maxPrice = document.getElementById('lead-unit-filter-maxprice');
+
+            if (kw) kw.value = '';
+            if (type) type.value = '';
+            if (beds) beds.value = '';
+            if (maxPrice) maxPrice.value = '';
+
+            filterLeadUnitsList();
+        }
+
+        function addSelectedUnitToLead() {
+            const sel = document.getElementById('edit-lead-matching-units-select');
+            const unitId = sel?.value;
+            const isAr = currentLang === 'ar';
+            if (!unitId) {
+                alert(isAr ? 'الرجاء اختيار وحدة من القائمة أولاً' : 'Please select a unit from the dropdown first');
+                return;
+            }
+
+            if (selectedUnitsForLead.some(u => u.unit_id === unitId)) {
+                showToast(isAr ? 'هذه الوحدة مضافة بالفعل في قائمة الطلب' : 'This unit is already shortlisted for this lead');
+                return;
+            }
+
+            const unit = cachedInventoryUnits.find(u => u.unit_id === unitId);
+            const pName = isAr ? (unit?.project_name_ar || unit?.project_name_en) : (unit?.project_name_en || unit?.project_name_ar);
+            const price = unit ? (unit.asking_price || unit.rent_price || 0) : 0;
+
+            const isFirst = selectedUnitsForLead.length === 0;
+            selectedUnitsForLead.push({
+                unit_id: unitId,
+                unit_number: unit ? unit.unit_number : unitId,
+                building_name: unit ? (unit.building_name || unit.building_id || '') : '',
+                project_name: pName || '',
+                unit_price: price,
+                bedrooms: unit ? unit.bedrooms : null,
+                is_primary: isFirst
+            });
+
+            // Auto-fill budget max if currently empty
+            const maxBudgetEl = document.getElementById('edit-lead-budget-max');
+            if (price > 0 && maxBudgetEl && !maxBudgetEl.value) {
+                maxBudgetEl.value = price;
+            }
+
+            renderLeadUnitsList();
+            filterLeadUnitsList();
+            showToast(isAr ? `تمت إضافة الوحدة ${unit?.unit_number || unitId} لقائمة الطلب!` : `Unit ${unit?.unit_number || unitId} added to shortlist!`);
+        }
+
+        function setPrimaryUnitForLead(unitId) {
+            selectedUnitsForLead.forEach(u => {
+                u.is_primary = (u.unit_id === unitId);
+            });
+            renderLeadUnitsList();
+            showToast(currentLang === 'ar' ? 'تم تعيين الوحدة كرئيسية' : 'Unit marked as primary');
+        }
+
+        function removeUnitFromLead(unitId) {
+            const wasPrimary = selectedUnitsForLead.some(u => u.unit_id === unitId && u.is_primary);
+            selectedUnitsForLead = selectedUnitsForLead.filter(u => u.unit_id !== unitId);
+            if (wasPrimary && selectedUnitsForLead.length > 0) {
+                selectedUnitsForLead[0].is_primary = true;
+            }
+            renderLeadUnitsList();
+            filterLeadUnitsList();
+            showToast(currentLang === 'ar' ? 'تمت إزالة الوحدة من القائمة' : 'Unit removed from shortlist');
+        }
+
+        function clearAllUnitsFromLead() {
+            selectedUnitsForLead = [];
+            renderLeadUnitsList();
+            filterLeadUnitsList();
+            showToast(currentLang === 'ar' ? 'تم إفراغ قائمة الوحدات' : 'All units cleared from shortlist');
+        }
+
         async function openEditLeadModal(leadId) {
             if (!refDataLoaded) await initReferenceData();
+            await loadInventoryUnitsIfNeeded();
+
             let lead = cachedLeads.find(l => l.lead_id === leadId);
             if (!lead) {
                 try {
@@ -1324,6 +1830,8 @@
                 alert('Lead details not found');
                 return;
             }
+
+            currentEditingLead = lead;
 
             document.getElementById('edit-lead-id').value = lead.lead_id;
             document.getElementById('edit-lead-id-display').textContent = lead.lead_id;
@@ -1343,21 +1851,92 @@
             document.getElementById('edit-lead-bedrooms').value = lead.bedrooms_min ?? '';
             document.getElementById('edit-lead-area-min').value = lead.area_min_sqm ?? '';
 
+            // Shortlisted units state initialization
+            selectedUnitsForLead = [];
+            if (lead.units && lead.units.length > 0) {
+                selectedUnitsForLead = lead.units.map(u => ({
+                    unit_id: u.unit_id,
+                    unit_number: u.unit_number || u.unit_id,
+                    building_name: u.building_name || '',
+                    project_name: u.project_name || '',
+                    unit_price: u.unit_price || 0,
+                    bedrooms: u.bedrooms ?? null,
+                    is_primary: !!u.is_primary
+                }));
+            } else if (lead.unit_id) {
+                const invUnit = cachedInventoryUnits.find(u => u.unit_id === lead.unit_id);
+                selectedUnitsForLead.push({
+                    unit_id: lead.unit_id,
+                    unit_number: invUnit ? invUnit.unit_number : (lead.unit_number || lead.unit_id),
+                    building_name: invUnit ? (invUnit.building_name || invUnit.building_id || '') : (lead.building_name || ''),
+                    project_name: invUnit ? (invUnit.project_name_en || invUnit.project_name_ar || '') : (lead.project_name || ''),
+                    unit_price: invUnit ? (invUnit.asking_price || invUnit.rent_price || 0) : (lead.unit_price || 0),
+                    bedrooms: invUnit ? invUnit.bedrooms : (lead.bedrooms_min ?? null),
+                    is_primary: true
+                });
+            }
+
+            if (selectedUnitsForLead.length > 0 && !selectedUnitsForLead.some(u => u.is_primary)) {
+                selectedUnitsForLead[0].is_primary = true;
+            }
+            renderLeadUnitsList();
+
+            // Populate filters and matching list
+            populateReferenceSelects();
+            const filterType = document.getElementById('lead-unit-filter-type');
+            if (filterType && lead.preferred_property_type_id) {
+                filterType.value = lead.preferred_property_type_id;
+            }
+            const filterBeds = document.getElementById('lead-unit-filter-beds');
+            if (filterBeds && lead.bedrooms_min) {
+                filterBeds.value = lead.bedrooms_min;
+            }
+            const filterMaxPrice = document.getElementById('lead-unit-filter-maxprice');
+            if (filterMaxPrice && lead.budget_max) {
+                filterMaxPrice.value = lead.budget_max;
+            }
+            filterLeadUnitsList();
+
             document.getElementById('edit-lead-modal').style.display = 'flex';
         }
 
         function closeEditLeadModal() {
             document.getElementById('edit-lead-modal').style.display = 'none';
+            currentEditingLead = null;
+            selectedUnitsForLead = [];
+        }
+
+        function logViewingFromLeadModal() {
+            const leadId = document.getElementById('edit-lead-id').value;
+            const custId = currentEditingLead?.customer_id || '';
+            const agentId = document.getElementById('edit-lead-assigned').value || '';
+            window.location.href = `tasks.html?lead_id=${encodeURIComponent(leadId)}&customer_id=${encodeURIComponent(custId)}&assigned_user_id=${encodeURIComponent(agentId)}&action=new_viewing`;
+        }
+
+        function logActivityFromLeadModal() {
+            const leadId = document.getElementById('edit-lead-id').value;
+            const custId = currentEditingLead?.customer_id || '';
+            const agentId = document.getElementById('edit-lead-assigned').value || '';
+            window.location.href = `tasks.html?lead_id=${encodeURIComponent(leadId)}&customer_id=${encodeURIComponent(custId)}&assigned_user_id=${encodeURIComponent(agentId)}&action=new_activity`;
+        }
+
+        function logCommFromLeadModal() {
+            const custId = currentEditingLead?.customer_id || '';
+            const agentId = document.getElementById('edit-lead-assigned').value || '';
+            window.location.href = `tasks.html?customer_id=${encodeURIComponent(custId)}&assigned_user_id=${encodeURIComponent(agentId)}&action=new_comm`;
         }
 
         async function submitEditLead(e) {
             e.preventDefault();
             const leadId = document.getElementById('edit-lead-id').value;
+            const primaryUnit = selectedUnitsForLead.find(u => u.is_primary) || selectedUnitsForLead[0];
             const payload = {
                 status: document.getElementById('edit-lead-status').value,
                 priority: document.getElementById('edit-lead-priority').value,
                 inquiry_type: document.getElementById('edit-lead-inquiry').value,
                 assigned_user_id: document.getElementById('edit-lead-assigned').value || null,
+                unit_id: primaryUnit ? primaryUnit.unit_id : "",
+                unit_ids: selectedUnitsForLead.map(u => u.unit_id),
                 lead_source_id: document.getElementById('edit-lead-source').value || null,
                 preferred_city_id: document.getElementById('edit-lead-city').value || null,
                 preferred_property_type_id: document.getElementById('edit-lead-prop-type')?.value || null,
@@ -1379,8 +1958,14 @@
                     closeEditLeadModal();
                     fetchLeads();
                 } else {
-                    const err = await res.json();
-                    alert(`Failed to update lead: ${JSON.stringify(err)}`);
+                    let errDetail = 'Unknown error';
+                    try {
+                        const err = await res.json();
+                        errDetail = err.detail || (err.error && err.error.message) || JSON.stringify(err);
+                    } catch (_) {
+                        errDetail = await res.text();
+                    }
+                    alert(`Failed to update lead (${res.status}): ${errDetail}`);
                 }
             } catch (err) {
                 alert(`Network error: ${err.message}`);
@@ -1389,9 +1974,19 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+            if (urlAgent) {
+                const filterUser = document.getElementById('agent-filter');
+                if (filterUser) {
+                    filterUser.innerHTML = `<option value="${urlAgent}" selected>Loading agent...</option>`;
+                    filterUser.value = urlAgent;
+                }
+            }
             fetchLeads(); // Priority 1: Immediate live data display
             setTimeout(initReferenceData, 150); // Priority 2: Pre-fetch modal reference selects in background
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>

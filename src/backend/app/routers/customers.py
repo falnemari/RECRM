@@ -37,6 +37,7 @@ async def list_customers(
     customer_type: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
+    company_name: Optional[str] = None,
     customer_id: Optional[str] = None,
     mobile: Optional[str] = None,
     email: Optional[str] = None,
@@ -62,6 +63,11 @@ async def list_customers(
     if last_name and last_name.strip():
         conditions.append(f"last_name ILIKE ${p_idx}")
         params.append(f"%{last_name.strip()}%")
+        p_idx += 1
+
+    if company_name and company_name.strip():
+        conditions.append(f"company_name ILIKE ${p_idx}")
+        params.append(f"%{company_name.strip()}%")
         p_idx += 1
 
     if mobile and mobile.strip():

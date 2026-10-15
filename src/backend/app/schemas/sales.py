@@ -61,6 +61,25 @@ class ReservationOut(BaseModel):
     expires_at: Optional[datetime] = None
     deposit_amount: Optional[float] = None
     status: str
+    customer_id: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_mobile: Optional[str] = None
+    customer_email: Optional[str] = None
+    national_id: Optional[str] = None
+    project_name: Optional[str] = None
+    building_name: Optional[str] = None
+    property_type: Optional[str] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
+    area_sqm: Optional[float] = None
+    floor_no: Optional[int] = None
+    asking_price: Optional[float] = None
+    unit_status: Optional[str] = None
+    assigned_agent_id: Optional[str] = None
+    assigned_agent_name: Optional[str] = None
+    contract_id: Optional[str] = None
+    contract_number: Optional[str] = None
+    contract_value: Optional[float] = None
 
 class OfferOut(BaseModel):
     offer_id: str

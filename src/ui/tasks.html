@@ -7,6 +7,9 @@
     <!-- Professional Arabic Typography (High-Speed Local Assets) -->
     <link rel="stylesheet" href="fonts/fonts.css">
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         :root {
             --primary: #1e3a8a;
             --primary-light: #2563eb;
@@ -221,12 +224,96 @@
             overflow-x: auto;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            width: 100%;
         }
         table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
         [dir="rtl"] table { text-align: right; }
         th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
         th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        /* Activities & Log Table Optimization - Responsive & No Horizontal Scroll */
+        .activities-table {
+            table-layout: auto;
+            width: 100%;
+        }
+        .activities-table th, .activities-table td {
+            vertical-align: top;
+            padding: 8px 12px;
+        }
+        .col-act-type {
+            width: 110px;
+            white-space: nowrap;
+        }
+        .col-act-subj {
+            width: 20%;
+            min-width: 140px;
+            white-space: normal !important;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+        .col-act-desc {
+            width: 32%;
+            min-width: 180px;
+            white-space: normal !important;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+        .col-act-agent {
+            width: 12%;
+            min-width: 100px;
+            white-space: normal !important;
+            word-break: break-word;
+        }
+        .col-act-cust {
+            width: 13%;
+            min-width: 100px;
+            white-space: normal !important;
+            word-break: break-word;
+        }
+        .col-act-date {
+            width: 130px;
+            white-space: nowrap;
+            font-size: 0.78rem;
+        }
+        .col-act-status {
+            width: 90px;
+            white-space: nowrap;
+            text-align: center;
+        }
+        [dir="rtl"] .col-act-status {
+            text-align: center;
+        }
+
+        /* Tasks & Comms Cell Wrapping */
+        .tasks-title-cell {
+            white-space: normal !important;
+            word-break: break-word;
+            min-width: 180px;
+            max-width: 280px;
+            line-height: 1.4;
+        }
+        .tasks-rel-cell {
+            white-space: normal !important;
+            word-break: break-word;
+            min-width: 140px;
+            max-width: 220px;
+            line-height: 1.35;
+        }
+        .comms-subj-cell {
+            white-space: normal !important;
+            word-break: break-word;
+            min-width: 130px;
+            max-width: 200px;
+            line-height: 1.4;
+        }
+        .comms-body-cell {
+            white-space: normal !important;
+            word-break: break-word;
+            min-width: 200px;
+            max-width: 360px;
+            line-height: 1.45;
+        }
 
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, monospace;
@@ -277,12 +364,14 @@
         .modal {
             background: white;
             border-radius: 10px;
-            width: 100%;
-            max-width: 580px;
+            width: 95%;
+            max-width: 640px;
             padding: 24px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             max-height: 90vh;
             overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
         .modal-header {
             display: flex;
@@ -294,17 +383,21 @@
         }
         .modal-header h3 { margin: 0; }
         .close-btn { background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text-muted); }
-        .form-group { margin-bottom: 14px; }
+        .form-group { margin-bottom: 14px; min-width: 0; }
         .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
+            max-width: 100%;
             padding: 8px 12px;
             border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 0.9em;
             box-sizing: border-box;
         }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 560px) {
+            .form-row { grid-template-columns: minmax(0, 1fr); }
+        }
         .modal-actions {
             display: flex;
             justify-content: flex-end;
@@ -327,7 +420,14 @@
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
             <span class="badge-header" data-i18n="badge_tasks">Tasks & Communications</span>
         </div>
-                    <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
+            <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
                     <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
@@ -337,6 +437,7 @@
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -383,6 +484,11 @@
                 <div class="kpi-value" id="kpi-completed-tasks">--</div>
                 <div class="kpi-sub" data-i18n="kpi_completed_tasks_sub">Finished to-dos & actions</div>
             </div>
+            <div class="kpi-card" style="border-inline-start: 4px solid #0284c7; cursor: pointer;" onclick="filterActivitiesToViewing()" title="Click to view all viewings">
+                <div class="kpi-title" data-i18n="kpi_viewings">Property Viewings</div>
+                <div class="kpi-value" id="kpi-viewings" style="color: #0284c7;">--</div>
+                <div class="kpi-sub" data-i18n="kpi_viewings_sub">Scheduled & Completed tours 🔍</div>
+            </div>
             <div class="kpi-card">
                 <div class="kpi-title" data-i18n="kpi_activities">Activities & Comms</div>
                 <div class="kpi-value" id="kpi-activities">--</div>
@@ -416,6 +522,13 @@
                         <option value="NORMAL" data-i18n="opt_normal">Normal</option>
                         <option value="LOW" data-i18n="opt_low">Low</option>
                     </select>
+                    <select id="task-agent-filter" class="select-filter" onchange="onTaskAgentFilterChange()">
+                        <option value="">All Agents (جميع الوسطاء)</option>
+                    </select>
+                    <div id="task-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
+                        <span id="task-agent-scope-text">Showing user data only</span>
+                        <button type="button" onclick="clearTaskAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
+                    </div>
                     <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
                         <input type="checkbox" id="task-overdue-only" onchange="loadTasks()">
                         <span data-i18n="lbl_overdue_only">Show Overdue Only</span>
@@ -463,20 +576,23 @@
                         <option value="NOTE">Internal Note (ملاحظة داخلية)</option>
                     </select>
                 </div>
-                <button class="btn" onclick="openNewActivityModal()" data-i18n="btn_new_act">+ Log Activity</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" style="background: #0284c7; border-color: #0284c7; font-weight: 600;" onclick="openNewActivityModal({ activityType: 'VIEWING', status: 'PLANNED' })">👁️ + Schedule Viewing</button>
+                    <button class="btn" onclick="openNewActivityModal()" data-i18n="btn_new_act">+ Log Activity</button>
+                </div>
             </div>
 
             <div class="table-responsive">
-                <table>
+                <table class="activities-table">
                     <thead>
                         <tr>
-                            <th data-i18n="th_type">Type</th>
-                            <th data-i18n="th_subject">Subject</th>
-                            <th data-i18n="th_description">Details</th>
-                            <th data-i18n="th_agent">Agent</th>
-                            <th data-i18n="th_customer">Customer</th>
-                            <th data-i18n="th_date">Date / Time</th>
-                            <th data-i18n="th_status">Status</th>
+                            <th class="col-act-type" data-i18n="th_type">Type</th>
+                            <th class="col-act-subj" data-i18n="th_subject">Subject</th>
+                            <th class="col-act-desc" data-i18n="th_description">Details</th>
+                            <th class="col-act-agent" data-i18n="th_agent">Agent</th>
+                            <th class="col-act-cust" data-i18n="th_customer">Customer</th>
+                            <th class="col-act-date" data-i18n="th_date">Date / Time</th>
+                            <th class="col-act-status" data-i18n="th_status">Status</th>
                         </tr>
                     </thead>
                     <tbody id="acts-tbody">
@@ -564,14 +680,28 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_assigned_agent">Assign Agent</label>
-                        <select id="task-agent">
+                        <select id="task-agent" onchange="onTaskAgentChange()">
                             <option value="">Select agent</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_related_customer">Related Customer</label>
-                        <select id="task-cust">
+                        <select id="task-cust" onchange="onTaskCustomerChange()">
                             <option value="">Select customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_lead">Related Lead</label>
+                        <select id="task-lead" onchange="onTaskLeadChange()">
+                            <option value="">Select lead (optional)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_opp">Related Opportunity</label>
+                        <select id="task-opp" onchange="onTaskOppChange()">
+                            <option value="">Select opportunity (optional)</option>
                         </select>
                     </div>
                 </div>
@@ -594,12 +724,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_act_type">Activity Type *</label>
-                        <select id="act-type-select" required>
+                        <select id="act-type-select" onchange="onActTypeChange()" required>
                             <option value="CALL">Phone Call (مكالمة)</option>
                             <option value="WHATSAPP">WhatsApp (واتساب)</option>
                             <option value="EMAIL">Email (بريد)</option>
                             <option value="MEETING">Meeting (اجتماع)</option>
-                            <option value="VIEWING">Property Viewing (معاينة)</option>
+                            <option value="VIEWING">Property Viewing (معاينة عقار)</option>
                             <option value="NOTE">Internal Note (ملاحظة)</option>
                         </select>
                     </div>
@@ -611,25 +741,45 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label data-i18n="lbl_subject">Subject *</label>
-                    <input type="text" id="act-subject" placeholder="e.g. Follow-up regarding counter-offer" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Appointment / Execution Time (الموعد / تاريخ التنفيذ)</label>
+                        <input type="datetime-local" id="act-datetime">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_subject">Subject *</label>
+                        <input type="text" id="act-subject" placeholder="e.g. Property viewing with client" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_details">Description / Outcome Notes</label>
-                    <textarea id="act-desc" rows="3" placeholder="Key takeaways from this interaction..."></textarea>
+                    <textarea id="act-desc" rows="3" placeholder="Key takeaways or property feedback from this interaction..."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_agent">Agent</label>
-                        <select id="act-agent">
+                        <label data-i18n="lbl_assigned_agent">Assign Agent</label>
+                        <select id="act-agent" onchange="onActAgentChange()">
                             <option value="">Select agent</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_customer">Customer</label>
-                        <select id="act-cust">
+                        <label data-i18n="lbl_related_customer">Related Customer</label>
+                        <select id="act-cust" onchange="onActCustomerChange()">
                             <option value="">Select customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_lead">Related Lead</label>
+                        <select id="act-lead" onchange="onActLeadChange()">
+                            <option value="">Select lead (optional)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_opp">Related Opportunity</label>
+                        <select id="act-opp" onchange="onActOppChange()">
+                            <option value="">Select opportunity (optional)</option>
                         </select>
                     </div>
                 </div>
@@ -675,11 +825,19 @@
                     <label data-i18n="lbl_body">Message Body *</label>
                     <textarea id="comm-body" rows="3" placeholder="Enter message contents or communication summary..." required></textarea>
                 </div>
-                <div class="form-group">
-                    <label data-i18n="lbl_customer">Target Customer</label>
-                    <select id="comm-cust">
-                        <option value="">Select customer</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_assigned_agent">Sender Agent</label>
+                        <select id="comm-agent" onchange="onCommAgentChange()">
+                            <option value="">Select agent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_customer">Target Customer</label>
+                        <select id="comm-cust" onchange="onCommCustomerChange()">
+                            <option value="">Select customer</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-comm')" data-i18n="btn_cancel">Cancel</button>
@@ -710,6 +868,7 @@
                 kpi_open_tasks: "Open Agent Tasks", kpi_open_tasks_sub: "Tasks requiring follow-up",
                 kpi_overdue_tasks: "Overdue Tasks", kpi_overdue_tasks_sub: "Past SLA deadline",
                 kpi_completed_tasks: "Completed Tasks", kpi_completed_tasks_sub: "Finished to-dos & actions",
+                kpi_viewings: "Property Viewings", kpi_viewings_sub: "Scheduled & Completed tours",
                 kpi_activities: "Activities & Comms", kpi_activities_sub: "Calls, meetings & messages",
                 tab_tasks: "Tasks & To-Dos", tab_activities: "Activities & Log", tab_comms: "Communications Feed",
                 opt_all_status: "All Statuses", opt_open: "Open", opt_completed: "Completed",
@@ -725,6 +884,7 @@
                 modal_task_title: "Create New Task", modal_act_title: "Log Agent Activity", modal_comm_title: "Log Message / Communication",
                 lbl_task_title: "Task Title *", lbl_due_date: "Due Date & Time *", lbl_priority: "Priority *",
                 lbl_assigned_agent: "Assign Agent", lbl_related_customer: "Related Customer",
+                lbl_related_lead: "Related Lead", lbl_related_opp: "Related Opportunity",
                 lbl_act_type: "Activity Type *", lbl_subject: "Subject *", lbl_details: "Description / Outcome Notes",
                 lbl_agent: "Agent", lbl_customer: "Customer", lbl_channel: "Channel *", lbl_direction: "Direction *",
                 lbl_body: "Message Body *",
@@ -740,6 +900,7 @@
                 kpi_open_tasks: "المهام الجارية", kpi_open_tasks_sub: "تتطلب متابعة من الوكلاء",
                 kpi_overdue_tasks: "المهام المتأخرة", kpi_overdue_tasks_sub: "تجاوزت الموعد المحدد",
                 kpi_completed_tasks: "المهام المنجزة", kpi_completed_tasks_sub: "متابعات تمت بنجاح",
+                kpi_viewings: "المعاينات العقارية", kpi_viewings_sub: "معاينات ميدانية مجدولة ومنفذة",
                 kpi_activities: "الأنشطة والاتصالات", kpi_activities_sub: "مكالمات واجتماعات ومراسلات",
                 tab_tasks: "المهام والمتابعات", tab_activities: "سجل الأنشطة والمكالمات", tab_comms: "سجل المراسلات والرسائل",
                 opt_all_status: "جميع الحالات", opt_open: "جارية", opt_completed: "مكتملة",
@@ -755,6 +916,7 @@
                 modal_task_title: "تسجيل مهمة جديدة", modal_act_title: "تسجيل نشاط أو مكالمة", modal_comm_title: "تسجيل رسالة أو مراسلة",
                 lbl_task_title: "عنوان المهمة *", lbl_due_date: "تاريخ ووقت الاستحقاق *", lbl_priority: "الأولوية *",
                 lbl_assigned_agent: "الموظف المكلف", lbl_related_customer: "العميل المعني",
+                lbl_related_lead: "الطلب / الاستفسار المرتبط", lbl_related_opp: "الفرصة البيعية المرتبطة",
                 lbl_act_type: "نوع النشاط *", lbl_subject: "الموضوع *", lbl_details: "ملاحظات وتفاصيل التفاعل",
                 lbl_agent: "الموظف / الوكيل", lbl_customer: "العميل", lbl_channel: "القناة *", lbl_direction: "الاتجاه *",
                 lbl_body: "نص الرسالة *",
@@ -825,16 +987,75 @@
         // --- Summary KPIs ---
         async function loadSummary() {
             try {
-                const res = await fetch(`${API_BASE}/api/v1/tasks/summary`);
+                const ag = document.getElementById('task-agent-filter')?.value || '';
+                let url = `${API_BASE}/api/v1/tasks/summary`;
+                if (ag) url += `?assigned_user_id=${encodeURIComponent(ag)}`;
+                const res = await fetch(url);
                 if (!res.ok) return;
                 const json = await res.json();
                 const d = json.data;
                 document.getElementById('kpi-open-tasks').textContent = d.open_tasks;
                 document.getElementById('kpi-overdue-tasks').textContent = d.overdue_tasks;
                 document.getElementById('kpi-completed-tasks').textContent = d.completed_tasks;
+                const viewingsEl = document.getElementById('kpi-viewings');
+                if (viewingsEl) viewingsEl.textContent = d.total_viewings || 0;
                 document.getElementById('kpi-activities').textContent = `${d.total_activities + d.total_communications}`;
             } catch (err) {
                 console.error("Summary load error:", err);
+            }
+        }
+
+        function filterActivitiesToViewing() {
+            switchTab('activities');
+            const typeFilter = document.getElementById('act-type-filter');
+            if (typeFilter) {
+                typeFilter.value = 'VIEWING';
+                loadActivities();
+            }
+        }
+
+        function onTaskAgentFilterChange() {
+            const ag = document.getElementById('task-agent-filter')?.value || '';
+            const badge = document.getElementById('task-agent-scope-badge');
+            const badgeText = document.getElementById('task-agent-scope-text');
+            const isAr = currentLang === 'ar';
+
+            if (ag) {
+                if (badge && badgeText) {
+                    const selUser = taskModalUsers.find(u => u.user_id === ag);
+                    const agName = selUser ? selUser.full_name : ag;
+                    badgeText.textContent = isAr 
+                        ? `عرض مهام (${agName}) فقط - تم حجب باقي المستخدمين`
+                        : `Showing tasks for (${agName}) only - others hidden`;
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                if (badge) badge.style.display = 'none';
+            }
+            loadTasks();
+            loadSummary();
+        }
+
+        function clearTaskAgentScope() {
+            const agSelect = document.getElementById('task-agent-filter');
+            if (agSelect) {
+                agSelect.value = '';
+                onTaskAgentFilterChange();
+            }
+        }
+
+        function populateTaskAgentFilter() {
+            const agSelect = document.getElementById('task-agent-filter');
+            if (!agSelect || taskModalUsers.length === 0) return;
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+            const curVal = agSelect.value || urlAgent || '';
+            const isAr = currentLang === 'ar';
+            agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` +
+                taskModalUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+            if (curVal) {
+                agSelect.value = curVal;
+                onTaskAgentFilterChange();
             }
         }
 
@@ -843,10 +1064,12 @@
             const status = document.getElementById('task-status').value;
             const priority = document.getElementById('task-priority').value;
             const overdue = document.getElementById('task-overdue-only').checked;
+            const agent = document.getElementById('task-agent-filter')?.value || '';
             let url = `${API_BASE}/api/v1/tasks?page_size=50`;
             if (status) url += `&status=${status}`;
             if (priority) url += `&priority=${priority}`;
             if (overdue) url += `&is_overdue=true`;
+            if (agent) url += `&assigned_user_id=${encodeURIComponent(agent)}`;
 
             try {
                 const res = await fetch(url);
@@ -872,14 +1095,18 @@
                 return `
                     <tr>
                         <td><span class="id-badge">${t.task_id}</span></td>
-                        <td>
+                        <td class="tasks-title-cell">
                             <strong>${t.title}</strong>
                             ${t.is_overdue ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>' : ''}
                         </td>
                         <td><span class="badge ${pCls}">${t.priority}</span></td>
                         <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
                         <td>${t.assigned_user_name || 'Unassigned'}</td>
-                        <td>${t.customer_name || 'N/A'}</td>
+                        <td class="tasks-rel-cell">
+                            <div><strong>${t.customer_name || 'N/A'}</strong></div>
+                            ${t.lead_id ? `<div style="font-size:0.75em; color:#0284c7; margin-top:2px;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a></div>` : ''}
+                            ${t.opportunity_id ? `<div style="font-size:0.75em; color:#16a34a; margin-top:2px;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a></div>` : ''}
+                        </td>
                         <td><span class="badge ${sCls}">${t.status}</span></td>
                         <td>
                             ${t.status === 'OPEN' ? `
@@ -898,7 +1125,9 @@
             const filtered = tasksData.filter(t =>
                 t.title.toLowerCase().includes(term) ||
                 (t.assigned_user_name && t.assigned_user_name.toLowerCase().includes(term)) ||
-                (t.customer_name && t.customer_name.toLowerCase().includes(term))
+                (t.customer_name && t.customer_name.toLowerCase().includes(term)) ||
+                (t.lead_id && t.lead_id.toLowerCase().includes(term)) ||
+                (t.opportunity_id && t.opportunity_id.toLowerCase().includes(term))
             );
             renderTasks(filtered);
         }
@@ -955,13 +1184,13 @@
 
                 return `
                     <tr>
-                        <td><span class="channel-tag ${tagCls}">${icon} ${a.activity_type_name || code}</span></td>
-                        <td><strong>${a.subject}</strong></td>
-                        <td style="color:var(--text-muted); font-size:0.85em;">${a.description || '--'}</td>
-                        <td>${a.user_name || 'Agent'}</td>
-                        <td>${a.customer_name || 'N/A'}</td>
-                        <td>${dt}</td>
-                        <td><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${a.status}</span></td>
+                        <td class="col-act-type"><span class="channel-tag ${tagCls}">${icon} ${a.activity_type_name || code}</span></td>
+                        <td class="col-act-subj"><strong>${a.subject || '--'}</strong></td>
+                        <td class="col-act-desc" style="color:var(--text-muted); font-size:0.85em;">${a.description || '--'}</td>
+                        <td class="col-act-agent">${a.user_name || 'Agent'}</td>
+                        <td class="col-act-cust">${a.customer_name || 'N/A'}</td>
+                        <td class="col-act-date">${dt}</td>
+                        <td class="col-act-status"><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${a.status}</span></td>
                     </tr>
                 `;
             }).join('');
@@ -1012,8 +1241,8 @@
                     <tr>
                         <td><span class="channel-tag ${chanCls}">${c.channel}</span></td>
                         <td><span class="badge ${c.direction === 'OUTBOUND' ? 'badge-normal' : 'badge-high'}">${c.direction}</span></td>
-                        <td><strong>${c.subject || '--'}</strong></td>
-                        <td style="color:var(--text-muted); font-size:0.85em; max-width:320px;">${c.body || '--'}</td>
+                        <td class="comms-subj-cell"><strong>${c.subject || '--'}</strong></td>
+                        <td class="comms-body-cell" style="color:var(--text-muted); font-size:0.85em;">${c.body || '--'}</td>
                         <td>${c.customer_name || 'N/A'}</td>
                         <td>${sentDate}</td>
                         <td><span class="badge badge-completed">${c.delivery_status || 'SENT'}</span></td>
@@ -1026,39 +1255,289 @@
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        async function openNewTaskModal() {
-            try {
-                const uRes = await fetch(`${API_BASE}/api/v1/users?page_size=100`);
-                const uJson = await uRes.json();
-                document.getElementById('task-agent').innerHTML = '<option value="">Select agent</option>' +
-                    (uJson.data || []).map(u => `<option value="${u.user_id}">${u.full_name} (${u.email})</option>`).join('');
+        // --- Task Modal Reference Data & Cascading Logic ---
+        let taskModalUsers = [];
+        let taskModalCustomers = [];
+        let taskModalLeads = [];
+        let taskModalOpportunities = [];
 
-                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
-                const cJson = await cRes.json();
-                document.getElementById('task-cust').innerHTML = '<option value="">Select customer</option>' +
-                    (cJson.data || []).map(c => {
-                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
-                        return `<option value="${c.customer_id}">${name}</option>`;
+        async function ensureReferenceDataLoaded() {
+            if (taskModalUsers.length === 0 || taskModalCustomers.length === 0 || 
+                taskModalLeads.length === 0 || taskModalOpportunities.length === 0) {
+                const [uRes, cRes, lRes, oRes] = await Promise.allSettled([
+                    fetch(`${API_BASE}/api/v1/users?page_size=100`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/customers?page_size=100`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/leads?page_size=100`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/opportunities?page_size=100`).then(r => r.ok ? r.json() : null)
+                ]);
+                if (uRes.status === 'fulfilled' && uRes.value) taskModalUsers = uRes.value.data || [];
+                if (cRes.status === 'fulfilled' && cRes.value) taskModalCustomers = cRes.value.data || [];
+                if (lRes.status === 'fulfilled' && lRes.value) taskModalLeads = lRes.value.data || [];
+                if (oRes.status === 'fulfilled' && oRes.value) taskModalOpportunities = oRes.value.data || [];
+            }
+        }
+
+        function syncCascadingDropdowns({ agentId, custId, leadId, oppId, trigger }) {
+            const agEl = agentId ? document.getElementById(agentId) : null;
+            const custEl = custId ? document.getElementById(custId) : null;
+            const leadEl = leadId ? document.getElementById(leadId) : null;
+            const oppEl = oppId ? document.getElementById(oppId) : null;
+
+            const isAr = currentLang === 'ar';
+            let curAg = agEl ? agEl.value : '';
+            let curCust = custEl ? custEl.value : '';
+            let curLead = leadEl ? leadEl.value : '';
+            let curOpp = oppEl ? oppEl.value : '';
+
+            // Handle Lead selection directly
+            if (trigger === 'lead' && curLead) {
+                const leadObj = taskModalLeads.find(l => l.lead_id === curLead);
+                if (leadObj) {
+                    if (leadObj.customer_id) curCust = leadObj.customer_id;
+                    if (leadObj.assigned_user_id) curAg = leadObj.assigned_user_id;
+                }
+            }
+
+            // Handle Opp selection directly
+            if (trigger === 'opp' && curOpp) {
+                const oppObj = taskModalOpportunities.find(o => o.opportunity_id === curOpp);
+                if (oppObj) {
+                    if (oppObj.customer_id) curCust = oppObj.customer_id;
+                    if (oppObj.assigned_user_id) curAg = oppObj.assigned_user_id;
+                    if (oppObj.lead_id) curLead = oppObj.lead_id;
+                }
+            }
+
+            // Handle Customer selection directly
+            if (trigger === 'customer' && curCust) {
+                const custLeads = taskModalLeads.filter(l => l.customer_id === curCust);
+                const custOpps = taskModalOpportunities.filter(o => o.customer_id === curCust);
+                const custAgents = new Set([
+                    ...custLeads.map(l => l.assigned_user_id).filter(Boolean),
+                    ...custOpps.map(o => o.assigned_user_id).filter(Boolean)
+                ]);
+                if (custAgents.size > 0 && (!curAg || !custAgents.has(curAg))) {
+                    curAg = Array.from(custAgents)[0];
+                }
+            }
+
+            // Filter sets
+            let validAgents = taskModalUsers;
+            if (curCust) {
+                const custLeads = taskModalLeads.filter(l => l.customer_id === curCust);
+                const custOpps = taskModalOpportunities.filter(o => o.customer_id === curCust);
+                const custAgentIds = new Set([
+                    ...custLeads.map(l => l.assigned_user_id).filter(Boolean),
+                    ...custOpps.map(o => o.assigned_user_id).filter(Boolean)
+                ]);
+                if (custAgentIds.size > 0) {
+                    validAgents = taskModalUsers.filter(u => custAgentIds.has(u.user_id));
+                }
+            }
+
+            let validCustomers = taskModalCustomers;
+            if (curAg) {
+                const agLeads = taskModalLeads.filter(l => l.assigned_user_id === curAg);
+                const agOpps = taskModalOpportunities.filter(o => o.assigned_user_id === curAg);
+                const agCustIds = new Set([
+                    ...agLeads.map(l => l.customer_id).filter(Boolean),
+                    ...agOpps.map(o => o.customer_id).filter(Boolean)
+                ]);
+                validCustomers = taskModalCustomers.filter(c => agCustIds.has(c.customer_id));
+            }
+
+            let validLeads = taskModalLeads;
+            if (curCust) validLeads = validLeads.filter(l => l.customer_id === curCust);
+            if (curAg) validLeads = validLeads.filter(l => l.assigned_user_id === curAg);
+
+            let validOpps = taskModalOpportunities;
+            if (curCust) validOpps = validOpps.filter(o => o.customer_id === curCust);
+            if (curAg) validOpps = validOpps.filter(o => o.assigned_user_id === curAg);
+            if (curLead) validOpps = validOpps.filter(o => o.lead_id === curLead || (curCust && o.customer_id === curCust));
+
+            // Render Agent Dropdown
+            if (agEl) {
+                const prev = curAg;
+                agEl.innerHTML = `<option value="">${isAr ? '-- اختر الموظف / الوكيل المكلف --' : '-- Select Assigned Agent --'}</option>` +
+                    validAgents.map(u => `<option value="${u.user_id}">👤 ${u.full_name} (${u.email || u.employee_no || ''})</option>`).join('');
+                if (validAgents.some(u => u.user_id === prev)) {
+                    agEl.value = prev;
+                } else if (validAgents.length === 1 && (curCust || curLead || curOpp)) {
+                    agEl.value = validAgents[0].user_id;
+                } else {
+                    agEl.value = '';
+                }
+            }
+
+            // Render Customer Dropdown
+            if (custEl) {
+                const prev = curCust;
+                custEl.innerHTML = `<option value="">${isAr ? '-- اختر العميل المعني --' : '-- Select Related Customer --'}</option>` +
+                    validCustomers.map(c => {
+                        const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.company_name || c.customer_id;
+                        const extra = c.company_name && c.first_name ? ` [${c.company_name}]` : '';
+                        return `<option value="${c.customer_id}">👥 ${name}${extra} (${c.mobile || c.customer_id})</option>`;
                     }).join('');
+                if (validCustomers.some(c => c.customer_id === prev)) {
+                    custEl.value = prev;
+                } else if (validCustomers.length === 1 && (curLead || curOpp)) {
+                    custEl.value = validCustomers[0].customer_id;
+                } else {
+                    custEl.value = '';
+                }
+            }
+
+            // Render Lead Dropdown
+            if (leadEl) {
+                const prev = curLead;
+                leadEl.innerHTML = `<option value="">${isAr ? '-- اختر الطلب المرتبط (اختياري) --' : '-- Select Related Lead (Optional) --'}</option>` +
+                    validLeads.map(l => {
+                        const desc = `${l.lead_id} • ${l.customer_name || 'Client'} [${l.inquiry_type || ''} - ${l.status || ''}]`;
+                        return `<option value="${l.lead_id}">🎯 ${desc}</option>`;
+                    }).join('');
+                if (validLeads.some(l => l.lead_id === prev)) {
+                    leadEl.value = prev;
+                } else if (validLeads.length === 1 && curOpp) {
+                    leadEl.value = validLeads[0].lead_id;
+                } else {
+                    leadEl.value = '';
+                }
+            }
+
+            // Render Opp Dropdown
+            if (oppEl) {
+                const prev = curOpp;
+                oppEl.innerHTML = `<option value="">${isAr ? '-- اختر الفرصة البيعية المرتبطة (اختياري) --' : '-- Select Related Opportunity (Optional) --'}</option>` +
+                    validOpps.map(o => {
+                        const valStr = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : '';
+                        const desc = `${o.opportunity_id} • ${o.customer_name || 'Deal'} [${o.stage} ${valStr ? '- ' + valStr : ''}]`;
+                        return `<option value="${o.opportunity_id}">📊 ${desc}</option>`;
+                    }).join('');
+                if (validOpps.some(o => o.opportunity_id === prev)) {
+                    oppEl.value = prev;
+                } else if (validOpps.length === 1 && curLead) {
+                    oppEl.value = validOpps[0].opportunity_id;
+                } else {
+                    oppEl.value = '';
+                }
+            }
+        }
+
+        // --- Task Modal Handlers ---
+        function onTaskAgentChange() {
+            syncCascadingDropdowns({ agentId: 'task-agent', custId: 'task-cust', leadId: 'task-lead', oppId: 'task-opp', trigger: 'agent' });
+        }
+        function onTaskCustomerChange() {
+            syncCascadingDropdowns({ agentId: 'task-agent', custId: 'task-cust', leadId: 'task-lead', oppId: 'task-opp', trigger: 'customer' });
+        }
+        function onTaskLeadChange() {
+            syncCascadingDropdowns({ agentId: 'task-agent', custId: 'task-cust', leadId: 'task-lead', oppId: 'task-opp', trigger: 'lead' });
+        }
+        function onTaskOppChange() {
+            syncCascadingDropdowns({ agentId: 'task-agent', custId: 'task-cust', leadId: 'task-lead', oppId: 'task-opp', trigger: 'opp' });
+        }
+
+        // --- Activity Modal Handlers ---
+        function onActAgentChange() {
+            syncCascadingDropdowns({ agentId: 'act-agent', custId: 'act-cust', leadId: 'act-lead', oppId: 'act-opp', trigger: 'agent' });
+        }
+        function onActCustomerChange() {
+            syncCascadingDropdowns({ agentId: 'act-agent', custId: 'act-cust', leadId: 'act-lead', oppId: 'act-opp', trigger: 'customer' });
+        }
+        function onActLeadChange() {
+            syncCascadingDropdowns({ agentId: 'act-agent', custId: 'act-cust', leadId: 'act-lead', oppId: 'act-opp', trigger: 'lead' });
+        }
+        function onActOppChange() {
+            syncCascadingDropdowns({ agentId: 'act-agent', custId: 'act-cust', leadId: 'act-lead', oppId: 'act-opp', trigger: 'opp' });
+        }
+
+        // --- Comm Modal Handlers ---
+        function onCommAgentChange() {
+            syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: null, oppId: null, trigger: 'agent' });
+        }
+        function onCommCustomerChange() {
+            syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: null, oppId: null, trigger: 'customer' });
+        }
+
+        async function openNewTaskModal(prefill = {}) {
+            try {
+                await ensureReferenceDataLoaded();
+
+                if (prefill.opportunityId && !taskModalOpportunities.some(o => o.opportunity_id === prefill.opportunityId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/opportunities/${prefill.opportunityId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalOpportunities.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+                if (prefill.leadId && !taskModalLeads.some(l => l.lead_id === prefill.leadId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/leads/${prefill.leadId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalLeads.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+                if (prefill.customerId && !taskModalCustomers.some(c => c.customer_id === prefill.customerId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/customers/${prefill.customerId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalCustomers.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+
+                // Initialize all dropdowns
+                syncCascadingDropdowns({ agentId: 'task-agent', custId: 'task-cust', leadId: 'task-lead', oppId: 'task-opp', trigger: null });
+
+                if (prefill.opportunityId) {
+                    document.getElementById('task-opp').value = prefill.opportunityId;
+                    onTaskOppChange();
+                } else if (prefill.leadId) {
+                    document.getElementById('task-lead').value = prefill.leadId;
+                    onTaskLeadChange();
+                } else if (prefill.customerId) {
+                    document.getElementById('task-cust').value = prefill.customerId;
+                    onTaskCustomerChange();
+                }
+
+                if (prefill.agentId && document.getElementById('task-agent')) {
+                    document.getElementById('task-agent').value = prefill.agentId;
+                }
 
                 const now = new Date();
                 now.setHours(now.getHours() + 24);
                 document.getElementById('task-due').value = now.toISOString().slice(0, 16);
+                if (prefill.title) {
+                    document.getElementById('task-title').value = prefill.title;
+                }
 
                 openModal('modal-task');
             } catch (err) {
-                alert("Failed to load options: " + err);
+                alert("Failed to load options: " + err.message);
             }
         }
 
         async function handleCreateTask(e) {
             e.preventDefault();
+            const title = document.getElementById('task-title').value.trim();
+            if (!title) {
+                alert(currentLang === 'ar' ? 'يرجى إدخال عنوان المهمة' : 'Please enter a task title');
+                return;
+            }
+
             const payload = {
-                title: document.getElementById('task-title').value,
+                title: title,
                 due_at: document.getElementById('task-due').value ? new Date(document.getElementById('task-due').value).toISOString() : null,
                 priority: document.getElementById('task-pri').value,
                 assigned_user_id: document.getElementById('task-agent').value || null,
                 customer_id: document.getElementById('task-cust').value || null,
+                lead_id: document.getElementById('task-lead').value || null,
+                opportunity_id: document.getElementById('task-opp').value || null,
                 status: 'OPEN'
             };
 
@@ -1068,46 +1547,141 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!res.ok) throw new Error('Task creation failed');
+                if (!res.ok) {
+                    let errDetail = 'Task creation failed';
+                    try {
+                        const err = await res.json();
+                        errDetail = err.detail || (err.error && err.error.message) || JSON.stringify(err);
+                    } catch (_) {
+                        errDetail = await res.text();
+                    }
+                    throw new Error(errDetail);
+                }
                 closeModal('modal-task');
+                document.getElementById('task-form').reset();
                 loadTasks();
                 loadSummary();
-                alert("Task created successfully!");
+                alert(currentLang === 'ar' ? 'تم إنشاء وحفظ المهمة بنجاح!' : 'Task created successfully!');
             } catch (err) {
-                alert("Error: " + err.message);
+                alert((currentLang === 'ar' ? 'خطأ في إنشاء المهمة: ' : 'Error creating task: ') + err.message);
             }
         }
 
-        async function openNewActivityModal() {
-            try {
-                const uRes = await fetch(`${API_BASE}/api/v1/users?page_size=100`);
-                const uJson = await uRes.json();
-                document.getElementById('act-agent').innerHTML = '<option value="">Select agent</option>' +
-                    (uJson.data || []).map(u => `<option value="${u.user_id}">${u.full_name}</option>`).join('');
+        function onActTypeChange() {
+            const actType = document.getElementById('act-type-select').value;
+            const subjInput = document.getElementById('act-subject');
+            if (actType === 'VIEWING' && (!subjInput.value || subjInput.value.startsWith('Follow-up') || subjInput.value.startsWith('Property viewing') || subjInput.value.startsWith('معاينة'))) {
+                subjInput.value = currentLang === 'ar' ? 'معاينة عقار مع العميل' : 'Property viewing with client';
+            }
+        }
 
-                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
-                const cJson = await cRes.json();
-                document.getElementById('act-cust').innerHTML = '<option value="">Select customer</option>' +
-                    (cJson.data || []).map(c => {
-                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
-                        return `<option value="${c.customer_id}">${name}</option>`;
-                    }).join('');
+        async function openNewActivityModal(prefill = {}) {
+            try {
+                await ensureReferenceDataLoaded();
+
+                if (prefill.opportunityId && !taskModalOpportunities.some(o => o.opportunity_id === prefill.opportunityId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/opportunities/${prefill.opportunityId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalOpportunities.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+                if (prefill.leadId && !taskModalLeads.some(l => l.lead_id === prefill.leadId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/leads/${prefill.leadId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalLeads.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+                if (prefill.customerId && !taskModalCustomers.some(c => c.customer_id === prefill.customerId)) {
+                    try {
+                        const r = await fetch(`${API_BASE}/api/v1/customers/${prefill.customerId}`);
+                        if (r.ok) {
+                            const d = (await r.json()).data;
+                            if (d) taskModalCustomers.unshift(d);
+                        }
+                    } catch (_) {}
+                }
+
+                // Initialize all dropdowns with cascading
+                syncCascadingDropdowns({ agentId: 'act-agent', custId: 'act-cust', leadId: 'act-lead', oppId: 'act-opp', trigger: null });
+
+                if (prefill.opportunityId) {
+                    document.getElementById('act-opp').value = prefill.opportunityId;
+                    onActOppChange();
+                } else if (prefill.leadId) {
+                    document.getElementById('act-lead').value = prefill.leadId;
+                    onActLeadChange();
+                } else if (prefill.customerId) {
+                    document.getElementById('act-cust').value = prefill.customerId;
+                    onActCustomerChange();
+                }
+
+                if (prefill.agentId && document.getElementById('act-agent')) {
+                    document.getElementById('act-agent').value = prefill.agentId;
+                }
+
+                if (prefill.activityType) {
+                    document.getElementById('act-type-select').value = prefill.activityType;
+                }
+                if (prefill.status) {
+                    document.getElementById('act-status-select').value = prefill.status;
+                }
+
+                const subjInput = document.getElementById('act-subject');
+                if (prefill.activityType === 'VIEWING') {
+                    subjInput.value = currentLang === 'ar' ? 'معاينة عقار مع العميل' : 'Property viewing with client';
+                } else if (!subjInput.value) {
+                    subjInput.value = '';
+                }
+
+                // Default date/time to now
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const localIso = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                const dtInput = document.getElementById('act-datetime');
+                if (dtInput) dtInput.value = localIso;
 
                 openModal('modal-activity');
             } catch (err) {
-                alert("Failed to load options: " + err);
+                alert("Failed to load options: " + err.message);
             }
         }
 
         async function handleCreateActivity(e) {
             e.preventDefault();
+            const dtVal = document.getElementById('act-datetime').value;
+            const statusVal = document.getElementById('act-status-select').value;
+            let scheduledAt = null;
+            let completedAt = null;
+
+            if (dtVal) {
+                const iso = new Date(dtVal).toISOString();
+                if (statusVal === 'PLANNED') {
+                    scheduledAt = iso;
+                } else {
+                    completedAt = iso;
+                    scheduledAt = iso;
+                }
+            } else if (statusVal === 'COMPLETED') {
+                completedAt = new Date().toISOString();
+            }
+
             const payload = {
                 activity_type_code: document.getElementById('act-type-select').value,
                 subject: document.getElementById('act-subject').value,
                 description: document.getElementById('act-desc').value || null,
                 user_id: document.getElementById('act-agent').value || null,
                 customer_id: document.getElementById('act-cust').value || null,
-                status: document.getElementById('act-status-select').value
+                lead_id: document.getElementById('act-lead').value || null,
+                opportunity_id: document.getElementById('act-opp').value || null,
+                status: statusVal,
+                scheduled_at: scheduledAt,
+                completed_at: completedAt
             };
 
             try {
@@ -1118,27 +1692,29 @@
                 });
                 if (!res.ok) throw new Error('Activity creation failed');
                 closeModal('modal-activity');
+                document.getElementById('act-form').reset();
                 loadActivities();
                 loadSummary();
-                alert("Activity logged successfully!");
+                alert(currentLang === 'ar' ? 'تم تسجيل وتوثيق النشاط بنجاح!' : 'Activity logged successfully!');
             } catch (err) {
                 alert("Error: " + err.message);
             }
         }
 
-        async function openNewCommModal() {
+        async function openNewCommModal(prefill = {}) {
             try {
-                const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
-                const cJson = await cRes.json();
-                document.getElementById('comm-cust').innerHTML = '<option value="">Select customer</option>' +
-                    (cJson.data || []).map(c => {
-                        const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
-                        return `<option value="${c.customer_id}">${name} (${c.mobile || ''})</option>`;
-                    }).join('');
-
+                await ensureReferenceDataLoaded();
+                syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: null, oppId: null, trigger: null });
+                if (prefill.customerId) {
+                    document.getElementById('comm-cust').value = prefill.customerId;
+                    onCommCustomerChange();
+                } else if (prefill.agentId) {
+                    document.getElementById('comm-agent').value = prefill.agentId;
+                    onCommAgentChange();
+                }
                 openModal('modal-comm');
             } catch (err) {
-                alert("Failed to load customers: " + err);
+                alert("Failed to load reference data: " + err.message);
             }
         }
 
@@ -1175,8 +1751,56 @@
             setLanguage(currentLang);
             loadSummary();
             loadTasks();
+            ensureReferenceDataLoaded().then(() => {
+                populateTaskAgentFilter();
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const preLead = urlParams.get('lead_id');
+            const preOpp = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+            const preCust = urlParams.get('customer_id');
+            const preAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+            const preAction = urlParams.get('action');
+            const preTab = urlParams.get('tab');
+
+            if (preTab) {
+                switchTab(preTab);
+            }
+
+            if (preAction === 'new_activity' || preAction === 'activity' || preAction === 'new_viewing' || preAction === 'viewing') {
+                switchTab('activities');
+                const isViewing = preAction === 'new_viewing' || preAction === 'viewing' || (urlParams.get('type') || '').toUpperCase() === 'VIEWING';
+                setTimeout(() => {
+                    openNewActivityModal({
+                        leadId: preLead,
+                        opportunityId: preOpp,
+                        customerId: preCust,
+                        agentId: preAgent,
+                        activityType: isViewing ? 'VIEWING' : (urlParams.get('type') || null),
+                        status: isViewing ? 'PLANNED' : null
+                    });
+                }, 350);
+            } else if (preAction === 'new_comm' || preAction === 'communication') {
+                switchTab('comms');
+                setTimeout(() => {
+                    openNewCommModal({
+                        customerId: preCust,
+                        agentId: preAgent
+                    });
+                }, 350);
+            } else if (preAction === 'new_task' || preLead || preOpp || preCust) {
+                setTimeout(() => {
+                    openNewTaskModal({
+                        leadId: preLead,
+                        opportunityId: preOpp,
+                        customerId: preCust,
+                        agentId: preAgent
+                    });
+                }, 350);
+            }
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>
 

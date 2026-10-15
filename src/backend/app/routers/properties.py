@@ -1,8 +1,9 @@
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
+from app.routers.auth import check_user_scope_override
 from app.schemas.properties import (
     ProjectOut, UnitOut, UnitStatusUpdate, UnitCreateIn, UnitUpdateIn,
     BuildingOut, ProjectCreateIn, BuildingCreateIn
@@ -142,13 +143,21 @@ async def list_units(
     bedrooms: Optional[int] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
+    assigned_user_id: Optional[str] = None,
     search: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
     p_idx = 1
+
+    if assigned_user_id:
+        conditions.append(f"u.assigned_user_id = ${p_idx}")
+        params.append(assigned_user_id)
+        p_idx += 1
 
     if status_filter:
         conditions.append(f"u.status = ${p_idx}")

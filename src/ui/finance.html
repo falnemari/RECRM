@@ -225,6 +225,7 @@
         <!-- Navigation Tabs -->
         <div class="tab-nav">
             <button class="tab-btn active" id="tab-btn-contracts" onclick="switchTab('contracts')" data-i18n="tab_contracts">Contracts & Sales Agreements</button>
+            <button class="tab-btn" id="tab-btn-reservations" onclick="switchTab('reservations')" data-i18n="tab_reservations">Unit Reservations & Earnest Deposits</button>
             <button class="tab-btn" id="tab-btn-payments" onclick="switchTab('payments')" data-i18n="tab_payments">Payment Schedules & Receivables</button>
             <button class="tab-btn" id="tab-btn-commissions" onclick="switchTab('commissions')" data-i18n="tab_commissions">Broker Commission Payouts</button>
         </div>
@@ -259,6 +260,42 @@
                     </thead>
                     <tbody id="contracts-tbody">
                         <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: UNIT RESERVATIONS & EARNEST DEPOSITS -->
+        <div id="tab-reservations" style="display: none;">
+            <div class="controls-bar">
+                <input type="text" id="res-search" placeholder="Search by reservation #, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="fetchReservations()">
+                <select id="res-status" onchange="fetchReservations()">
+                    <option value="">All Statuses (جميع الحالات)</option>
+                    <option value="ACTIVE">ACTIVE (حجز ساري ومؤكد)</option>
+                    <option value="CONVERTED">CONVERTED (تم تحويله لعقد)</option>
+                    <option value="EXPIRED">EXPIRED (منتهي الصلاحية)</option>
+                    <option value="CANCELLED">CANCELLED (ملغي)</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchReservations()">🔄 Refresh</button>
+                <button class="btn btn-success" onclick="openConvertModal()" data-i18n="btn_convert_res">+ Convert Reservation to Contract</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reservation #</th>
+                            <th>Customer / Buyer</th>
+                            <th>Target Unit</th>
+                            <th>Earnest Deposit (العربون)</th>
+                            <th>Reserved Date</th>
+                            <th>Expiry / Validity</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservations-tbody">
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -383,6 +420,26 @@
                             <option value="">-- Choose active reservation --</option>
                         </select>
                     </div>
+
+                    <!-- Live Dynamic Preview of Selected Reservation -->
+                    <div id="conv-res-preview" style="display: none; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.88em;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong id="conv-preview-cust" style="color: var(--navy);">--</strong>
+                            <span class="badge badge-signed" id="conv-preview-deposit">-- SAR</span>
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.82em; margin-bottom: 8px;">
+                            <span>🏢 Unit: <strong id="conv-preview-unit" style="color: var(--text-main);">--</strong></span> • 
+                            <span id="conv-preview-project">--</span>
+                        </div>
+                        <div id="conv-preview-banner" style="margin-bottom: 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.83em; font-weight: 700;">
+                            --
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 0.8em;">
+                            <span style="color: #166534;">✓ Deposit will be credited towards Purchase Price</span>
+                            <button type="button" class="btn-sm" style="font-size: 0.8em; padding: 2px 6px;" onclick="viewSelectedReservationFromConvert()">👁️ View Details</button>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label data-i18n="lbl_con_val">Contract Value (SAR) *</label>
                         <input type="number" id="conv-value" step="0.01" required>
@@ -403,6 +460,189 @@
         </div>
     </div>
 
+    <!-- MODAL: RESERVATION DETAILS (عرض تفاصيل الحجز الشاملة) -->
+    <div class="modal-overlay" id="reservation-detail-modal">
+        <div class="modal" style="max-width: 820px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span>
+                        <span data-i18n="modal_res_detail_title">Reservation Notice & Earnest Details</span>
+                        <span class="id-badge" id="det-res-number" style="background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3);">--</span>
+                    </h3>
+                    <div style="font-size: 0.82em; color: #94a3b8; margin-top: 4px;" data-i18n="modal_res_subtitle">Official booking confirmation, buyer credentials, unit specifications & earnest deposit ledger</div>
+                </div>
+                <button class="close-btn" onclick="closeReservationDetailModal()" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <!-- HERO STATUS & EXPIRY BANNER (شريط الحالة وصلاحية الحجز البارز) -->
+                <div id="det-res-hero-box" style="border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; border: 2px solid #86efac; background: #f0fdf4; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <span id="det-res-hero-icon" style="font-size: 2.2em; line-height: 1;">🟢</span>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span id="det-res-hero-title" style="font-size: 1.15em; font-weight: 800; color: #166534;">Reservation Active & Confirmed</span>
+                                    <span id="det-res-status-badge" class="badge badge-signed" style="font-size: 0.85em; padding: 3px 10px;">ACTIVE</span>
+                                </div>
+                                <div id="det-res-hero-countdown" style="font-size: 0.95em; color: #15803d; font-weight: 700; margin-top: 4px;">
+                                    --
+                                </div>
+                            </div>
+                        </div>
+                        <div id="det-res-hero-extra-action"></div>
+                    </div>
+                    <!-- Live Validity Progress Track -->
+                    <div id="det-res-progress-wrap" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.15);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #475569; margin-bottom: 6px; font-weight: 600;">
+                            <span>📅 <span data-i18n="lbl_reserved_at">Booked</span>: <strong id="det-res-prog-start">--</strong></span>
+                            <span id="det-res-prog-pct" style="padding: 1px 8px; border-radius: 10px; background: rgba(0,0,0,0.06); font-weight: 700;">--% Elapsed</span>
+                            <span>⏳ <span data-i18n="lbl_expires_at">Expires</span>: <strong id="det-res-prog-end">--</strong></span>
+                        </div>
+                        <div style="width: 100%; height: 9px; background: rgba(0,0,0,0.08); border-radius: 999px; overflow: hidden;">
+                            <div id="det-res-prog-bar" style="height: 100%; width: 50%; background: #16a34a; border-radius: 999px; transition: width 0.5s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Responsive Information Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <!-- Card 1: Buyer / Customer Info -->
+                    <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-weight: 700; font-size: 0.95em; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                            <span>👤</span> <span data-i18n="sec_buyer_info">Buyer / Client Information (بيانات المشتري)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.88em;">
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Client Name (الاسم):</span>
+                                <strong id="det-res-cust-name" style="color: var(--text-main);">--</strong>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Phone / Mobile (الجوال):</span>
+                                <span id="det-res-cust-mobile-wrap">--</span>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">National / CR ID (الهوية/السجل):</span>
+                                <span id="det-res-cust-id" style="font-family: monospace; font-weight: 600;">--</span>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Email (البريد):</span>
+                                <span id="det-res-cust-email" style="font-size: 0.85em; word-break: break-all;">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Property & Unit Specifications -->
+                    <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-weight: 700; font-size: 0.95em; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                            <span>🏢</span> <span data-i18n="sec_unit_specs">Unit & Project Specifications (الوحدة والمشروع)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.88em;">
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Unit # (رقم الوحدة):</span>
+                                <strong id="det-res-unit-num" style="font-size: 1.05em; color: var(--primary);">--</strong>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Project / Building (المشروع/المبنى):</span>
+                                <span id="det-res-project-building">--</span>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Type / Floor (النوع / الدور):</span>
+                                <span id="det-res-prop-type">--</span>
+                            </div>
+                            <div>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Area / Layout (المساحة والتفصيل):</span>
+                                <span id="det-res-unit-specs">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Earnest Deposit Breakdown Box -->
+                <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                    <div style="font-weight: 700; font-size: 0.95em; color: #166534; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>💰</span> <span data-i18n="sec_earnest_deposit">Earnest Deposit & Financial Ledger (سجل العربون المالي)</span>
+                        </div>
+                        <span class="badge badge-signed" style="background: #15803d; color: #fff;" data-i18n="badge_paid_receipt">✓ Earnest Paid (العربون مسدد)</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+                        <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #86efac;">
+                            <span style="font-size: 0.8em; color: #166534; font-weight: 600; display: block;" data-i18n="lbl_deposit_amount">Deposit Paid (العربون):</span>
+                            <div id="det-res-deposit" style="font-size: 1.4em; font-weight: 800; color: #15803d; margin-top: 2px;">-- SAR</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_unit_asking_price">Target Sale Price (سعر البيع):</span>
+                            <div id="det-res-unit-price" style="font-size: 1.2em; font-weight: 700; color: var(--navy); margin-top: 2px;">-- SAR</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_balance_to_contract">Balance after Deposit (المتبقي):</span>
+                            <div id="det-res-balance" style="font-size: 1.2em; font-weight: 700; color: #ea580c; margin-top: 2px;">-- SAR</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_deposit_pct">Deposit Ratio (نسبة العربون):</span>
+                            <div id="det-res-deposit-pct" style="font-size: 1.2em; font-weight: 700; color: var(--primary); margin-top: 2px;">-- %</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.8em; color: #166534; display: flex; align-items: center; gap: 4px;">
+                        <span>ℹ️</span> <span data-i18n="note_earnest_credit">This deposit is legally credited towards Installment 1 / Down payment upon contract execution.</span>
+                    </div>
+                </div>
+
+                <!-- Timeline & Representation Box -->
+                <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
+                    <div>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_reserved_at">Booking Date (تاريخ الحجز):</span>
+                        <strong id="det-res-reserved-at">--</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_expires_at">Expiry Date (تاريخ انتهاء الحجز):</span>
+                        <strong id="det-res-expires-at">--</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_assigned_broker">Handling Broker / Agent (الوسيط):</span>
+                        <strong id="det-res-agent">--</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_linked_deal">Opportunity / Contract (الصفقة/العقد):</span>
+                        <span id="det-res-contract-link">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button type="button" class="btn btn-sm" onclick="printReservationNotice()" style="background: #e2e8f0; color: #0f172a; font-weight: 600;">🖨️ <span data-i18n="btn_print_receipt">Print Notice (طباعة الإشعار)</span></button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-sm" onclick="closeReservationDetailModal()" data-i18n="btn_close">Close</button>
+                    <button type="button" class="btn btn-success" id="btn-modal-convert" onclick="convertFromDetailModal()">📝 <span data-i18n="btn_convert_contract">Convert to Contract</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONTRACT DETAILS (عرض تفاصيل العقد المالي) -->
+    <div class="modal-overlay" id="contract-detail-modal">
+        <div class="modal" style="max-width: 820px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>📜</span>
+                        <span>Contract Details (تفاصيل العقد المالي)</span>
+                        <span class="id-badge" id="det-con-number" style="background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3);">--</span>
+                    </h3>
+                </div>
+                <button class="close-btn" onclick="closeContractDetailModal()" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body" id="det-con-body" style="padding: 20px;">
+                Loading contract details...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" onclick="closeContractDetailModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = (() => {
             if (window.location.protocol === 'file:') return 'http://localhost:8000';
@@ -419,8 +659,9 @@
                 kpi_contracts_val: "Total Contracted Value", kpi_collected: "Payments Collected",
                 kpi_collected_sub: "Confirmed receipts in bank", kpi_receivables: "Outstanding Receivables",
                 kpi_receivables_sub: "Due on payment schedules", kpi_commissions: "Broker Commissions",
-                tab_contracts: "Contracts & Sales Agreements", tab_payments: "Payment Schedules & Receivables",
-                tab_commissions: "Broker Commission Payouts", btn_convert_res: "+ Convert Reservation to Contract",
+                tab_contracts: "Contracts & Sales Agreements", tab_reservations: "Unit Reservations & Earnest Deposits",
+                tab_payments: "Payment Schedules & Receivables", tab_commissions: "Broker Commission Payouts",
+                btn_convert_res: "+ Convert Reservation to Contract",
                 th_con_num: "Contract #", th_con_type: "Type", th_con_customer: "Customer", th_con_unit: "Unit #",
                 th_con_value: "Value (SAR)", th_con_paid: "Paid (SAR)", th_con_bal: "Balance (SAR)", th_con_status: "Status",
                 th_pay_ref: "Reference #", th_pay_due_date: "Due Date", th_pay_amount_due: "Amount Due",
@@ -428,7 +669,17 @@
                 th_comm_agent: "Agent / Broker", th_comm_type: "Type", th_comm_rate: "Rate (%)", th_comm_amount: "Amount (SAR)",
                 th_comm_status: "Status", th_actions: "Actions", modal_pay_title: "Record Payment Receipt",
                 modal_convert_title: "Convert Reservation to Contract", btn_confirm_pay: "Confirm & Record Receipt",
-                btn_execute_con: "Generate Contract & Payment Plan", lang_label: "عربي"
+                btn_execute_con: "Generate Contract & Payment Plan", lang_label: "عربي",
+                modal_res_detail_title: "Reservation Notice & Earnest Details",
+                modal_res_subtitle: "Official booking confirmation, buyer credentials, unit specifications & earnest deposit ledger",
+                lbl_res_status: "Reservation Status:", sec_buyer_info: "Buyer / Client Information",
+                sec_unit_specs: "Unit & Project Specifications", sec_earnest_deposit: "Earnest Deposit & Financial Ledger",
+                badge_paid_receipt: "✓ Earnest Paid", lbl_deposit_amount: "Deposit Paid:",
+                lbl_unit_asking_price: "Target Sale Price:", lbl_balance_to_contract: "Balance after Deposit:",
+                lbl_deposit_pct: "Deposit Ratio:", note_earnest_credit: "This deposit is legally credited towards Installment 1 / Down payment upon contract execution.",
+                lbl_reserved_at: "Booking Date:", lbl_expires_at: "Expiry Date:",
+                lbl_assigned_broker: "Handling Broker / Agent:", lbl_linked_deal: "Opportunity / Contract:",
+                btn_print_receipt: "Print Notice", btn_convert_contract: "Convert to Contract", btn_close: "Close"
             },
             ar: {
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
@@ -437,8 +688,9 @@
                 kpi_contracts_val: "إجمالي قيمة العقود", kpi_collected: "المبالغ المحصلة",
                 kpi_collected_sub: "مدفوعات مؤكدة في الحساب", kpi_receivables: "المستحقات المتبقية",
                 kpi_receivables_sub: "أقساط مجدولة للتحصيل", kpi_commissions: "عمولات الوسطاء",
-                tab_contracts: "العقود والاتفاقيات", tab_payments: "جدول الدفعات والمستحقات",
-                tab_commissions: "عمولات المبيعات والوسطاء", btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
+                tab_contracts: "العقود والاتفاقيات", tab_reservations: "حجوزات الوحدات وعربون الشراء",
+                tab_payments: "جدول الدفعات والمستحقات", tab_commissions: "عمولات المبيعات والوسطاء",
+                btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
                 th_con_num: "رقم العقد", th_con_type: "النوع", th_con_customer: "العميل", th_con_unit: "رقم الوحدة",
                 th_con_value: "قيمة العقد (ريال)", th_con_paid: "المسدد (ريال)", th_con_bal: "المتبقي (ريال)", th_con_status: "الحالة",
                 th_pay_ref: "الرقم المرجعي", th_pay_due_date: "تاريخ الاستحقاق", th_pay_amount_due: "المبلغ المستحق",
@@ -446,7 +698,17 @@
                 th_comm_agent: "الوسيط / المسوق", th_comm_type: "النوع", th_comm_rate: "النسبة (%)", th_comm_amount: "مبلغ العمولة",
                 th_comm_status: "الحالة", th_actions: "الإجراءات", modal_pay_title: "تسجيل سند قبض دفعة",
                 modal_convert_title: "تحويل الحجز إلى عقد بيع", btn_confirm_pay: "تأكيد واستلام الدفعة",
-                btn_execute_con: "إصدار العقد وجدول الدفعات", lang_label: "English"
+                btn_execute_con: "إصدار العقد وجدول الدفعات", lang_label: "English",
+                modal_res_detail_title: "تفاصيل إشعار حجز الوحدة وسجل العربون",
+                modal_res_subtitle: "تأكيد الحجز الرسمي، بيانات المشتري، مواصفات الوحدة وسجل استلام العربون المالي",
+                lbl_res_status: "حالة الحجز:", sec_buyer_info: "بيانات المشتري / العميل",
+                sec_unit_specs: "بيانات ومواصفات الوحدة والمشروع", sec_earnest_deposit: "سجل العربون المالي والتحصيل",
+                badge_paid_receipt: "✓ العربون مسدد ومثبت", lbl_deposit_amount: "مبلغ العربون المسدد:",
+                lbl_unit_asking_price: "سعر البيع المستهدف:", lbl_balance_to_contract: "المتبقي بعد العربون:",
+                lbl_deposit_pct: "نسبة العربون:", note_earnest_credit: "يتم احتساب وقيد هذا العربون كدفعة أولى مقدمة تلقائياً عند إبرام العقد الرسمي.",
+                lbl_reserved_at: "تاريخ الحجز:", lbl_expires_at: "تاريخ انتهاء الحجز:",
+                lbl_assigned_broker: "الوسيط المسؤول:", lbl_linked_deal: "الصفقة / العقد المرتبط:",
+                btn_print_receipt: "طباعة إشعار الحجز", btn_convert_contract: "تحويل إلى عقد رسمي", btn_close: "إغلاق"
             }
         };
 
@@ -498,11 +760,14 @@
         }
 
         function switchTab(tab) {
-            ['contracts', 'payments', 'commissions'].forEach(t => {
-                document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
-                document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
+            ['contracts', 'reservations', 'payments', 'commissions'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.style.display = t === tab ? 'block' : 'none';
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (btn) btn.classList.toggle('active', t === tab);
             });
             if (tab === 'contracts') fetchContracts();
+            if (tab === 'reservations') fetchReservations();
             if (tab === 'payments') fetchPayments();
             if (tab === 'commissions') fetchCommissions();
         }
@@ -558,7 +823,7 @@
                         <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
                         <td><span class="badge badge-signed">${c.status}</span></td>
                         <td>
-                            <button class="btn btn-sm" onclick="alert('Contract ${c.contract_number}\\nCustomer: ${c.customer_name}\\nValue: ${Number(c.contract_value || 0).toLocaleString()} SAR\\nTotal Paid: ${Number(c.total_paid || 0).toLocaleString()} SAR')">View Detail</button>
+                            <button class="btn btn-sm" onclick="viewContractDetail('${c.contract_id}')">👁️ View Detail</button>
                         </td>
                     </tr>
                 `).join('');
@@ -704,7 +969,422 @@
         }
 
         let cachedReservations = [];
-        async function openConvertModal() {
+        let activeReservationInModal = null;
+
+        async function fetchReservations() {
+            const search = document.getElementById('res-search')?.value || '';
+            const status = document.getElementById('res-status')?.value || '';
+
+            let url = `${API_BASE}/api/v1/reservations?page_size=50`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                cachedReservations = json.data || [];
+
+                const tbody = document.getElementById('reservations-tbody');
+                if (!tbody) return;
+                if (cachedReservations.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No reservations found.</td></tr>';
+                    return;
+                }
+
+                const now = new Date();
+                tbody.innerHTML = cachedReservations.map(r => {
+                    const exp = r.expires_at ? new Date(r.expires_at) : null;
+                    let expBadge = '--';
+                    if (r.status === 'CONVERTED') {
+                        expBadge = `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🔵 Converted ${r.contract_number ? '#' + r.contract_number : ''}</span>`;
+                    } else if (exp) {
+                        const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+                        if (daysLeft < 0) {
+                            expBadge = `<span class="badge badge-overdue" style="font-weight: 700;">🔴 Expired (${r.expires_at.split('T')[0]})</span>`;
+                        } else if (daysLeft <= 3) {
+                            expBadge = `<span class="badge badge-due" style="font-weight: 700; background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;">⏳ ${daysLeft}d left (${r.expires_at.split('T')[0]})</span>`;
+                        } else {
+                            expBadge = `<span class="badge badge-signed" style="font-weight: 700;">🟢 ${daysLeft}d left (${r.expires_at.split('T')[0]})</span>`;
+                        }
+                    } else {
+                        expBadge = `<span class="badge" style="background: #f1f5f9; color: #475569;">Open validity</span>`;
+                    }
+
+                    const stBadge = r.status === 'ACTIVE' 
+                        ? '<span class="badge badge-signed">ACTIVE</span>'
+                        : (r.status === 'CONVERTED' 
+                            ? '<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">CONVERTED</span>'
+                            : `<span class="badge badge-due">${r.status}</span>`);
+
+                    const canConvert = r.status === 'ACTIVE';
+
+                    return `
+                        <tr>
+                            <td><span class="id-badge">${r.reservation_number}</span></td>
+                            <td>
+                                <strong>${r.customer_name || 'Prospect'}</strong>
+                                ${r.customer_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${r.customer_mobile}</div>` : ''}
+                            </td>
+                            <td>
+                                <strong>Unit ${r.unit_number || r.unit_id}</strong>
+                                <div style="font-size: 0.78em; color: var(--text-muted);">${r.project_name || r.building_name || 'Direct Property'}</div>
+                            </td>
+                            <td style="font-weight: 700; color: #15803d;">${Number(r.deposit_amount || 0).toLocaleString()} SAR</td>
+                            <td>${r.reserved_at ? r.reserved_at.split('T')[0] : '--'}</td>
+                            <td>${expBadge}</td>
+                            <td>${stBadge}</td>
+                            <td>
+                                <button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>
+                                ${canConvert ? `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">📝 Convert</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error(e);
+                const tbody = document.getElementById('reservations-tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
+            }
+        }
+
+        function renderReservationDetailModal(r) {
+            activeReservationInModal = r;
+
+            // 1. Header Badges
+            document.getElementById('det-res-number').textContent = r.reservation_number || r.reservation_id;
+
+            // 2. High-Visibility Hero Status & Expiry Banner
+            const heroBox = document.getElementById('det-res-hero-box');
+            const heroIcon = document.getElementById('det-res-hero-icon');
+            const heroTitle = document.getElementById('det-res-hero-title');
+            const stBadge = document.getElementById('det-res-status-badge');
+            const heroCountdown = document.getElementById('det-res-hero-countdown');
+            const heroAction = document.getElementById('det-res-hero-extra-action');
+            const progWrap = document.getElementById('det-res-progress-wrap');
+            const progStart = document.getElementById('det-res-prog-start');
+            const progEnd = document.getElementById('det-res-prog-end');
+            const progPct = document.getElementById('det-res-prog-pct');
+            const progBar = document.getElementById('det-res-prog-bar');
+
+            stBadge.textContent = r.status;
+            if (heroAction) heroAction.innerHTML = '';
+
+            const now = new Date();
+            const start = r.reserved_at ? new Date(r.reserved_at) : null;
+            const exp = r.expires_at ? new Date(r.expires_at) : null;
+
+            if (r.status === 'CONVERTED') {
+                heroBox.style.background = '#f0f9ff';
+                heroBox.style.borderColor = '#38bdf8';
+                heroIcon.textContent = '🔵';
+                heroTitle.textContent = currentLang === 'ar' ? 'تم تحويل الحجز إلى عقد بيع رسمي وموثق' : 'Reservation Converted to Sales Contract';
+                heroTitle.style.color = '#0369a1';
+                stBadge.className = 'badge';
+                stBadge.style.background = '#0284c7';
+                stBadge.style.color = '#fff';
+
+                const cNum = r.contract_number ? `#${r.contract_number}` : (r.contract_id || '');
+                heroCountdown.innerHTML = currentLang === 'ar'
+                    ? `تم اعتماد هذا الحجز وإصدار العقد النهائي المرتبط رقم <strong>${cNum}</strong>`
+                    : `Booking finalized into signed agreement <strong>${cNum}</strong>`;
+                heroCountdown.style.color = '#0284c7';
+
+                if (r.contract_id && heroAction) {
+                    heroAction.innerHTML = `<button type="button" class="btn btn-sm" style="background:#0284c7; color:#fff; font-weight:700;" onclick="closeReservationDetailModal(); viewContractDetail('${r.contract_id}')">📄 ${currentLang === 'ar' ? 'عرض تفاصيل العقد ➔' : 'View Contract ➔'}</button>`;
+                }
+
+                if (progWrap) {
+                    progWrap.style.display = 'block';
+                    progStart.textContent = start ? start.toLocaleDateString() : '--';
+                    progEnd.textContent = exp ? exp.toLocaleDateString() : '--';
+                    progPct.textContent = currentLang === 'ar' ? 'مكتمل ومحول' : '100% Converted';
+                    progBar.style.width = '100%';
+                    progBar.style.background = '#0284c7';
+                }
+            } else if (r.status === 'CANCELLED') {
+                heroBox.style.background = '#f8fafc';
+                heroBox.style.borderColor = '#cbd5e1';
+                heroIcon.textContent = '⚪';
+                heroTitle.textContent = currentLang === 'ar' ? 'حجز ملغي' : 'Reservation Cancelled';
+                heroTitle.style.color = '#475569';
+                stBadge.className = 'badge badge-overdue';
+                heroCountdown.textContent = currentLang === 'ar' ? 'تم إلغاء حجز هذه الوحدة وتم فك الارتباط.' : 'This reservation was cancelled and released.';
+                heroCountdown.style.color = '#64748b';
+                if (progWrap) progWrap.style.display = 'none';
+            } else {
+                // ACTIVE or normal status
+                if (exp) {
+                    const diffMs = exp.getTime() - now.getTime();
+                    const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    const hoursLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+
+                    // Calculate elapsed ratio
+                    let pct = 50;
+                    if (start && exp > start) {
+                        const totalMs = exp.getTime() - start.getTime();
+                        const elapsedMs = Math.max(0, now.getTime() - start.getTime());
+                        pct = Math.min(100, Math.max(0, Math.round((elapsedMs / totalMs) * 100)));
+                    }
+
+                    if (daysLeft < 0) {
+                        // Expired
+                        heroBox.style.background = '#fef2f2';
+                        heroBox.style.borderColor = '#f87171';
+                        heroIcon.textContent = '🔴';
+                        heroTitle.textContent = currentLang === 'ar' ? 'انتهت صلاحية الحجز والعربون' : 'Reservation Validity Expired';
+                        heroTitle.style.color = '#991b1b';
+                        stBadge.className = 'badge badge-overdue';
+                        stBadge.textContent = 'EXPIRED';
+                        heroCountdown.innerHTML = currentLang === 'ar'
+                            ? `⚠️ انتهت مهلة الحجز المحددة في <strong>${exp.toLocaleDateString()}</strong>. الوحدة مؤهلة لإعادة الطرح في المخزون أو طلب تمديد.`
+                            : `⚠️ Validity deadline passed on <strong>${exp.toLocaleDateString()}</strong>. Unit is subject to inventory release or extension.`;
+                        heroCountdown.style.color = '#b91c1c';
+
+                        if (progWrap) {
+                            progWrap.style.display = 'block';
+                            progStart.textContent = start ? start.toLocaleDateString() : '--';
+                            progEnd.textContent = exp.toLocaleDateString();
+                            progPct.textContent = currentLang === 'ar' ? 'منتهي الصلاحية (100%)' : 'Expired (100%)';
+                            progBar.style.width = '100%';
+                            progBar.style.background = '#dc2626';
+                        }
+                    } else if (daysLeft <= 3) {
+                        // Expiring soon
+                        heroBox.style.background = '#fffbeb';
+                        heroBox.style.borderColor = '#f59e0b';
+                        heroIcon.textContent = '⏳';
+                        heroTitle.textContent = currentLang === 'ar' ? 'تنبيه: حجز قارب على الانتهاء' : 'Urgent: Reservation Expiring Soon';
+                        heroTitle.style.color = '#92400e';
+                        stBadge.className = 'badge badge-due';
+                        stBadge.style.background = '#fef3c7';
+                        stBadge.style.color = '#92400e';
+                        heroCountdown.innerHTML = currentLang === 'ar'
+                            ? `⏳ بقي فقط <strong>${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}</strong> (${hoursLeft} ساعة) قبل انتهاء الصلاحية في <strong>${exp.toLocaleDateString()}</strong>!`
+                            : `⏳ Only <strong>${daysLeft} day${daysLeft > 1 ? 's' : ''}</strong> (${hoursLeft} hrs) left before expiration on <strong>${exp.toLocaleDateString()}</strong>!`;
+                        heroCountdown.style.color = '#b45309';
+
+                        if (progWrap) {
+                            progWrap.style.display = 'block';
+                            progStart.textContent = start ? start.toLocaleDateString() : '--';
+                            progEnd.textContent = exp.toLocaleDateString();
+                            progPct.textContent = `${pct}% ${currentLang === 'ar' ? 'منقضي' : 'Elapsed'}`;
+                            progBar.style.width = `${pct}%`;
+                            progBar.style.background = '#f59e0b';
+                        }
+                    } else {
+                        // Active & plenty of time
+                        heroBox.style.background = '#f0fdf4';
+                        heroBox.style.borderColor = '#86efac';
+                        heroIcon.textContent = '🟢';
+                        heroTitle.textContent = currentLang === 'ar' ? 'حجز ساري ومؤكد' : 'Reservation Active & Confirmed';
+                        heroTitle.style.color = '#166534';
+                        stBadge.className = 'badge badge-signed';
+                        heroCountdown.innerHTML = currentLang === 'ar'
+                            ? `✓ ساري ومتاح للتحويل لعقد - باقي <strong>${daysLeft} يوماً</strong> (صالح حتى ${exp.toLocaleDateString()})`
+                            : `✓ Active & ready for contract execution - <strong>${daysLeft} days remaining</strong> (valid until ${exp.toLocaleDateString()})`;
+                        heroCountdown.style.color = '#15803d';
+
+                        if (progWrap) {
+                            progWrap.style.display = 'block';
+                            progStart.textContent = start ? start.toLocaleDateString() : '--';
+                            progEnd.textContent = exp.toLocaleDateString();
+                            progPct.textContent = `${pct}% ${currentLang === 'ar' ? 'منقضي' : 'Elapsed'}`;
+                            progBar.style.width = `${pct}%`;
+                            progBar.style.background = '#16a34a';
+                        }
+                    }
+                } else {
+                    heroBox.style.background = '#f0fdf4';
+                    heroBox.style.borderColor = '#86efac';
+                    heroIcon.textContent = '🟢';
+                    heroTitle.textContent = currentLang === 'ar' ? 'حجز ساري ومفتوح المدة' : 'Reservation Active (Open-ended)';
+                    heroTitle.style.color = '#166534';
+                    stBadge.className = 'badge badge-signed';
+                    heroCountdown.textContent = currentLang === 'ar' ? 'حجز مؤكد بدون تاريخ انتهاء محدد.' : 'Active booking without predefined expiration date.';
+                    heroCountdown.style.color = '#15803d';
+                    if (progWrap) progWrap.style.display = 'none';
+                }
+            }
+
+            // 3. Buyer / Customer Information
+            document.getElementById('det-res-cust-name').textContent = r.customer_name || 'Prospect Client';
+            const mobWrap = document.getElementById('det-res-cust-mobile-wrap');
+            if (r.customer_mobile) {
+                const cleanPhone = r.customer_mobile.replace(/[^0-9]/g, '');
+                mobWrap.innerHTML = `<a href="tel:${r.customer_mobile}" style="color: var(--secondary); text-decoration: none; font-weight: 700;">📞 ${r.customer_mobile}</a> <a href="https://wa.me/${cleanPhone}" target="_blank" style="margin-inline-start: 6px; text-decoration: none;" title="Chat via WhatsApp">💬</a>`;
+            } else {
+                mobWrap.textContent = '--';
+            }
+
+            const nid = r.national_id;
+            const nidEl = document.getElementById('det-res-cust-id');
+            if (nid) {
+                if (nid.length > 20) {
+                    nidEl.innerHTML = `<span title="${nid}" style="font-family: monospace; font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">🔒 ${nid.substring(0, 8)}...${nid.substring(nid.length - 6)}</span> <span style="font-size:0.75em; color:var(--text-muted);">(Verified / موثق)</span>`;
+                } else {
+                    nidEl.textContent = nid;
+                }
+            } else {
+                nidEl.textContent = r.customer_id || '--';
+            }
+
+            document.getElementById('det-res-cust-email').textContent = r.customer_email || '--';
+
+            // 4. Unit Specifications
+            document.getElementById('det-res-unit-num').textContent = r.unit_number || r.unit_id;
+            const pb = `${r.project_name || ''} ${r.building_name ? ' / ' + r.building_name : ''}`.trim() || 'Direct Inventory';
+            document.getElementById('det-res-project-building').textContent = pb;
+            document.getElementById('det-res-prop-type').textContent = `${r.property_type || 'Residential'} ${r.floor_no != null ? '• Floor ' + r.floor_no : ''}`;
+            const specs = [];
+            if (r.area_sqm) specs.push(`${r.area_sqm} m²`);
+            if (r.bedrooms != null) specs.push(`${r.bedrooms} Beds`);
+            if (r.bathrooms != null) specs.push(`${r.bathrooms} Baths`);
+            document.getElementById('det-res-unit-specs').textContent = specs.join(' • ') || 'Standard Specs';
+
+            // 5. Financials
+            const dep = Number(r.deposit_amount || 0);
+            const price = Number(r.asking_price || r.contract_value || (dep ? dep * 10 : 0));
+            const bal = Math.max(0, price - dep);
+            const pct = (price > 0 && dep > 0) ? ((dep / price) * 100).toFixed(1) : '--';
+
+            document.getElementById('det-res-deposit').textContent = `${dep.toLocaleString()} SAR`;
+            document.getElementById('det-res-unit-price').textContent = price > 0 ? `${price.toLocaleString()} SAR` : 'N/A';
+            document.getElementById('det-res-balance').textContent = price > 0 ? `${bal.toLocaleString()} SAR` : '-- SAR';
+            document.getElementById('det-res-deposit-pct').textContent = pct !== '--' ? `${pct}%` : '--%';
+
+            // 6. Dates & Agent
+            document.getElementById('det-res-reserved-at').textContent = r.reserved_at ? new Date(r.reserved_at).toLocaleString() : '--';
+            document.getElementById('det-res-expires-at').textContent = r.expires_at ? new Date(r.expires_at).toLocaleString() : 'No expiry set';
+            document.getElementById('det-res-agent').textContent = r.assigned_agent_name ? `${r.assigned_agent_name} (${r.assigned_agent_id || ''})` : 'Direct Broker Desk';
+
+            const clWrap = document.getElementById('det-res-contract-link');
+            if (r.contract_number) {
+                clWrap.innerHTML = `<span class="id-badge" style="background:#e0f2fe; color:#0369a1; cursor:pointer;" onclick="closeReservationDetailModal(); viewContractDetail('${r.contract_id}')">📄 Contract: ${r.contract_number}</span>`;
+            } else if (r.opportunity_id) {
+                clWrap.innerHTML = `<span class="id-badge">🎯 Deal: ${r.opportunity_id}</span>`;
+            } else {
+                clWrap.textContent = '--';
+            }
+
+            // 7. Convert Button visibility
+            const convBtn = document.getElementById('btn-modal-convert');
+            if (convBtn) {
+                convBtn.style.display = r.status === 'ACTIVE' ? 'inline-block' : 'none';
+            }
+
+            document.getElementById('reservation-detail-modal').style.display = 'flex';
+        }
+
+        async function viewReservationDetail(reservationId) {
+            // 1. Immediately find in cached data if available
+            let r = cachedReservations.find(x => x.reservation_id === reservationId);
+            if (r) {
+                renderReservationDetailModal(r);
+            }
+
+            // 2. Fetch fresh detailed record from server
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations/${reservationId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.data) {
+                        r = json.data;
+                        const idx = cachedReservations.findIndex(x => x.reservation_id === reservationId);
+                        if (idx >= 0) cachedReservations[idx] = r;
+                        else cachedReservations.push(r);
+                        renderReservationDetailModal(r);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('Network issue fetching reservation detail, displaying cached state', err);
+            }
+
+            // 3. Fallback only if no data was found anywhere
+            if (!r) {
+                alert(currentLang === 'ar' ? 'تعذر العثور على تفاصيل هذا الحجز.' : 'Unable to find reservation details.');
+            }
+        }
+
+        function closeReservationDetailModal() {
+            document.getElementById('reservation-detail-modal').style.display = 'none';
+        }
+
+        function convertFromDetailModal() {
+            if (!activeReservationInModal) return;
+            const resId = activeReservationInModal.reservation_id;
+            closeReservationDetailModal();
+            openConvertModal(resId);
+        }
+
+        function printReservationNotice() {
+            if (!activeReservationInModal) return;
+            const r = activeReservationInModal;
+            const printWin = window.open('', '_blank', 'width=800,height=700');
+            const isAr = currentLang === 'ar';
+            const dep = Number(r.deposit_amount || 0);
+
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
+                <head>
+                    <meta charset="utf-8">
+                    <title>Reservation Notice - ${r.reservation_number}</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 40px; color: #0f172a; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+                        .title { font-size: 22px; font-weight: bold; }
+                        .id-box { background: #f1f5f9; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-family: monospace; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: ${isAr ? 'right' : 'left'}; font-size: 14px; }
+                        th { background: #f8fafc; font-weight: 600; width: 30%; }
+                        .deposit-box { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 16px; margin-top: 24px; text-align: center; }
+                        .deposit-val { font-size: 24px; font-weight: 800; color: #166534; }
+                        .footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <div class="title">${isAr ? 'إشعار تأكيد حجز وحدة واستلام عربون' : 'Property Unit Reservation & Deposit Notice'}</div>
+                            <div style="color: #64748b; margin-top: 4px;">مكتب معاذ خضر النمري للخدمات العقارية (رخصة فال)</div>
+                        </div>
+                        <div class="id-box">${r.reservation_number}</div>
+                    </div>
+
+                    <table>
+                        <tr><th>${isAr ? 'اسم المشتري / العميل' : 'Buyer Name'}</th><td><strong>${r.customer_name || 'Prospect Client'}</strong></td></tr>
+                        <tr><th>${isAr ? 'رقم الجوال' : 'Mobile Phone'}</th><td>${r.customer_mobile || '--'}</td></tr>
+                        <tr><th>${isAr ? 'الهوية الوطنية / السجل' : 'National / CR ID'}</th><td>${r.national_id || r.customer_id || '--'}</td></tr>
+                        <tr><th>${isAr ? 'رقم الوحدة المحجوزة' : 'Reserved Unit #'}</th><td><strong>Unit ${r.unit_number || r.unit_id}</strong></td></tr>
+                        <tr><th>${isAr ? 'المشروع / المبنى' : 'Project / Building'}</th><td>${r.project_name || ''} ${r.building_name ? ' / ' + r.building_name : ''}</td></tr>
+                        <tr><th>${isAr ? 'مواصفات الوحدة' : 'Specifications'}</th><td>${r.area_sqm ? r.area_sqm + ' m² • ' : ''}${r.bedrooms != null ? r.bedrooms + ' Beds • ' : ''}${r.bathrooms != null ? r.bathrooms + ' Baths' : ''}</td></tr>
+                        <tr><th>${isAr ? 'تاريخ الحجز' : 'Booking Date'}</th><td>${r.reserved_at ? new Date(r.reserved_at).toLocaleDateString() : '--'}</td></tr>
+                        <tr><th>${isAr ? 'صلاحية الحجز حتى' : 'Reservation Expiry'}</th><td>${r.expires_at ? new Date(r.expires_at).toLocaleDateString() : 'Open'}</td></tr>
+                        <tr><th>${isAr ? 'الوسيط المسؤول' : 'Handling Agent'}</th><td>${r.assigned_agent_name || 'Office Desk'}</td></tr>
+                    </table>
+
+                    <div class="deposit-box">
+                        <div style="font-size: 13px; color: #166534; font-weight: 600;">${isAr ? 'مبلغ العربون المسدد والمثبت' : 'Confirmed Earnest Deposit Amount'}</div>
+                        <div class="deposit-val">${dep.toLocaleString()} SAR</div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 4px;">${isAr ? 'يتم قيد هذا المبلغ تلقائياً كدفعة أولى عند إبرام عقد البيع الرسمي' : 'This amount is credited as initial down payment upon contract signing'}</div>
+                    </div>
+
+                    <div class="footer">
+                        <div>تاريخ الطباعة: ${new Date().toLocaleString()}</div>
+                        <div>نظام إدارة العقارات RECRM • توثيق رسمي</div>
+                    </div>
+
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        async function openConvertModal(preResId = null) {
             document.getElementById('convert-modal').style.display = 'flex';
             const sel = document.getElementById('conv-res-select');
             sel.innerHTML = '<option value="">Loading active reservations...</option>';
@@ -716,21 +1396,84 @@
 
                 if (cachedReservations.length === 0) {
                     sel.innerHTML = '<option value="">No active reservations available</option>';
+                    document.getElementById('conv-res-preview').style.display = 'none';
                     return;
                 }
 
                 sel.innerHTML = '<option value="">-- Choose active reservation --</option>' +
-                    cachedReservations.map(r => `<option value="${r.reservation_id}">#${r.reservation_number} - Unit ${r.unit_number || 'N/A'} (Deposit: ${(r.deposit_amount || 0).toLocaleString()} SAR)</option>`).join('');
-            } catch (e) {}
+                    cachedReservations.map(r => `<option value="${r.reservation_id}" ${preResId && r.reservation_id === preResId ? 'selected' : ''}>#${r.reservation_number} - Unit ${r.unit_number || 'N/A'} - ${r.customer_name || 'Client'} (${(r.deposit_amount || 0).toLocaleString()} SAR)</option>`).join('');
+
+                if (preResId) {
+                    sel.value = preResId;
+                    populateReservationDetails();
+                } else {
+                    document.getElementById('conv-res-preview').style.display = 'none';
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
+
         function closeConvertModal() {
             document.getElementById('convert-modal').style.display = 'none';
         }
+
         function populateReservationDetails() {
             const resId = document.getElementById('conv-res-select').value;
             const item = cachedReservations.find(r => r.reservation_id === resId);
+            const preview = document.getElementById('conv-res-preview');
             if (item) {
-                document.getElementById('conv-value').value = 500000;
+                const dep = Number(item.deposit_amount || 0);
+                const price = Number(item.asking_price || (dep ? dep * 10 : 500000));
+                document.getElementById('conv-value').value = price;
+
+                document.getElementById('conv-preview-cust').textContent = `${item.customer_name || 'Client'} ${item.customer_mobile ? `(${item.customer_mobile})` : ''}`;
+                document.getElementById('conv-preview-deposit').textContent = `Deposit: ${dep.toLocaleString()} SAR`;
+                document.getElementById('conv-preview-unit').textContent = item.unit_number || item.unit_id;
+                document.getElementById('conv-preview-project').textContent = item.project_name || item.building_name || 'Property';
+
+                // Status & Expiry Banner in Convert Modal Preview
+                const bannerEl = document.getElementById('conv-preview-banner');
+                if (bannerEl) {
+                    const now = new Date();
+                    const exp = item.expires_at ? new Date(item.expires_at) : null;
+                    if (exp) {
+                        const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+                        if (daysLeft < 0) {
+                            bannerEl.innerHTML = `🔴 <strong>${currentLang === 'ar' ? 'حجز منتهي الصلاحية' : 'Expired Reservation'}:</strong> ${currentLang === 'ar' ? `انتهت المهلة بتاريخ ${item.expires_at.split('T')[0]}` : `Validity passed on ${item.expires_at.split('T')[0]}`}`;
+                            bannerEl.style.background = '#fee2e2';
+                            bannerEl.style.color = '#991b1b';
+                            bannerEl.style.border = '1px solid #fca5a5';
+                        } else if (daysLeft <= 3) {
+                            bannerEl.innerHTML = `⏳ <strong>${currentLang === 'ar' ? 'تنبيه انتهاء قريب' : 'Expiring Soon'}:</strong> ${daysLeft} ${currentLang === 'ar' ? 'أيام متبقية' : 'day(s) left'} (${item.expires_at.split('T')[0]})`;
+                            bannerEl.style.background = '#fffbeb';
+                            bannerEl.style.color = '#b45309';
+                            bannerEl.style.border = '1px solid #fcd34d';
+                        } else {
+                            bannerEl.innerHTML = `🟢 <strong>${currentLang === 'ar' ? 'حجز ساري ومؤكد' : 'Active & Confirmed'}:</strong> ${daysLeft} ${currentLang === 'ar' ? 'أيام متبقية' : 'day(s) left'} (${item.expires_at.split('T')[0]})`;
+                            bannerEl.style.background = '#dcfce7';
+                            bannerEl.style.color = '#166534';
+                            bannerEl.style.border = '1px solid #86efac';
+                        }
+                    } else {
+                        bannerEl.innerHTML = `🟢 <strong>${currentLang === 'ar' ? 'حجز ساري' : 'Active Booking'}:</strong> ${currentLang === 'ar' ? 'صلاحية مفتوحة' : 'Open validity'}`;
+                        bannerEl.style.background = '#f1f5f9';
+                        bannerEl.style.color = '#334155';
+                        bannerEl.style.border = '1px solid #cbd5e1';
+                    }
+                }
+
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function viewSelectedReservationFromConvert() {
+            const resId = document.getElementById('conv-res-select').value;
+            if (resId) {
+                closeConvertModal();
+                viewReservationDetail(resId);
             }
         }
 
@@ -751,20 +1494,156 @@
                     alert('Reservation successfully converted to Contract with payment schedule & commission!');
                     closeConvertModal();
                     fetchContracts();
+                    fetchReservations();
                     loadSummary();
                 } else {
                     const err = await res.json();
-                    alert(`Conversion error: ${JSON.stringify(err)}`);
+                    alert(`Conversion error: ${err.detail || JSON.stringify(err)}`);
                 }
             } catch (e) {
                 alert(`Error: ${e.message}`);
             }
         }
 
+        async function viewContractDetail(contractId) {
+            document.getElementById('contract-detail-modal').style.display = 'flex';
+            const body = document.getElementById('det-con-body');
+            body.innerHTML = '<div style="text-align: center; padding: 30px;">Loading contract details...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/contracts/${contractId}`);
+                if (!res.ok) throw new Error('Failed to load contract');
+                const json = await res.json();
+                const data = json.data;
+                const c = data.contract;
+                const payments = data.payments || [];
+                const commissions = data.commissions || [];
+
+                document.getElementById('det-con-number').textContent = c.contract_number;
+
+                let html = `
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">Customer / Client:</span>
+                            <strong>${c.customer_name || 'N/A'}</strong> ${c.customer_mobile ? `(${c.customer_mobile})` : ''}
+                        </div>
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">Target Unit #:</span>
+                            <strong style="color:var(--primary); font-size: 1.05em;">Unit ${c.unit_number || 'N/A'}</strong>
+                        </div>
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">Contract Type & Status:</span>
+                            <span class="badge" style="background:#e2e8f0;">${c.contract_type}</span>
+                            <span class="badge badge-signed" style="margin-inline-start:4px;">${c.status}</span>
+                        </div>
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">Origin Reservation:</span>
+                            ${c.reservation_number ? `<span class="id-badge" style="cursor:pointer;" onclick="closeContractDetailModal(); viewReservationDetail('${c.reservation_id}')">🔗 #${c.reservation_number}</span>` : 'Direct Contract'}
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                        <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+                            <span style="font-size:0.8em; color:var(--text-muted); display:block;">Total Contract Value:</span>
+                            <div style="font-size:1.3em; font-weight:800; color:var(--navy);">${Number(c.contract_value || 0).toLocaleString()} SAR</div>
+                        </div>
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
+                            <span style="font-size:0.8em; color:#166534; display:block;">Total Paid & Collected:</span>
+                            <div style="font-size:1.3em; font-weight:800; color:#15803d;">${Number(c.total_paid || 0).toLocaleString()} SAR</div>
+                        </div>
+                        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px;">
+                            <span style="font-size:0.8em; color:#9a3412; display:block;">Outstanding Balance:</span>
+                            <div style="font-size:1.3em; font-weight:800; color:#ea580c;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Schedule & Installments -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="font-weight: 700; font-size: 0.92em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>💳</span> <span>Scheduled Payment Plan & Installments:</span>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th>Ref #</th>
+                                    <th>Due Date</th>
+                                    <th>Amount Due</th>
+                                    <th>Amount Paid</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${payments.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:10px;">No payments scheduled</td></tr>' :
+                                    payments.map(p => `
+                                        <tr>
+                                            <td><span class="id-badge">${p.payment_reference}</span></td>
+                                            <td>${p.due_date}</td>
+                                            <td>${Number(p.amount_due).toLocaleString()} SAR</td>
+                                            <td style="color:#16a34a; font-weight:600;">${Number(p.amount_paid).toLocaleString()} SAR</td>
+                                            <td><span class="badge ${p.status === 'PAID' ? 'badge-paid' : (p.status === 'PARTIAL' ? 'badge-partial' : 'badge-due')}">${p.status}</span></td>
+                                        </tr>
+                                    `).join('')
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Broker Commissions -->
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.92em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>🤝</span> <span>Broker Commission Ledger:</span>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th>Agent / Broker</th>
+                                    <th>Type</th>
+                                    <th>Rate</th>
+                                    <th>Commission Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${commissions.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:10px;">No commission records for this contract</td></tr>' :
+                                    commissions.map(cm => `
+                                        <tr>
+                                            <td><strong>${cm.user_name || 'Agent'}</strong></td>
+                                            <td>${cm.commission_type}</td>
+                                            <td>${cm.rate}%</td>
+                                            <td style="font-weight:700; color:var(--primary);">${Number(cm.amount).toLocaleString()} SAR</td>
+                                            <td><span class="badge ${cm.status === 'PAID' ? 'badge-paid' : 'badge-pending'}">${cm.status}</span></td>
+                                        </tr>
+                                    `).join('')
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                body.innerHTML = html;
+            } catch (err) {
+                body.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Failed to load contract details: ${err.message}</div>`;
+            }
+        }
+
+        function closeContractDetailModal() {
+            document.getElementById('contract-detail-modal').style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
             loadSummary();
-            fetchContracts();
+            const hash = window.location.hash;
+            if (hash === '#reservations') {
+                switchTab('reservations');
+            } else if (hash === '#payments') {
+                switchTab('payments');
+            } else if (hash === '#commissions') {
+                switchTab('commissions');
+            } else {
+                fetchContracts();
+            }
         });
     </script>
 </body>

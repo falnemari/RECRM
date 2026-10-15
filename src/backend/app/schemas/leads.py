@@ -1,7 +1,16 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
+
+class LeadUnitItem(BaseModel):
+    unit_id: str
+    unit_number: str
+    building_name: Optional[str] = None
+    project_name: Optional[str] = None
+    unit_price: Optional[float] = None
+    bedrooms: Optional[int] = None
+    is_primary: bool = False
 
 class LeadOut(BaseModel):
     lead_id: str
@@ -26,6 +35,12 @@ class LeadOut(BaseModel):
     preferred_property_type_name: Optional[str] = None
     bedrooms_min: Optional[int] = None
     area_min_sqm: Optional[float] = None
+    unit_id: Optional[str] = None
+    unit_number: Optional[str] = None
+    building_name: Optional[str] = None
+    project_name: Optional[str] = None
+    unit_price: Optional[float] = None
+    units: List[LeadUnitItem] = []
     first_contact_due_at: Optional[datetime] = None
     first_contact_at: Optional[datetime] = None
     created_at: datetime
@@ -39,6 +54,8 @@ class LeadCreate(BaseModel):
     email: Optional[str] = None
     lead_source_id: Optional[str] = None
     assigned_user_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    unit_ids: Optional[List[str]] = None
     priority: str = "MEDIUM"
     inquiry_type: str = "BUY"
     budget_min: Optional[float] = None
@@ -61,6 +78,8 @@ class LeadUpdate(BaseModel):
     customer_id: Optional[str] = None
     lead_source_id: Optional[str] = None
     assigned_user_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    unit_ids: Optional[List[str]] = None
     status: Optional[str] = None
     priority: Optional[str] = None
     inquiry_type: Optional[str] = None

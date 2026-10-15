@@ -148,6 +148,66 @@
             transform: translateY(-2px);
             box-shadow: 0 3px 8px rgba(0,0,0,0.08);
         }
+        @keyframes dealHighlightPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+                border-color: #16a34a;
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
+                border-color: #15803d;
+                transform: scale(1.02);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+                border-color: #16a34a;
+                transform: scale(1);
+            }
+        }
+        .opportunity-card.highlighted-deal {
+            border: 2px solid #16a34a !important;
+            background: #f0fdf4 !important;
+            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.25) !important;
+            animation: dealHighlightPulse 1.8s ease-in-out 4;
+            position: relative;
+        }
+        .deal-highlight-badge {
+            background: #16a34a;
+            color: #ffffff;
+            font-size: 0.75em;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
+        }
+        #toast {
+            visibility: hidden;
+            min-width: 280px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px 20px;
+            position: fixed;
+            z-index: 10000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            transition: visibility 0s, opacity 0.3s ease-in-out;
+            opacity: 0;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
         .opp-title {
             font-weight: 700;
             font-size: 0.9em;
@@ -377,6 +437,12 @@
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Pipeline</span>
         </div>
         <div class="header-actions">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center; margin-inline-end: 8px;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
                         <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
@@ -433,6 +499,13 @@
                 <button id="btn-tab-offers" class="tab-btn" onclick="switchSalesTab('offers')">📑 <span data-i18n="tab_offers">Purchase & Lease Offers</span></button>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="opp-agent-filter" onchange="filterOpportunities()" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88em; background: #fff;">
+                    <option value="">All Agents (جميع الوسطاء)</option>
+                </select>
+                <div id="opp-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
+                    <span id="opp-agent-scope-text">Showing user data only</span>
+                    <button type="button" onclick="clearAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
+                </div>
                 <input type="text" id="opp-search" placeholder="Search deals, clients, agents..." style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88em; min-width: 220px;" oninput="filterOpportunities()">
                 <button class="btn-sm" style="padding: 8px 14px; font-weight: 600;" onclick="fetchOpportunities()">🔄 <span data-i18n="btn_refresh">Refresh Pipeline</span></button>
                 <button class="btn-primary" style="padding: 8px 14px; font-size: 0.88em;" onclick="openNewOppModal()">+ <span data-i18n="btn_new_opp">New Opportunity</span></button>
@@ -501,6 +574,7 @@
                     <option value="COUNTER">COUNTER (عرض مضاد)</option>
                 </select>
                 <button class="btn-sm" onclick="fetchOffers()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+                <button class="btn-primary" onclick="openNewOfferModal()" style="padding: 7px 16px; font-size: 0.88em; font-weight: 600;">+ <span data-i18n="btn_new_offer">+ New Offer (تقديم عرض جديد)</span></button>
             </div>
             <div class="table-wrap">
                 <table>
@@ -521,6 +595,59 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- New Offer Modal -->
+    <div class="modal-overlay" id="new-offer-modal" style="display: none; z-index: 1500;">
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📝 <span data-i18n="modal_new_offer_title">Submit Formal Offer (تقديم عرض سعر / شراء رسمي)</span></h3>
+                <button class="close-btn" onclick="closeNewOfferModal()">&times;</button>
+            </div>
+            <form id="new-offer-form" onsubmit="submitNewOffer(event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">🎯 الصفقة / العميل (Opportunity / Prospect) *</label>
+                    <select id="offer-opp-select" required onchange="onOfferOppChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                        <option value="">-- اختر الصفقة (Select Opportunity) --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">🏢 الوحدة المستهدفة (Target Property Unit) *</label>
+                    <select id="offer-unit-select" required onchange="onOfferUnitChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                        <option value="">-- اختر الوحدة (Select Unit) --</option>
+                    </select>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 0.85em;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="color: var(--text-muted);">السعر المطلوب للوحدة (Unit Asking Price):</span>
+                        <strong id="offer-unit-asking-price">-- SAR</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">ميزانية العميل القصوى (Customer Max Budget):</span>
+                        <strong id="offer-customer-budget" style="color: #16a34a;">-- SAR</strong>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">💰 مبلغ العرض المقترح (Offer Amount SAR) *</label>
+                        <input type="number" id="offer-amount-input" required min="1000" step="100" placeholder="e.g. 480000" oninput="calculateOfferSpread()" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                        <div id="offer-spread-display" style="font-size: 0.78em; margin-top: 3px; font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">📅 سريان العرض حتى (Valid Until) *</label>
+                        <input type="date" id="offer-valid-input" required style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                    <button type="button" class="btn-sm" onclick="closeNewOfferModal()" style="padding: 7px 16px;">إلغاء (Cancel)</button>
+                    <button type="submit" class="btn-primary" style="padding: 7px 18px; font-weight: 700;">✓ إرسال العرض الرسمي (Submit Offer)</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -601,7 +728,99 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeOppDetailModal()" data-i18n="btn_cancel">Cancel</button>
                     <button type="button" class="btn-sm" id="btn-detail-view-units" onclick="openLinkedUnitsFromDetail()">🏢 View Units</button>
+                    <button type="button" class="btn-sm" onclick="logActivityFromOppDetail()" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 600; cursor: pointer;" title="Log viewing, call, meeting or note for this deal">📝 + Activity</button>
+                    <button type="button" class="btn-sm" onclick="logViewingFromOppDetail()" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; font-weight: 600; cursor: pointer;" title="Schedule viewing for this deal">👁️ + Viewing</button>
                     <button type="submit" class="btn-primary" data-i18n="btn_save_changes">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Log Deal Activity Modal -->
+    <div class="modal-overlay" id="deal-activity-modal" style="z-index: 1200;">
+        <div class="modal-box" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3>📝 <span>Log Deal Activity (تسجيل نشاط للصفقة)</span></h3>
+                <button class="close-btn" onclick="closeDealActivityModal()">&times;</button>
+            </div>
+            <form id="deal-activity-form" onsubmit="submitDealActivity(event)">
+                <input type="hidden" id="deal-act-opp-id">
+                <input type="hidden" id="deal-act-cust-id">
+                <input type="hidden" id="deal-act-lead-id">
+                
+                <div class="modal-body">
+                    <!-- Deal Summary Card -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <strong id="deal-act-cust-name" style="color: var(--navy); font-size: 1.02em;">--</strong>
+                            <span class="badge badge-primary" id="deal-act-stage-badge">--</span>
+                        </div>
+                        <div style="font-size: 0.82em; color: var(--text-muted);">
+                            <span>Deal ID: <strong id="deal-act-opp-display" style="font-family: monospace;">--</strong></span> |
+                            <span>📞 <span id="deal-act-cust-mobile">--</span></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Activity Type (نوع النشاط) *</label>
+                            <select id="deal-act-type" required onchange="onDealActTypeChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                <option value="VIEWING">👁️ Property Viewing (معاينة عقار)</option>
+                                <option value="MEETING">🤝 Client Meeting (اجتماع مع العميل)</option>
+                                <option value="CALL">📞 Phone Call (مكالمة هاتفية)</option>
+                                <option value="WHATSAPP">💬 WhatsApp Chat (مراسلة واتساب)</option>
+                                <option value="FOLLOW_UP">🔄 Follow-Up (متابعة واهتمام)</option>
+                                <option value="NOTE">📝 Internal Note (ملاحظة داخلية)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Status (حالة النشاط) *</label>
+                            <select id="deal-act-status" required style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                <option value="COMPLETED" selected>✓ Completed (تم التنفيذ)</option>
+                                <option value="PLANNED">⏰ Planned / Scheduled (مجدول مستقبلاً)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Date & Time (التاريخ والموعد)</label>
+                            <input type="datetime-local" id="deal-act-datetime" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Assigned Agent (الوسيط المسؤول)</label>
+                            <select id="deal-act-agent" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Subject / Summary (عنوان النشاط) *</label>
+                        <input type="text" id="deal-act-subject" placeholder="e.g. Conducted unit viewing with client" required style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Details & Outcome Notes (ملاحظات المعاينة أو النشاط)</label>
+                        <textarea id="deal-act-desc" rows="3" placeholder="Key outcomes, customer impressions, price feedback, or next steps..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;"></textarea>
+                    </div>
+
+                    <div id="deal-act-advance-box" style="margin-bottom: 10px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88em; cursor: pointer; color: #166534; font-weight: 500;">
+                            <input type="checkbox" id="deal-act-advance-stage" checked style="width: 16px; height: 16px; cursor: pointer;">
+                            <span>Move deal to <strong>Stage 2: Viewing (نقل الصفقة تلقائياً إلى مرحلة المعاينة)</strong></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid #e2e8f0;">
+                    <a id="deal-act-open-tasks-link" href="#" target="_blank" style="font-size: 0.8em; color: var(--primary); text-decoration: none;">
+                        Open full tasks & activities hub ➔
+                    </a>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-secondary" onclick="closeDealActivityModal()" data-i18n="btn_cancel">Cancel</button>
+                        <button type="submit" class="btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 600;">✓ Save Activity</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -616,10 +835,24 @@
             </div>
             <form id="new-opp-form" onsubmit="submitNewOpportunity(event)">
                 <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_opp_agent">Assigned Agent</label>
+                            <select id="new-opp-agent" onchange="onNewOppAgentChange()">
+                                <option value="">-- All / Unassigned --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_select_customer">Customer *</label>
+                            <select id="new-opp-customer" required onchange="onNewOppCustomerChange()">
+                                <option value="">Select Customer *</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_select_customer">Customer *</label>
-                        <select id="new-opp-customer" required>
-                            <option value="">Loading customers...</option>
+                        <label data-i18n="lbl_related_lead">Related Lead / Inquiry</label>
+                        <select id="new-opp-lead" onchange="onNewOppLeadChange()">
+                            <option value="">-- Select Related Lead (Optional) --</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -632,21 +865,13 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label data-i18n="lbl_opp_agent">Assigned Agent</label>
-                            <select id="new-opp-agent">
-                                <option value="">-- Unassigned --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
                             <label data-i18n="lbl_expected_val">Expected Deal Value (SAR)</label>
                             <input type="number" id="new-opp-val" step="5000" placeholder="e.g. 850000">
                         </div>
-                        <div class="form-group">
-                            <label data-i18n="lbl_close_date">Expected Close Date</label>
-                            <input type="date" id="new-opp-close">
-                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_close_date">Expected Close Date</label>
+                        <input type="date" id="new-opp-close">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -703,6 +928,7 @@
                 modal_opp_detail_title: "Opportunity Details & Stage Progression",
                 modal_new_opp_title: "New Sales Opportunity",
                 lbl_select_customer: "Customer *",
+                lbl_related_lead: "Related Lead / Inquiry",
                 lbl_opp_stage: "Pipeline Stage *",
                 lbl_opp_agent: "Assigned Sales Agent",
                 lbl_expected_val: "Expected Deal Value (SAR)",
@@ -749,6 +975,7 @@
                 modal_opp_detail_title: "تفاصيل الفرصة البيعية ومسار المرحلة",
                 modal_new_opp_title: "إنشاء فرصة بيعية جديدة",
                 lbl_select_customer: "اختيار العميل *",
+                lbl_related_lead: "الطلب / الاستفسار المرتبط",
                 lbl_opp_stage: "مرحلة الصفقة في المسار *",
                 lbl_opp_agent: "الوسيط المسؤول",
                 lbl_expected_val: "قيمة الصفقة المتوقعة (ريال)",
@@ -785,6 +1012,7 @@
                 lbl.textContent = i18nData[currentLang].lang_label;
             }
             localStorage.setItem('recrm_lang', currentLang);
+            populateAgentFilter();
         }
 
         function toggleLanguage() {
@@ -811,24 +1039,107 @@
         let allOpportunities = [];
         let refUsers = [];
         let refCustomers = [];
+        let refLeads = [];
         let cachedPropertyTypes = [];
         let cachedInventoryUnits = [];
         let currentOppInModal = null;
         let currentModalOppUnits = [];
+        let savedUnitSearchFilters = {
+            keyword: '',
+            typeId: '',
+            minBeds: '',
+            maxPrice: ''
+        };
+
+        function populateAgentFilter() {
+            const agSelect = document.getElementById('opp-agent-filter');
+            if (agSelect && refUsers && refUsers.length > 0) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+                const curVal = agSelect.value || urlAgent || '';
+                const isAr = currentLang === 'ar';
+                agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` + 
+                    refUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                if (curVal) {
+                    agSelect.value = curVal;
+                }
+                filterOpportunities();
+            }
+        }
+
+        function clearAgentScope() {
+            const agSelect = document.getElementById('opp-agent-filter');
+            if (agSelect) {
+                agSelect.value = '';
+                filterOpportunities();
+            }
+        }
 
         async function initSalesData() {
             try {
-                const [uRes, cRes, ptRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/v1/users`),
-                    fetch(`${API_BASE}/api/v1/customers?page_size=100`),
-                    fetch(`${API_BASE}/api/v1/property-types`)
+                const [uRes, cRes, ptRes, lRes] = await Promise.allSettled([
+                    fetch(`${API_BASE}/api/v1/users`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/customers?page_size=100`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/property-types`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API_BASE}/api/v1/leads?page_size=100`).then(r => r.ok ? r.json() : null)
                 ]);
-                if (uRes.ok) refUsers = (await uRes.json()).data || [];
-                if (cRes.ok) refCustomers = (await cRes.json()).data || [];
-                if (ptRes && ptRes.ok) cachedPropertyTypes = (await ptRes.json()).data || [];
+                if (uRes.status === 'fulfilled' && uRes.value) {
+                    refUsers = uRes.value.data || [];
+                    populateAgentFilter();
+                }
+                if (cRes.status === 'fulfilled' && cRes.value) {
+                    refCustomers = cRes.value.data || [];
+                }
+                if (ptRes.status === 'fulfilled' && ptRes.value) {
+                    cachedPropertyTypes = ptRes.value.data || [];
+                }
+                if (lRes.status === 'fulfilled' && lRes.value) {
+                    refLeads = lRes.value.data || [];
+                }
             } catch (e) {
-                console.warn("Could not load users or customers:", e);
+                console.warn("Could not load users, customers or leads:", e);
             }
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 4500);
+        }
+
+        let hasScrolledToTargetOpp = false;
+        function checkAndHighlightTargetOpportunity() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLeadId = urlParams.get('lead_id');
+            const targetOppId = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+
+            if (!targetLeadId && !targetOppId) return;
+
+            setTimeout(() => {
+                const targetCard = document.querySelector('.opportunity-card.highlighted-deal') ||
+                                   (targetOppId ? document.getElementById(`opp-card-${targetOppId}`) : null) ||
+                                   (targetLeadId ? document.querySelector(`[data-lead-id="${targetLeadId}"]`) : null);
+
+                if (targetCard) {
+                    if (!targetCard.classList.contains('highlighted-deal')) {
+                        targetCard.classList.add('highlighted-deal');
+                    }
+                    if (!hasScrolledToTargetOpp) {
+                        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        hasScrolledToTargetOpp = true;
+                    }
+                    const isAr = currentLang === 'ar';
+                    showToast(isAr 
+                        ? `🎯 تم تحديد وتمييز الفرصة المرتبطة بالطلب (${targetLeadId || targetOppId}) في مسار المبيعات!` 
+                        : `🎯 Found and highlighted opportunity linked to (${targetLeadId || targetOppId})!`);
+                }
+            }, 300);
         }
 
         async function fetchOpportunities() {
@@ -839,6 +1150,20 @@
                 if (!res.ok) throw new Error('Network error');
                 const json = await res.json();
                 allOpportunities = json.data || [];
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetLeadId = urlParams.get('lead_id');
+                // If a lead was requested from leads table but not found yet in active pipeline, sync qualified leads
+                if (targetLeadId && !allOpportunities.some(o => o.lead_id === targetLeadId)) {
+                    try {
+                        await fetch(`${API_BASE}/api/v1/opportunities/sync-qualified-leads`, { method: 'POST' });
+                        const syncRes = await fetch(`${API_BASE}/api/v1/opportunities?page_size=100`);
+                        if (syncRes.ok) {
+                            const syncJson = await syncRes.json();
+                            allOpportunities = syncJson.data || [];
+                        }
+                    } catch (_) {}
+                }
 
                 if (counter) {
                     counter.textContent = currentLang === 'ar' 
@@ -864,21 +1189,70 @@
         }
 
         function filterOpportunities() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLeadId = urlParams.get('lead_id');
+            const targetOppId = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+
             const q = (document.getElementById('opp-search')?.value || '').toLowerCase().trim();
-            if (!q) {
-                renderPipeline(allOpportunities);
-                return;
+            const agSelect = document.getElementById('opp-agent-filter');
+            const agId = agSelect?.value || '';
+            let filtered = allOpportunities;
+
+            const badge = document.getElementById('opp-agent-scope-badge');
+            const badgeText = document.getElementById('opp-agent-scope-text');
+            const isAr = currentLang === 'ar';
+
+            if (agId) {
+                filtered = filtered.filter(o => 
+                    o.assigned_user_id === agId ||
+                    (targetLeadId && o.lead_id === targetLeadId) ||
+                    (targetOppId && o.opportunity_id === targetOppId)
+                );
+                if (badge && badgeText) {
+                    const selUser = refUsers.find(u => u.user_id === agId);
+                    const agName = selUser ? selUser.full_name : agId;
+                    badgeText.textContent = isAr 
+                        ? `عرض بيانات (${agName}) فقط - تم حجب باقي المستخدمين`
+                        : `Showing data for (${agName}) only - others hidden`;
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                if (badge) badge.style.display = 'none';
             }
-            const filtered = allOpportunities.filter(o => 
-                (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
-                (o.opportunity_id && o.opportunity_id.toLowerCase().includes(q)) ||
-                (o.assigned_user_name && o.assigned_user_name.toLowerCase().includes(q)) ||
-                (o.customer_mobile && o.customer_mobile.includes(q))
-            );
+
+            if (q) {
+                filtered = filtered.filter(o => 
+                    (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
+                    (o.opportunity_id && o.opportunity_id.toLowerCase().includes(q)) ||
+                    (o.assigned_user_name && o.assigned_user_name.toLowerCase().includes(q)) ||
+                    (o.customer_mobile && o.customer_mobile.includes(q)) ||
+                    (targetLeadId && o.lead_id === targetLeadId) ||
+                    (targetOppId && o.opportunity_id === targetOppId)
+                );
+            }
+
+            const counter = document.getElementById('counter-label');
+            if (counter) {
+                if (agId) {
+                    counter.innerHTML = isAr 
+                        ? `<strong>${filtered.length}</strong> فرصة معروضة خاصة بالوسيط المختار (من أصل ${allOpportunities.length})` 
+                        : `<strong>${filtered.length}</strong> opportunities shown for selected agent (of ${allOpportunities.length})`;
+                } else {
+                    counter.textContent = isAr 
+                        ? `${allOpportunities.length} فرصة بيعية نشطة بالمسار (جميع الوسطاء)` 
+                        : `${allOpportunities.length} total active opportunities in pipeline`;
+                }
+            }
+
             renderPipeline(filtered);
+            checkAndHighlightTargetOpportunity();
         }
 
         function renderPipeline(opps) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLeadId = urlParams.get('lead_id');
+            const targetOppId = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+
             const groups = {
                 'QUALIFIED': [],
                 'VIEWING': [],
@@ -916,6 +1290,15 @@
                 }
 
                 container.innerHTML = list.map(o => {
+                    const isTarget = (targetLeadId && o.lead_id === targetLeadId) || (targetOppId && o.opportunity_id === targetOppId);
+                    const highlightCls = isTarget ? ' highlighted-deal' : '';
+                    const highlightBadge = isTarget ? `
+                        <div class="deal-highlight-badge">
+                            <span>🎯 ${currentLang === 'ar' ? 'الفرصة المحددة من الطلب' : 'Linked Opportunity from Lead'}</span>
+                            <span style="font-family: monospace; font-size: 0.9em; background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 3px;">${o.lead_id || o.opportunity_id}</span>
+                        </div>
+                    ` : '';
+
                     const val = (o.expected_value != null && !isNaN(o.expected_value)) ? `${Number(o.expected_value).toLocaleString()} SAR` : (currentLang === 'ar' ? 'القيمة غير محددة' : 'Valuation Pending');
                     const closeDate = o.expected_close_date || (currentLang === 'ar' ? 'تاريخ مفتوح' : 'Open target date');
                     const reqTag = (o.preferred_property_type_name || o.bedrooms_min != null || o.inquiry_type) ? `
@@ -927,7 +1310,8 @@
                         </div>
                     ` : '';
                     return `
-                        <div class="opportunity-card" onclick="openOpportunityDetailModal('${o.opportunity_id}')">
+                        <div class="opportunity-card${highlightCls}" id="opp-card-${o.opportunity_id}" data-opp-id="${o.opportunity_id}" data-lead-id="${o.lead_id || ''}" onclick="openOpportunityDetailModal('${o.opportunity_id}')">
+                            ${highlightBadge}
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                                 <div class="opp-title">${o.customer_name || 'Direct Inquirer'}</div>
                                 <span class="badge badge-primary" style="font-size: 0.7em;">${o.stage}</span>
@@ -940,7 +1324,10 @@
                                 <span>📅 ${closeDate}</span>
                             </div>
                             <div style="display: flex; gap: 4px; margin-top: 8px; justify-content: space-between; align-items: center;" onclick="event.stopPropagation()">
-                                <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')" title="View or assign units to this deal">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')" title="View or assign units to this deal">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;" onclick="openDealActivityModal('${o.opportunity_id}')" title="Log viewing, call or meeting for this deal">📝 ${currentLang === 'ar' ? 'نشاط' : 'Activity'}</button>
+                                </div>
                                 <div style="display: flex; gap: 4px;">
                                     ${getStageMoveButtons(o)}
                                 </div>
@@ -954,10 +1341,14 @@
         function getStageMoveButtons(o) {
             const st = (o.stage || '').toUpperCase();
             if (st === 'QUALIFIED') {
-                return `<button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Move to Viewing">👁️ ${currentLang === 'ar' ? 'معاينة ➔' : 'Viewing ➔'}</button>`;
+                return `
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #0284c7; color: #fff; border-color: #0284c7; font-weight: 600;" onclick="openDealActivityModal('${o.opportunity_id}', 'VIEWING', 'PLANNED')" title="Schedule or record property viewing for this deal">👁️ ${currentLang === 'ar' ? '+ معاينة' : '+ Viewing'}</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Move directly to Viewing stage">➔</button>
+                `;
             } else if (st === 'VIEWING') {
                 return `
                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Back to Qualified">◀</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #0284c7; color: #fff; border-color: #0284c7;" onclick="openDealActivityModal('${o.opportunity_id}', 'VIEWING', 'COMPLETED')" title="Log completed viewing notes">👁️ ${currentLang === 'ar' ? 'توثيق' : 'Log'}</button>
                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'NEGOTIATION')" title="Move to Offer/Negotiation">📑 ${currentLang === 'ar' ? 'تفاوض ➔' : 'Offer ➔'}</button>
                 `;
             } else if (st === 'OFFER' || st === 'NEGOTIATION') {
@@ -1023,6 +1414,182 @@
             viewOpportunityUnits(oppId, custName);
         }
 
+        function logActivityFromOppDetail() {
+            const oppId = document.getElementById('opp-detail-id').value;
+            closeOppDetailModal();
+            openDealActivityModal(oppId);
+        }
+
+        function logViewingFromOppDetail() {
+            const oppId = document.getElementById('opp-detail-id').value;
+            closeOppDetailModal();
+            openDealActivityModal(oppId, 'VIEWING', 'PLANNED');
+        }
+
+        function onDealActTypeChange() {
+            const actType = document.getElementById('deal-act-type').value;
+            const subjInput = document.getElementById('deal-act-subject');
+            const custName = document.getElementById('deal-act-cust-name').textContent || '';
+            if (actType === 'VIEWING') {
+                subjInput.value = currentLang === 'ar' ? `معاينة عقار مع العميل (${custName})` : `Property viewing with ${custName}`;
+            } else if (actType === 'MEETING') {
+                subjInput.value = currentLang === 'ar' ? `اجتماع مع العميل (${custName})` : `Client meeting with ${custName}`;
+            } else if (actType === 'CALL') {
+                subjInput.value = currentLang === 'ar' ? `مكالمة هاتفية مع (${custName})` : `Phone call with ${custName}`;
+            } else if (actType === 'WHATSAPP') {
+                subjInput.value = currentLang === 'ar' ? `مراسلة واتساب مع (${custName})` : `WhatsApp follow-up with ${custName}`;
+            }
+        }
+
+        function openDealActivityModal(oppId, initialType = null, initialStatus = null) {
+            const opp = allOpportunities.find(o => o.opportunity_id === oppId);
+            if (!opp) {
+                alert('Deal details not found');
+                return;
+            }
+
+            document.getElementById('deal-act-opp-id').value = opp.opportunity_id;
+            document.getElementById('deal-act-opp-display').textContent = opp.opportunity_id;
+            document.getElementById('deal-act-cust-id').value = opp.customer_id || '';
+            document.getElementById('deal-act-lead-id').value = opp.lead_id || '';
+            document.getElementById('deal-act-cust-name').textContent = opp.customer_name || 'Client';
+            document.getElementById('deal-act-cust-mobile').textContent = opp.customer_mobile || '--';
+            document.getElementById('deal-act-stage-badge').textContent = opp.stage;
+
+            // Pre-select agent
+            const agentSel = document.getElementById('deal-act-agent');
+            if (agentSel) {
+                agentSel.innerHTML = '<option value="">-- Unassigned --</option>' +
+                    refUsers.map(u => `<option value="${u.user_id}" ${u.user_id === opp.assigned_user_id ? 'selected' : ''}>${u.full_name}</option>`).join('');
+            }
+
+            const typeSel = document.getElementById('deal-act-type');
+            const statusSel = document.getElementById('deal-act-status');
+            const subjInput = document.getElementById('deal-act-subject');
+            const advanceBox = document.getElementById('deal-act-advance-box');
+            const advanceCheck = document.getElementById('deal-act-advance-stage');
+
+            // Show advance checkbox if deal is in QUALIFIED
+            const isQualified = (opp.stage || '').toUpperCase() === 'QUALIFIED';
+            if (advanceBox) {
+                advanceBox.style.display = isQualified ? 'block' : 'none';
+                if (advanceCheck) advanceCheck.checked = isQualified;
+            }
+
+            const actType = initialType || (opp.stage === 'VIEWING' ? 'VIEWING' : (opp.stage === 'NEGOTIATION' || opp.stage === 'OFFER' ? 'MEETING' : (isQualified ? 'VIEWING' : 'CALL')));
+            typeSel.value = actType;
+
+            const actStatus = initialStatus || (actType === 'VIEWING' && isQualified ? 'PLANNED' : 'COMPLETED');
+            statusSel.value = actStatus;
+
+            if (actType === 'VIEWING') {
+                subjInput.value = currentLang === 'ar' 
+                    ? `معاينة عقار مع العميل (${opp.customer_name || 'العميل'})`
+                    : `Property viewing with ${opp.customer_name || 'client'}`;
+            } else if (actType === 'MEETING') {
+                subjInput.value = currentLang === 'ar' 
+                    ? `اجتماع ومناقشة تفاصيل العرض مع (${opp.customer_name || 'العميل'})`
+                    : `Meeting & offer discussion with ${opp.customer_name || 'client'}`;
+            } else {
+                subjInput.value = currentLang === 'ar' 
+                    ? `متابعة مجريات الصفقة مع (${opp.customer_name || 'العميل'})`
+                    : `Follow-up on deal progress with ${opp.customer_name || 'client'}`;
+            }
+
+            // Set default date & time to current local time
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const localIso = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const dtInput = document.getElementById('deal-act-datetime');
+            if (dtInput) dtInput.value = localIso;
+
+            document.getElementById('deal-act-desc').value = '';
+
+            const tasksLink = document.getElementById('deal-act-open-tasks-link');
+            if (tasksLink) {
+                tasksLink.href = `tasks.html?opportunity_id=${encodeURIComponent(opp.opportunity_id)}&customer_id=${encodeURIComponent(opp.customer_id || '')}&assigned_user_id=${encodeURIComponent(opp.assigned_user_id || '')}&action=new_activity&type=${encodeURIComponent(actType)}`;
+            }
+
+            document.getElementById('deal-activity-modal').classList.add('show');
+        }
+
+        function closeDealActivityModal() {
+            document.getElementById('deal-activity-modal').classList.remove('show');
+            document.getElementById('deal-activity-form').reset();
+        }
+
+        async function submitDealActivity(e) {
+            e.preventDefault();
+            const oppId = document.getElementById('deal-act-opp-id').value;
+            const custId = document.getElementById('deal-act-cust-id').value || null;
+            const leadId = document.getElementById('deal-act-lead-id').value || null;
+            const agentId = document.getElementById('deal-act-agent').value || null;
+            const actType = document.getElementById('deal-act-type').value;
+            const statusVal = document.getElementById('deal-act-status').value;
+            const dtVal = document.getElementById('deal-act-datetime').value;
+
+            let scheduledAt = null;
+            let completedAt = null;
+            if (dtVal) {
+                const iso = new Date(dtVal).toISOString();
+                if (statusVal === 'PLANNED') {
+                    scheduledAt = iso;
+                } else {
+                    completedAt = iso;
+                    scheduledAt = iso;
+                }
+            } else if (statusVal === 'COMPLETED') {
+                completedAt = new Date().toISOString();
+            }
+
+            const payload = {
+                activity_type_code: actType,
+                subject: document.getElementById('deal-act-subject').value.trim(),
+                description: document.getElementById('deal-act-desc').value.trim() || null,
+                user_id: agentId,
+                customer_id: custId,
+                lead_id: leadId,
+                opportunity_id: oppId,
+                status: statusVal,
+                scheduled_at: scheduledAt,
+                completed_at: completedAt
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/activities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    // Check if auto-advance to VIEWING stage is requested
+                    const advanceCheck = document.getElementById('deal-act-advance-stage');
+                    const advanceBox = document.getElementById('deal-act-advance-box');
+                    if (advanceBox && advanceBox.style.display !== 'none' && advanceCheck && advanceCheck.checked) {
+                        try {
+                            await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ stage: 'VIEWING' })
+                            });
+                        } catch (stageErr) {
+                            console.error('Stage advance error:', stageErr);
+                        }
+                    }
+
+                    alert(currentLang === 'ar' ? 'تم تسجيل وتوثيق النشاط بنجاح!' : 'Deal activity logged successfully!');
+                    closeDealActivityModal();
+                    fetchOpportunities();
+                } else {
+                    const err = await res.json();
+                    alert((err.detail || 'Failed to log activity') + ` (${res.status})`);
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
         async function submitUpdateOpportunity(e) {
             e.preventDefault();
             const oppId = document.getElementById('opp-detail-id').value;
@@ -1048,19 +1615,149 @@
             }
         }
 
-        async function openNewOppModal() {
-            if (refCustomers.length === 0 || refUsers.length === 0) await initSalesData();
+        function syncNewOppDropdowns(trigger) {
+            const agEl = document.getElementById('new-opp-agent');
+            const custEl = document.getElementById('new-opp-customer');
+            const leadEl = document.getElementById('new-opp-lead');
+            const valEl = document.getElementById('new-opp-val');
 
-            const custSelect = document.getElementById('new-opp-customer');
-            custSelect.innerHTML = '<option value="">Select Customer *</option>' +
-                refCustomers.map(c => {
-                    const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.company_name || c.customer_id;
-                    return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
-                }).join('');
+            const isAr = currentLang === 'ar';
+            let curAg = agEl ? agEl.value : '';
+            let curCust = custEl ? custEl.value : '';
+            let curLead = leadEl ? leadEl.value : '';
 
-            const agentSelect = document.getElementById('new-opp-agent');
-            agentSelect.innerHTML = '<option value="">-- Unassigned --</option>' +
-                refUsers.map(u => `<option value="${u.user_id}">${u.full_name}</option>`).join('');
+            // Handle Lead selection
+            if (trigger === 'lead' && curLead) {
+                const leadObj = refLeads.find(l => l.lead_id === curLead);
+                if (leadObj) {
+                    if (leadObj.customer_id) curCust = leadObj.customer_id;
+                    if (leadObj.assigned_user_id) curAg = leadObj.assigned_user_id;
+                    if (valEl && (!valEl.value || valEl.dataset.autofilled === 'true')) {
+                        const bVal = leadObj.budget_max || leadObj.budget_min || '';
+                        if (bVal) {
+                            valEl.value = bVal;
+                            valEl.dataset.autofilled = 'true';
+                        }
+                    }
+                }
+            }
+
+            // Handle Customer selection
+            if (trigger === 'customer' && curCust) {
+                const custLeads = refLeads.filter(l => l.customer_id === curCust);
+                const custOpps = allOpportunities.filter(o => o.customer_id === curCust);
+                const custAgents = new Set([
+                    ...custLeads.map(l => l.assigned_user_id).filter(Boolean),
+                    ...custOpps.map(o => o.assigned_user_id).filter(Boolean)
+                ]);
+                if (custAgents.size > 0 && (!curAg || !custAgents.has(curAg))) {
+                    curAg = Array.from(custAgents)[0];
+                }
+            }
+
+            // Filter lists based on selections
+            let validAgents = refUsers;
+            if (curCust) {
+                const custLeads = refLeads.filter(l => l.customer_id === curCust);
+                const custOpps = allOpportunities.filter(o => o.customer_id === curCust);
+                const custAgentIds = new Set([
+                    ...custLeads.map(l => l.assigned_user_id).filter(Boolean),
+                    ...custOpps.map(o => o.assigned_user_id).filter(Boolean)
+                ]);
+                if (custAgentIds.size > 0) {
+                    validAgents = refUsers.filter(u => custAgentIds.has(u.user_id));
+                }
+            }
+
+            let validCustomers = refCustomers;
+            if (curAg) {
+                const agLeads = refLeads.filter(l => l.assigned_user_id === curAg);
+                const agOpps = allOpportunities.filter(o => o.assigned_user_id === curAg);
+                const agCustIds = new Set([
+                    ...agLeads.map(l => l.customer_id).filter(Boolean),
+                    ...agOpps.map(o => o.customer_id).filter(Boolean)
+                ]);
+                validCustomers = refCustomers.filter(c => agCustIds.has(c.customer_id));
+            }
+
+            let validLeads = refLeads;
+            if (curCust) validLeads = validLeads.filter(l => l.customer_id === curCust);
+            if (curAg) validLeads = validLeads.filter(l => l.assigned_user_id === curAg);
+
+            // Populate Agent dropdown
+            if (agEl) {
+                const prev = curAg;
+                agEl.innerHTML = `<option value="">${isAr ? '-- غير محدد / اختر الوكيل --' : '-- Unassigned / Select Agent --'}</option>` +
+                    validAgents.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                if (validAgents.some(u => u.user_id === prev)) {
+                    agEl.value = prev;
+                } else if (validAgents.length === 1 && (curCust || curLead)) {
+                    agEl.value = validAgents[0].user_id;
+                } else {
+                    agEl.value = '';
+                }
+            }
+
+            // Populate Customer dropdown
+            if (custEl) {
+                const prev = curCust;
+                custEl.innerHTML = `<option value="">${isAr ? '-- اختر العميل * --' : '-- Select Customer * --'}</option>` +
+                    validCustomers.map(c => {
+                        const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.company_name || c.customer_id;
+                        return `<option value="${c.customer_id}">👥 ${name} (${c.mobile || 'No phone'})</option>`;
+                    }).join('');
+                if (validCustomers.some(c => c.customer_id === prev)) {
+                    custEl.value = prev;
+                } else if (validCustomers.length === 1 && curLead) {
+                    custEl.value = validCustomers[0].customer_id;
+                } else {
+                    custEl.value = '';
+                }
+            }
+
+            // Populate Lead dropdown
+            if (leadEl) {
+                const prev = curLead;
+                leadEl.innerHTML = `<option value="">${isAr ? '-- اختر الطلب المرتبط (اختياري) --' : '-- Select Related Lead (Optional) --'}</option>` +
+                    validLeads.map(l => {
+                        const desc = `${l.lead_id} • ${l.customer_name || 'Client'} [${l.inquiry_type || ''} - ${l.status || ''}]`;
+                        return `<option value="${l.lead_id}">🎯 ${desc}</option>`;
+                    }).join('');
+                if (validLeads.some(l => l.lead_id === prev)) {
+                    leadEl.value = prev;
+                } else {
+                    leadEl.value = '';
+                }
+            }
+        }
+
+        function onNewOppAgentChange() {
+            syncNewOppDropdowns('agent');
+        }
+        function onNewOppCustomerChange() {
+            syncNewOppDropdowns('customer');
+        }
+        function onNewOppLeadChange() {
+            syncNewOppDropdowns('lead');
+        }
+
+        async function openNewOppModal(prefill = {}) {
+            if (refCustomers.length === 0 || refUsers.length === 0 || refLeads.length === 0) {
+                await initSalesData();
+            }
+
+            syncNewOppDropdowns(null);
+
+            if (prefill.leadId) {
+                const el = document.getElementById('new-opp-lead');
+                if (el) { el.value = prefill.leadId; onNewOppLeadChange(); }
+            } else if (prefill.customerId) {
+                const el = document.getElementById('new-opp-customer');
+                if (el) { el.value = prefill.customerId; onNewOppCustomerChange(); }
+            } else if (prefill.agentId) {
+                const el = document.getElementById('new-opp-agent');
+                if (el) { el.value = prefill.agentId; onNewOppAgentChange(); }
+            }
 
             document.getElementById('new-opp-modal').classList.add('show');
         }
@@ -1073,12 +1770,13 @@
             e.preventDefault();
             const custId = document.getElementById('new-opp-customer').value;
             if (!custId) {
-                alert('Please select a customer');
+                alert(currentLang === 'ar' ? 'يرجى اختيار العميل أولاً' : 'Please select a customer');
                 return;
             }
 
             const payload = {
                 customer_id: custId,
+                lead_id: document.getElementById('new-opp-lead').value || null,
                 stage: document.getElementById('new-opp-stage').value || 'QUALIFIED',
                 assigned_user_id: document.getElementById('new-opp-agent').value || null,
                 expected_value: parseFloat(document.getElementById('new-opp-val').value) || 0.0,
@@ -1094,9 +1792,9 @@
                 if (!res.ok) throw new Error('Creation failed');
                 closeNewOppModal();
                 fetchOpportunities();
-                alert(currentLang === 'ar' ? 'تم إنشاء الفرصة البيعية بنجاح!' : 'Opportunity created successfully!');
+                alert(currentLang === 'ar' ? 'تم إنشاء وحفظ الفرصة البيعية بنجاح!' : 'Opportunity created successfully!');
             } catch (err) {
-                alert('Error creating opportunity: ' + err.message);
+                alert((currentLang === 'ar' ? 'خطأ في إنشاء الفرصة: ' : 'Error creating opportunity: ') + err.message);
             }
         }
 
@@ -1124,9 +1822,223 @@
             }
         }
 
+        let activeOfferOppUnits = [];
+
+        async function openNewOfferModal(preOppId = null, preUnitId = null, prePrice = null) {
+            const modal = document.getElementById('new-offer-modal');
+            if (!modal) return;
+            const oppSelect = document.getElementById('offer-opp-select');
+            const unitSelect = document.getElementById('offer-unit-select');
+            const amountInput = document.getElementById('offer-amount-input');
+            const validUntilInput = document.getElementById('offer-valid-input');
+
+            // Default valid until: +14 days from today
+            const in14Days = new Date();
+            in14Days.setDate(in14Days.getDate() + 14);
+            validUntilInput.value = in14Days.toISOString().split('T')[0];
+
+            // Populate opportunities
+            oppSelect.innerHTML = `<option value="">-- ${currentLang === 'ar' ? 'اختر الصفقة' : 'Select Opportunity'} --</option>` +
+                allOpportunities.map(o => `<option value="${o.opportunity_id}">🎯 ${o.opportunity_id} - ${o.customer_name || 'Prospect'} (${Number(o.expected_value || 0).toLocaleString()} SAR)</option>`).join('');
+
+            if (preOppId) {
+                oppSelect.value = preOppId;
+                await onOfferOppChange(preUnitId);
+            } else if (allOpportunities.length > 0) {
+                oppSelect.selectedIndex = 1;
+                await onOfferOppChange();
+            }
+
+            if (prePrice && prePrice > 0) {
+                amountInput.value = prePrice;
+                calculateOfferSpread();
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeNewOfferModal() {
+            const modal = document.getElementById('new-offer-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function onOfferOppChange(selectUnitId = null) {
+            const oppId = document.getElementById('offer-opp-select').value;
+            const unitSelect = document.getElementById('offer-unit-select');
+            const budgetEl = document.getElementById('offer-customer-budget');
+
+            const opp = allOpportunities.find(o => o.opportunity_id === oppId);
+            if (opp && budgetEl) {
+                budgetEl.textContent = `${Number(opp.budget_max || opp.expected_value || 0).toLocaleString()} SAR`;
+            }
+
+            unitSelect.innerHTML = `<option value="">${currentLang === 'ar' ? 'جاري جلب الوحدات...' : 'Loading units...'}</option>`;
+
+            try {
+                // Fetch linked units first
+                const [lRes, invUnits] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`),
+                    getInventoryUnits()
+                ]);
+                let linkedUnits = [];
+                if (lRes.ok) {
+                    const lJson = await lRes.json();
+                    linkedUnits = lJson.data || [];
+                }
+
+                activeOfferOppUnits = invUnits;
+                let opts = '';
+                if (linkedUnits.length > 0) {
+                    opts += `<optgroup label="${currentLang === 'ar' ? 'الوحدات المرتبطة بالصفقة' : 'Linked Opportunity Units'}">` +
+                        linkedUnits.map(lu => {
+                            const inv = invUnits.find(u => u.unit_id === lu.unit_id);
+                            const price = lu.offered_price || inv?.asking_price || inv?.rent_price || 0;
+                            return `<option value="${lu.unit_id}" data-price="${price}">★ Unit #${lu.unit_number || lu.unit_id} (${Number(price).toLocaleString()} SAR)</option>`;
+                        }).join('') + `</optgroup>`;
+                }
+
+                // Other inventory units
+                opts += `<optgroup label="${currentLang === 'ar' ? 'باقي وحدات المخزون' : 'Other Inventory Units'}">` +
+                    invUnits.filter(u => !linkedUnits.some(lu => lu.unit_id === u.unit_id)).slice(0, 30).map(u => {
+                        const price = u.asking_price || u.rent_price || 0;
+                        return `<option value="${u.unit_id}" data-price="${price}">Unit #${u.unit_number} - ${u.project_name_en || u.project_name_ar || ''} (${Number(price).toLocaleString()} SAR)</option>`;
+                    }).join('') + `</optgroup>`;
+
+                unitSelect.innerHTML = opts;
+                if (selectUnitId) {
+                    unitSelect.value = selectUnitId;
+                }
+                onOfferUnitChange();
+            } catch (err) {
+                console.warn('Failed to load units for offer:', err);
+                unitSelect.innerHTML = `<option value="">Error loading units</option>`;
+            }
+        }
+
+        function onOfferUnitChange() {
+            const uSelect = document.getElementById('offer-unit-select');
+            const askingEl = document.getElementById('offer-unit-asking-price');
+            const amountInput = document.getElementById('offer-amount-input');
+            const selOpt = uSelect.selectedOptions[0];
+            const price = selOpt ? parseFloat(selOpt.getAttribute('data-price') || 0) : 0;
+
+            if (askingEl) askingEl.textContent = `${Number(price).toLocaleString()} SAR`;
+            if (!amountInput.value || parseFloat(amountInput.value) === 0) {
+                amountInput.value = price > 0 ? price : '';
+            }
+            calculateOfferSpread();
+        }
+
+        function calculateOfferSpread() {
+            const uSelect = document.getElementById('offer-unit-select');
+            const selOpt = uSelect.selectedOptions[0];
+            const askingPrice = selOpt ? parseFloat(selOpt.getAttribute('data-price') || 0) : 0;
+            const offerAmount = parseFloat(document.getElementById('offer-amount-input').value || 0);
+            const spreadEl = document.getElementById('offer-spread-display');
+            if (!spreadEl) return;
+
+            if (askingPrice > 0 && offerAmount > 0) {
+                const diff = offerAmount - askingPrice;
+                const pct = ((diff / askingPrice) * 100).toFixed(1);
+                if (diff === 0) {
+                    spreadEl.style.color = '#15803d';
+                    spreadEl.textContent = currentLang === 'ar' ? 'العرض مطابق تماماً للسعر المطلوب (100% Full Asking Price)' : '100% Full Asking Price';
+                } else if (diff < 0) {
+                    spreadEl.style.color = '#b45309';
+                    spreadEl.textContent = currentLang === 'ar' 
+                        ? `خصم تفاوضي: ${Math.abs(diff).toLocaleString()} ر.س (${pct}%) من السعر المطلوب`
+                        : `Discount: ${Math.abs(diff).toLocaleString()} SAR (${pct}%) below asking price`;
+                } else {
+                    spreadEl.style.color = '#0284c7';
+                    spreadEl.textContent = currentLang === 'ar'
+                        ? `عرض أعلى من السعر المطلوب: +${diff.toLocaleString()} ر.س (+${pct}%)`
+                        : `Premium: +${diff.toLocaleString()} SAR (+${pct}%) above asking price`;
+                }
+            } else {
+                spreadEl.textContent = '';
+            }
+        }
+
+        async function submitNewOffer(e) {
+            e.preventDefault();
+            const oppId = document.getElementById('offer-opp-select').value;
+            const unitId = document.getElementById('offer-unit-select').value;
+            const amount = parseFloat(document.getElementById('offer-amount-input').value);
+            const validUntil = document.getElementById('offer-valid-input').value;
+
+            if (!oppId || !unitId || !amount) {
+                alert(currentLang === 'ar' ? 'يرجى استكمال جميع الحقول المطلوبة' : 'Please fill all required fields');
+                return;
+            }
+
+            const payload = {
+                opportunity_id: oppId,
+                unit_id: unitId,
+                offer_amount: amount,
+                valid_until: validUntil ? `${validUntil}T23:59:59` : null,
+                status: 'SUBMITTED'
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/offers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || (err.error && err.error.message) || 'Offer submission failed');
+                }
+                closeNewOfferModal();
+                showToast(currentLang === 'ar' ? 'تم تقديم العرض الرسمي بنجاح!' : 'Formal offer submitted successfully!');
+                fetchOffers();
+            } catch (err) {
+                alert((currentLang === 'ar' ? 'خطأ في تقديم العرض: ' : 'Error: ') + err.message);
+            }
+        }
+
+        async function quickUpdateOfferStatus(offerId, newStatus, counterAmount = null) {
+            const isAr = currentLang === 'ar';
+            const confirmMsg = newStatus === 'ACCEPTED' 
+                ? (isAr ? 'هل أنت متأكد من قبول هذا العرض؟ سيتم نقل الصفقة للمرحلة التالية.' : 'Accept this offer and progress deal to reservation/contract?')
+                : (newStatus === 'REJECTED' 
+                    ? (isAr ? 'هل أنت متأكد من رفض هذا العرض؟' : 'Reject this offer?') 
+                    : (isAr ? 'تأكيد إرسال العرض المضاد؟' : 'Confirm counter offer?'));
+
+            if (!confirm(confirmMsg)) return;
+
+            const payload = { status: newStatus };
+            if (counterAmount) payload.offer_amount = counterAmount;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/offers/${offerId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Failed to update offer');
+                showToast(isAr ? `تم تحديث حالة العرض إلى ${newStatus}` : `Offer status updated to ${newStatus}`);
+                fetchOffers();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function promptCounterOffer(offerId, currentAmount) {
+            const isAr = currentLang === 'ar';
+            const val = prompt(isAr ? `أدخل قيمة العرض المضاد المقترح من المالك (السعر الحالي: ${Number(currentAmount).toLocaleString()} ر.س):` : `Enter counter offer amount (Current: ${Number(currentAmount).toLocaleString()} SAR):`, currentAmount);
+            if (!val) return;
+            const num = parseFloat(val);
+            if (isNaN(num) || num <= 0) {
+                alert(isAr ? 'قيمة غير صالحة' : 'Invalid amount');
+                return;
+            }
+            quickUpdateOfferStatus(offerId, 'COUNTER', num);
+        }
+
         async function fetchOffers() {
             const statusFilter = document.getElementById('offer-status-filter')?.value || '';
-            let url = `${API_BASE}/api/v1/sales/offers?page_size=100`;
+            let url = `${API_BASE}/api/v1/offers?page_size=100`;
             if (statusFilter) url += `&status=${encodeURIComponent(statusFilter)}`;
 
             try {
@@ -1170,9 +2082,37 @@
                 else if (o.status === 'COUNTER') badgeClass = 'badge-warning';
                 else if (o.status === 'SUBMITTED') badgeClass = 'badge-primary';
 
+                let actionBtns = '';
+                if (o.status === 'SUBMITTED') {
+                    actionBtns = `
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <button class="btn-sm" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'ACCEPTED')">✓ ${currentLang === 'ar' ? 'قبول' : 'Accept'}</button>
+                            <button class="btn-sm" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="promptCounterOffer('${o.offer_id}', ${o.offer_amount})">💬 ${currentLang === 'ar' ? 'مضاد' : 'Counter'}</button>
+                            <button class="btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'REJECTED')">✕ ${currentLang === 'ar' ? 'رفض' : 'Reject'}</button>
+                        </div>
+                    `;
+                } else if (o.status === 'ACCEPTED') {
+                    actionBtns = `
+                        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                            <span style="font-size: 0.8em; color: #16a34a; font-weight: 700;">✓ ${currentLang === 'ar' ? 'عرض مقبول' : 'Accepted'}</span>
+                            <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'الحجز والعقد ➔' : 'Reservation ➔'}</a>
+                            <button class="btn-sm" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 7px; font-size: 0.78em; font-weight: 700;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                        </div>
+                    `;
+                } else if (o.status === 'COUNTER') {
+                    actionBtns = `
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <span style="font-size: 0.8em; color: #d97706; font-weight: 700;">⏳ ${currentLang === 'ar' ? 'بانتظار الرد' : 'Countered'}</span>
+                            <button class="btn-sm" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'ACCEPTED')">✓ ${currentLang === 'ar' ? 'قبول' : 'Accept'}</button>
+                        </div>
+                    `;
+                } else {
+                    actionBtns = `<span style="font-size: 0.8em; color: var(--text-muted);">${o.status}</span>`;
+                }
+
                 return `
                     <tr>
-                        <td style="font-family: monospace; font-weight: 600;">${o.offer_id}</td>
+                        <td style="font-family: monospace; font-weight: 600;"><span class="id-badge">${o.offer_id}</span></td>
                         <td>
                             <div style="font-weight: 600;">${o.customer_name || 'Prospect'}</div>
                             <div style="font-size: 0.8em; color: var(--text-muted); font-family: monospace;">${o.opportunity_id}</div>
@@ -1182,9 +2122,7 @@
                         <td><span class="badge ${badgeClass}">${o.status}</span></td>
                         <td style="font-size: 0.85em; color: var(--text-muted);">${new Date(o.submitted_at).toLocaleDateString()}</td>
                         <td style="font-size: 0.85em; color: var(--text-muted);">${o.valid_until ? new Date(o.valid_until).toLocaleDateString() : '--'}</td>
-                        <td>
-                            <button class="btn-sm" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
-                        </td>
+                        <td>${actionBtns}</td>
                     </tr>
                 `;
             }).join('');
@@ -1328,8 +2266,13 @@
                 `;
 
                 // 2. Property Type options for search filter
+                const savedKw = savedUnitSearchFilters.keyword || '';
+                const savedTypeId = savedUnitSearchFilters.typeId || '';
+                const savedBeds = savedUnitSearchFilters.minBeds || '';
+                const savedMaxPrice = savedUnitSearchFilters.maxPrice || '';
+
                 const typeOptions = pTypes.map(pt => 
-                    `<option value="${pt.property_type_id}">${isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar)}</option>`
+                    `<option value="${pt.property_type_id}" ${pt.property_type_id === savedTypeId ? 'selected' : ''}>${isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar)}</option>`
                 ).join('');
 
                 // 3. Smart Search & Assign Card
@@ -1350,11 +2293,14 @@
                             </div>
                         </div>
 
+                        <!-- In-modal notification banner -->
+                        <div id="opp-unit-notice" style="display: none; margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.88em; font-weight: 600;"></div>
+
                         <!-- Filter inputs grid -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'بحث بالاسم / الرقم / المشروع' : 'Keyword / Unit # / Project'}</label>
-                                <input type="text" id="unit-filter-keyword" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                <input type="text" id="unit-filter-keyword" value="${savedKw}" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
                             </div>
 
                             <div>
@@ -1368,19 +2314,19 @@
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'عدد الغرف الأدنى' : 'Bedrooms (Min)'}</label>
                                 <select id="unit-filter-beds" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
-                                    <option value="">-- ${isAr ? 'الكل' : 'Any Bedrooms'} --</option>
-                                    <option value="0">Studio (0)</option>
-                                    <option value="1">1+ ${isAr ? 'غرفة' : 'Bed'}</option>
-                                    <option value="2">2+ ${isAr ? 'غرف' : 'Beds'}</option>
-                                    <option value="3">3+ ${isAr ? 'غرف' : 'Beds'}</option>
-                                    <option value="4">4+ ${isAr ? 'غرف' : 'Beds'}</option>
-                                    <option value="5">5+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="" ${savedBeds === '' ? 'selected' : ''}>-- ${isAr ? 'الكل' : 'Any Bedrooms'} --</option>
+                                    <option value="0" ${savedBeds === '0' ? 'selected' : ''}>Studio (0)</option>
+                                    <option value="1" ${savedBeds === '1' ? 'selected' : ''}>1+ ${isAr ? 'غرفة' : 'Bed'}</option>
+                                    <option value="2" ${savedBeds === '2' ? 'selected' : ''}>2+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="3" ${savedBeds === '3' ? 'selected' : ''}>3+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="4" ${savedBeds === '4' ? 'selected' : ''}>4+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="5" ${savedBeds === '5' ? 'selected' : ''}>5+ ${isAr ? 'غرف' : 'Beds'}</option>
                                 </select>
                             </div>
 
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'أقصى ميزانية / سعر (ريال)' : 'Max Budget / Price (SAR)'}</label>
-                                <input type="number" id="unit-filter-maxprice" placeholder="${isAr ? 'مثال: 750000' : 'e.g. 750000'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                <input type="number" id="unit-filter-maxprice" value="${savedMaxPrice}" placeholder="${isAr ? 'مثال: 750000' : 'e.g. 750000'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
                             </div>
                         </div>
 
@@ -1426,48 +2372,20 @@
                     </div>
                 `;
 
-                // 4. Currently Assigned Units Table
-                let tableHtml = '';
-                if (currentModalOppUnits.length === 0) {
-                    tableHtml = `<div style="text-align: center; padding: 22px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم نموذج البحث أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the search form above to assign a unit.'}</div>`;
-                } else {
-                    tableHtml = `
-                        <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy); display: flex; align-items: center; gap: 6px;">
-                            <span>🏢</span>
-                            <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
-                        </div>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
-                            <thead>
-                                <tr style="background: #f1f5f9;">
-                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'معرف الوحدة' : 'Unit ID'}</th>
-                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'رقم الوحدة' : 'Unit Number'}</th>
-                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'الوحدة الرئيسية' : 'Primary Unit'}</th>
-                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'السعر المقترح' : 'Offered Price'}</th>
-                                    <th style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${currentModalOppUnits.map(u => `
-                                    <tr>
-                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);"><span class="id-badge">${u.unit_id}</span></td>
-                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600;">${u.unit_number || u.unit_id}</td>
-                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
-                                            ${u.is_primary ? '<span class="badge badge-success">★ PRIMARY</span>' : '<span class="badge badge-muted">SECONDARY</span>'}
-                                        </td>
-                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--primary);">
-                                            ${u.offered_price != null ? `${Number(u.offered_price).toLocaleString()} SAR` : '--'}
-                                        </td>
-                                        <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">
-                                            <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b; padding: 2px 8px; font-size: 0.8em;" onclick="removeOpportunityUnit('${oppId}', '${u.unit_id}', '${encodeURIComponent(oppTitle)}')" title="Remove this unit link">🗑️ ${isAr ? 'فك الارتباط' : 'Remove'}</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                }
+                // 4. Currently Assigned Units Table Container
+                const tableContainerHtml = `<div id="opp-assigned-units-container">${buildAssignedUnitsTableHtml(oppId, oppTitle, currentModalOppUnits, isAr)}</div>`;
 
-                bodyEl.innerHTML = inquiryBannerHtml + searchAndAssignHtml + tableHtml;
+                bodyEl.innerHTML = inquiryBannerHtml + searchAndAssignHtml + tableContainerHtml;
+
+                // Sync select values if needed
+                if (savedTypeId) {
+                    const tSel = document.getElementById('unit-filter-type');
+                    if (tSel) tSel.value = savedTypeId;
+                }
+                if (savedBeds !== '') {
+                    const bSel = document.getElementById('unit-filter-beds');
+                    if (bSel) bSel.value = savedBeds;
+                }
 
                 // Initialize unit filters
                 applyUnitFilters();
@@ -1476,6 +2394,77 @@
                 console.error(err);
                 bodyEl.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">Error loading opportunity units: ${err.message}</div>`;
             }
+        }
+
+        function buildAssignedUnitsTableHtml(oppId, oppTitle, units, isAr) {
+            if (!units || units.length === 0) {
+                return `<div style="text-align: center; padding: 22px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم نموذج البحث أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the search form above to assign a unit.'}</div>`;
+            }
+            return `
+                <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                    <span>🏢</span>
+                    <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'معرف الوحدة' : 'Unit ID'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'رقم الوحدة' : 'Unit Number'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'الوحدة الرئيسية' : 'Primary Unit'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'السعر المقترح' : 'Offered Price'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${units.map(u => `
+                            <tr>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);"><span class="id-badge">${u.unit_id}</span></td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600;">${u.unit_number || u.unit_id}</td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
+                                    ${u.is_primary ? '<span class="badge badge-success">★ PRIMARY</span>' : '<span class="badge badge-muted">SECONDARY</span>'}
+                                </td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--primary);">
+                                    ${u.offered_price != null ? `${Number(u.offered_price).toLocaleString()} SAR` : '--'}
+                                </td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; white-space: nowrap;">
+                                    <button type="button" class="btn-sm" style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; font-size: 0.8em; margin-inline-end: 4px; font-weight: 600;" onclick="closeOppUnitsModal(); openNewOfferModal('${oppId}', '${u.unit_id}', ${u.offered_price || 'null'});" title="Make Offer">📝 ${isAr ? 'تقديم عرض' : 'Make Offer'}</button>
+                                    <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b; padding: 3px 8px; font-size: 0.8em;" onclick="removeOpportunityUnit('${oppId}', '${u.unit_id}', '${encodeURIComponent(oppTitle)}')" title="Remove this unit link">🗑️ ${isAr ? 'فك الارتباط' : 'Remove'}</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderAssignedUnitsTable(oppId, oppTitle) {
+            const container = document.getElementById('opp-assigned-units-container');
+            if (!container) return;
+            const isAr = currentLang === 'ar';
+            container.innerHTML = buildAssignedUnitsTableHtml(oppId, oppTitle, currentModalOppUnits, isAr);
+        }
+
+        function showOppUnitNotice(message, type = 'success') {
+            const noticeEl = document.getElementById('opp-unit-notice');
+            if (!noticeEl) return;
+            noticeEl.style.display = 'block';
+            if (type === 'success') {
+                noticeEl.style.background = '#dcfce7';
+                noticeEl.style.border = '1px solid #86efac';
+                noticeEl.style.color = '#15803d';
+            } else if (type === 'error') {
+                noticeEl.style.background = '#fee2e2';
+                noticeEl.style.border = '1px solid #fca5a5';
+                noticeEl.style.color = '#991b1b';
+            } else {
+                noticeEl.style.background = '#e0f2fe';
+                noticeEl.style.border = '1px solid #93c5fd';
+                noticeEl.style.color = '#0369a1';
+            }
+            noticeEl.textContent = message;
+            setTimeout(() => {
+                if (noticeEl) noticeEl.style.display = 'none';
+            }, 4500);
         }
 
         function formatUnitOptionText(u, isAr, targetBudgetMax) {
@@ -1497,23 +2486,39 @@
         }
 
         function applyUnitFilters() {
-            const kw = (document.getElementById('unit-filter-keyword')?.value || '').trim().toLowerCase();
-            const typeId = document.getElementById('unit-filter-type')?.value || '';
-            const minBedsVal = document.getElementById('unit-filter-beds')?.value;
+            const kwInput = document.getElementById('unit-filter-keyword');
+            const typeSelect = document.getElementById('unit-filter-type');
+            const bedsSelect = document.getElementById('unit-filter-beds');
+            const priceInput = document.getElementById('unit-filter-maxprice');
+
+            const kw = (kwInput ? kwInput.value : (savedUnitSearchFilters.keyword || '')).trim();
+            const typeId = typeSelect ? typeSelect.value : (savedUnitSearchFilters.typeId || '');
+            const minBedsVal = bedsSelect ? bedsSelect.value : (savedUnitSearchFilters.minBeds || '');
+            const maxPriceVal = priceInput ? priceInput.value : (savedUnitSearchFilters.maxPrice || '');
+
+            // Persist to search state until explicit reset
+            savedUnitSearchFilters = {
+                keyword: kw,
+                typeId: typeId,
+                minBeds: minBedsVal,
+                maxPrice: maxPriceVal
+            };
+
+            const kwLower = kw.toLowerCase();
             const minBeds = minBedsVal !== '' && minBedsVal != null ? parseInt(minBedsVal, 10) : null;
-            const maxPrice = parseFloat(document.getElementById('unit-filter-maxprice')?.value) || null;
+            const maxPrice = parseFloat(maxPriceVal) || null;
 
             const isAr = currentLang === 'ar';
             const isInquiryRent = currentOppInModal?.inquiry_type === 'RENT';
 
             const filtered = cachedInventoryUnits.filter(u => {
-                if (kw) {
+                if (kwLower) {
                     const num = (u.unit_number || '').toLowerCase();
                     const uid = (u.unit_id || '').toLowerCase();
                     const projEn = (u.project_name_en || '').toLowerCase();
                     const projAr = (u.project_name_ar || '').toLowerCase();
                     const typeName = (u.property_type_name || '').toLowerCase();
-                    if (!num.includes(kw) && !uid.includes(kw) && !projEn.includes(kw) && !projAr.includes(kw) && !typeName.includes(kw)) {
+                    if (!num.includes(kwLower) && !uid.includes(kwLower) && !projEn.includes(kwLower) && !projAr.includes(kwLower) && !typeName.includes(kwLower)) {
                         return false;
                     }
                 }
@@ -1616,6 +2621,12 @@
         }
 
         function resetUnitSearchFilters() {
+            savedUnitSearchFilters = {
+                keyword: '',
+                typeId: '',
+                minBeds: '',
+                maxPrice: ''
+            };
             const kw = document.getElementById('unit-filter-keyword');
             const type = document.getElementById('unit-filter-type');
             const beds = document.getElementById('unit-filter-beds');
@@ -1697,7 +2708,7 @@
             const isPrimary = document.getElementById('assign-unit-primary').checked;
 
             if (!unitId) {
-                alert(currentLang === 'ar' ? 'يرجى اختيار الوحدة المطابقة أولاً' : 'Please select a matching unit first');
+                showOppUnitNotice(currentLang === 'ar' ? 'يرجى اختيار الوحدة المطابقة أولاً' : 'Please select a matching unit first', 'error');
                 return;
             }
 
@@ -1713,10 +2724,28 @@
                     throw new Error(err.detail || 'Failed to assign unit');
                 }
 
-                alert(currentLang === 'ar' ? 'تم ربط وتعيين الوحدة بالفرصة بنجاح!' : 'Unit linked to opportunity successfully!');
-                viewOpportunityUnits(oppId, oppTitle);
+                // Update assigned units list
+                const unitsRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`);
+                if (unitsRes.ok) {
+                    const json = await unitsRes.json();
+                    currentModalOppUnits = json.data || [];
+                }
+
+                // Re-render table without touching search filters or inputs
+                renderAssignedUnitsTable(oppId, oppTitle);
+
+                // Update pipeline board in background
+                fetchOpportunities();
+
+                // Uncheck primary for next unit selection if any
+                const primaryCb = document.getElementById('assign-unit-primary');
+                if (primaryCb) primaryCb.checked = false;
+
+                const successMsg = currentLang === 'ar' ? 'تم ربط وتعيين الوحدة بالفرصة بنجاح!' : 'Unit linked to opportunity successfully!';
+                showOppUnitNotice(successMsg, 'success');
+                showToast(successMsg);
             } catch (err) {
-                alert('Error: ' + err.message);
+                showOppUnitNotice('Error: ' + err.message, 'error');
             }
         }
 
@@ -1729,9 +2758,21 @@
                     method: 'DELETE'
                 });
                 if (!res.ok) throw new Error('Failed to unlink unit');
-                viewOpportunityUnits(oppId, oppTitle);
+
+                const unitsRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`);
+                if (unitsRes.ok) {
+                    const json = await unitsRes.json();
+                    currentModalOppUnits = json.data || [];
+                }
+
+                renderAssignedUnitsTable(oppId, oppTitle);
+                fetchOpportunities();
+
+                const unlinkedMsg = currentLang === 'ar' ? 'تم فك ارتباط الوحدة بنجاح' : 'Unit unlinked successfully';
+                showOppUnitNotice(unlinkedMsg, 'info');
+                showToast(unlinkedMsg);
             } catch (err) {
-                alert('Error: ' + err.message);
+                showOppUnitNotice('Error: ' + err.message, 'error');
             }
         }
 
@@ -1741,8 +2782,20 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
+            if (urlAgent) {
+                const agSelect = document.getElementById('opp-agent-filter');
+                if (agSelect) {
+                    agSelect.innerHTML = `<option value="${urlAgent}" selected>Loading agent...</option>`;
+                    agSelect.value = urlAgent;
+                }
+            }
+            initSalesData();
             fetchOpportunities();
         });
     </script>
+    <div id="toast"></div>
+    <script src="user_session.js"></script>
 </body>
 </html>

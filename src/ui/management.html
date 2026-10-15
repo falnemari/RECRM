@@ -239,6 +239,14 @@
             display: inline-block;
             vertical-align: middle;
         }
+        .cell-multiline, .cell-wrap {
+            white-space: normal !important;
+            word-break: break-word;
+            line-height: 1.38;
+            min-width: 140px;
+            max-width: 280px;
+            display: block;
+        }
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, monospace;
             font-size: 0.78rem;
@@ -343,7 +351,14 @@
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
             <span class="badge-header" data-i18n="badge_pm">Property Operations & PM</span>
         </div>
-                    <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
+            <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
                     <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
@@ -353,6 +368,7 @@
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
+        </div>
     </div>
 
     <!-- Main Navigation -->
@@ -625,7 +641,7 @@
             <form id="tenancy-form" onsubmit="handleCreateTenancy(event)">
                 <div class="form-group">
                     <label data-i18n="lbl_unit">Select Unit *</label>
-                    <select id="t-unit" required>
+                    <select id="t-unit" required onchange="onTenancyUnitChange()">
                         <option value="">Loading units...</option>
                     </select>
                 </div>
@@ -688,13 +704,13 @@
             <form id="ticket-form" onsubmit="handleCreateTicket(event)">
                 <div class="form-group">
                     <label data-i18n="lbl_unit">Select Unit *</label>
-                    <select id="mt-unit" required>
+                    <select id="mt-unit" required onchange="onTicketUnitChange()">
                         <option value="">Loading units...</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_tenant_reporter">Reported By (Tenant / Customer)</label>
-                    <select id="mt-customer">
+                    <select id="mt-customer" onchange="onTicketCustomerChange()">
                         <option value="">Select customer (optional)</option>
                     </select>
                 </div>
@@ -855,7 +871,7 @@
             <form id="pmc-form" onsubmit="handleCreatePMC(event)">
                 <div class="form-group">
                     <label data-i18n="lbl_owner">Select Property Owner *</label>
-                    <select id="pmc-owner" required>
+                    <select id="pmc-owner" required onchange="onPMCOwnerChange()">
                         <option value="">Loading owners...</option>
                     </select>
                 </div>
@@ -1110,8 +1126,10 @@
                         <td><span class="id-badge">${t.contract_number}</span></td>
                         <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
                         <td>
-                            <strong>${t.tenant_name || 'N/A'}</strong>
-                            ${t.tenant_mobile ? `<span style="font-size:0.78em; color:var(--text-muted); margin-inline-start:4px;">• ${t.tenant_mobile}</span>` : ''}
+                            <div class="cell-multiline" style="max-width: 200px;">
+                                <strong>${t.tenant_name || 'N/A'}</strong>
+                                ${t.tenant_mobile ? `<div style="font-size:0.78em; color:var(--text-muted);">${t.tenant_mobile}</div>` : ''}
+                            </div>
                         </td>
                         <td>${t.start_date}</td>
                         <td>${t.end_date || 'Open-ended'}</td>
@@ -1225,7 +1243,7 @@
                         <td>${t.reported_by_name || 'Tenant'}</td>
                         <td><strong>${t.category || 'GENERAL'}</strong></td>
                         <td><span class="badge ${pCls}">${t.priority}</span></td>
-                        <td><span class="cell-truncate" title="${(t.description||'').replace(/"/g, '&quot;')}">${t.description || '--'}</span></td>
+                        <td><div class="cell-multiline" style="max-width: 280px; min-width: 160px;" title="${(t.description||'').replace(/"/g, '&quot;')}">${t.description || '--'}</div></td>
                         <td>${openDate}</td>
                         <td><span class="badge ${sCls}">${t.status}</span></td>
                         <td>
@@ -1301,7 +1319,7 @@
                     <tr>
                         <td><strong>${r.contract_number || 'N/A'}</strong></td>
                         <td>${r.unit_number ? 'Unit ' + r.unit_number : 'N/A'}</td>
-                        <td>${r.tenant_name || 'N/A'}</td>
+                        <td><div class="cell-multiline" style="max-width: 180px;">${r.tenant_name || 'N/A'}</div></td>
                         <td>${r.due_date}</td>
                         <td><strong>${due.toLocaleString()} SAR</strong></td>
                         <td style="color:var(--success); font-weight:600;">${paid.toLocaleString()} SAR</td>
@@ -1339,7 +1357,7 @@
             }
             tbody.innerHTML = items.map(v => `
                 <tr>
-                    <td><strong>${v.vendor_name}</strong></td>
+                    <td><div class="cell-multiline" style="max-width: 200px;"><strong>${v.vendor_name}</strong></div></td>
                     <td>${v.phone || 'N/A'}</td>
                     <td>${v.email || 'N/A'}</td>
                     <td><code>${v.tax_number || 'N/A'}</code></td>
@@ -1398,19 +1416,70 @@
             renderPMContracts(filtered);
         }
 
-        // --- Modal Helpers ---
+        // --- Modal Helpers & Cascading ---
+        let cachedAvailableUnits = [];
+        let cachedTicketUnits = [];
+        let cachedTicketCustomers = [];
+        let cachedPMCUnits = [];
+
+        function onTenancyUnitChange() {
+            const unitId = document.getElementById('t-unit').value;
+            const u = cachedAvailableUnits.find(x => x.unit_id === unitId);
+            if (u && (u.rent_price || u.asking_price)) {
+                document.getElementById('t-rent').value = u.rent_price || u.asking_price;
+            }
+        }
+
+        function onTicketUnitChange() {
+            const unitId = document.getElementById('mt-unit').value;
+            if (!unitId) return;
+            const t = tenanciesData.find(x => x.unit_id === unitId && x.status === 'ACTIVE');
+            if (t && t.tenant_customer_id) {
+                const custSelect = document.getElementById('mt-customer');
+                if (custSelect) custSelect.value = t.tenant_customer_id;
+            }
+        }
+
+        function onTicketCustomerChange() {
+            const custId = document.getElementById('mt-customer').value;
+            if (!custId) return;
+            const t = tenanciesData.find(x => x.tenant_customer_id === custId && x.status === 'ACTIVE');
+            if (t && t.unit_id) {
+                const unitSelect = document.getElementById('mt-unit');
+                if (unitSelect) unitSelect.value = t.unit_id;
+            }
+        }
+
+        function onPMCOwnerChange() {
+            const ownerId = document.getElementById('pmc-owner').value;
+            const uSelect = document.getElementById('pmc-units');
+            if (!uSelect) return;
+            const filtered = ownerId
+                ? cachedPMCUnits.filter(u => u.owner_customer_id === ownerId)
+                : cachedPMCUnits;
+            const unitsToShow = (filtered.length > 0) ? filtered : cachedPMCUnits;
+            uSelect.innerHTML = unitsToShow.map(u => 
+                `<option value="${u.unit_id}" ${filtered.length > 0 && ownerId && u.owner_customer_id === ownerId ? 'selected' : ''}>Unit ${u.unit_number || u.unit_id} - ${u.project_name_en || u.property_name || 'Property'} (${u.status})</option>`
+            ).join('') || '<option value="">No units found</option>';
+        }
+
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openNewTenancyModal() {
-            // Load available units
             try {
-                const uRes = await fetch(`${API_BASE}/api/v1/units?status=AVAILABLE&page_size=100`);
+                // Load all eligible units (status != SOLD/ARCHIVED) so agents aren't blocked
+                const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 const uJson = await uRes.json();
+                const allUnits = uJson.data || [];
+                cachedAvailableUnits = allUnits.filter(u => u.status !== 'SOLD' && u.status !== 'ARCHIVED');
+                
                 const uSelect = document.getElementById('t-unit');
-                uSelect.innerHTML = (uJson.data || []).map(u => 
-                    `<option value="${u.unit_id}">Unit ${u.unit_number} - ${u.asking_price || u.rent_price || 'N/A'} SAR (${u.bedrooms || 0} Beds)</option>`
-                ).join('') || '<option value="">No available units</option>';
+                uSelect.innerHTML = cachedAvailableUnits.map(u => {
+                    const price = u.rent_price || u.asking_price || 0;
+                    const priceStr = price ? `${Number(price).toLocaleString()} SAR` : 'N/A';
+                    return `<option value="${u.unit_id}">Unit ${u.unit_number || u.unit_id} [${u.status}] - ${priceStr} (${u.bedrooms || 0} Beds)</option>`;
+                }).join('') || '<option value="">No units found</option>';
 
                 // Load customers
                 const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
@@ -1421,15 +1490,16 @@
                     return `<option value="${c.customer_id}">${name} (${c.mobile || 'No phone'})</option>`;
                 }).join('') || '<option value="">No customers found</option>';
 
-                // Default dates
+                // Default dates: Today until +1 year
                 const today = new Date().toISOString().split('T')[0];
                 const nextYear = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
                 document.getElementById('t-start').value = today;
                 document.getElementById('t-end').value = nextYear;
 
+                onTenancyUnitChange();
                 openModal('modal-tenancy');
             } catch (err) {
-                alert("Error preparing form: " + err);
+                alert("Error preparing form: " + err.message);
             }
         }
 
@@ -1463,15 +1533,25 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Creation failed');
+                    let errMsg = 'Creation failed';
+                    try {
+                        const err = await res.json();
+                        if (typeof err.detail === 'string') {
+                            errMsg = err.detail;
+                        } else if (Array.isArray(err.detail)) {
+                            errMsg = err.detail.map(d => `${d.loc ? d.loc.slice(-1) + ': ' : ''}${d.msg}`).join('\n');
+                        } else if (err.message) {
+                            errMsg = err.message;
+                        }
+                    } catch (_) {}
+                    throw new Error(errMsg);
                 }
                 closeModal('modal-tenancy');
                 loadTenancies();
                 loadSummary();
-                alert("Lease agreement created successfully and installments generated!");
+                alert(currentLang === 'ar' ? "تم إنشاء وتوثيق عقد الإيجار بنجاح وتوليد الأقساط المالية في منصة التحصيل!" : "Lease agreement created successfully and installments generated!");
             } catch (err) {
-                alert("Failed to create lease: " + err.message);
+                alert((currentLang === 'ar' ? "فشل إنشاء عقد الإيجار:\n" : "Failed to create lease:\n") + err.message);
             }
         }
 
@@ -1480,19 +1560,22 @@
                 // Load units
                 const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 const uJson = await uRes.json();
-                document.getElementById('mt-unit').innerHTML = (uJson.data || []).map(u => 
+                cachedTicketUnits = uJson.data || [];
+                document.getElementById('mt-unit').innerHTML = cachedTicketUnits.map(u => 
                     `<option value="${u.unit_id}">Unit ${u.unit_number} (${u.status})</option>`
                 ).join('');
 
                 // Load customers
                 const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
                 const cJson = await cRes.json();
+                cachedTicketCustomers = cJson.data || [];
                 document.getElementById('mt-customer').innerHTML = '<option value="">No specific reporter</option>' + 
-                    (cJson.data || []).map(c => {
+                    cachedTicketCustomers.map(c => {
                         const name = (c.first_name + ' ' + (c.last_name || '')).trim() || c.company_name;
                         return `<option value="${c.customer_id}">${name}</option>`;
                     }).join('');
 
+                onTicketUnitChange();
                 openModal('modal-ticket');
             } catch (err) {
                 alert("Error loading data: " + err);
@@ -1648,12 +1731,8 @@
                 // Fetch units for management linkage
                 const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 const uJson = await uRes.json();
-                const uSelect = document.getElementById('pmc-units');
-                if (uSelect) {
-                    uSelect.innerHTML = (uJson.data || []).map(u => 
-                        `<option value="${u.unit_id}">Unit ${u.unit_number || u.unit_id} - ${u.property_name || 'Property'} (${u.status})</option>`
-                    ).join('') || '<option value="">No units found</option>';
-                }
+                cachedPMCUnits = uJson.data || [];
+                onPMCOwnerChange();
 
                 const today = new Date().toISOString().split('T')[0];
                 const twoYears = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0];
@@ -1692,7 +1771,13 @@
                     let errMsg = 'Contract creation failed';
                     try {
                         const err = await res.json();
-                        errMsg = err.detail || err.message || errMsg;
+                        if (typeof err.detail === 'string') {
+                            errMsg = err.detail;
+                        } else if (Array.isArray(err.detail)) {
+                            errMsg = err.detail.map(d => `${d.loc ? d.loc.slice(-1) + ': ' : ''}${d.msg}`).join('\n');
+                        } else if (err.message) {
+                            errMsg = err.message;
+                        }
                     } catch (_) {}
                     throw new Error(errMsg);
                 }
@@ -1713,5 +1798,6 @@
             loadTenancies();
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>

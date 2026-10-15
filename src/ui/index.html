@@ -235,6 +235,218 @@
         .btn:hover {
             background-color: #2563eb;
         }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        /* Scope Controller & Filter Bar */
+        .scope-pill-btn {
+            background: none;
+            border: none;
+            padding: 6px 14px;
+            font-size: 0.84em;
+            font-weight: 600;
+            color: #475569;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .scope-pill-btn:hover { color: var(--primary); }
+        .scope-pill-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        /* 10 Funnel KPI Cards */
+        .funnel-kpi-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            position: relative;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .funnel-kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+        }
+        .funnel-kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .funnel-kpi-card.accent-blue::before { background: #3b82f6; }
+        .funnel-kpi-card.accent-cyan::before { background: #06b6d4; }
+        .funnel-kpi-card.accent-indigo::before { background: #6366f1; }
+        .funnel-kpi-card.accent-purple::before { background: #8b5cf6; }
+        .funnel-kpi-card.accent-amber::before { background: #f59e0b; }
+        .funnel-kpi-card.accent-gold::before { background: #eab308; }
+        .funnel-kpi-card.accent-emerald::before { background: #10b981; }
+        .funnel-kpi-card.accent-green::before { background: #16a34a; }
+        .funnel-kpi-title {
+            font-size: 0.76em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+        }
+        .funnel-kpi-value {
+            font-size: 1.55em;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+        .funnel-kpi-sub {
+            font-size: 0.74em;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Drilldown Tables & Elements */
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+            text-align: left;
+        }
+        [dir="rtl"] .dash-table { text-align: right; }
+        .dash-table th, .dash-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .dash-table th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+        .dash-table tr:hover { background: #f8fafc; }
+        
+        .breadcrumb-item {
+            cursor: pointer;
+            color: var(--secondary);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .breadcrumb-item:hover { text-decoration: underline; }
+        .breadcrumb-item.current {
+            color: var(--text-main);
+            font-weight: 700;
+            cursor: default;
+            text-decoration: none !important;
+        }
+
+        /* Live Pulse Stream */
+        .pulse-filter-chip {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.76em;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .pulse-filter-chip:hover {
+            color: var(--primary);
+            border-color: #cbd5e1;
+        }
+        .pulse-filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .pulse-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.83em;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .pulse-card:hover {
+            border-color: #cbd5e1;
+            background: #f1f5f9;
+        }
+        .pulse-type-badge {
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .pulse-type-viewing { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; }
+        .pulse-type-activity { background: #f1f5f9; color: #334155; }
+        .pulse-type-task { background: #fef3c7; color: #b45309; }
+        .pulse-type-comm { background: #dcfce7; color: #15803d; }
+        .pulse-type-lead { background: #ede9fe; color: #6d28d9; }
+
+        .btn-drill {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-drill:hover {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        .id-badge {
+            font-family: monospace;
+            font-size: 0.78em;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 1024px) {
+            .drilldown-split-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -254,7 +466,12 @@
                     <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
                 </select>
             </div>
-            <span id="user-greeting" style="font-size: 0.9em;">Connected as: <strong>Admin</strong></span>
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
         </div>
     </div>
@@ -295,34 +512,136 @@
             </div>
         </div>
 
-        <!-- Dynamic Live KPI Cards -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-title" data-i18n="kpi_leads">Active Leads</div>
-                <div class="kpi-value" id="kpi-leads">--</div>
-                <div class="kpi-sub" id="kpi-leads-sub">of -- total leads</div>
+        <!-- ================= DASHBOARD SCOPE CONTROLLER ================= -->
+        <div class="scope-controller-card" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-weight: 700; font-size: 0.9em; color: var(--text-main);" data-i18n="lbl_dashboard_scope">Dashboard Scope:</span>
+                <div class="scope-btn-group" style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 6px; border: 1px solid var(--border);">
+                    <button type="button" class="scope-pill-btn active" id="btn-scope-GLOBAL" onclick="setDashboardScope('GLOBAL')">🌐 <span data-i18n="lbl_scope_global">Global</span></button>
+                    <button type="button" class="scope-pill-btn" id="btn-scope-BRANCH" onclick="setDashboardScope('BRANCH')">🏢 <span data-i18n="lbl_scope_branch">Branch</span></button>
+                    <button type="button" class="scope-pill-btn" id="btn-scope-TEAM" onclick="setDashboardScope('TEAM')">👥 <span data-i18n="lbl_scope_team">Team</span></button>
+                    <button type="button" class="scope-pill-btn" id="btn-scope-OWN" onclick="setDashboardScope('OWN')">👤 <span data-i18n="lbl_scope_own">Own (My Work)</span></button>
+                </div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-title" data-i18n="kpi_customers">Customers 360</div>
-                <div class="kpi-value" id="kpi-customers">--</div>
-                <div class="kpi-sub" data-i18n="kpi_customers_sub">Buyers & Tenants</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title" data-i18n="kpi_inventory">Available Units</div>
-                <div class="kpi-value" id="kpi-units">--</div>
-                <div class="kpi-sub" id="kpi-units-sub">of -- total inventory</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title" data-i18n="kpi_pipeline">Pipeline Value</div>
-                <div class="kpi-value" id="kpi-pipeline">--</div>
-                <div class="kpi-sub" id="kpi-pipeline-sub">-- active opportunities</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title" data-i18n="kpi_collections">Rent Collected</div>
-                <div class="kpi-value" id="kpi-rent">--</div>
-                <div class="kpi-sub" id="kpi-rent-sub">of -- total receivables</div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <select id="dash-branch-select" onchange="onBranchFilterChange()" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85em; background: white; cursor: pointer;">
+                    <option value="">🏢 All Branches (جميع الفروع)</option>
+                </select>
+                <select id="dash-agent-select" onchange="onAgentFilterChange()" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85em; background: white; cursor: pointer;">
+                    <option value="">👤 All Agents (كافة الوسطاء)</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="resetToGlobalScope()" title="Reset to Global Overview">↺ Reset</button>
             </div>
         </div>
+
+        <!-- ================= 10 FUNNEL & FINANCIAL KPIS ================= -->
+        <div class="funnel-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 14px; margin-bottom: 24px;">
+            <!-- 1. Total Leads -->
+            <div class="funnel-kpi-card accent-blue">
+                <div class="funnel-kpi-title" data-i18n="kpi_total_leads">Total Leads</div>
+                <div class="funnel-kpi-value" id="kpi-f-total-leads">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_all_inquiries">Lifetime Inquiries</div>
+            </div>
+            <!-- 2. New Leads -->
+            <div class="funnel-kpi-card accent-cyan">
+                <div class="funnel-kpi-title" data-i18n="kpi_new_leads">New Leads</div>
+                <div class="funnel-kpi-value" id="kpi-f-new-leads">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_uncontacted">Needs SLA Response</div>
+            </div>
+            <!-- 3. Qualified Leads -->
+            <div class="funnel-kpi-card accent-indigo">
+                <div class="funnel-kpi-title" data-i18n="kpi_qualified_leads">Qualified Leads</div>
+                <div class="funnel-kpi-value" id="kpi-f-qualified-leads">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_verified_needs">Verified Budget & Needs</div>
+            </div>
+            <!-- 4. Open Opportunities -->
+            <div class="funnel-kpi-card accent-purple">
+                <div class="funnel-kpi-title" data-i18n="kpi_open_opps">Open Opportunities</div>
+                <div class="funnel-kpi-value" id="kpi-f-open-opps">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_active_pipeline">Active Negotiations</div>
+            </div>
+            <!-- 5. Viewings -->
+            <div class="funnel-kpi-card accent-amber" onclick="quickFilterViewings()" style="cursor: pointer;" title="Click to filter live pulse feed to viewings">
+                <div class="funnel-kpi-title" data-i18n="kpi_viewings">Viewings</div>
+                <div class="funnel-kpi-value" id="kpi-f-viewings">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_site_visits">Scheduled & Completed 🔍</div>
+            </div>
+            <!-- 6. Offers -->
+            <div class="funnel-kpi-card accent-gold">
+                <div class="funnel-kpi-title" data-i18n="kpi_offers">Offers</div>
+                <div class="funnel-kpi-value" id="kpi-f-offers">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_bids_submitted">Bids & Formal Offers</div>
+            </div>
+            <!-- 7. Reservations -->
+            <div class="funnel-kpi-card accent-emerald">
+                <div class="funnel-kpi-title" data-i18n="kpi_reservations">Reservations</div>
+                <div class="funnel-kpi-value" id="kpi-f-reservations">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_deposit_locked">Deposits Confirmed</div>
+            </div>
+            <!-- 8. Contracts -->
+            <div class="funnel-kpi-card accent-green">
+                <div class="funnel-kpi-title" data-i18n="kpi_contracts">Contracts</div>
+                <div class="funnel-kpi-value" id="kpi-f-contracts">--</div>
+                <div class="funnel-kpi-sub" data-i18n="sub_deals_signed">Legally Signed Deeds</div>
+            </div>
+            <!-- 9. Sales Value -->
+            <div class="funnel-kpi-card" style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; border: none;">
+                <div class="funnel-kpi-title" style="color: #a7f3d0;" data-i18n="kpi_sales_value">Sales Value (SAR)</div>
+                <div class="funnel-kpi-value" id="kpi-f-sales-val" style="color: white; font-size: 1.5em;">--</div>
+                <div class="funnel-kpi-sub" style="color: #d1fae5;" data-i18n="sub_total_revenue">Closed Contract Gross</div>
+            </div>
+            <!-- 10. Pending Payments -->
+            <div class="funnel-kpi-card" style="background: linear-gradient(135deg, #9f1239 0%, #be123c 100%); color: white; border: none;">
+                <div class="funnel-kpi-title" style="color: #fecdd3;" data-i18n="kpi_pending_payments">Pending Payments</div>
+                <div class="funnel-kpi-value" id="kpi-f-pending-pay" style="color: white; font-size: 1.5em;">--</div>
+                <div class="funnel-kpi-sub" style="color: #ffe4e6;" data-i18n="sub_cashflow_due">Outstanding Receivables</div>
+            </div>
+        </div>
+
+        <!-- ================= DRILLDOWN EXPLORER & LIVE PULSE STREAM (SPLIT VIEW) ================= -->
+        <div class="drilldown-split-grid" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 32px;">
+            <!-- LEFT COLUMN: HIERARCHICAL DRILLDOWN EXPLORER -->
+            <div class="card-box" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <!-- Dynamic Interactive Breadcrumbs -->
+                <div id="drill-breadcrumbs" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                    <span class="breadcrumb-item current" id="bc-root">🌐 Global Overview</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <h3 id="drill-view-title" style="margin: 0; font-size: 1.15em; color: var(--text-main);">🏢 Branches Performance Breakdown</h3>
+                    <span id="drill-counter-badge" class="badge" style="background: #e2e8f0; color: #334155; font-size: 0.8em; padding: 3px 8px; border-radius: 4px;">--</span>
+                </div>
+
+                <div id="drilldown-table-container" style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
+                    <!-- Dynamically rendered table: Branches -> Agents -> Opportunities -->
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: LIVE ENGAGEMENT & ACTIVITY PULSE FEED -->
+            <div class="card-box" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1em; color: var(--text-main);" data-i18n="pulse_stream_title">⚡ Live Operational Pulse</h3>
+                        <small style="color: var(--text-muted); font-size: 0.8em;" data-i18n="pulse_stream_sub">Activities, tasks, WhatsApp & lead updates</small>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="fetchFunnelData()" style="padding: 4px 8px; font-size: 0.8em;">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                    <button class="pulse-filter-chip active" onclick="filterPulseFeed('ALL', this)">All (الكل)</button>
+                    <button class="pulse-filter-chip" id="chip-filter-viewing" data-filter="VIEWING" onclick="filterPulseFeed('VIEWING', this)" style="border-color: #bae6fd;">👁️ Viewings (معاينات)</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('ACTIVITY', this)">📞 Activities (أنشطة)</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('TASK', this)">📋 Tasks (مهام)</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('COMMUNICATION', this)">💬 Messages (مراسلات)</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('LEAD_UPDATE', this)">⚡ Lead Updates (طلبات)</button>
+                </div>
+
+                <div id="live-pulse-list" style="flex-grow: 1; overflow-y: auto; max-height: 440px; display: flex; flex-direction: column; gap: 10px; padding-inline-end: 4px;">
+                    <!-- Dynamically rendered pulse items -->
+                </div>
+            </div>
+        </div>
+
         
         <div class="module-grid">
             <div class="module-card">
@@ -483,6 +802,51 @@
                 m_admin_title: "Administration & Security",
                 m_admin_desc: "Manage branches, operational staff, RBAC permission matrices, audit logs and least-privilege data scopes.",
                 m_admin_btn: "Open Governance Console →",
+                lbl_dashboard_scope: "Dashboard Scope:",
+                lbl_scope_global: "Global",
+                lbl_scope_branch: "Branch",
+                lbl_scope_team: "Team",
+                lbl_scope_own: "Own (My Work)",
+                kpi_total_leads: "Total Leads",
+                sub_all_inquiries: "Lifetime Inquiries",
+                kpi_new_leads: "New Leads",
+                sub_uncontacted: "Needs SLA Response",
+                kpi_qualified_leads: "Qualified Leads",
+                sub_verified_needs: "Verified Budget & Needs",
+                kpi_open_opps: "Open Opportunities",
+                sub_active_pipeline: "Active Negotiations",
+                kpi_viewings: "Viewings",
+                sub_site_visits: "Scheduled & Completed",
+                kpi_offers: "Offers",
+                sub_bids_submitted: "Bids & Formal Offers",
+                kpi_reservations: "Reservations",
+                sub_deposit_locked: "Deposits Confirmed",
+                kpi_contracts: "Contracts",
+                sub_deals_signed: "Legally Signed Deeds",
+                kpi_sales_value: "Sales Value (SAR)",
+                sub_total_revenue: "Closed Contract Gross",
+                kpi_pending_payments: "Pending Payments",
+                sub_cashflow_due: "Outstanding Receivables",
+                pulse_stream_title: "⚡ Live Operational Pulse",
+                pulse_stream_sub: "Activities, tasks, WhatsApp & lead updates",
+                th_branch_code: "Code",
+                th_branch_name: "Branch Name",
+                th_agents: "Agents",
+                th_leads: "Leads",
+                th_opps: "Opportunities",
+                th_contracts: "Contracts",
+                th_sales_value: "Sales Value",
+                th_actions: "Action",
+                th_agent_name: "Agent Name",
+                th_employee_no: "Emp #",
+                th_branch: "Branch",
+                th_viewings: "Viewings",
+                th_opp_id: "Opportunity",
+                th_customer: "Customer",
+                th_stage: "Stage",
+                th_property_unit: "Property / Unit",
+                th_expected_value: "Expected Value",
+                btn_refresh: "Refresh",
                 lang_label: "عربي"
             },
             ar: {
@@ -540,6 +904,51 @@
                 m_admin_title: "الإدارة والحوكمة والأمان",
                 m_admin_desc: "إدارة الفروع والمراكز، المستخدمين، أدوار الصلاحيات (RBAC)، سجلات الرقابة، ونطاق البيانات.",
                 m_admin_btn: "فتح لوحة الإدارة والحوكمة ←",
+                lbl_dashboard_scope: "نطاق العرض والبيانات:",
+                lbl_scope_global: "شامل (المنظمة)",
+                lbl_scope_branch: "الفرع",
+                lbl_scope_team: "فريق العمل",
+                lbl_scope_own: "سجلاتي فقط",
+                kpi_total_leads: "إجمالي الطلبات",
+                sub_all_inquiries: "كافة الاستفسارات والطلبات",
+                kpi_new_leads: "طلبات جديدة",
+                sub_uncontacted: "تتطلب استجابة سريعة SLA",
+                kpi_qualified_leads: "طلبات مؤهلة",
+                sub_verified_needs: "تم التحقق من الميزانية والاحتياج",
+                kpi_open_opps: "فرص بيعية نشطة",
+                sub_active_pipeline: "تفاوض ومتابعة جارية",
+                kpi_viewings: "معاينات عقارية",
+                sub_site_visits: "معاينات ميدانية مجدولة ومنفذة",
+                kpi_offers: "عروض مقدمة",
+                sub_bids_submitted: "عروض شراء وتأجير رسمية",
+                kpi_reservations: "حجوزات مؤكدة",
+                sub_deposit_locked: "عربون ودفعات مقدمة مثبتة",
+                kpi_contracts: "عقود مبرمة",
+                sub_deals_signed: "عقود نهائية نافذة",
+                kpi_sales_value: "قيمة المبيعات (ر.س)",
+                sub_total_revenue: "إجمالي قيمة العقود النافذة",
+                kpi_pending_payments: "دفعات معلقة ومستحقة",
+                sub_cashflow_due: "مستحقات وسندات قيد التحصيل",
+                pulse_stream_title: "⚡ نبض العمليات والتفاعلات الحية",
+                pulse_stream_sub: "الأنشطة، المهام، رسائل الواتساب وتحديثات الطلبات",
+                th_branch_code: "رمز الفرع",
+                th_branch_name: "اسم الفرع",
+                th_agents: "الوسطاء",
+                th_leads: "الطلبات",
+                th_opps: "الفرص",
+                th_contracts: "العقود",
+                th_sales_value: "المبيعات",
+                th_actions: "الإجراء",
+                th_agent_name: "اسم الوسيط / الموظف",
+                th_employee_no: "الرقم الوظيفي",
+                th_branch: "الفرع",
+                th_viewings: "المعاينات",
+                th_opp_id: "رقم الفرصة",
+                th_customer: "العميل",
+                th_stage: "المرحلة",
+                th_property_unit: "العقار / الوحدة",
+                th_expected_value: "القيمة المتوقعة",
+                btn_refresh: "تحديث",
                 lang_label: "English"
             }
         };
@@ -600,43 +1009,586 @@
             return `${window.location.protocol}//${host}:8000`;
         })();
 
-        async function loadDashboardData() {
+        // ================= MULTI-TIER FUNNEL & DRILLDOWN STATE =================
+        const dashboardState = {
+            scope: 'GLOBAL',          // 'GLOBAL' | 'BRANCH' | 'TEAM' | 'OWN'
+            branchId: null,
+            userId: null,
+            drillLevel: 'BRANCHES',   // 'BRANCHES' | 'AGENTS' | 'OPPORTUNITIES'
+            selectedBranch: null,     // { branch_id, name, branch_code }
+            selectedAgent: null,      // { user_id, full_name }
+            pulseFilter: 'ALL',
+            cachedData: null,
+            branchesList: [],
+            agentsList: []
+        };
+
+        async function fetchFunnelData() {
             try {
-                const res = await fetch(`${API_BASE}/api/v1/reports/executive`);
-                if (!res.ok) throw new Error('API fetch error');
+                let url = `${API_BASE}/api/v1/reports/funnel-dashboard?scope=${dashboardState.scope}`;
+                if (dashboardState.branchId) url += `&branch_id=${encodeURIComponent(dashboardState.branchId)}`;
+                if (dashboardState.userId) url += `&user_id=${encodeURIComponent(dashboardState.userId)}`;
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load funnel data');
                 const json = await res.json();
-                const kpis = json.data.kpis;
+                dashboardState.cachedData = json.data;
 
-                document.getElementById('kpi-leads').textContent = kpis.active_leads;
-                document.getElementById('kpi-leads-sub').textContent = `of ${kpis.total_leads} total inquiries`;
+                renderFunnelKPIs(json.data.kpis);
+                renderDrilldown();
+                renderPulseFeed();
 
-                document.getElementById('kpi-customers').textContent = kpis.total_customers;
-
-                document.getElementById('kpi-units').textContent = kpis.available_units;
-                document.getElementById('kpi-units-sub').textContent = `of ${kpis.total_units} total units`;
-
-                document.getElementById('kpi-pipeline').textContent = (kpis.active_pipeline_value / 1000000).toFixed(1) + 'M SAR';
-                document.getElementById('kpi-pipeline-sub').textContent = `${kpis.total_opportunities} opportunities`;
-
-                document.getElementById('kpi-rent').textContent = (kpis.total_rent_collected / 1000000).toFixed(2) + 'M SAR';
-                document.getElementById('kpi-rent-sub').textContent = `of ${(kpis.total_rent_due / 1000000).toFixed(2)}M SAR due`;
                 document.getElementById('db-status').textContent = 'PostgreSQL Connected';
-                document.querySelector('.status-dot').style.background = '#16a34a';
-            } catch (err) {
-                console.warn('Could not load live dashboard data:', err);
-                document.getElementById('db-status').textContent = 'Backend Offline';
-                document.querySelector('.status-dot').style.background = '#ef4444';
-            }
+                const dot = document.querySelector('.status-dot');
+                if (dot) dot.style.background = '#16a34a';
 
+                if (dashboardState.branchesList.length === 0) {
+                    await populateFilters();
+                }
+            } catch (err) {
+                console.warn('Funnel dashboard error:', err);
+                document.getElementById('db-status').textContent = 'Backend Offline';
+                const dot = document.querySelector('.status-dot');
+                if (dot) dot.style.background = '#ef4444';
+            }
+        }
+
+        function renderFunnelKPIs(k) {
+            if (!k) return;
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
+
+            setVal('kpi-f-total-leads', k.total_leads.toLocaleString());
+            setVal('kpi-f-new-leads', k.new_leads.toLocaleString());
+            setVal('kpi-f-qualified-leads', k.qualified_leads.toLocaleString());
+            setVal('kpi-f-open-opps', k.open_opportunities.toLocaleString());
+            setVal('kpi-f-viewings', k.viewings.toLocaleString());
+            setVal('kpi-f-offers', k.offers.toLocaleString());
+            setVal('kpi-f-reservations', k.reservations.toLocaleString());
+            setVal('kpi-f-contracts', k.contracts.toLocaleString());
+            setVal('kpi-f-sales-val', (k.sales_value >= 1000000 ? (k.sales_value / 1000000).toFixed(2) + 'M SAR' : k.sales_value.toLocaleString() + ' SAR'));
+            setVal('kpi-f-pending-pay', (k.pending_payments >= 1000000 ? (k.pending_payments / 1000000).toFixed(2) + 'M SAR' : k.pending_payments.toLocaleString() + ' SAR'));
+        }
+
+        async function populateFilters() {
             try {
-                const meRes = await fetch(`${API_BASE}/api/v1/me`);
-                if (meRes.ok) {
-                    const meJson = await meRes.json();
-                    if (meJson.data && meJson.data.full_name) {
-                        document.getElementById('user-greeting').innerHTML = `Connected: <strong>${meJson.data.full_name}</strong> (${meJson.data.organization_name})`;
+                const [bRes, uRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/admin/branches`),
+                    fetch(`${API_BASE}/api/v1/auth/users`)
+                ]);
+                if (bRes.ok) {
+                    const bJson = await bRes.json();
+                    dashboardState.branchesList = bJson.data || [];
+                    const bSel = document.getElementById('dash-branch-select');
+                    if (bSel) {
+                        bSel.innerHTML = '<option value="">🏢 All Branches (جميع الفروع)</option>' +
+                            dashboardState.branchesList.map(b => `<option value="${b.branch_id}">${b.branch_code} - ${b.name}</option>`).join('');
+                        if (dashboardState.branchId) bSel.value = dashboardState.branchId;
                     }
                 }
-            } catch (e) {}
+                if (uRes.ok) {
+                    const uJson = await uRes.json();
+                    dashboardState.agentsList = uJson.data || [];
+                    const aSel = document.getElementById('dash-agent-select');
+                    if (aSel) {
+                        aSel.innerHTML = '<option value="">👤 All Agents (كافة الوسطاء)</option>' +
+                            dashboardState.agentsList.map(u => `<option value="${u.user_id}">${u.full_name} (${u.user_id})</option>`).join('');
+                        if (dashboardState.userId) aSel.value = dashboardState.userId;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to populate dash filters:', e);
+            }
+        }
+
+        function setDashboardScope(scope) {
+            dashboardState.scope = scope;
+            document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-scope-${scope}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (scope === 'GLOBAL') {
+                dashboardState.branchId = null;
+                dashboardState.userId = null;
+                dashboardState.drillLevel = 'BRANCHES';
+                dashboardState.selectedBranch = null;
+                dashboardState.selectedAgent = null;
+                const bSel = document.getElementById('dash-branch-select');
+                const aSel = document.getElementById('dash-agent-select');
+                if (bSel) bSel.value = '';
+                if (aSel) aSel.value = '';
+            } else if (scope === 'BRANCH') {
+                dashboardState.drillLevel = 'AGENTS';
+                if (!dashboardState.branchId && dashboardState.branchesList[0]) {
+                    dashboardState.branchId = dashboardState.branchesList[0].branch_id;
+                    dashboardState.selectedBranch = dashboardState.branchesList[0];
+                    const bSel = document.getElementById('dash-branch-select');
+                    if (bSel) bSel.value = dashboardState.branchId;
+                }
+            } else if (scope === 'TEAM') {
+                dashboardState.drillLevel = 'AGENTS';
+                const activeUid = localStorage.getItem('recrm_user_id') || 'user-51';
+                dashboardState.userId = activeUid;
+            } else if (scope === 'OWN') {
+                dashboardState.drillLevel = 'OPPORTUNITIES';
+                const activeUid = localStorage.getItem('recrm_user_id') || 'user-51';
+                dashboardState.userId = activeUid;
+                const a = dashboardState.agentsList.find(u => u.user_id === activeUid);
+                dashboardState.selectedAgent = a || { user_id: activeUid, full_name: 'My Workspace' };
+            }
+
+            fetchFunnelData();
+        }
+
+        function onBranchFilterChange() {
+            const bId = document.getElementById('dash-branch-select').value;
+            dashboardState.branchId = bId || null;
+            if (bId) {
+                const b = dashboardState.branchesList.find(item => item.branch_id === bId);
+                dashboardState.selectedBranch = b || null;
+                dashboardState.scope = 'BRANCH';
+                dashboardState.drillLevel = 'AGENTS';
+                document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+                const btn = document.getElementById('btn-scope-BRANCH');
+                if (btn) btn.classList.add('active');
+            } else {
+                dashboardState.selectedBranch = null;
+            }
+            fetchFunnelData();
+        }
+
+        function onAgentFilterChange() {
+            const uId = document.getElementById('dash-agent-select').value;
+            dashboardState.userId = uId || null;
+            if (uId) {
+                const a = dashboardState.agentsList.find(item => item.user_id === uId);
+                dashboardState.selectedAgent = a || null;
+                dashboardState.scope = 'OWN';
+                dashboardState.drillLevel = 'OPPORTUNITIES';
+                document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+                const btn = document.getElementById('btn-scope-OWN');
+                if (btn) btn.classList.add('active');
+            } else {
+                dashboardState.selectedAgent = null;
+            }
+            fetchFunnelData();
+        }
+
+        function resetToGlobalScope() {
+            setDashboardScope('GLOBAL');
+        }
+
+        // ================= HIERARCHICAL DRILLDOWN NAVIGATION =================
+        function drillToGlobal() {
+            dashboardState.drillLevel = 'BRANCHES';
+            dashboardState.selectedBranch = null;
+            dashboardState.selectedAgent = null;
+            dashboardState.branchId = null;
+            dashboardState.userId = null;
+            dashboardState.scope = 'GLOBAL';
+            document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('btn-scope-GLOBAL');
+            if (btn) btn.classList.add('active');
+            const bSel = document.getElementById('dash-branch-select');
+            const aSel = document.getElementById('dash-agent-select');
+            if (bSel) bSel.value = '';
+            if (aSel) aSel.value = '';
+            fetchFunnelData();
+        }
+
+        function drillToBranch(bId, bName, bCode) {
+            dashboardState.branchId = bId;
+            dashboardState.selectedBranch = { branch_id: bId, name: bName, branch_code: bCode };
+            dashboardState.drillLevel = 'AGENTS';
+            dashboardState.selectedAgent = null;
+            dashboardState.scope = 'BRANCH';
+            document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('btn-scope-BRANCH');
+            if (btn) btn.classList.add('active');
+            const bSel = document.getElementById('dash-branch-select');
+            if (bSel) bSel.value = bId;
+            fetchFunnelData();
+        }
+
+        function drillToAgent(uId, uName) {
+            dashboardState.userId = uId;
+            dashboardState.selectedAgent = { user_id: uId, full_name: uName };
+            dashboardState.drillLevel = 'OPPORTUNITIES';
+            dashboardState.scope = 'OWN';
+            document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('btn-scope-OWN');
+            if (btn) btn.classList.add('active');
+            const aSel = document.getElementById('dash-agent-select');
+            if (aSel) aSel.value = uId;
+            fetchFunnelData();
+        }
+
+        function renderDrilldown() {
+            const container = document.getElementById('drilldown-table-container');
+            const bcContainer = document.getElementById('drill-breadcrumbs');
+            const titleEl = document.getElementById('drill-view-title');
+            const counterEl = document.getElementById('drill-counter-badge');
+            if (!container || !dashboardState.cachedData) return;
+
+            const isAr = currentLang === 'ar';
+            const drill = dashboardState.cachedData.drilldown;
+
+            // Render Breadcrumbs
+            let bcHtml = `<span class="breadcrumb-item ${dashboardState.drillLevel === 'BRANCHES' ? 'current' : ''}" onclick="drillToGlobal()">🌐 ${isAr ? 'المنظمة بالكامل' : 'Global Overview'}</span>`;
+
+            if (dashboardState.selectedBranch || dashboardState.drillLevel === 'AGENTS' || dashboardState.drillLevel === 'OPPORTUNITIES') {
+                const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info.branch_name || 'Selected Branch');
+                const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : dashboardState.cachedData.scope_info.branch_id;
+                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item ${dashboardState.drillLevel === 'AGENTS' ? 'current' : ''}" onclick="drillToBranch('${bId}', '${bName}')">🏢 ${bName}</span>`;
+            }
+
+            if (dashboardState.selectedAgent || dashboardState.drillLevel === 'OPPORTUNITIES') {
+                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info.user_name || 'Selected Agent');
+                const aId = dashboardState.selectedAgent ? dashboardState.selectedAgent.user_id : dashboardState.cachedData.scope_info.user_id;
+                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">👤 ${aName}</span>`;
+            }
+
+            if (bcContainer) bcContainer.innerHTML = bcHtml;
+
+            // Render Views
+            if (dashboardState.drillLevel === 'BRANCHES') {
+                if (titleEl) titleEl.textContent = isAr ? '🏢 أداء فروع ومراكز العمليات' : '🏢 Operational Branches Performance';
+                const branches = drill.branches || [];
+                if (counterEl) counterEl.textContent = `${branches.length} ${isAr ? 'فروع' : 'Branches'}`;
+
+                container.innerHTML = `
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>${isAr ? 'رمز الفرع' : 'Code'}</th>
+                                <th>${isAr ? 'اسم الفرع' : 'Branch Name'}</th>
+                                <th>${isAr ? 'الوسطاء' : 'Agents'}</th>
+                                <th>${isAr ? 'الطلبات' : 'Leads'}</th>
+                                <th>${isAr ? 'الفرص' : 'Open Opps'}</th>
+                                <th>${isAr ? 'المعاينات' : 'Viewings'}</th>
+                                <th>${isAr ? 'العقود' : 'Contracts'}</th>
+                                <th>${isAr ? 'قيمة المبيعات' : 'Sales Value'}</th>
+                                <th>${isAr ? 'التفاصيل' : 'Drilldown'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${branches.map(b => `
+                                <tr>
+                                    <td><span class="id-badge">${b.branch_code}</span></td>
+                                    <td><strong>${b.name}</strong></td>
+                                    <td>${b.agents_count}</td>
+                                    <td>${b.leads_count}</td>
+                                    <td>${b.open_opps}</td>
+                                    <td><span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; padding:2px 6px; border-radius:4px;">${b.viewings_count || 0}</span></td>
+                                    <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 6px; border-radius:4px;">${b.contracts_count}</span></td>
+                                    <td><strong style="color:#047857;">${Number(b.sales_value).toLocaleString()} SAR</strong></td>
+                                    <td>
+                                        <button class="btn-drill" onclick="drillToBranch('${b.branch_id}', '${b.name.replace(/'/g, "\\'")}', '${b.branch_code}')">
+                                            ${isAr ? 'استعراض الوسطاء ❯' : 'View Agents ❯'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (dashboardState.drillLevel === 'AGENTS') {
+                const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : 'Branch';
+                if (titleEl) titleEl.textContent = isAr ? `👤 أداء الوسطاء والموظفين (${bName})` : `👤 Agents & Brokers Performance (${bName})`;
+                const agents = drill.agents || [];
+                if (counterEl) counterEl.textContent = `${agents.length} ${isAr ? 'وسطاء' : 'Agents'}`;
+
+                if (agents.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لا يوجد وسطاء مسجلين في هذا الفرع' : 'No agents found for this branch.'}</div>`;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>${isAr ? 'الموظف / الوسيط' : 'Agent / Staff'}</th>
+                                <th>${isAr ? 'الفرع' : 'Branch'}</th>
+                                <th>${isAr ? 'الطلبات' : 'Leads'}</th>
+                                <th>${isAr ? 'الفرص البيعية' : 'Open Opps'}</th>
+                                <th>${isAr ? 'المعاينات' : 'Viewings'}</th>
+                                <th>${isAr ? 'العقود المبرمة' : 'Contracts'}</th>
+                                <th>${isAr ? 'قيمة المبيعات' : 'Sales Value'}</th>
+                                <th>${isAr ? 'استعراض الصفقات' : 'Action'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${agents.map(a => `
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>${a.full_name}</strong>
+                                            <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace;">${a.user_id} (${a.employee_no || '--'})</div>
+                                        </div>
+                                    </td>
+                                    <td>${a.branch_name || '--'}</td>
+                                    <td>${a.leads_count}</td>
+                                    <td>${a.open_opps}</td>
+                                    <td>${a.viewings_count}</td>
+                                    <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 6px; border-radius:4px;">${a.contracts_count}</span></td>
+                                    <td><strong style="color:#047857;">${Number(a.sales_value).toLocaleString()} SAR</strong></td>
+                                    <td>
+                                        <button class="btn-drill" onclick="drillToAgent('${a.user_id}', '${a.full_name.replace(/'/g, "\\'")}')">
+                                            ${isAr ? 'استعراض الفرص ❯' : 'View Deals ❯'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (dashboardState.drillLevel === 'OPPORTUNITIES') {
+                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : 'Agent';
+                if (titleEl) titleEl.textContent = isAr ? `🎯 الصفقات والفرص البيعية للوسيط: ${aName}` : `🎯 Opportunities & Deals for ${aName}`;
+                const opps = drill.opportunities || [];
+                if (counterEl) counterEl.textContent = `${opps.length} ${isAr ? 'فرص' : 'Opportunities'}`;
+
+                if (opps.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لا توجد فرص بيعية نشطة مسندة' : 'No active opportunities found.'}</div>`;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>${isAr ? 'رقم الفرصة' : 'Opportunity ID'}</th>
+                                <th>${isAr ? 'العميل' : 'Customer'}</th>
+                                <th>${isAr ? 'المرحلة' : 'Stage'}</th>
+                                <th>${isAr ? 'القيمة المتوقعة' : 'Expected Value'}</th>
+                                <th>${isAr ? 'العقار / الوحدة' : 'Property / Unit'}</th>
+                                <th>${isAr ? 'المسؤول' : 'Agent'}</th>
+                                <th>${isAr ? 'إجراء' : 'Link'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${opps.map(op => {
+                                let badgeBg = '#e2e8f0';
+                                let badgeColor = '#334155';
+                                if (op.stage.includes('WON') || op.stage.includes('CONTRACT')) { badgeBg = '#dcfce7'; badgeColor = '#15803d'; }
+                                else if (op.stage.includes('OFFER') || op.stage.includes('RESERVATION')) { badgeBg = '#fef3c7'; badgeColor = '#b45309'; }
+                                else if (op.stage.includes('VIEWING')) { badgeBg = '#e0f2fe'; badgeColor = '#0369a1'; }
+
+                                return `
+                                    <tr>
+                                        <td><span class="id-badge">${op.opportunity_id}</span></td>
+                                        <td>
+                                            <strong>${op.customer_name || 'Customer'}</strong>
+                                            ${op.customer_mobile ? `<div style="font-size:0.75em; color:var(--text-muted);">${op.customer_mobile}</div>` : ''}
+                                        </td>
+                                        <td><span class="badge" style="background:${badgeBg}; color:${badgeColor}; font-weight:700; padding:2px 8px; border-radius:4px; font-size:0.75em;">${op.stage}</span></td>
+                                        <td><strong>${Number(op.expected_value).toLocaleString()} SAR</strong></td>
+                                        <td>
+                                            ${op.unit_number ? `<div><strong>Unit ${op.unit_number}</strong> <span style="font-size:0.75em; color:var(--text-muted);">(${op.building_name || op.project_name || 'Asset'})</span></div>` : '<span style="color:var(--text-muted);">Unassigned Unit</span>'}
+                                        </td>
+                                        <td>${op.agent_name || '--'}</td>
+                                        <td>
+                                            <a href="sales.html" class="btn-drill" style="text-decoration:none; display:inline-block;">
+                                                ${isAr ? 'مسار البيع ➔' : 'Pipeline ➔'}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        // ================= LIVE OPERATIONAL PULSE FEED =================
+        function quickFilterViewings() {
+            const chip = document.getElementById('chip-filter-viewing') || document.querySelector('[data-filter=VIEWING]');
+            filterPulseFeed('VIEWING', chip);
+            const pulseBox = document.getElementById('live-pulse-list');
+            if (pulseBox) {
+                pulseBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function filterPulseFeed(type, chipEl) {
+            dashboardState.pulseFilter = type;
+            document.querySelectorAll('.pulse-filter-chip').forEach(c => c.classList.remove('active'));
+            if (chipEl) chipEl.classList.add('active');
+            renderPulseFeed();
+        }
+
+        function renderPulseFeed() {
+            const listEl = document.getElementById('live-pulse-list');
+            if (!listEl || !dashboardState.cachedData) return;
+
+            let items = dashboardState.cachedData.live_pulse || [];
+            if (dashboardState.pulseFilter !== 'ALL') {
+                items = items.filter(ev => ev.event_type === dashboardState.pulseFilter);
+            }
+
+            if (items.length === 0) {
+                listEl.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.9em;">No live events matching filter.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map(ev => {
+                let badgeClass = 'pulse-type-activity';
+                let icon = '📞';
+                let typeLabel = ev.event_type;
+                if (ev.event_type === 'VIEWING') {
+                    badgeClass = 'pulse-type-viewing';
+                    icon = '👁️';
+                    typeLabel = 'VIEWING (معاينة)';
+                } else if (ev.event_type === 'TASK') {
+                    badgeClass = 'pulse-type-task';
+                    icon = '📋';
+                    typeLabel = 'TASK (مهمة)';
+                } else if (ev.event_type === 'COMMUNICATION') {
+                    badgeClass = 'pulse-type-comm';
+                    icon = '💬';
+                    typeLabel = 'MESSAGE (رسالة)';
+                } else if (ev.event_type === 'LEAD_UPDATE') {
+                    badgeClass = 'pulse-type-lead';
+                    icon = '⚡';
+                    typeLabel = 'LEAD (طلب)';
+                } else if (ev.event_type === 'ACTIVITY') {
+                    typeLabel = 'ACTIVITY (نشاط)';
+                }
+
+                const timeStr = ev.occurred_at ? new Date(ev.occurred_at).toLocaleString() : 'Just now';
+
+                return `
+                    <div class="pulse-card" ${ev.event_type === 'VIEWING' ? 'style="border-inline-start: 4px solid #0284c7; background: #f0f9ff;"' : ''}>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="pulse-type-badge ${badgeClass}">${icon} ${typeLabel}</span>
+                            <span style="font-size: 0.72em; color: var(--text-muted);">${timeStr}</span>
+                        </div>
+                        <div style="font-weight: 700; color: #0f172a; margin-top: 3px;">${ev.title}</div>
+                        <div style="font-size: 0.85em; color: #475569; line-height: 1.35;">${ev.description}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76em; color: var(--text-muted); margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 4px;">
+                            <span>👤 ${ev.actor_name || 'System / Auto'}</span>
+                            ${ev.customer_name ? `<span>👥 <strong>${ev.customer_name}</strong></span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadDashboardData() {
+            await fetchFunnelData();
+            try {
+                await loadUserProfile();
+            } catch (e) {
+                console.warn('Failed to load user profile:', e);
+            }
+        }
+
+        let currentUserProfile = null;
+
+        async function loadUserProfile() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryUser = urlParams.get('user_id') || urlParams.get('u');
+                if (queryUser) {
+                    localStorage.setItem('recrm_user_id', queryUser);
+                }
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                
+                const res = await fetch(`${API_BASE}/api/v1/me?user_id=${encodeURIComponent(activeUserId)}`);
+                if (!res.ok) throw new Error('Failed to load user profile');
+                const json = await res.json();
+                currentUserProfile = json.data;
+
+                const nameDisplay = document.getElementById('user-name-display');
+                if (nameDisplay && currentUserProfile) {
+                    const roleName = (currentUserProfile.roles && currentUserProfile.roles[0]) 
+                        ? currentUserProfile.roles[0].name 
+                        : (currentUserProfile.role_codes ? currentUserProfile.role_codes[0] : 'SYS_ADMIN');
+                    nameDisplay.innerHTML = `<strong>${currentUserProfile.full_name}</strong> <span style="opacity: 0.85; font-size: 0.85em; background: rgba(255,255,255,0.22); padding: 1px 6px; border-radius: 4px; margin-inline-start: 4px;">${currentUserProfile.user_id}</span> <span style="background: #10b981; color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.8em; font-weight: 700; margin-inline-start: 4px;">🛡️ ${roleName}</span>`;
+                }
+            } catch (err) {
+                console.warn('Error loading user profile:', err);
+                const nameDisplay = document.getElementById('user-name-display');
+                if (nameDisplay) nameDisplay.textContent = 'Fahad Kh. Alnemari (user-51)';
+            }
+        }
+
+        async function openUserProfileModal() {
+            if (!currentUserProfile) await loadUserProfile();
+            if (!currentUserProfile) return;
+            const isAr = currentLang === 'ar';
+            const modal = document.getElementById('user-profile-modal');
+            if (!modal) return;
+            
+            // Populate modal fields
+            document.getElementById('modal-user-fullname').textContent = currentUserProfile.full_name || '--';
+            document.getElementById('modal-user-id').textContent = currentUserProfile.user_id || '--';
+            document.getElementById('modal-user-email').textContent = currentUserProfile.email || '--';
+            document.getElementById('modal-user-mobile').textContent = currentUserProfile.mobile || '--';
+            document.getElementById('modal-user-branch').textContent = currentUserProfile.branch_name || '--';
+            document.getElementById('modal-user-scope').textContent = currentUserProfile.effective_scope || 'GLOBAL';
+
+            // Roles
+            const rolesWrap = document.getElementById('modal-user-roles');
+            if (rolesWrap) {
+                rolesWrap.innerHTML = (currentUserProfile.roles || []).map(r => 
+                    `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.85em; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-inline-end: 4px;">🛡️ ${r.name || r.role_code} (${r.role_code})</span>`
+                ).join('') || '--';
+            }
+
+            // Permissions list
+            const permsWrap = document.getElementById('modal-user-permissions');
+            const countBadge = document.getElementById('modal-perm-count-badge');
+            const perms = currentUserProfile.permissions || [];
+            if (countBadge) countBadge.textContent = `${perms.length} ${isAr ? 'صلاحية نشطة' : 'Active Permissions'}`;
+            if (permsWrap) {
+                permsWrap.innerHTML = perms.map(p => 
+                    `<div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.82em;">
+                        <span style="color: #16a34a; font-weight: 800;">✓</span>
+                        <span style="font-weight: 700; color: #1e3a8a;">${p.code}</span>
+                        <span style="color: #64748b; font-size: 0.9em;">- ${p.name}</span>
+                    </div>`
+                ).join('') || `<div style="color: #64748b;">${isAr ? 'لا توجد صلاحيات' : 'No explicit permissions'}</div>`;
+            }
+
+            // Load switch user dropdown
+            const switchSel = document.getElementById('modal-user-switch-select');
+            if (switchSel) {
+                try {
+                    const uRes = await fetch(`${API_BASE}/api/v1/auth/users`);
+                    if (uRes.ok) {
+                        const uJson = await uRes.json();
+                        const users = uJson.data || [];
+                        switchSel.innerHTML = users.map(u => 
+                            `<option value="${u.user_id}" ${u.user_id === currentUserProfile.user_id ? 'selected' : ''}>👤 ${u.full_name} (${u.user_id}) - ${u.roles ? u.roles.join(', ') : ''}</option>`
+                        ).join('');
+                    }
+                } catch (e) {
+                    console.warn('Failed to load user switch list:', e);
+                }
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeUserProfileModal() {
+            const modal = document.getElementById('user-profile-modal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        function switchActiveUser() {
+            const switchSel = document.getElementById('modal-user-switch-select');
+            if (!switchSel) return;
+            const newUid = switchSel.value;
+            if (newUid) {
+                localStorage.setItem('recrm_user_id', newUid);
+                const url = new URL(window.location.href);
+                url.searchParams.set('user_id', newUid);
+                window.location.href = url.toString();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -644,5 +1596,82 @@
             loadDashboardData();
         });
     </script>
+
+    <!-- User Profile & Permissions Modal -->
+    <div id="user-profile-modal" class="modal-overlay" onclick="if(event.target===this) closeUserProfileModal()">
+        <div class="modal-box" style="max-width: 720px; width: 95%;">
+            <div style="padding: 16px 20px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️</span>
+                    <span>ملف المستخدم والأدوار والصلاحيات (User Profile & RBAC)</span>
+                </div>
+                <button onclick="closeUserProfileModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4em; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            
+            <div style="padding: 20px; max-height: 75vh; overflow-y: auto;">
+                <!-- Identity Card -->
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-size: 1.25em; font-weight: 800; color: #0f172a;" id="modal-user-fullname">--</div>
+                            <div style="font-size: 0.85em; color: #64748b; margin-top: 3px;">
+                                <span id="modal-user-email">--</span> • <span id="modal-user-mobile">--</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <span class="id-badge" style="background: #e2e8f0; color: #0f172a; font-size: 0.85em; font-weight: 700; padding: 4px 8px; border-radius: 4px;" id="modal-user-id">--</span>
+                            <span style="background: #dcfce7; color: #166534; font-size: 0.82em; font-weight: 700; padding: 4px 8px; border-radius: 4px;">ACTIVE</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.85em; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                        <div>
+                            <span style="color: #64748b; font-size: 0.82em;">الفرع (Branch):</span>
+                            <strong id="modal-user-branch" style="display: block; color: #0f172a; font-size: 0.95em;">--</strong>
+                        </div>
+                        <div>
+                            <span style="color: #64748b; font-size: 0.82em;">نطاق البيانات (Data Scope):</span>
+                            <strong id="modal-user-scope" style="display: block; color: #7c3aed; font-size: 0.95em;">GLOBAL</strong>
+                        </div>
+                        <div>
+                            <span style="color: #64748b; font-size: 0.82em;">الأدوار (Assigned Roles):</span>
+                            <div id="modal-user-roles" style="margin-top: 3px;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fast User Switcher -->
+                <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px;">
+                    <label style="display: block; font-size: 0.85em; font-weight: 700; color: #1e3a8a; margin-bottom: 6px;">
+                        🔄 تبديل المستخدم الحالي (Switch Active User Context):
+                    </label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <select id="modal-user-switch-select" style="flex: 1; min-width: 260px; padding: 8px 10px; border-radius: 6px; border: 1px solid #93c5fd; font-size: 0.88em; background: white;">
+                            <option value="">جاري تحميل المستخدمين...</option>
+                        </select>
+                        <button type="button" class="btn" onclick="switchActiveUser()" style="padding: 8px 16px; font-size: 0.88em; background: #0284c7;">
+                            تطبيق التبديل (Switch User)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Granted Permissions Section -->
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95em; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📋 الصلاحيات الممنوحة (Active Permissions):</span>
+                        <span id="modal-perm-count-badge" style="font-size: 0.8em; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 700;">--</span>
+                    </div>
+                    <div id="modal-user-permissions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; max-height: 240px; overflow-y: auto; padding: 2px;">
+                        <!-- dynamic items -->
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn" onclick="closeUserProfileModal()" style="background: #64748b; padding: 6px 16px;">إغلاق (Close)</button>
+            </div>
+        </div>
+    </div>
+    <script src="user_session.js"></script>
 </body>
 </html>

@@ -7,6 +7,9 @@
     <!-- Professional Arabic Typography (High-Speed Local Assets) -->
     <link rel="stylesheet" href="fonts/fonts.css">
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         :root {
             --primary: #1e3a8a;
             --secondary: #3b82f6;
@@ -169,8 +172,8 @@
             backdrop-filter: blur(2px);
         }
         .modal {
-            background: white; border-radius: 12px; width: 92%; max-width: 740px; max-height: 90vh;
-            overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            background: white; border-radius: 12px; width: 95%; max-width: 860px; max-height: 90vh;
+            overflow-y: auto; overflow-x: hidden; padding: 24px 28px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
         }
         .modal-header {
             display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);
@@ -180,33 +183,46 @@
         .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); line-height: 1; }
         .close-btn:hover { color: var(--text-main); }
         
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-        @media (max-width: 640px) {
-            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+        .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 14px; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 14px; }
+        @media (max-width: 768px) {
+            .form-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 0.85em; font-weight: 600; color: var(--text-main); }
+        @media (max-width: 540px) {
+            .form-row, .form-row-3 { grid-template-columns: minmax(0, 1fr); }
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .form-group label {
+            font-size: 0.85em; font-weight: 600; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .form-group input, .form-group select, .form-group textarea {
+            width: 100%; max-width: 100%; box-sizing: border-box;
             padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; outline: none;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s; background-color: #fff;
+        }
+        .form-group select {
+            text-overflow: ellipsis;
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             border-color: var(--secondary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
         }
         .modal-footer {
             display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border);
-            padding-top: 16px; margin-top: 20px;
+            padding-top: 16px; margin-top: 20px; flex-wrap: wrap;
         }
 
         /* Detail View Spec Table */
         .detail-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0;
             background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px;
         }
-        .detail-item { font-size: 0.9em; }
+        @media (max-width: 540px) {
+            .detail-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+        .detail-item { font-size: 0.9em; min-width: 0; }
         .detail-label { color: var(--text-muted); font-size: 0.85em; display: block; margin-bottom: 2px; }
-        .detail-val { font-weight: 600; color: var(--text-main); }
+        .detail-val { font-weight: 600; color: var(--text-main); word-break: break-word; }
 
         /* Toast */
         #toast {
@@ -227,7 +243,13 @@
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_inventory">Inventory</span>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div id="user-session-widget" style="display: inline-flex; align-items: center;">
+                <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
+                    <span>👤</span>
+                    <span id="user-name-display">Loading user-51...</span>
+                </div>
+            </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
                 <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
@@ -289,9 +311,19 @@
 
         <div class="controls-bar">
             <input type="text" id="search-box" placeholder="Search by unit number, unit_id or project..." style="flex-grow: 1; min-width: 220px;" oninput="fetchUnits()" data-i18n-placeholder="search_placeholder">
-            <select id="building-filter" onchange="fetchUnits()">
+            <select id="project-filter" onchange="onProjectFilterChange()">
+                <option value="" data-i18n="opt_all_projects">All Projects</option>
+            </select>
+            <select id="building-filter" onchange="onBuildingFilterChange()">
                 <option value="" data-i18n="opt_all_buildings">All Buildings & Projects</option>
             </select>
+            <select id="unit-agent-filter" onchange="fetchUnits()">
+                <option value="">All Agents (جميع الوسطاء)</option>
+            </select>
+            <div id="unit-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
+                <span id="unit-agent-scope-text">Showing user data only</span>
+                <button type="button" onclick="clearUnitAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
+            </div>
             <select id="status-select" onchange="fetchUnits()">
                 <option value="" data-i18n="opt_all_statuses">All Statuses</option>
                 <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
@@ -425,10 +457,19 @@
                 <div class="form-row">
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label style="margin: 0;" data-i18n="lbl_building">Building / Project *</label>
+                            <label style="margin: 0;" data-i18n="lbl_project">Project</label>
+                            <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddProjectModal()">+ New Project</button>
+                        </div>
+                        <select id="add-project-id" onchange="onAddUnitProjectChange()">
+                            <option value="">-- Select Project --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label style="margin: 0;" data-i18n="lbl_building">Building *</label>
                             <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddBuildingModal()">+ New Building</button>
                         </div>
-                        <select id="add-building-id" required>
+                        <select id="add-building-id" required onchange="onAddUnitBuildingChange()">
                             <option value="">-- Select Building --</option>
                         </select>
                     </div>
@@ -510,13 +551,13 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_owner_customer">Owner (Customer)</label>
-                        <select id="add-owner-id">
+                        <select id="add-owner-id" onchange="onAddUnitOwnerChange()">
                             <option value="" data-i18n="opt_direct_agency">-- Direct / Agency (مباشر للمكتب) --</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_assigned_agent">Assigned Agent</label>
-                        <select id="add-assigned-user">
+                        <select id="add-assigned-user" onchange="onAddUnitAgentChange()">
                             <option value="" data-i18n="opt_unassigned">-- Unassigned (غير مسند) --</option>
                         </select>
                     </div>
@@ -545,8 +586,14 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_building">Building / Project *</label>
-                        <select id="edit-building-id" required></select>
+                        <label data-i18n="lbl_project">Project</label>
+                        <select id="edit-project-id" onchange="onEditUnitProjectChange()">
+                            <option value="">-- Select Project --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_building">Building *</label>
+                        <select id="edit-building-id" required onchange="onEditUnitBuildingChange()"></select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_unit_number">Unit Number *</label>
@@ -624,11 +671,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_owner_customer">Owner (Customer)</label>
-                        <select id="edit-owner-id"></select>
+                        <select id="edit-owner-id" onchange="onEditUnitOwnerChange()"></select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_assigned_agent">Assigned Agent</label>
-                        <select id="edit-assigned-user"></select>
+                        <select id="edit-assigned-user" onchange="onEditUnitAgentChange()"></select>
                     </div>
                 </div>
 
@@ -745,6 +792,7 @@
                 page_title: "Property Inventory & Units",
                 loading_inventory: "Loading live property inventory from database...",
                 search_placeholder: "Search by unit number, unit_id or project...",
+                opt_all_projects: "All Projects",
                 opt_all_buildings: "All Buildings & Projects",
                 opt_all_statuses: "All Statuses",
                 opt_available: "AVAILABLE",
@@ -833,6 +881,7 @@
                 page_title: "المخزون والوحدات العقارية",
                 loading_inventory: "جاري تحميل المخزون العقاري من قاعدة البيانات...",
                 search_placeholder: "البحث برقم الوحدة أو معرف الوحدة أو المشروع...",
+                opt_all_projects: "جميع المشاريع",
                 opt_all_buildings: "جميع المباني والمشاريع",
                 opt_all_statuses: "جميع الحالات",
                 opt_available: "متاح (AVAILABLE)",
@@ -1093,18 +1142,47 @@
         let currentUnitsPage = 1;
         let unitsPageSize = 24;
 
+        function clearUnitAgentScope() {
+            const agFilter = document.getElementById('unit-agent-filter');
+            if (agFilter) {
+                agFilter.value = '';
+                fetchUnits(1);
+            }
+        }
+
         async function fetchUnits(page = null) {
             if (page !== null) currentUnitsPage = page;
             const search = document.getElementById('search-box').value;
+            const prjId = document.getElementById('project-filter') ? document.getElementById('project-filter').value : '';
             const bldId = document.getElementById('building-filter').value;
             const status = document.getElementById('status-select').value;
             const bedrooms = document.getElementById('bedrooms-select').value;
+            const agId = document.getElementById('unit-agent-filter')?.value || '';
+
+            const badge = document.getElementById('unit-agent-scope-badge');
+            const badgeText = document.getElementById('unit-agent-scope-text');
+            const isAr = currentLang === 'ar';
+
+            if (agId) {
+                if (badge && badgeText) {
+                    const selUser = (cachedUsers || []).find(u => u.user_id === agId);
+                    const agName = selUser ? selUser.full_name : agId;
+                    badgeText.textContent = isAr 
+                        ? `عرض وحدات (${agName}) فقط - تم حجب باقي المستخدمين`
+                        : `Showing units for (${agName}) only - others hidden`;
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                if (badge) badge.style.display = 'none';
+            }
 
             let url = `${API_BASE}/api/v1/units?page=${currentUnitsPage}&page_size=${unitsPageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (prjId && !bldId) url += `&project_id=${encodeURIComponent(prjId)}`;
             if (bldId) url += `&building_id=${encodeURIComponent(bldId)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (bedrooms) url += `&bedrooms=${encodeURIComponent(bedrooms)}`;
+            if (agId) url += `&assigned_user_id=${encodeURIComponent(agId)}`;
 
             try {
                 const res = await fetch(url);
@@ -1162,12 +1240,58 @@
             fetchUnits(1);
         }
 
+        function updateBuildingFilterOptions(selectedPrjId = '') {
+            const isAr = currentLang === 'ar';
+            const t = i18nData[currentLang];
+            const bldFilter = document.getElementById('building-filter');
+            if (!bldFilter) return;
+            const curBldVal = bldFilter.value;
+            const filteredBlds = selectedPrjId 
+                ? cachedBuildings.filter(b => b.project_id === selectedPrjId)
+                : cachedBuildings;
+            bldFilter.innerHTML = `<option value="">${t.opt_all_buildings}</option>` + 
+                filteredBlds.map(b => {
+                    const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
+                    const bName = b.building_name || b.building_code;
+                    return `<option value="${b.building_id}">[${pName}] ${b.building_code} - ${bName}</option>`;
+                }).join('');
+            if (filteredBlds.some(b => b.building_id === curBldVal)) {
+                bldFilter.value = curBldVal;
+            } else {
+                bldFilter.value = '';
+            }
+        }
+
+        function onProjectFilterChange() {
+            const prjId = document.getElementById('project-filter')?.value || '';
+            updateBuildingFilterOptions(prjId);
+            fetchUnits(1);
+        }
+
+        function onBuildingFilterChange() {
+            const bldId = document.getElementById('building-filter')?.value || '';
+            if (bldId) {
+                const b = cachedBuildings.find(x => x.building_id === bldId);
+                if (b && b.project_id) {
+                    const prjFilter = document.getElementById('project-filter');
+                    if (prjFilter && prjFilter.value !== b.project_id) {
+                        prjFilter.value = b.project_id;
+                        updateBuildingFilterOptions(b.project_id);
+                        document.getElementById('building-filter').value = bldId;
+                    }
+                }
+            }
+            fetchUnits(1);
+        }
+
         function resetFilters() {
             document.getElementById('search-box').value = '';
+            if (document.getElementById('project-filter')) document.getElementById('project-filter').value = '';
+            updateBuildingFilterOptions('');
             document.getElementById('building-filter').value = '';
             document.getElementById('status-select').value = '';
             document.getElementById('bedrooms-select').value = '';
-            fetchUnits();
+            fetchUnits(1);
         }
 
         // ================= REFERENCE DATA LOADING =================
@@ -1195,46 +1319,80 @@
             }
         }
 
+        function getOwnerAgentMappings() {
+            const ownerToAgents = {};
+            const agentToOwners = {};
+            cachedUnits.forEach(u => {
+                if (u.owner_customer_id && u.assigned_user_id) {
+                    if (!ownerToAgents[u.owner_customer_id]) ownerToAgents[u.owner_customer_id] = new Set();
+                    ownerToAgents[u.owner_customer_id].add(u.assigned_user_id);
+                    if (!agentToOwners[u.assigned_user_id]) agentToOwners[u.assigned_user_id] = new Set();
+                    agentToOwners[u.assigned_user_id].add(u.owner_customer_id);
+                }
+            });
+            return { ownerToAgents, agentToOwners };
+        }
+
         function populateSelectOptions() {
             const isAr = currentLang === 'ar';
             const t = i18nData[currentLang];
 
-            // 1. Building filter in controls-bar
-            const bldFilter = document.getElementById('building-filter');
-            const curFilterVal = bldFilter ? bldFilter.value : '';
-            if (bldFilter) {
-                bldFilter.innerHTML = `<option value="">${t.opt_all_buildings}</option>` + 
-                    cachedBuildings.map(b => {
-                        const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
-                        const bName = b.building_name || b.building_code;
-                        return `<option value="${b.building_id}">[${pName}] ${b.building_code} - ${bName}</option>`;
+            // 1. Project & Building filter in controls-bar
+            const prjFilter = document.getElementById('project-filter');
+            const curPrjFilterVal = prjFilter ? prjFilter.value : '';
+            if (prjFilter) {
+                prjFilter.innerHTML = `<option value="">${t.opt_all_projects || 'All Projects'}</option>` + 
+                    cachedProjects.map(p => {
+                        const pName = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+                        return `<option value="${p.project_id}">${pName}</option>`;
                     }).join('');
-                bldFilter.value = curFilterVal;
+                prjFilter.value = curPrjFilterVal;
+            }
+            updateBuildingFilterOptions(curPrjFilterVal);
+
+            // Unit agent filter in controls-bar
+            const unitAgFilter = document.getElementById('unit-agent-filter');
+            if (unitAgFilter && cachedUsers && cachedUsers.length > 0) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+                const curAg = unitAgFilter.value || urlAgent || '';
+                unitAgFilter.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` + 
+                    cachedUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                if (curAg) {
+                    unitAgFilter.value = curAg;
+                    fetchUnits(1);
+                }
             }
 
-            // 2. Building select in Add & Edit modals
-            const bldOptions = `<option value="">-- ${isAr ? 'اختر المبنى' : 'Select Building'} --</option>` +
-                cachedBuildings.map(b => {
-                    const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
-                    const bName = b.building_name || b.building_code;
-                    return `<option value="${b.building_id}">[${pName}] ${b.building_code} - ${bName}</option>`;
-                }).join('');
-            
-            const addBld = document.getElementById('add-building-id');
-            if (addBld) addBld.innerHTML = bldOptions;
-            const editBld = document.getElementById('edit-building-id');
-            if (editBld) editBld.innerHTML = bldOptions;
-
-            // 2b. Project select in Add Building modal
-            const prjOptions = `<option value="">-- ${isAr ? 'اختر المشروع' : 'Select Project'} --</option>` +
+            // 2. Project dropdowns in Add & Edit modals
+            const prjSelectOptions = `<option value="">-- ${isAr ? 'اختر المشروع' : 'Select Project'} --</option>` +
                 cachedProjects.map(p => {
                     const pName = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
                     return `<option value="${p.project_id}">${pName} (${p.project_id})</option>`;
                 }).join('');
-            const addBldPrj = document.getElementById('add-bld-project-id');
-            if (addBldPrj) addBldPrj.innerHTML = prjOptions;
 
-            // 2c. City select in Add Project modal
+            const addPrj = document.getElementById('add-project-id');
+            if (addPrj) {
+                const prev = addPrj.value;
+                addPrj.innerHTML = prjSelectOptions;
+                if (prev) addPrj.value = prev;
+            }
+            const editPrj = document.getElementById('edit-project-id');
+            if (editPrj) {
+                const prev = editPrj.value;
+                editPrj.innerHTML = prjSelectOptions;
+                if (prev) editPrj.value = prev;
+            }
+
+            // 2b. Building select in Add & Edit modals
+            onAddUnitProjectChange();
+            onEditUnitProjectChange();
+
+            // 2c. Project select in Add Building modal
+            const addBldPrj = document.getElementById('add-bld-project-id');
+            if (addBldPrj) addBldPrj.innerHTML = prjSelectOptions;
+
+            // 2d. City select in Add Project modal
             const cityOptions = `<option value="">-- ${isAr ? 'اختر المدينة' : 'Select City'} --</option>` +
                 cachedCities.map(c => {
                     const cName = isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar);
@@ -1272,9 +1430,17 @@
                 }).join('');
 
             const addOwner = document.getElementById('add-owner-id');
-            if (addOwner) addOwner.innerHTML = custOptions;
+            if (addOwner) {
+                const prevOwnerVal = addOwner.value;
+                addOwner.innerHTML = custOptions;
+                if (prevOwnerVal) addOwner.value = prevOwnerVal;
+            }
             const editOwner = document.getElementById('edit-owner-id');
-            if (editOwner) editOwner.innerHTML = custOptions;
+            if (editOwner) {
+                const prevEditOwnerVal = editOwner.value;
+                editOwner.innerHTML = custOptions;
+                if (prevEditOwnerVal) editOwner.value = prevEditOwnerVal;
+            }
 
             // 5. Assigned Users in Add & Edit modals
             const userOptions = `<option value="">${t.opt_unassigned}</option>` +
@@ -1283,9 +1449,135 @@
                 }).join('');
 
             const addUsr = document.getElementById('add-assigned-user');
-            if (addUsr) addUsr.innerHTML = userOptions;
+            if (addUsr) {
+                const prevUsrVal = addUsr.value;
+                addUsr.innerHTML = userOptions;
+                if (prevUsrVal) addUsr.value = prevUsrVal;
+            }
             const editUsr = document.getElementById('edit-assigned-user');
-            if (editUsr) editUsr.innerHTML = userOptions;
+            if (editUsr) {
+                const prevEditUsrVal = editUsr.value;
+                editUsr.innerHTML = userOptions;
+                if (prevEditUsrVal) editUsr.value = prevEditUsrVal;
+            }
+        }
+
+        function onAddUnitProjectChange() {
+            const prjId = document.getElementById('add-project-id')?.value || '';
+            const isAr = currentLang === 'ar';
+            const bldSelect = document.getElementById('add-building-id');
+            if (!bldSelect) return;
+            const curVal = bldSelect.value;
+            const filtered = prjId ? cachedBuildings.filter(b => b.project_id === prjId) : cachedBuildings;
+            bldSelect.innerHTML = `<option value="">-- ${isAr ? 'اختر المبنى' : 'Select Building'} --</option>` +
+                filtered.map(b => {
+                    const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
+                    const bName = b.building_name || b.building_code;
+                    return `<option value="${b.building_id}">[${pName}] ${b.building_code} - ${bName}</option>`;
+                }).join('');
+            if (filtered.some(b => b.building_id === curVal)) {
+                bldSelect.value = curVal;
+            } else if (filtered.length === 1) {
+                bldSelect.value = filtered[0].building_id;
+            } else {
+                bldSelect.value = '';
+            }
+        }
+
+        function onAddUnitBuildingChange() {
+            const bldId = document.getElementById('add-building-id')?.value || '';
+            if (bldId) {
+                const b = cachedBuildings.find(x => x.building_id === bldId);
+                if (b && b.project_id) {
+                    const prjSelect = document.getElementById('add-project-id');
+                    if (prjSelect && prjSelect.value !== b.project_id) {
+                        prjSelect.value = b.project_id;
+                        onAddUnitProjectChange();
+                        document.getElementById('add-building-id').value = bldId;
+                    }
+                }
+            }
+        }
+
+        function onAddUnitOwnerChange() {
+            const ownerId = document.getElementById('add-owner-id')?.value || '';
+            const agentSelect = document.getElementById('add-assigned-user');
+            if (!agentSelect || !ownerId) return;
+            const { ownerToAgents } = getOwnerAgentMappings();
+            const agents = ownerToAgents[ownerId];
+            if (agents && agents.size === 1) {
+                agentSelect.value = Array.from(agents)[0];
+            }
+        }
+
+        function onAddUnitAgentChange() {
+            const agentId = document.getElementById('add-assigned-user')?.value || '';
+            const ownerSelect = document.getElementById('add-owner-id');
+            if (!ownerSelect || !agentId) return;
+            const { agentToOwners } = getOwnerAgentMappings();
+            const owners = agentToOwners[agentId];
+            if (owners && owners.size === 1 && !ownerSelect.value) {
+                ownerSelect.value = Array.from(owners)[0];
+            }
+        }
+
+        function onEditUnitProjectChange() {
+            const prjId = document.getElementById('edit-project-id')?.value || '';
+            const isAr = currentLang === 'ar';
+            const bldSelect = document.getElementById('edit-building-id');
+            if (!bldSelect) return;
+            const curVal = bldSelect.value;
+            const filtered = prjId ? cachedBuildings.filter(b => b.project_id === prjId) : cachedBuildings;
+            bldSelect.innerHTML = `<option value="">-- ${isAr ? 'اختر المبنى' : 'Select Building'} --</option>` +
+                filtered.map(b => {
+                    const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
+                    const bName = b.building_name || b.building_code;
+                    return `<option value="${b.building_id}">[${pName}] ${b.building_code} - ${bName}</option>`;
+                }).join('');
+            if (filtered.some(b => b.building_id === curVal)) {
+                bldSelect.value = curVal;
+            } else if (filtered.length === 1) {
+                bldSelect.value = filtered[0].building_id;
+            } else {
+                bldSelect.value = '';
+            }
+        }
+
+        function onEditUnitBuildingChange() {
+            const bldId = document.getElementById('edit-building-id')?.value || '';
+            if (bldId) {
+                const b = cachedBuildings.find(x => x.building_id === bldId);
+                if (b && b.project_id) {
+                    const prjSelect = document.getElementById('edit-project-id');
+                    if (prjSelect && prjSelect.value !== b.project_id) {
+                        prjSelect.value = b.project_id;
+                        onEditUnitProjectChange();
+                        document.getElementById('edit-building-id').value = bldId;
+                    }
+                }
+            }
+        }
+
+        function onEditUnitOwnerChange() {
+            const ownerId = document.getElementById('edit-owner-id')?.value || '';
+            const agentSelect = document.getElementById('edit-assigned-user');
+            if (!agentSelect || !ownerId) return;
+            const { ownerToAgents } = getOwnerAgentMappings();
+            const agents = ownerToAgents[ownerId];
+            if (agents && agents.size === 1) {
+                agentSelect.value = Array.from(agents)[0];
+            }
+        }
+
+        function onEditUnitAgentChange() {
+            const agentId = document.getElementById('edit-assigned-user')?.value || '';
+            const ownerSelect = document.getElementById('edit-owner-id');
+            if (!ownerSelect || !agentId) return;
+            const { agentToOwners } = getOwnerAgentMappings();
+            const owners = agentToOwners[agentId];
+            if (owners && owners.size === 1 && !ownerSelect.value) {
+                ownerSelect.value = Array.from(owners)[0];
+            }
         }
 
         // ================= PROJECT & BUILDING MODAL HANDLERS =================
@@ -1391,6 +1683,8 @@
             } else {
                 populateSelectOptions();
             }
+            if (document.getElementById('add-project-id')) document.getElementById('add-project-id').value = '';
+            onAddUnitProjectChange();
             document.getElementById('add-building-id').value = '';
             document.getElementById('add-unit-number').value = '';
             document.getElementById('add-property-type-id').value = '';
@@ -1464,6 +1758,12 @@
 
                 document.getElementById('edit-unit-id').value = u.unit_id;
                 document.getElementById('edit-unit-id-display').textContent = u.unit_id;
+                const bldObj = cachedBuildings.find(b => b.building_id === u.building_id);
+                const editPrj = document.getElementById('edit-project-id');
+                if (editPrj) {
+                    editPrj.value = (bldObj && bldObj.project_id) ? bldObj.project_id : '';
+                    onEditUnitProjectChange();
+                }
                 document.getElementById('edit-building-id').value = u.building_id || '';
                 document.getElementById('edit-unit-number').value = u.unit_number || '';
                 document.getElementById('edit-property-type-id').value = u.property_type_id || '';
@@ -1628,5 +1928,6 @@
             await fetchUnits();
         });
     </script>
+    <script src="user_session.js"></script>
 </body>
 </html>
