@@ -708,6 +708,7 @@
 
         let cachedBranches = [];
         let cachedUsers = [];
+        let allStaffUsers = [];
         let cachedRoles = [];
         let cachedPermissions = [];
         let cachedCities = [];
@@ -1219,7 +1220,7 @@
         }
 
         function editUser(uId) {
-            const u = cachedUsers.find(item => item.user_id === uId);
+            const u = cachedUsers.find(item => item.user_id === uId) || allStaffUsers.find(item => item.user_id === uId);
             if (!u) return;
             document.getElementById('user-modal-title').textContent = currentLang === 'ar' ? 'تعديل بيانات الموظف' : 'Edit Staff User';
             document.getElementById('user-form-id').value = u.user_id;
@@ -1337,6 +1338,7 @@
                 }
                 closeUserModal();
                 showToast(`✓ User saved successfully!`);
+                await refreshAllStaff();
                 await fetchUsers();
                 await fetchSummary();
             } catch (err) {
@@ -1497,8 +1499,12 @@
 
                 // Populate staff select in tester
                 const sel = document.getElementById('scope-user-select');
+                if (allStaffUsers.length === 0) {
+                    await refreshAllStaff();
+                }
+                const sourceList = (allStaffUsers && allStaffUsers.length > 0) ? allStaffUsers : cachedUsers;
                 sel.innerHTML = '<option value="">-- Select Staff Member --</option>' +
-                    cachedUsers.map(u => `<option value="${u.user_id}">${u.full_name} (${u.roles.map(r=>r.name).join(', ') || 'No Role'}) - ${u.branch_name || 'No Branch'}</option>`).join('');
+                    sourceList.map(u => `<option value="${u.user_id}">${u.full_name} (${(u.roles && u.roles.map(r=>r.name).join(', ')) || 'No Role'}) - ${u.branch_name || 'No Branch'}</option>`).join('');
             } catch (err) {
                 console.error(err);
             }
@@ -1745,6 +1751,18 @@
         }
 
         // ================= HELPERS & DROPDOWNS =================
+        async function refreshAllStaff() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/admin/users?page_size=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    allStaffUsers = json.data || [];
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
         async function loadAllInitialReference() {
             try {
                 const [cRes, bRes, rRes, pRes] = await Promise.all([
@@ -1757,6 +1775,7 @@
                 cachedBranches = (await bRes.json()).data || [];
                 cachedRoles = (await rRes.json()).data || [];
                 cachedPermissions = (await pRes.json()).data || [];
+                await refreshAllStaff();
             } catch (err) {
                 console.warn(err);
             }
@@ -1799,10 +1818,15 @@
             const sel = document.getElementById(selectId);
             if (!sel) return;
             const curVal = sel.value;
+            const sourceList = (allStaffUsers && allStaffUsers.length > 0) ? allStaffUsers : cachedUsers;
             sel.innerHTML = '<option value="">-- No Direct Supervisor --</option>' +
-                cachedUsers
+                sourceList
                     .filter(u => u.user_id !== excludeUserId)
-                    .map(u => `<option value="${u.user_id}">${u.full_name} (${u.user_id})</option>`).join('');
+                    .map(u => {
+                        const branchLabel = u.branch_name ? ` [${u.branch_name}]` : '';
+                        const roleNames = (u.roles && u.roles.length > 0) ? ` - ${u.roles.map(r => r.name).join(', ')}` : '';
+                        return `<option value="${u.user_id}">${u.full_name}${branchLabel}${roleNames}</option>`;
+                    }).join('');
             sel.value = curVal;
         }
 
@@ -1816,6 +1840,7 @@
             await fetchUsers();
         });
     </script>
+    <script src="common.js"></script>
     <script src="user_session.js"></script>
 </body>
 </html>

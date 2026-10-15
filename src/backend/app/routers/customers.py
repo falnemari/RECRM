@@ -1,11 +1,12 @@
 import hashlib
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.customers import CustomerOut, CustomerCreate, CustomerUpdate, Customer360Out
+from app.routers.auth import resolve_user_data_scope
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
@@ -42,12 +43,42 @@ async def list_customers(
     mobile: Optional[str] = None,
     email: Optional[str] = None,
     national_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
     p_idx = 1
+
+    # Role-based & multi-tenant data scoping enforcement
+    if x_user_id:
+        roles = await conn.fetch(
+            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+            x_user_id
+        )
+        role_codes = [r["role_code"] for r in roles]
+        scope = resolve_user_data_scope(role_codes)
+        if scope == "OWN":
+            conditions.append(f"""
+                (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.assigned_user_id = ${p_idx})
+                 OR EXISTS (SELECT 1 FROM opportunities o WHERE o.customer_id = customers.customer_id AND o.assigned_user_id = ${p_idx})
+                 OR EXISTS (SELECT 1 FROM tasks t WHERE t.customer_id = customers.customer_id AND t.assigned_user_id = ${p_idx})
+                 OR EXISTS (SELECT 1 FROM units u WHERE u.owner_customer_id = customers.customer_id AND u.assigned_user_id = ${p_idx}))
+            """)
+            params.append(x_user_id)
+            p_idx += 1
+        elif scope == "BRANCH":
+            u_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if u_branch:
+                conditions.append(f"""
+                    (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.branch_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM opportunities o JOIN users u_opp ON o.assigned_user_id = u_opp.user_id WHERE o.customer_id = customers.customer_id AND u_opp.branch_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM tasks t JOIN users u_tsk ON t.assigned_user_id = u_tsk.user_id WHERE t.customer_id = customers.customer_id AND u_tsk.branch_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM units un JOIN users u_un ON un.assigned_user_id = u_un.user_id WHERE un.owner_customer_id = customers.customer_id AND u_un.branch_id = ${p_idx}))
+                """)
+                params.append(u_branch)
+                p_idx += 1
 
     if customer_id and customer_id.strip():
         cid_val = customer_id.strip()

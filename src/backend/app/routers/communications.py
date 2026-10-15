@@ -320,8 +320,10 @@ async def list_activities(
     lead_id: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    user_id = await check_user_scope_override(conn, x_user_id, user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []

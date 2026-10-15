@@ -185,14 +185,21 @@ async def list_available_auth_users(conn: asyncpg.Connection = Depends(get_db)):
             u.status,
             u.branch_id,
             b.name AS branch_name,
-            array_agg(r.role_code) as roles
+            b.branch_code AS branch_code,
+            array_remove(array_agg(DISTINCT r.name), NULL) as role_names,
+            array_remove(array_agg(DISTINCT r.role_code), NULL) as roles
         FROM users u
         LEFT JOIN branches b ON u.branch_id = b.branch_id
         LEFT JOIN user_roles ur ON u.user_id = ur.user_id
         LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE u.status = 'ACTIVE'
-        GROUP BY u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status, u.branch_id, b.name
-        ORDER BY CASE WHEN u.user_id = 'user-51' THEN 0 ELSE 1 END, u.user_id
+        GROUP BY u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status, u.branch_id, b.name, b.branch_code
+        ORDER BY CASE WHEN u.user_id = 'user-51' THEN 0 ELSE 1 END, b.branch_code, u.full_name
         """
     )
-    return ResponseEnvelope(data=[dict(r) for r in rows], meta=BaseMeta())
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["effective_scope"] = resolve_user_data_scope(d.get("roles") or [])
+        result.append(d)
+    return ResponseEnvelope(data=result, meta=BaseMeta())

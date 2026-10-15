@@ -457,28 +457,44 @@ async def mark_lead_contacted(lead_id: str, conn: asyncpg.Connection = Depends(g
 
 @router.post("/{lead_id}/qualify", response_model=ResponseEnvelope[LeadOut])
 async def qualify_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    await conn.execute("UPDATE leads SET status = 'QUALIFIED', updated_at = now() WHERE lead_id = $1", lead_id)
+    async with conn.transaction():
+        await conn.execute("UPDATE leads SET status = 'QUALIFIED', updated_at = now() WHERE lead_id = $1", lead_id)
 
-    # Automatically create/link active opportunity in Sales Pipeline
-    existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
-    lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min, unit_id FROM leads WHERE lead_id = $1", lead_id)
-    if not existing_opp:
-        if lead_row and lead_row["customer_id"]:
-            opp_id = await get_next_id(conn, "opportunities", "opportunity")
-            val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
-            if lead_row["unit_id"]:
-                u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", lead_row["unit_id"])
-                if u_row and (val == 0 or val is None):
-                    val = float(u_row["asking_price"] or u_row["rent_price"] or 0.0)
+        # Automatically create/link active opportunity in Sales Pipeline
+        existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
+        lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min, unit_id FROM leads WHERE lead_id = $1", lead_id)
+        if not existing_opp:
+            if lead_row and lead_row["customer_id"]:
+                opp_id = await get_next_id(conn, "opportunities", "opportunity")
+                val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
+                if lead_row["unit_id"]:
+                    u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", lead_row["unit_id"])
+                    if u_row and (val == 0 or val is None):
+                        val = float(u_row["asking_price"] or u_row["rent_price"] or 0.0)
 
-            await conn.execute("""
-                INSERT INTO opportunities (
-                    opportunity_id, lead_id, customer_id, assigned_user_id,
-                    stage, expected_value, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
-            """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
+                await conn.execute("""
+                    INSERT INTO opportunities (
+                        opportunity_id, lead_id, customer_id, assigned_user_id,
+                        stage, expected_value, created_at, updated_at
+                    ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
+                """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
 
-            # Transfer all shortlisted units from lead_units to opportunity_units
+                # Transfer all shortlisted units from lead_units to opportunity_units
+                lu_rows = await conn.fetch("""
+                    SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
+                    FROM lead_units lu
+                    JOIN units un ON lu.unit_id = un.unit_id
+                    WHERE lu.lead_id = $1
+                """, lead_id)
+                for lu in lu_rows:
+                    u_price = float(lu["unit_price"] or val or 0.0)
+                    await conn.execute("""
+                        INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+                        VALUES ($1, $2, $3, $4)
+                        ON CONFLICT (opportunity_id, unit_id) DO NOTHING
+                    """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
+        else:
+            opp_id = existing_opp["opportunity_id"]
             lu_rows = await conn.fetch("""
                 SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
                 FROM lead_units lu
@@ -486,27 +502,12 @@ async def qualify_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db))
                 WHERE lu.lead_id = $1
             """, lead_id)
             for lu in lu_rows:
-                u_price = float(lu["unit_price"] or val or 0.0)
+                u_price = float(lu["unit_price"] or 0.0)
                 await conn.execute("""
                     INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT (opportunity_id, unit_id) DO NOTHING
                 """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
-    else:
-        opp_id = existing_opp["opportunity_id"]
-        lu_rows = await conn.fetch("""
-            SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
-            FROM lead_units lu
-            JOIN units un ON lu.unit_id = un.unit_id
-            WHERE lu.lead_id = $1
-        """, lead_id)
-        for lu in lu_rows:
-            u_price = float(lu["unit_price"] or 0.0)
-            await conn.execute("""
-                INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (opportunity_id, unit_id) DO NOTHING
-            """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
 
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)

@@ -1,6 +1,6 @@
 import json
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Request, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
@@ -124,11 +124,45 @@ async def log_audit_event(
          action, old_json, new_json, ip)
 
 
+async def verify_admin_access(conn: asyncpg.Connection, x_user_id: Optional[str]) -> None:
+    """Verifies that the requesting user has administrative module privileges."""
+    if not x_user_id:
+        return
+    roles = await conn.fetch(
+        "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+        x_user_id
+    )
+    role_codes = set(r["role_code"].upper() for r in roles)
+    if "SYS_ADMIN" in role_codes:
+        return
+
+    permissions = await conn.fetch(
+        """
+        SELECT p.code FROM user_roles ur
+        JOIN role_permissions rp ON ur.role_id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.permission_id
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    perm_codes = set(p["code"].upper() for p in permissions)
+    if "ADMIN" in perm_codes or "USER_MANAGE" in perm_codes or "ROLE_MANAGE" in perm_codes or "AUDIT_READ" in perm_codes:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Forbidden: Administrative privileges required."
+    )
+
 # =============================================================
 # 1. Admin Summary & KPIs
 # =============================================================
 @router.get("/summary", response_model=ResponseEnvelope[AdminSummaryOut])
-async def get_admin_summary(conn: asyncpg.Connection = Depends(get_db)):
+async def get_admin_summary(
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_admin_access(conn, x_user_id)
     total_branches = await conn.fetchval("SELECT count(*) FROM branches") or 0
     total_users = await conn.fetchval("SELECT count(*) FROM users") or 0
     active_users = await conn.fetchval("SELECT count(*) FROM users WHERE status = 'ACTIVE'") or 0

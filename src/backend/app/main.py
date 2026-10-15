@@ -40,13 +40,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Correlation / Request ID Middleware
+# Correlation / Request ID and Security Headers Middleware
 @app.middleware("http")
-async def add_correlation_id_and_timing(request: Request, call_next):
+async def add_correlation_id_and_security_headers(request: Request, call_next):
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request.state.request_id = req_id
     response = await call_next(request)
     response.headers["X-Request-ID"] = req_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
 # Standardized Validation Error Handler matching API.md
@@ -77,7 +81,7 @@ async def root_redirect():
 # Health Check
 @app.get("/health", tags=["System"])
 async def health_check():
-    return {"status": "healthy", "service": "recrm-api", "version": "1.0.0"}
+    return {"status": "healthy", "service": "recrm-api", "version": "1.0.0", "database": settings.DB_NAME}
 
 # Register v1 Routers
 app.include_router(auth.router, prefix=settings.API_PREFIX)

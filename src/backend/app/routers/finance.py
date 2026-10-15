@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
@@ -14,6 +14,42 @@ from app.schemas.contracts import (
 )
 
 router = APIRouter(tags=["Contracts, Payments & Commissions"])
+
+async def verify_finance_access(conn: asyncpg.Connection, x_user_id: Optional[str]) -> None:
+    """Verifies that the requesting user has financial module access privileges."""
+    if not x_user_id:
+        return
+    # Check assigned roles
+    roles = await conn.fetch(
+        """
+        SELECT r.role_code FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    role_codes = set(r["role_code"].upper() for r in roles)
+    if "SYS_ADMIN" in role_codes or "ACCOUNTANT" in role_codes or "AUDITOR" in role_codes:
+        return
+
+    # Check effective permissions
+    permissions = await conn.fetch(
+        """
+        SELECT p.code FROM user_roles ur
+        JOIN role_permissions rp ON ur.role_id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.permission_id
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    perm_codes = set(p["code"].upper() for p in permissions)
+    if "PAYMENT_READ" in perm_codes or "PAYMENT_WRITE" in perm_codes or "ADMIN" in perm_codes:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Forbidden: You do not have permission to access financial records."
+    )
 
 CONTRACT_SELECT_QUERY = """
     SELECT 
@@ -41,7 +77,11 @@ CONTRACT_SELECT_QUERY = """
 """
 
 @router.get("/finance/summary", response_model=ResponseEnvelope[FinanceSummary])
-async def get_finance_summary(conn: asyncpg.Connection = Depends(get_db)):
+async def get_finance_summary(
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
     total_contracts = await conn.fetchval("SELECT count(*) FROM contracts")
     total_contract_value = await conn.fetchval("SELECT COALESCE(SUM(contract_value), 0) FROM contracts")
     
@@ -72,8 +112,10 @@ async def list_contracts(
     status_filter: Optional[str] = Query(None, alias="status"),
     contract_type: Optional[str] = None,
     search: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -116,7 +158,12 @@ async def list_contracts(
     )
 
 @router.get("/contracts/{contract_id}", response_model=ResponseEnvelope[ContractDetailOut])
-async def get_contract_detail(contract_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_contract_detail(
+    contract_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
     c_row = await conn.fetchrow(f"{CONTRACT_SELECT_QUERY} WHERE c.contract_id = $1", contract_id)
     if not c_row:
         raise HTTPException(status_code=404, detail="Contract not found")
@@ -283,8 +330,10 @@ async def list_payments(
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
     contract_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -371,8 +420,10 @@ async def list_commissions(
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
     user_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
