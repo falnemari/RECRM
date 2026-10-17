@@ -190,7 +190,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Customer 360</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -201,12 +201,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -233,8 +233,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
     
     <div class="content">
@@ -250,8 +250,8 @@
             <input type="text" id="search-box" placeholder="Search by name, customer_id, mobile, email or national ID..." style="flex-grow: 1; min-width: 250px;" oninput="debounceFetch()">
             <select id="type-select" onchange="fetchCustomers()">
                 <option value="" data-i18n="opt_all_types">All Customer Types</option>
-                <option value="INDIVIDUAL" data-i18n="opt_individual">INDIVIDUAL (أفراد)</option>
-                <option value="COMPANY" data-i18n="opt_company">COMPANY (شركات)</option>
+                <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
+                <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
             </select>
         </div>
 
@@ -303,8 +303,8 @@
                     <div class="form-group">
                         <label data-i18n="form_type">Customer Type</label>
                         <select id="f-type" onchange="toggleCompanyFields('add')">
-                            <option value="INDIVIDUAL">Individual (فرد)</option>
-                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                            <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
+                            <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
                         </select>
                     </div>
 
@@ -349,8 +349,8 @@
                     <div class="form-group">
                         <label data-i18n="form_language">Preferred Language</label>
                         <select id="f-lang">
-                            <option value="ar">العربية (Arabic)</option>
-                            <option value="en">English</option>
+                            <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
+                            <option value="en" data-i18n="opt_lang_en">English</option>
                         </select>
                     </div>
                 </div>
@@ -380,8 +380,8 @@
                     <div class="form-group">
                         <label data-i18n="form_type">Customer Type</label>
                         <select id="edit-type" onchange="toggleCompanyFields('edit')">
-                            <option value="INDIVIDUAL">Individual (فرد)</option>
-                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                            <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
+                            <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
                         </select>
                     </div>
 
@@ -427,15 +427,15 @@
                         <div class="form-group">
                             <label data-i18n="form_language">Preferred Language</label>
                             <select id="edit-lang">
-                                <option value="ar">العربية (Arabic)</option>
-                                <option value="en">English</option>
+                                <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
+                                <option value="en" data-i18n="opt_lang_en">English</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_status">Account Status</label>
                             <select id="edit-status">
-                                <option value="ACTIVE">ACTIVE (نشط)</option>
-                                <option value="INACTIVE">INACTIVE (غير نشط)</option>
+                                <option value="ACTIVE" data-i18n="opt_status_active">Active</option>
+                                <option value="INACTIVE" data-i18n="opt_status_inactive">Inactive</option>
                             </select>
                         </div>
                     </div>
@@ -490,7 +490,17 @@
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
                 nav_admin: "Admin & Governance", nav_api: "API Docs", page_title: "Customer Directory & 360 Profiles", btn_add_customer: "+ Add New Customer",
-                opt_all_types: "All Customer Types", opt_individual: "INDIVIDUAL (أفراد)", opt_company: "COMPANY (شركات)",
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                opt_all_types: "All Customer Types", opt_individual: "Individual", opt_company: "Corporate / Developer",
+                opt_status_active: "Active", opt_status_inactive: "Inactive",
+                opt_lang_ar: "Arabic", opt_lang_en: "English",
                 th_id: "Customer ID", th_name: "Customer / Company", th_type: "Type", th_mobile: "Mobile Phone", th_email: "Email",
                 th_lang: "Language", th_status: "Status", th_actions: "Actions",
                 modal_add_title: "Create New Customer Profile", modal_edit_title: "Edit Customer Profile",
@@ -507,7 +517,17 @@
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
                 nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
                 nav_admin: "الإدارة والأمان", nav_api: "توثيق API", page_title: "دليل العملاء وملف العميل الشامل 360", btn_add_customer: "+ إضافة عميل جديد",
-                opt_all_types: "جميع أنواع العملاء", opt_individual: "أفراد (INDIVIDUAL)", opt_company: "شركات (COMPANY)",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                opt_all_types: "جميع أنواع العملاء", opt_individual: "أفراد", opt_company: "شركات ومطورين",
+                opt_status_active: "نشط", opt_status_inactive: "غير نشط",
+                opt_lang_ar: "العربية", opt_lang_en: "الإنجليزية",
                 th_id: "معرّف العميل (ID)", th_name: "الاسم / اسم الشركة", th_type: "النوع", th_mobile: "رقم الجوال", th_email: "البريد الإلكتروني",
                 th_lang: "اللغة", th_status: "الحالة", th_actions: "الإجراءات",
                 modal_add_title: "إنشاء ملف عميل جديد", modal_edit_title: "تعديل بيانات العميل",
@@ -909,10 +929,20 @@
                     </div>
 
                     <h4 style="margin: 16px 0 8px 0;">Inbound Leads (${leads.length})</h4>
-                    ${leads.length ? leads.map(l => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Lead ID: <span class="id-badge">${l.lead_id}</span> | Status: <strong>${l.status}</strong> | Priority: <strong>${l.priority}</strong> | Type: ${l.inquiry_type}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No leads recorded.</p>'}
+                    ${leads.length ? leads.map(l => `
+                        <div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <div>• Lead ID: <span class="id-badge">${l.lead_id}</span> | Status: <strong>${l.status}</strong> | Priority: <strong>${l.priority}</strong> | Type: ${l.inquiry_type}</div>
+                            <button type="button" class="btn btn-sm" style="font-size: 0.78em; padding: 2px 8px; background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; border-radius: 4px; cursor: pointer;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey">📍 مسار المعاملة</button>
+                        </div>
+                    `).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No leads recorded.</p>'}
 
                     <h4 style="margin: 16px 0 8px 0;">Sales Pipeline Deals (${opportunities.length})</h4>
-                    ${opportunities.length ? opportunities.map(o => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Stage: <strong>${o.stage}</strong> | Expected Value: <strong>${Number(o.expected_value || 0).toLocaleString()} SAR</strong> | Target Date: ${o.expected_close_date || '--'}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No pipeline opportunities.</p>'}
+                    ${opportunities.length ? opportunities.map(o => `
+                        <div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <div>• Stage: <strong>${o.stage}</strong> | Expected Value: <strong>${Number(o.expected_value || 0).toLocaleString()} SAR</strong> | Target Date: ${o.expected_close_date || '--'}</div>
+                            <button type="button" class="btn btn-sm" style="font-size: 0.78em; padding: 2px 8px; background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; border-radius: 4px; cursor: pointer;" onclick="openSituationModal({ oppId: '${o.opportunity_id}' })" title="Situation & Operational Journey">📍 مسار المعاملة</button>
+                        </div>
+                    `).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No pipeline opportunities.</p>'}
 
                     <h4 style="margin: 16px 0 8px 0;">Leases & Tenancies (${tenancies.length})</h4>
                     ${tenancies.length ? tenancies.map(t => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Contract: <strong>${t.contract_number}</strong> | Rent: <strong>${Number(t.rent_amount || 0).toLocaleString()} SAR</strong> | Status: ${t.status}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No tenancy agreements.</p>'}

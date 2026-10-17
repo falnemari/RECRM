@@ -348,7 +348,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span class="badge-header" data-i18n="badge_pm">Property Operations & PM</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
@@ -359,12 +359,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -392,8 +392,8 @@
 
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
 
     <div class="content">
@@ -492,10 +492,10 @@
                     </select>
                     <select id="ticket-category" class="select-filter" onchange="loadTickets()">
                         <option value="" data-i18n="opt_all_categories">All Categories</option>
-                        <option value="PLUMBING">Plumbing (سباكة)</option>
-                        <option value="ELECTRICAL">Electrical (كهرباء)</option>
-                        <option value="HVAC">HVAC (تكييف)</option>
-                        <option value="GENERAL">General (عام)</option>
+                        <option value="PLUMBING" data-i18n="opt_cat_plumbing">Plumbing</option>
+                        <option value="ELECTRICAL" data-i18n="opt_cat_electrical">Electrical</option>
+                        <option value="HVAC" data-i18n="opt_cat_hvac">HVAC</option>
+                        <option value="GENERAL" data-i18n="opt_cat_general">General</option>
                     </select>
                 </div>
                 <button class="btn" onclick="openNewTicketModal()" data-i18n="btn_new_ticket">+ Open Maintenance Ticket</button>
@@ -675,10 +675,10 @@
                     <div class="form-group">
                         <label data-i18n="lbl_freq">Payment Frequency</label>
                         <select id="t-freq" onchange="adjustInstallmentCount()">
-                            <option value="ANNUAL">Annual (دفعة سنوية)</option>
-                            <option value="SEMI_ANNUAL">Semi-Annual (دفعتان - 6 أشهر)</option>
-                            <option value="QUARTERLY" selected>Quarterly (أربع دفعات - ربع سنوي)</option>
-                            <option value="MONTHLY">Monthly (شهري - 12 دفعة)</option>
+                            <option value="ANNUAL" data-i18n="opt_freq_annual">Annual</option>
+                            <option value="SEMI_ANNUAL" data-i18n="opt_freq_semi">Semi-Annual</option>
+                            <option value="QUARTERLY" data-i18n="opt_freq_quarterly" selected>Quarterly</option>
+                            <option value="MONTHLY" data-i18n="opt_freq_monthly">Monthly</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -718,19 +718,19 @@
                     <div class="form-group">
                         <label data-i18n="lbl_category">Category *</label>
                         <select id="mt-category" required>
-                            <option value="PLUMBING">Plumbing (سباكة)</option>
-                            <option value="ELECTRICAL">Electrical (كهرباء)</option>
-                            <option value="HVAC">HVAC (تكييف وتبريد)</option>
-                            <option value="GENERAL">General Repair (صيانة عامة)</option>
+                            <option value="PLUMBING" data-i18n="opt_cat_plumbing">Plumbing</option>
+                            <option value="ELECTRICAL" data-i18n="opt_cat_electrical">Electrical</option>
+                            <option value="HVAC" data-i18n="opt_cat_hvac">HVAC</option>
+                            <option value="GENERAL" data-i18n="opt_cat_general">General Repair</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_priority">Priority *</label>
                         <select id="mt-priority" required>
-                            <option value="NORMAL">Normal (عادي)</option>
-                            <option value="HIGH">High (هام)</option>
-                            <option value="URGENT">Urgent (طارئ)</option>
-                            <option value="LOW">Low (منخفض)</option>
+                            <option value="NORMAL" data-i18n="opt_normal">Normal</option>
+                            <option value="HIGH" data-i18n="opt_high">High</option>
+                            <option value="URGENT" data-i18n="opt_urgent">Urgent</option>
+                            <option value="LOW" data-i18n="opt_low">Low</option>
                         </select>
                     </div>
                 </div>
@@ -969,10 +969,26 @@
                 lbl_fee_type: "Fee Type", lbl_fee_rate: "Management Fee Rate *", btn_save_pmc: "Create PM Contract",
                 lbl_managed_units_select: "Managed Units (Optional)",
                 lbl_multiselect_hint: "Hold Ctrl (Cmd on Mac) to select multiple units",
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                opt_cat_plumbing: "Plumbing",
+                opt_cat_electrical: "Electrical",
+                opt_cat_hvac: "HVAC",
+                opt_cat_general: "General Repair",
+                opt_freq_annual: "Annual",
+                opt_freq_semi: "Semi-Annual",
+                opt_freq_quarterly: "Quarterly",
+                opt_freq_monthly: "Monthly",
+                font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 lang_label: "عربي"
             },
             ar: {
                 badge_pm: "تشغيل وإدارة الأملاك",
+                font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات", nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
@@ -1015,6 +1031,16 @@
                 lbl_fee_type: "نوع الأتعاب", lbl_fee_rate: "نسبة / قيمة الأتعاب *", btn_save_pmc: "حفظ عقد الإدارة",
                 lbl_managed_units_select: "الوحدات المدارة (اختياري)",
                 lbl_multiselect_hint: "اضغط مع الاستمرار على Ctrl لتحديد أكثر من وحدة",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                opt_cat_plumbing: "سباكة",
+                opt_cat_electrical: "كهرباء",
+                opt_cat_hvac: "تكييف وتبريد",
+                opt_cat_general: "صيانة عامة",
+                opt_freq_annual: "سنوي",
+                opt_freq_semi: "نصف سنوي",
+                opt_freq_quarterly: "ربع سنوي",
+                opt_freq_monthly: "شهري",
                 lang_label: "English"
             }
         };

@@ -202,7 +202,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Leads</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -213,12 +213,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -245,8 +245,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
     
     <div class="content">
@@ -261,7 +261,7 @@
         <div class="controls-bar">
             <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." style="flex-grow: 1; min-width: 200px;" oninput="debounceFetch()">
             <select id="agent-filter" onchange="fetchLeads(1)">
-                <option value="">All Agents (جميع الوسطاء)</option>
+                <option value="" data-i18n="opt_all_agents">All Agents</option>
             </select>
             <div id="lead-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
                 <span id="lead-agent-scope-text">Showing user data only</span>
@@ -277,17 +277,17 @@
             </select>
             <select id="priority-select" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_priorities">All Priorities</option>
-                <option value="HIGH">HIGH (عالي)</option>
-                <option value="MEDIUM">MEDIUM (متوسط)</option>
-                <option value="NORMAL">NORMAL (عادي)</option>
-                <option value="LOW">LOW (منخفض)</option>
+                <option value="HIGH" data-i18n="opt_pri_high">HIGH</option>
+                <option value="MEDIUM" data-i18n="opt_pri_med">MEDIUM</option>
+                <option value="NORMAL" data-i18n="opt_pri_norm">NORMAL</option>
+                <option value="LOW" data-i18n="opt_pri_low">LOW</option>
             </select>
             <select id="inquiry-filter" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_inquiry">All Inquiry Types</option>
-                <option value="BUY">BUY (شراء)</option>
-                <option value="RENT">RENT (إيجار)</option>
-                <option value="SALE">SALE (بيع)</option>
-                <option value="INVESTMENT">INVESTMENT (استثمار)</option>
+                <option value="BUY" data-i18n="opt_inq_buy">BUY</option>
+                <option value="RENT" data-i18n="opt_inq_rent">RENT</option>
+                <option value="SALE" data-i18n="opt_inq_sale">SALE</option>
+                <option value="INVESTMENT" data-i18n="opt_inq_inv">INVESTMENT</option>
             </select>
         </div>
 
@@ -343,23 +343,23 @@
                         <!-- Search Inputs Grid -->
                         <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                             <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
-                                <label style="font-size: 0.82em; font-weight: 600; color: var(--text-muted);">Customer Type / نوع العميل:</label>
+                                <label style="font-size: 0.82em; font-weight: 600; color: var(--text-muted);" data-i18n="lbl_cust_type">Customer Type</label>
                                 <select id="srch-cust-type" style="padding: 4px 8px; font-size: 0.85em; border-radius: 5px; border: 1px solid var(--border); background: #fff;" onchange="performCustomerSearch()">
-                                    <option value="ALL">All Customers (جميع العملاء)</option>
-                                    <option value="INDIVIDUAL">Individual (أفراد)</option>
-                                    <option value="COMPANY">Company / Corporate (شركات ومؤسسات)</option>
+                                    <option value="ALL" data-i18n="opt_cust_all">All Customers</option>
+                                    <option value="INDIVIDUAL" data-i18n="opt_cust_ind">Individual</option>
+                                    <option value="COMPANY" data-i18n="opt_cust_comp">Company / Corporate</option>
                                 </select>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                <input type="text" id="srch-first-name" placeholder="First Name (الاسم الأول)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-last-name" placeholder="Last Name (اسم العائلة)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-company-name" placeholder="Company Name (اسم الشركة)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-first-name" placeholder="First Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-last-name" placeholder="Last Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-company-name" placeholder="Company Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                                 <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                                 <input type="text" id="srch-email" placeholder="Email Address" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                                 <input type="text" id="srch-cust-id" placeholder="Customer ID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-national-id" placeholder="National ID / CR (هوية/سجل)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-national-id" placeholder="National ID / CR" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                                 <div style="display: flex; gap: 8px;">
@@ -393,20 +393,38 @@
                         <div class="form-group">
                             <label data-i18n="lbl_inquiry_type">Inquiry Type *</label>
                             <select id="lead-inquiry-type" required>
-                                <option value="BUY">BUY (شراء)</option>
-                                <option value="RENT">RENT (إيجار)</option>
-                                <option value="SALE">SALE (عرض عقار للبيع)</option>
-                                <option value="INVESTMENT">INVESTMENT (استثمار)</option>
+                                <option value="BUY" data-i18n="opt_inq_buy">BUY</option>
+                                <option value="RENT" data-i18n="opt_inq_rent">RENT</option>
+                                <option value="SALE" data-i18n="opt_inq_sale">SALE</option>
+                                <option value="INVESTMENT" data-i18n="opt_inq_inv">INVESTMENT</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_priority">Priority *</label>
                             <select id="lead-priority" required>
-                                <option value="MEDIUM">MEDIUM (متوسط)</option>
-                                <option value="NORMAL">NORMAL (عادي)</option>
-                                <option value="HIGH">HIGH (مرتفع)</option>
-                                <option value="LOW">LOW (منخفض)</option>
+                                <option value="MEDIUM" data-i18n="opt_pri_med">MEDIUM</option>
+                                <option value="NORMAL" data-i18n="opt_pri_norm">NORMAL</option>
+                                <option value="HIGH" data-i18n="opt_pri_high">HIGH</option>
+                                <option value="LOW" data-i18n="opt_pri_low">LOW</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="lead-city" onchange="onLeadCityChange()">
+                                <option value="" data-i18n="opt_any_city">-- Any City --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_assigned_agent">Assign to Agent</label>
+                            <select id="lead-assigned-user">
+                                <option value="">-- Unassigned (Auto-route to Branch Manager) --</option>
+                            </select>
+                            <small id="lead-assigned-agent-hint" style="color: var(--text-muted); font-size: 0.78em; display: block; margin-top: 3px;" data-i18n="hint_city_agents">
+                                Select preferred city first to list branch agents only
+                            </small>
                         </div>
                     </div>
 
@@ -415,21 +433,6 @@
                             <label data-i18n="lbl_lead_source">Lead Channel / Source</label>
                             <select id="lead-source">
                                 <option value="">-- Direct / Walk-in --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="lbl_assigned_agent">Assign to Agent</label>
-                            <select id="lead-assigned-user">
-                                <option value="">-- Unassigned --</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="lbl_pref_city">Preferred City</label>
-                            <select id="lead-city">
-                                <option value="">-- Any City --</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -482,8 +485,8 @@
                     <div class="form-group">
                         <label data-i18n="lbl_cust_type">Customer Type</label>
                         <select id="qc-type" onchange="toggleQuickCompanyFields()">
-                            <option value="INDIVIDUAL">Individual (فرد)</option>
-                            <option value="COMPANY">Corporate / Developer (شركة)</option>
+                            <option value="INDIVIDUAL" data-i18n="opt_cust_ind">Individual</option>
+                            <option value="COMPANY" data-i18n="opt_cust_comp">Corporate / Developer</option>
                         </select>
                     </div>
 
@@ -553,7 +556,10 @@
                             <span data-i18n="lbl_customer">Customer:</span> <strong id="edit-lead-cust-name">--</strong>
                             <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="edit-lead-cust-info">--</div>
                         </div>
-                        <div style="display: flex; gap: 6px;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-sm" onclick="openSituationModal({ leadId: document.getElementById('edit-lead-id').value })" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="View Operational Situation & Journey">
+                                📍 <span data-i18n="btn_situation">مسار المعاملة</span>
+                            </button>
                             <button type="button" class="btn btn-sm" onclick="logViewingFromLeadModal()" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Schedule a property viewing for this lead">
                                 👁️ + Viewing
                             </button>
@@ -599,10 +605,19 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="edit-lead-city" onchange="onEditLeadCityChange()">
+                                <option value="" data-i18n="opt_any_city">-- Any City --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label data-i18n="col_agent">Assigned Agent</label>
                             <select id="edit-lead-assigned">
                                 <option value="">-- Unassigned --</option>
                             </select>
+                            <small id="edit-lead-assigned-hint" style="color: var(--text-muted); font-size: 0.78em; display: block; margin-top: 3px;" data-i18n="hint_city_agents">
+                                Select preferred city to filter branch agents only
+                            </small>
                         </div>
                     </div>
 
@@ -611,12 +626,6 @@
                             <label data-i18n="lbl_lead_source">Lead Channel / Source</label>
                             <select id="edit-lead-source">
                                 <option value="">-- Direct / Walk-in --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="lbl_pref_city">Preferred City</label>
-                            <select id="edit-lead-city">
-                                <option value="">-- Any City --</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -683,7 +692,7 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_kw">Keyword / Unit # / Project</label>
-                                <input type="text" id="lead-unit-filter-keyword" placeholder="Search..." oninput="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                <input type="text" id="lead-unit-filter-keyword" placeholder="Search..." oninput="filterLeadUnitsList()" onkeydown="if(event.key==='Enter'){event.preventDefault(); filterLeadUnitsList();}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_type">Property Type</label>
@@ -705,7 +714,7 @@
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_maxprice">Max Price (SAR)</label>
-                                <input type="number" id="lead-unit-filter-maxprice" placeholder="e.g. 750000" oninput="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                <input type="number" id="lead-unit-filter-maxprice" placeholder="e.g. 750000" oninput="filterLeadUnitsList()" onkeydown="if(event.key==='Enter'){event.preventDefault(); filterLeadUnitsList();}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
                             </div>
                         </div>
 
@@ -713,7 +722,7 @@
                         <div id="lead-unit-no-match-alert" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.84em; color: #92400e;">
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                                 <div>
-                                    <span>⚠️ <strong>لا توجد وحدات تطابق هذه المعايير حالياً</strong> (0 وحدات). يمكنك تأهيل الطلب بدون وحدات، أو استعراض كل الوحدات:</span>
+                                    <span>⚠️ <strong data-i18n="alert_no_matching_units_strong">No units currently match these criteria</strong> <span data-i18n="alert_no_matching_units_desc">(0 units). You can qualify the lead without units, or browse all units:</span></span>
                                 </div>
                                 <button type="button" class="btn btn-sm" onclick="resetLeadUnitSearchFilters()" style="background: #f59e0b; color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 0.82em; cursor: pointer;">
                                     🌐 <span data-i18n="btn_show_all_units">Show All Units</span>
@@ -749,6 +758,121 @@
         </div>
     </div>
 
+    <!-- MODAL: QUALIFY LEAD (Stage 2) -->
+    <div class="modal-overlay" id="qualify-lead-modal" style="display: none;">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 style="margin: 0;">⭐ <span data-i18n="modal_qualify_title">Qualify Lead & Convert to Deal</span></h3>
+                <button class="close-btn" onclick="closeQualifyLeadModal()">&times;</button>
+            </div>
+            <form id="qualify-lead-form" onsubmit="submitQualifyLead(event)">
+                <input type="hidden" id="ql-lead-id">
+                <div class="modal-body">
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9em;">
+                        <div><span data-i18n="lbl_customer">Customer:</span> <strong id="ql-cust-name">--</strong> (<span id="ql-lead-id-display">--</span>)</div>
+                        <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="ql-cust-info">--</div>
+                    </div>
+
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px;">
+                        <span style="font-size: 0.85em; color: #166534; font-weight: 600;" data-i18n="msg_qualify_banner">
+                            ✓ Lead will be promoted to QUALIFIED, an active Opportunity created in Sales Pipeline, shortlisted units linked, and a viewing schedule task generated automatically.
+                        </span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_min">Budget Min (SAR)</label>
+                            <input type="number" id="ql-budget-min" placeholder="e.g. 1500000">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_max">Budget Max (SAR)</label>
+                            <input type="number" id="ql-budget-max" placeholder="e.g. 2500000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="ql-city">
+                                <option value="" data-i18n="opt_select_city">-- Select City --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
+                            <select id="ql-property-type">
+                                <option value="" data-i18n="opt_select_prop_type">-- Select Property Type --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="lbl_qual_notes">Qualification Notes & Requirements</label>
+                        <textarea id="ql-notes" rows="2" placeholder="Client readiness, criteria details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeQualifyLeadModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-i18n="btn_confirm_qualify">⭐ Confirm Qualification & Promote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONTACT LEAD (Stage 2 Outcome Recording) -->
+    <div class="modal-overlay" id="contact-lead-modal" style="display: none;">
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 style="margin: 0;">📞 <span data-i18n="modal_contact_title">Log Client Contact Attempt</span></h3>
+                <button class="close-btn" onclick="closeContactLeadModal()">&times;</button>
+            </div>
+            <form id="contact-lead-form" onsubmit="submitContactLead(event)">
+                <input type="hidden" id="cl-lead-id">
+                <div class="modal-body">
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9em;">
+                        <div><span data-i18n="lbl_lead_prefix">Lead:</span> <strong id="cl-lead-id-display">--</strong> | <span data-i18n="lbl_customer">Customer:</span> <strong id="cl-cust-name">--</strong></div>
+                        <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 3px;" id="cl-cust-phone">--</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 8px;" data-i18n="lbl_call_outcome">Call Outcome *</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #bbf7d0; border-radius: 6px; cursor: pointer;">
+                                <input type="radio" name="cl_outcome" value="CONNECTED" checked>
+                                <div>
+                                    <strong style="color: #166534;" data-i18n="opt_outcome_connected">📞 Connected with Client</strong>
+                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_connected_sub">Promote to CONTACTED and generate qualification task</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #fed7aa; border-radius: 6px; cursor: pointer;">
+                                <input type="radio" name="cl_outcome" value="NO_ANSWER">
+                                <div>
+                                    <strong style="color: #c2410c;" data-i18n="opt_outcome_no_answer">📵 No Answer / Busy</strong>
+                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_no_answer_sub">Keep lead status and schedule follow-up in 3 hours</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;">
+                                <input type="radio" name="cl_outcome" value="NOT_INTERESTED">
+                                <div>
+                                    <strong style="color: #991b1b;" data-i18n="opt_outcome_not_interested">🚫 Not Interested / Disqualified</strong>
+                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_not_interested_sub">Disqualify lead and update status to DISQUALIFIED</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="lbl_call_notes">Call Notes</label>
+                        <textarea id="cl-notes" rows="2" placeholder="Call attempt notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeContactLeadModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_contact_outcome">Save & Confirm Outcome</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="toast">Operation completed successfully!</div>
 
     <script>
@@ -773,9 +897,13 @@
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings",
                 nav_admin: "Admin & Governance", nav_api: "API Docs", page_title: "Leads Management", new_lead_btn: "+ Add Inbound Lead",
+                font_label: "🔤 Font:",
                 col_lead_id: "Lead ID", col_customer: "Customer", col_contact: "Contact", col_inquiry: "Type / Source",
                 col_budget: "Budget Range", col_status: "Status", col_agent: "Assigned Agent", col_actions: "Actions",
+                opt_all_agents: "All Agents",
                 opt_all_statuses: "All Statuses", opt_all_priorities: "All Priorities", opt_all_inquiry: "All Inquiry Types",
+                opt_pri_high: "HIGH", opt_pri_med: "MEDIUM", opt_pri_norm: "NORMAL", opt_pri_low: "LOW",
+                opt_inq_buy: "BUY", opt_inq_rent: "RENT", opt_inq_sale: "SALE", opt_inq_inv: "INVESTMENT",
                 modal_add_lead_title: "Create Inbound Lead", modal_edit_lead_title: "Edit Lead Details",
                 modal_quick_cust_title: "Quick Add New Customer", sec_customer_search: "1. Customer Verification & Search",
                 sec_customer_sub: "Search if this customer already exists before adding lead, or quickly add a new customer:",
@@ -788,7 +916,27 @@
                 lbl_cust_type: "Customer Type", form_first_name: "First Name *", form_last_name: "Last Name *",
                 form_company: "Company Legal Name *", form_mobile: "Mobile Phone *", form_email: "Email Address",
                 form_national_id: "National ID / Iqama", form_nationality: "Nationality", btn_save_select_cust: "Save & Select Customer",
-                btn_copy: "Copy ID", btn_edit: "Edit", btn_save_changes: "Save Changes", lbl_customer: "Customer:",
+                btn_copy: "Copy ID", btn_edit: "Edit", btn_situation: "Situation", btn_save_changes: "Save Changes", lbl_customer: "Customer:",
+                opt_cust_all: "All Customers", opt_cust_ind: "Individual", opt_cust_comp: "Company / Corporate",
+                opt_any_city: "-- Any City --",
+                hint_city_agents: "Select preferred city first to list branch agents only",
+                modal_qualify_title: "Qualify Lead & Convert to Deal",
+                msg_qualify_banner: "✓ Lead will be promoted to QUALIFIED, an active Opportunity created in Sales Pipeline, shortlisted units linked, and a viewing schedule task generated automatically.",
+                opt_select_city: "-- Select City --",
+                opt_select_prop_type: "-- Select Property Type --",
+                lbl_qual_notes: "Qualification Notes & Requirements",
+                btn_confirm_qualify: "⭐ Confirm Qualification & Promote",
+                modal_contact_title: "Log Client Contact Attempt",
+                lbl_lead_prefix: "Lead:",
+                lbl_call_outcome: "Call Outcome *",
+                opt_outcome_connected: "📞 Connected with Client",
+                opt_outcome_connected_sub: "Promote to CONTACTED and generate qualification task",
+                opt_outcome_no_answer: "📵 No Answer / Busy",
+                opt_outcome_no_answer_sub: "Keep lead status and schedule follow-up in 3 hours",
+                opt_outcome_not_interested: "🚫 Not Interested / Disqualified",
+                opt_outcome_not_interested_sub: "Disqualify lead and update status to DISQUALIFIED",
+                lbl_call_notes: "Call Notes",
+                btn_save_contact_outcome: "Save & Confirm Outcome",
                 lbl_shortlisted_units: "Shortlisted Units for Lead:",
                 btn_add_unit: "Add Unit",
                 btn_clear_all_units: "Clear All",
@@ -808,6 +956,12 @@
                 btn_remove_unit: "Unlink",
                 unit_unassigned_msg: "No unit assigned to this lead. (Optional)",
                 unit_assigned_msg: "Assigned Unit:",
+                nav_brand: "Al-Nemari Real Estate Services",
+                font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                alert_no_matching_units_strong: "No units currently match these criteria",
+                alert_no_matching_units_desc: "(0 units). You can qualify the lead without units, or browse all units:",
                 lang_label: "عربي"
             },
             ar: {
@@ -816,9 +970,19 @@
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
                 nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات",
                 nav_admin: "الإدارة والأمان", nav_api: "توثيق API", page_title: "إدارة العملاء المحتملين", new_lead_btn: "+ إضافة طلب وارد",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                alert_no_matching_units_strong: "لا توجد وحدات تطابق هذه المعايير حالياً",
+                alert_no_matching_units_desc: "(0 وحدات). يمكنك تأهيل الطلب بدون وحدات، أو استعراض كل الوحدات:",
+                font_label: "🔤 الخط:",
                 col_lead_id: "معرّف الطلب (Lead ID)", col_customer: "العميل", col_contact: "الاتصال", col_inquiry: "النوع / المصدر",
                 col_budget: "الميزانية المتوقعة", col_status: "الحالة", col_agent: "الوسيط المسؤول", col_actions: "الإجراءات",
+                opt_all_agents: "جميع الوسطاء",
                 opt_all_statuses: "جميع الحالات", opt_all_priorities: "جميع الأولويات", opt_all_inquiry: "جميع أنواع الطلبات",
+                opt_pri_high: "عالي", opt_pri_med: "متوسط", opt_pri_norm: "عادي", opt_pri_low: "منخفض",
+                opt_inq_buy: "شراء", opt_inq_rent: "إيجار", opt_inq_sale: "بيع", opt_inq_inv: "استثمار",
                 modal_add_lead_title: "إنشاء طلب وارد جديد", modal_edit_lead_title: "تعديل بيانات الطلب",
                 modal_quick_cust_title: "إضافة عميل جديد سريعاً", sec_customer_search: "1. التحقق من العميل والبحث",
                 sec_customer_sub: "ابحث عما إذا كان هذا العميل مسجلاً مسبقاً، أو أضف عميلاً جديداً مباشرة:",
@@ -831,7 +995,27 @@
                 lbl_cust_type: "نوع العميل", form_first_name: "الاسم الأول *", form_last_name: "اسم العائلة *",
                 form_company: "اسم الشركة القانوني *", form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني",
                 form_national_id: "الهوية الوطنية / الإقامة", form_nationality: "الجنسية", btn_save_select_cust: "حفظ وتحديد العميل",
-                btn_copy: "نسخ المعرّف", btn_edit: "تعديل", btn_save_changes: "حفظ التعديلات", lbl_customer: "العميل:",
+                btn_copy: "نسخ المعرّف", btn_edit: "تعديل", btn_situation: "مسار المعاملة", btn_save_changes: "حفظ التعديلات", lbl_customer: "العميل:",
+                opt_cust_all: "جميع العملاء", opt_cust_ind: "أفراد", opt_cust_comp: "شركات ومؤسسات",
+                opt_any_city: "-- أي مدينة --",
+                hint_city_agents: "يتم حصر الوسطاء بناءً على المدينة المختارة",
+                modal_qualify_title: "تأهيل الطلب وتحويله لفرصة بيعية",
+                msg_qualify_banner: "✓ سيتم ترقية حالة الطلب إلى (QUALIFIED)، وإنشاء فرصة بيعية نشطة بالـ Pipeline، ونقل كافة الوحدات المرشحة، وتوليد مهمة جدولة المعاينة تلقائياً.",
+                opt_select_city: "-- اختر المدينة --",
+                opt_select_prop_type: "-- اختر نوع العقار --",
+                lbl_qual_notes: "ملاحظات التأهيل ومتطلبات العميل",
+                btn_confirm_qualify: "⭐ تأكيد التأهيل والترقية لفرصة",
+                modal_contact_title: "تسجيل محاولة التواصل بالعميل",
+                lbl_lead_prefix: "الطلب:",
+                lbl_call_outcome: "نتيجة الاتصال المعتمدة *",
+                opt_outcome_connected: "📞 تم التواصل بنجاح (Connected)",
+                opt_outcome_connected_sub: "ترقية لـ CONTACTED وتوليد مهمة التأهيل",
+                opt_outcome_no_answer: "📵 لم يرد / مشغول (No Answer)",
+                opt_outcome_no_answer_sub: "بقاء الطلب بحالته وجدولة متابعة بعد 3 ساعات",
+                opt_outcome_not_interested: "🚫 غير مهتم بالطلب (Not Interested)",
+                opt_outcome_not_interested_sub: "استبعاد الطلب وتحديث حالته لـ DISQUALIFIED",
+                lbl_call_notes: "ملاحظات المكالمة",
+                btn_save_contact_outcome: "حفظ وتأكيد النتيجة",
                 lbl_shortlisted_units: "الوحدات المختارة للطلب:",
                 btn_add_unit: "إضافة وحدة",
                 btn_clear_all_units: "مسح الكل",
@@ -1029,30 +1213,143 @@
                 if (cur) editSource.value = cur;
             }
 
-            // Users
-            const uOpts = `<option value="">-- ${isAr ? 'غير مسند' : 'Unassigned'} --</option>` + 
-                refUsers.map(u => `<option value="${u.user_id}">${u.full_name} (${u.employee_no || 'Agent'})</option>`).join('');
-            const leadUser = document.getElementById('lead-assigned-user');
-            if (leadUser) {
-                const cur = leadUser.value;
-                leadUser.innerHTML = uOpts;
-                if (cur) leadUser.value = cur;
-            }
-            const editUser = document.getElementById('edit-lead-assigned');
-            if (editUser) {
-                const cur = editUser.value;
-                editUser.innerHTML = uOpts;
-                if (cur) editUser.value = cur;
-            }
+            // Users & City-dependent filtering
+            const leadCityVal = document.getElementById('lead-city')?.value || '';
+            const leadAgentVal = document.getElementById('lead-assigned-user')?.value || '';
+            populateLeadAgentsForCity(leadCityVal, leadAgentVal);
+
+            const editCityVal = document.getElementById('edit-lead-city')?.value || '';
+            const editAgentVal = document.getElementById('edit-lead-assigned')?.value || '';
+            populateEditLeadAgentsForCity(editCityVal, editAgentVal);
+
             const filterUser = document.getElementById('agent-filter');
             if (filterUser) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
                 const cur = filterUser.value || urlAgent || '';
-                filterUser.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` +
+                filterUser.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` +
                     refUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
                 if (cur) filterUser.value = cur;
             }
+        }
+
+        function populateLeadAgentsForCity(cityId, selectedAgentId = null) {
+            const agentSelect = document.getElementById('lead-assigned-user');
+            const hintEl = document.getElementById('lead-assigned-agent-hint');
+            if (!agentSelect) return;
+            const isAr = currentLang === 'ar';
+
+            let filteredUsers = [];
+            let cityObj = null;
+
+            if (cityId) {
+                filteredUsers = refUsers.filter(u => u.city_id === cityId);
+                cityObj = refCities.find(c => c.city_id === cityId);
+            } else {
+                filteredUsers = refUsers;
+            }
+
+            const unassignedLabel = isAr 
+                ? (cityId ? '-- بدون وسيط (توجيه تلقائي لمدير الفرع) --' : '-- غير مسند (توجيه تلقائي لمدير الفرع) --')
+                : (cityId ? '-- Unassigned (Auto-route to Branch Manager) --' : '-- Unassigned (Auto-route to Branch Manager) --');
+
+            let html = `<option value="">${unassignedLabel}</option>`;
+
+            if (filteredUsers.length > 0) {
+                html += filteredUsers.map(u => {
+                    const brText = u.branch_name ? ` - ${u.branch_name}` : '';
+                    return `<option value="${u.user_id}">👤 ${u.full_name} (${u.employee_no || 'Agent'}${brText})</option>`;
+                }).join('');
+            } else if (cityId) {
+                html += `<option value="" disabled>${isAr ? '(لا يوجد وسطاء مسجلين في هذا الفرع)' : '(No agents registered in this branch)'}</option>`;
+            }
+
+            agentSelect.innerHTML = html;
+
+            if (selectedAgentId && filteredUsers.some(u => u.user_id === selectedAgentId)) {
+                agentSelect.value = selectedAgentId;
+            } else {
+                agentSelect.value = '';
+            }
+
+            if (hintEl) {
+                if (cityId && cityObj) {
+                    const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
+                    hintEl.textContent = isAr 
+                        ? `✓ تم حصر القائمة على وسطاء (${cityName}): ${filteredUsers.length} وسيط متاح`
+                        : `✓ Filtered to agents in (${cityName}): ${filteredUsers.length} available agents`;
+                    hintEl.style.color = filteredUsers.length > 0 ? '#0284c7' : '#d97706';
+                } else {
+                    hintEl.textContent = isAr 
+                        ? 'اختر المدينة المفضلة أولاً لعرض وسطاء الفرع المختص فقط'
+                        : 'Select preferred city first to list branch agents only';
+                    hintEl.style.color = 'var(--text-muted)';
+                }
+            }
+        }
+
+        function onLeadCityChange() {
+            const cityId = document.getElementById('lead-city')?.value || '';
+            const curAgent = document.getElementById('lead-assigned-user')?.value || '';
+            populateLeadAgentsForCity(cityId, curAgent);
+        }
+
+        function populateEditLeadAgentsForCity(cityId, selectedAgentId = null) {
+            const agentSelect = document.getElementById('edit-lead-assigned');
+            const hintEl = document.getElementById('edit-lead-assigned-hint');
+            if (!agentSelect) return;
+            const isAr = currentLang === 'ar';
+
+            let filteredUsers = [];
+            let cityObj = null;
+
+            if (cityId) {
+                filteredUsers = refUsers.filter(u => u.city_id === cityId);
+                cityObj = refCities.find(c => c.city_id === cityId);
+            } else {
+                filteredUsers = refUsers;
+            }
+
+            const unassignedLabel = isAr ? '-- غير مسند --' : '-- Unassigned --';
+            let html = `<option value="">${unassignedLabel}</option>`;
+
+            if (filteredUsers.length > 0) {
+                html += filteredUsers.map(u => {
+                    const brText = u.branch_name ? ` - ${u.branch_name}` : '';
+                    return `<option value="${u.user_id}">👤 ${u.full_name} (${u.employee_no || 'Agent'}${brText})</option>`;
+                }).join('');
+            } else if (cityId) {
+                html += `<option value="" disabled>${isAr ? '(لا يوجد وسطاء مسجلين في هذا الفرع)' : '(No agents registered in this branch)'}</option>`;
+            }
+
+            agentSelect.innerHTML = html;
+
+            if (selectedAgentId && filteredUsers.some(u => u.user_id === selectedAgentId)) {
+                agentSelect.value = selectedAgentId;
+            } else {
+                agentSelect.value = '';
+            }
+
+            if (hintEl) {
+                if (cityId && cityObj) {
+                    const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
+                    hintEl.textContent = isAr 
+                        ? `✓ تم حصر القائمة على وسطاء (${cityName}): ${filteredUsers.length} وسيط متاح`
+                        : `✓ Filtered to agents in (${cityName}): ${filteredUsers.length} available agents`;
+                    hintEl.style.color = filteredUsers.length > 0 ? '#0284c7' : '#d97706';
+                } else {
+                    hintEl.textContent = isAr 
+                        ? 'اختر المدينة المفضلة لعرض وسطاء الفرع المختص فقط'
+                        : 'Select preferred city to filter branch agents only';
+                    hintEl.style.color = 'var(--text-muted)';
+                }
+            }
+        }
+
+        function onEditLeadCityChange() {
+            const cityId = document.getElementById('edit-lead-city')?.value || '';
+            const curAgent = document.getElementById('edit-lead-assigned')?.value || '';
+            populateEditLeadAgentsForCity(cityId, curAgent);
         }
 
         function clearLeadAgentScope() {
@@ -1228,6 +1525,7 @@
                             <td>${l.assigned_user_name || 'Unassigned'}</td>
                             <td>
                                 <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey / مسار المعاملة">📍 مسار المعاملة</button>
                                     <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details">✏️ Edit</button>
                                     <a href="tasks.html?lead_id=${encodeURIComponent(l.lead_id)}&customer_id=${encodeURIComponent(l.customer_id || '')}&action=new_viewing" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; text-decoration: none;" title="Schedule a property viewing for this lead">👁️ Viewing</a>
                                     <a href="tasks.html?lead_id=${encodeURIComponent(l.lead_id)}&customer_id=${encodeURIComponent(l.customer_id || '')}&action=new_activity" class="btn btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; text-decoration: none;" title="Log activity / note for this lead">📝 Activity</a>
@@ -1280,35 +1578,127 @@
             fetchLeads(1);
         }
 
-        async function markContacted(leadId) {
+        function markContacted(leadId) {
+            openContactLeadModal(leadId);
+        }
+
+        function qualifyLead(leadId) {
+            openQualifyLeadModal(leadId);
+        }
+
+        function openContactLeadModal(leadId) {
+            const lead = leadsData.find(l => l.lead_id === leadId);
+            document.getElementById('cl-lead-id').value = leadId;
+            document.getElementById('cl-lead-id-display').textContent = leadId;
+            document.getElementById('cl-cust-name').textContent = lead ? (lead.customer_name || 'Customer') : 'Customer';
+            document.getElementById('cl-cust-phone').textContent = lead ? (lead.customer_mobile || lead.customer_email || '') : '';
+            document.getElementById('cl-notes').value = '';
+            document.getElementById('contact-lead-modal').style.display = 'flex';
+        }
+
+        function closeContactLeadModal() {
+            document.getElementById('contact-lead-modal').style.display = 'none';
+        }
+
+        async function submitContactLead(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('cl-lead-id').value;
+            const outcomeEl = document.querySelector('input[name="cl_outcome"]:checked');
+            const outcome = outcomeEl ? outcomeEl.value : 'CONNECTED';
+            const notes = document.getElementById('cl-notes').value.trim();
+
             try {
-                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/contact`, { method: 'POST' });
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/contact`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ outcome, notes })
+                });
                 if (res.ok) {
-                    showToast('Customer marked as CONTACTED! First contact timestamp recorded.');
+                    closeContactLeadModal();
+                    const isAr = currentLang === 'ar';
+                    if (outcome === 'CONNECTED') {
+                        showToast(isAr ? 'تم التواصل مع العميل بنجاح وترقية حالة الطلب لـ CONTACTED وتوليد مهمة التأهيل!' : 'Client contacted successfully. Lead moved to CONTACTED and qualification task generated!');
+                    } else if (outcome === 'NO_ANSWER') {
+                        showToast(isAr ? 'تم تسجيل عدم الرد وجدولة اتصال متابعة تلقائي بعد 3 ساعات.' : 'No answer logged. Automatic follow-up scheduled in 3 hours.');
+                    } else {
+                        showToast(isAr ? 'تم تسجيل النتيجة وتحديث حالة الطلب.' : 'Outcome logged and lead status updated.');
+                    }
                     fetchLeads();
                 } else {
                     const err = await res.json();
-                    alert(`Failed to update status: ${JSON.stringify(err)}`);
+                    alert((currentLang === 'ar' ? 'فشل التحديث: ' : 'Update failed: ') + (err.detail || JSON.stringify(err)));
                 }
             } catch (e) {
                 alert('Request failed');
             }
         }
 
-        async function qualifyLead(leadId) {
-            if (!confirm('Qualify this lead and add as active opportunity to sales pipeline?')) return;
+        async function openQualifyLeadModal(leadId) {
+            if (!refDataLoaded) await initReferenceData();
+            const isAr = currentLang === 'ar';
+            const lead = leadsData.find(l => l.lead_id === leadId);
+            document.getElementById('ql-lead-id').value = leadId;
+            document.getElementById('ql-lead-id-display').textContent = leadId;
+            document.getElementById('ql-cust-name').textContent = lead ? (lead.customer_name || 'Customer') : 'Customer';
+            document.getElementById('ql-cust-info').textContent = lead ? `${lead.inquiry_type || 'BUY'} | ${lead.preferred_city_name || ''} | ${lead.preferred_property_type_name || ''}` : '';
+
+            document.getElementById('ql-budget-min').value = (lead && lead.budget_min) ? lead.budget_min : '';
+            document.getElementById('ql-budget-max').value = (lead && lead.budget_max) ? lead.budget_max : '';
+            document.getElementById('ql-notes').value = '';
+
+            // Populate Cities
+            const cityEl = document.getElementById('ql-city');
+            cityEl.innerHTML = `<option value="">-- ${isAr ? 'اختر المدينة' : 'Select City'} --</option>` +
+                refCities.map(c => `<option value="${c.city_id}" ${lead && lead.preferred_city_id === c.city_id ? 'selected' : ''}>${isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar)}</option>`).join('');
+
+            // Populate Property Types
+            const ptEl = document.getElementById('ql-property-type');
+            ptEl.innerHTML = `<option value="">-- ${isAr ? 'اختر نوع العقار' : 'Select Property Type'} --</option>` +
+                refPropertyTypes.map(p => `<option value="${p.property_type_id}" ${lead && lead.preferred_property_type_id === p.property_type_id ? 'selected' : ''}>${isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)}</option>`).join('');
+
+            document.getElementById('qualify-lead-modal').style.display = 'flex';
+        }
+
+        function closeQualifyLeadModal() {
+            document.getElementById('qualify-lead-modal').style.display = 'none';
+        }
+
+        async function submitQualifyLead(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('ql-lead-id').value;
+            const bMin = document.getElementById('ql-budget-min').value;
+            const bMax = document.getElementById('ql-budget-max').value;
+            const city = document.getElementById('ql-city').value;
+            const pType = document.getElementById('ql-property-type').value;
+            const notes = document.getElementById('ql-notes').value.trim();
+
+            const payload = {};
+            if (bMin) payload.budget_min = parseFloat(bMin);
+            if (bMax) payload.budget_max = parseFloat(bMax);
+            if (city) payload.preferred_city_id = city;
+            if (pType) payload.preferred_property_type_id = pType;
+            if (notes) payload.notes = notes;
+
             try {
-                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/qualify`, { method: 'POST' });
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/qualify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 if (res.ok) {
-                    showToast('Lead marked as QUALIFIED & added to Sales Pipeline!');
+                    closeQualifyLeadModal();
+                    const isAr = currentLang === 'ar';
+                    showToast(isAr ? 'تهانينا! تم تأهيل الطلب بنجاح وترقيته لفرصة بيعية نشطة وتوليد مهمة جدولة المعاينة!' : 'Congratulations! Lead qualified and promoted to active deal. Viewing task generated!');
                     fetchLeads();
                 } else {
-                    alert('Could not qualify lead');
+                    const err = await res.json();
+                    alert((currentLang === 'ar' ? 'فشل التأهيل: ' : 'Qualification failed: ') + (err.detail || JSON.stringify(err)));
                 }
             } catch (e) {
                 alert('Request failed');
             }
         }
+
 
         /* -------------------------------------------------------------------------- */
         /* ADD LEAD MODAL & CUSTOMER SEARCH / QUICK ADD                                */
@@ -1318,6 +1708,7 @@
             clearCustomerSearch();
             deselectCustomer();
             document.getElementById('add-lead-form').reset();
+            populateLeadAgentsForCity('');
             document.getElementById('add-lead-modal').style.display = 'flex';
         }
 
@@ -1421,23 +1812,45 @@
             document.getElementById('srch-results').style.display = 'none';
             showToast(`Selected customer: ${displayName}`);
 
-            // Auto-select existing associated agent if available
+            // Auto-select existing associated agent & city if available
             const prevLead = cachedLeads.find(l => l.customer_id === cust.customer_id && l.assigned_user_id);
             if (prevLead) {
-                const agentSelect = document.getElementById('lead-assigned-user');
-                if (agentSelect) {
-                    agentSelect.value = prevLead.assigned_user_id;
-                    showToast(`Auto-assigned to agent: ${prevLead.assigned_user_name || prevLead.assigned_user_id}`);
+                if (prevLead.preferred_city_id) {
+                    const citySelect = document.getElementById('lead-city');
+                    if (citySelect) citySelect.value = prevLead.preferred_city_id;
+                    populateLeadAgentsForCity(prevLead.preferred_city_id, prevLead.assigned_user_id);
+                } else {
+                    const ag = refUsers.find(u => u.user_id === prevLead.assigned_user_id);
+                    if (ag && ag.city_id) {
+                        const citySelect = document.getElementById('lead-city');
+                        if (citySelect) citySelect.value = ag.city_id;
+                        populateLeadAgentsForCity(ag.city_id, ag.user_id);
+                    } else {
+                        populateLeadAgentsForCity('', prevLead.assigned_user_id);
+                    }
                 }
+                showToast(`Auto-assigned to agent: ${prevLead.assigned_user_name || prevLead.assigned_user_id}`);
             } else {
                 fetch(`${API_BASE}/api/v1/leads?customer_id=${encodeURIComponent(cust.customer_id)}&page_size=5`)
                     .then(r => r.json())
                     .then(res => {
                         const leads = res.data || [];
                         const match = leads.find(l => l.assigned_user_id);
-                        const agentSelect = document.getElementById('lead-assigned-user');
-                        if (match && agentSelect && !agentSelect.value) {
-                            agentSelect.value = match.assigned_user_id;
+                        if (match) {
+                            if (match.preferred_city_id) {
+                                const citySelect = document.getElementById('lead-city');
+                                if (citySelect) citySelect.value = match.preferred_city_id;
+                                populateLeadAgentsForCity(match.preferred_city_id, match.assigned_user_id);
+                            } else {
+                                const ag = refUsers.find(u => u.user_id === match.assigned_user_id);
+                                if (ag && ag.city_id) {
+                                    const citySelect = document.getElementById('lead-city');
+                                    if (citySelect) citySelect.value = ag.city_id;
+                                    populateLeadAgentsForCity(ag.city_id, ag.user_id);
+                                } else {
+                                    populateLeadAgentsForCity('', match.assigned_user_id);
+                                }
+                            }
                             showToast(`Auto-assigned to agent: ${match.assigned_user_name || match.assigned_user_id}`);
                         }
                     }).catch(() => {});
@@ -1511,9 +1924,14 @@
                 if (res.ok) {
                     const result = await res.json();
                     const newCust = result.data;
-                    showToast(`Customer registered! ID: ${newCust.customer_id}`);
+                    const isAr = currentLang === 'ar';
+                    if (newCust.is_duplicate) {
+                        showToast(isAr ? `⚠️ تنبيه منع التكرار: ${newCust.duplicate_note || 'تم العثور على عميل مطابق واسترجاع ملفه'}` : `⚠️ Duplicate check: Existing client record matched and selected`, 'warning', 7000);
+                    } else {
+                        showToast(isAr ? `تم تسجيل العميل بنجاح! معرّف العميل: ${newCust.customer_id}` : `Customer registered! ID: ${newCust.customer_id}`);
+                    }
                     closeQuickAddCustomerModal();
-                    // Select this newly added customer in lead creation
+                    // Select this customer in lead creation
                     selectLeadCustomer(encodeURIComponent(JSON.stringify(newCust)));
                 } else {
                     let errDetail = 'Unknown error';
@@ -1534,7 +1952,7 @@
             e.preventDefault();
             const custId = document.getElementById('lead-cust-id').value;
             if (!custId) {
-                alert('Please select or add a customer first before creating the lead.');
+                alert(currentLang === 'ar' ? 'يرجى اختيار أو إضافة العميل أولاً قبل إنشاء الطلب.' : 'Please select or add a customer first before creating the lead.');
                 return;
             }
 
@@ -1561,7 +1979,17 @@
 
                 if (res.ok) {
                     const result = await res.json();
-                    showToast(`Lead created successfully! Lead ID: ${result.data.lead_id}`);
+                    const lead = result.data;
+                    const isAr = currentLang === 'ar';
+                    if (lead.is_duplicate_customer) {
+                        showToast(isAr 
+                            ? `⚠️ تم العثور على ملف عميل سابق (${lead.customer_name}) وتم ربط الطلب بملفه القائم بدلاً من تكراره! معرّف الطلب: ${lead.lead_id}`
+                            : `⚠️ Existing customer profile matched (${lead.customer_name}) and linked to lead #${lead.lead_id}!`, 'warning', 7000);
+                    } else {
+                        showToast(isAr 
+                            ? `تم إنشاء الطلب بنجاح! معرّف الطلب: ${lead.lead_id} — تم تعيين مهمة الاتصال الأولي (30 دقيقة)`
+                            : `Lead created successfully! Lead ID: ${lead.lead_id} — Initial contact task assigned (30-min SLA)`, 'success', 5000);
+                    }
                     closeAddLeadModal();
                     fetchLeads();
                 } else {
@@ -1841,9 +2269,9 @@
             document.getElementById('edit-lead-status').value = lead.status || 'NEW';
             document.getElementById('edit-lead-priority').value = lead.priority || 'MEDIUM';
             document.getElementById('edit-lead-inquiry').value = lead.inquiry_type || 'BUY';
-            document.getElementById('edit-lead-assigned').value = lead.assigned_user_id || '';
             document.getElementById('edit-lead-source').value = lead.lead_source_id || '';
             document.getElementById('edit-lead-city').value = lead.preferred_city_id || '';
+            populateEditLeadAgentsForCity(lead.preferred_city_id || '', lead.assigned_user_id || '');
             const editPt = document.getElementById('edit-lead-prop-type');
             if (editPt) editPt.value = lead.preferred_property_type_id || '';
             document.getElementById('edit-lead-budget-min').value = lead.budget_min ?? '';

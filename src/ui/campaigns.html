@@ -367,7 +367,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span class="badge-header" data-i18n="badge_marketing">Marketing & Campaigns</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -378,12 +378,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -410,8 +410,8 @@
 
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
 
     <div class="content">
@@ -464,9 +464,9 @@
                 </select>
                 <select id="filter-status" onchange="fetchCampaigns()">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
-                    <option value="ACTIVE">ACTIVE (سارية)</option>
-                    <option value="COMPLETED">COMPLETED (مكتملة)</option>
-                    <option value="PAUSED">PAUSED (متوقفة مؤقتاً)</option>
+                    <option value="ACTIVE" data-i18n="opt_active">ACTIVE</option>
+                    <option value="COMPLETED" data-i18n="opt_completed">COMPLETED</option>
+                    <option value="PAUSED" data-i18n="opt_paused">PAUSED</option>
                 </select>
                 <button class="btn btn-primary" onclick="openNewCampaignModal()" data-i18n="btn_new_campaign">+ New Campaign</button>
             </div>
@@ -529,12 +529,12 @@
             <div class="controls-bar">
                 <select id="filter-event-type" onchange="fetchLeadEvents()">
                     <option value="" data-i18n="opt_all_events">All Event Types</option>
-                    <option value="CREATED">CREATED (إنشاء طلب)</option>
-                    <option value="VIEWED_LISTING">VIEWED_LISTING (معاينة إعلان)</option>
-                    <option value="CONTACTED">CONTACTED (تم التواصل)</option>
-                    <option value="STATUS_CHANGED">STATUS_CHANGED (تحديث الحالة)</option>
-                    <option value="CAMPAIGN_ATTRIBUTED">CAMPAIGN_ATTRIBUTED (ربط بحملة)</option>
-                    <option value="OFFER_REQUESTED">OFFER_REQUESTED (طلب عرض سعر)</option>
+                    <option value="CREATED" data-i18n="ev_created">Lead Created (CREATED)</option>
+                    <option value="VIEWED_LISTING" data-i18n="ev_viewed">Listing Viewed (VIEWED_LISTING)</option>
+                    <option value="CONTACTED" data-i18n="ev_contacted">Contacted (CONTACTED)</option>
+                    <option value="STATUS_CHANGED" data-i18n="ev_status_changed">Status Changed (STATUS_CHANGED)</option>
+                    <option value="CAMPAIGN_ATTRIBUTED" data-i18n="ev_attributed">Campaign Attributed (CAMPAIGN_ATTRIBUTED)</option>
+                    <option value="OFFER_REQUESTED" data-i18n="ev_offer_requested">Offer Requested (OFFER_REQUESTED)</option>
                 </select>
                 <button class="btn btn-primary" onclick="openLogEventModal()" data-i18n="btn_log_event">+ Log Marketing Event</button>
             </div>
@@ -586,9 +586,9 @@
                     <div class="form-group">
                         <label data-i18n="lbl_status">Campaign Status</label>
                         <select id="fc-status">
-                            <option value="ACTIVE">ACTIVE (سارية فوراً)</option>
-                            <option value="PAUSED">PAUSED (مسودة / متوقفة)</option>
-                            <option value="COMPLETED">COMPLETED (مكتملة)</option>
+                            <option value="ACTIVE" data-i18n="opt_camp_active">ACTIVE (Live)</option>
+                            <option value="PAUSED" data-i18n="opt_camp_paused">PAUSED (Draft)</option>
+                            <option value="COMPLETED" data-i18n="opt_camp_completed">COMPLETED</option>
                         </select>
                     </div>
                 </div>
@@ -648,11 +648,11 @@
                     <div class="form-group">
                         <label data-i18n="lbl_event_type">Event Type *</label>
                         <select id="fe-type" required>
-                            <option value="VIEWED_LISTING">VIEWED_LISTING (معاينة إعلان)</option>
-                            <option value="CONTACTED">CONTACTED (تواصل مع العميل)</option>
-                            <option value="OFFER_REQUESTED">OFFER_REQUESTED (طلب عرض سعر)</option>
-                            <option value="STATUS_CHANGED">STATUS_CHANGED (تغيير مرحلة العميل)</option>
-                            <option value="CAMPAIGN_ATTRIBUTED">CAMPAIGN_ATTRIBUTED (ربط بحملة تسويقية)</option>
+                            <option value="VIEWED_LISTING" data-i18n="ev_viewed">Listing Viewed (VIEWED_LISTING)</option>
+                            <option value="CONTACTED" data-i18n="ev_contacted">Contacted (CONTACTED)</option>
+                            <option value="OFFER_REQUESTED" data-i18n="ev_offer_requested">Offer Requested (OFFER_REQUESTED)</option>
+                            <option value="STATUS_CHANGED" data-i18n="ev_status_changed">Status Changed (STATUS_CHANGED)</option>
+                            <option value="CAMPAIGN_ATTRIBUTED" data-i18n="ev_attributed">Campaign Attributed (CAMPAIGN_ATTRIBUTED)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -678,16 +678,32 @@
 
         const i18nData = {
             en: {
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 badge_marketing: "Marketing & Attribution",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
-                nav_marketing: "Marketing & Campaigns", nav_admin: "Admin & Governance", nav_api: "API Docs",
+                nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 kpi_active_campaigns: "Active Campaigns", kpi_total_budget: "Total Marketing Budget",
                 kpi_budget_sub: "Allocated across campaigns", kpi_leads_captured: "Attributed Inbound Leads",
                 kpi_leads_sub: "Generated via campaign channels", kpi_conversion_rate: "Qualified Conversion Rate",
                 tab_campaigns: "Marketing Campaigns", tab_leads: "Attributed Leads & Clients", tab_events: "Lead Events Stream",
                 opt_all_channels: "All Channels", opt_all_status: "All Statuses", opt_all_events: "All Event Types",
+                opt_active: "ACTIVE", opt_completed: "COMPLETED", opt_paused: "PAUSED",
+                opt_camp_active: "ACTIVE (Live)", opt_camp_paused: "PAUSED (Draft)", opt_camp_completed: "COMPLETED",
+                ev_created: "Lead Created (CREATED)",
+                ev_viewed: "Listing Viewed (VIEWED_LISTING)",
+                ev_contacted: "Contacted (CONTACTED)",
+                ev_status_changed: "Status Changed (STATUS_CHANGED)",
+                ev_attributed: "Campaign Attributed (CAMPAIGN_ATTRIBUTED)",
+                ev_offer_requested: "Offer Requested (OFFER_REQUESTED)",
                 btn_new_campaign: "+ New Campaign", btn_attach_lead: "+ Attribute Lead", btn_log_event: "+ Log Marketing Event",
                 th_name: "Campaign Name", th_channel: "Channel", th_dates: "Schedule Dates", th_budget: "Budget (SAR)",
                 th_leads: "Leads", th_qualified: "Qualified", th_cpl: "Cost / Lead", th_status: "Status", th_actions: "Actions",
@@ -703,16 +719,32 @@
                 lang_label: "عربي"
             },
             ar: {
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
                 badge_marketing: "التسويق وتتبع مصادر الجذب",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
-                nav_marketing: "التسويق والحملات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
+                nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 kpi_active_campaigns: "الحملات النشطة", kpi_total_budget: "إجمالي الميزانية التسويقية",
                 kpi_budget_sub: "إجمالي الميزانيات المرصودة", kpi_leads_captured: "العملاء المستقطبون",
                 kpi_leads_sub: "واردون عبر القنوات الإعلانية", kpi_conversion_rate: "نسبة التأهيل والتحويل",
                 tab_campaigns: "الحملات الإعلانية", tab_leads: "العملاء المستقطبون", tab_events: "سجل التفاعلات والأحداث",
                 opt_all_channels: "جميع القنوات الإعلانية", opt_all_status: "جميع الحالات", opt_all_events: "جميع أنواع الأحداث",
+                opt_active: "سارية (ACTIVE)", opt_completed: "مكتملة (COMPLETED)", opt_paused: "متوقفة مؤقتاً (PAUSED)",
+                opt_camp_active: "سارية فوراً (ACTIVE)", opt_camp_paused: "مسودة / متوقفة (PAUSED)", opt_camp_completed: "مكتملة (COMPLETED)",
+                ev_created: "إنشاء طلب جديد (CREATED)",
+                ev_viewed: "معاينة إعلان (VIEWED_LISTING)",
+                ev_contacted: "تم التواصل مع العميل (CONTACTED)",
+                ev_status_changed: "تحديث مرحلة الطلب (STATUS_CHANGED)",
+                ev_attributed: "ربط بحملة تسويقية (CAMPAIGN_ATTRIBUTED)",
+                ev_offer_requested: "طلب عرض سعر رسمي (OFFER_REQUESTED)",
                 btn_new_campaign: "+ حملة جديدة", btn_attach_lead: "+ ربط عميل بحملة", btn_log_event: "+ تسجيل حدث تسويقي",
                 th_name: "اسم الحملة", th_channel: "القناة الإعلانية", th_dates: "فترة الحملة", th_budget: "الميزانية (ريال)",
                 th_leads: "الطلبات", th_qualified: "المؤهلون", th_cpl: "تكلفة الطلب (CPL)", th_status: "الحالة", th_actions: "الإجراءات",

@@ -43,13 +43,33 @@ class OpportunityCreateIn(BaseModel):
 class ViewingOut(BaseModel):
     viewing_id: str
     opportunity_id: str
+    lead_id: Optional[str] = None
     unit_id: str
     unit_number: Optional[str] = None
+    project_name: Optional[str] = None
+    building_name: Optional[str] = None
+    customer_id: Optional[str] = None
     customer_name: Optional[str] = None
+    agent_user_id: Optional[str] = None
+    agent_user_name: Optional[str] = None
     scheduled_start: datetime
     scheduled_end: Optional[datetime] = None
     status: str
+    outcome: Optional[str] = None
+    notes: Optional[str] = None
     feedback: Optional[str] = None
+
+class ViewingCreateIn(BaseModel):
+    unit_id: str
+    scheduled_start: datetime
+    scheduled_end: Optional[datetime] = None
+    opportunity_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    agent_user_id: Optional[str] = None
+    task_id: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = "SCHEDULED"
 
 class ReservationOut(BaseModel):
     reservation_id: str
@@ -104,6 +124,25 @@ class OfferUpdateIn(BaseModel):
     valid_until: Optional[datetime] = None
     status: Optional[str] = None
 
+class OfferDecisionIn(BaseModel):
+    decision: str # ACCEPTED, REJECTED, COUNTERED, APPROVED
+    counter_amount: Optional[float] = None
+    notes: Optional[str] = None
+
+class ReservationCreateIn(BaseModel):
+    opportunity_id: str
+    unit_id: str
+    customer_id: Optional[str] = None
+    deposit_amount: Optional[float] = None
+    expiry_hours: int = 48
+    notes: Optional[str] = None
+
+class ReservationDepositVerifyIn(BaseModel):
+    amount_received: float
+    payment_method: str = "BANK_TRANSFER"
+    payment_reference: Optional[str] = None
+    notes: Optional[str] = None
+
 class OpportunityUnitOut(BaseModel):
     opportunity_id: str
     unit_id: str
@@ -115,5 +154,6 @@ class OpportunityUnitCreateIn(BaseModel):
     unit_id: str
     is_primary: bool = False
     offered_price: Optional[float] = None
+
 
 

@@ -1,7 +1,8 @@
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Header
 import asyncpg
 from app.database import get_db
+from app.routers.auth import resolve_user_data_scope
 from app.schemas.common import ResponseEnvelope, BaseMeta
 from app.schemas.reports import (
     ExecutiveDashboard, ExecutiveKPIs, StatusBreakdown,
@@ -82,9 +83,10 @@ async def get_executive_report(conn: asyncpg.Connection = Depends(get_db)):
 # =====================================================================
 @router.get("/funnel-dashboard", response_model=ResponseEnvelope[MultiTierDashboardOut])
 async def get_funnel_dashboard(
-    scope: str = Query("GLOBAL", regex="^(GLOBAL|BRANCH|TEAM|OWN)$"),
+    scope: str = Query("GLOBAL", pattern="^(GLOBAL|BRANCH|TEAM|OWN)$"),
     branch_id: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -94,6 +96,22 @@ async def get_funnel_dashboard(
     - Hierarchical Drilldown: Branches -> Agents -> Opportunities (linked with Customer & Unit).
     - Live Operational Pulse: Unified chronological feed of Activities, Tasks, Communications, Lead Updates.
     """
+    # Enforce Role-Based Data Isolation on Active User
+    if x_user_id:
+        roles_rows = await conn.fetch("""
+            SELECT r.role_code FROM user_roles ur
+            JOIN roles r ON ur.role_id = r.role_id
+            WHERE ur.user_id = $1
+        """, x_user_id)
+        role_codes = [r["role_code"] for r in roles_rows]
+        user_scope = resolve_user_data_scope(role_codes)
+        if user_scope == "OWN":
+            scope = "OWN"
+            user_id = x_user_id
+        elif user_scope == "BRANCH" and scope == "GLOBAL":
+            scope = "BRANCH"
+            if not branch_id:
+                branch_id = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
     target_user_ids: Optional[List[str]] = None
     target_branch_id: Optional[str] = branch_id
     branch_name: Optional[str] = None
@@ -117,9 +135,16 @@ async def get_funnel_dashboard(
         if not user_id:
             # Fallback to demo default
             user_id = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id ASC LIMIT 1")
-            u_row = await conn.fetchrow("SELECT full_name FROM users WHERE user_id = $1", user_id)
-            user_name = u_row["full_name"] if u_row else user_id
+        u_row = await conn.fetchrow("SELECT full_name, branch_id FROM users WHERE user_id = $1", user_id)
+        user_name = u_row["full_name"] if u_row else user_id
         target_user_ids = [user_id]
+        # In OWN scope, standard sales agents see only their own leads
+        is_mgr = await conn.fetchval("""
+            SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id 
+            WHERE ur.user_id = $1 AND r.role_code IN ('SALES_MANAGER', 'SYS_ADMIN')
+        """, user_id)
+        if not is_mgr:
+            target_branch_id = None
 
     elif scope == "TEAM":
         if not user_id:
@@ -136,39 +161,33 @@ async def get_funnel_dashboard(
         target_user_ids = [tr["user_id"] for tr in team_rows] or [user_id]
 
     elif scope == "BRANCH":
-        if target_branch_id:
-            b_users = await conn.fetch("SELECT user_id FROM users WHERE branch_id = $1", target_branch_id)
-            target_user_ids = [r["user_id"] for r in b_users]
-            if not branch_name:
-                branch_name = await conn.fetchval("SELECT name FROM branches WHERE branch_id = $1", target_branch_id)
+        if not target_branch_id:
+            target_branch_id = await conn.fetchval("SELECT branch_id FROM branches WHERE status = 'ACTIVE' ORDER BY branch_id LIMIT 1")
+        b_users = await conn.fetch("SELECT user_id FROM users WHERE branch_id = $1", target_branch_id)
+        target_user_ids = [r["user_id"] for r in b_users]
+        if not branch_name:
+            branch_name = await conn.fetchval("SELECT name FROM branches WHERE branch_id = $1", target_branch_id)
 
     elif scope == "GLOBAL":
-        if target_branch_id:
-            b_users = await conn.fetch("SELECT user_id FROM users WHERE branch_id = $1", target_branch_id)
-            target_user_ids = [r["user_id"] for r in b_users]
-            if not branch_name:
-                branch_name = await conn.fetchval("SELECT name FROM branches WHERE branch_id = $1", target_branch_id)
+        target_user_ids = None
+        target_branch_id = None
 
     # 2. Compute 10 Funnel KPIs with dynamic scope filtering
     if target_user_ids is not None:
-        # Leads filter
-        total_leads = await conn.fetchval("""
-            SELECT count(*) FROM leads 
-            WHERE assigned_user_id = ANY($1) 
-               OR (branch_id = $2 AND assigned_user_id IS NULL)
-        """, target_user_ids, target_branch_id)
+        if scope == "BRANCH" and target_branch_id:
+            lead_condition = "(l.branch_id = $2 OR l.assigned_user_id = ANY($1))"
+            lead_params = [target_user_ids, target_branch_id]
+        elif target_branch_id:
+            lead_condition = "(l.assigned_user_id = ANY($1) OR (l.branch_id = $2 AND l.assigned_user_id IS NULL))"
+            lead_params = [target_user_ids, target_branch_id]
+        else:
+            lead_condition = "l.assigned_user_id = ANY($1)"
+            lead_params = [target_user_ids]
 
-        new_leads = await conn.fetchval("""
-            SELECT count(*) FROM leads 
-            WHERE status = 'NEW' 
-              AND (assigned_user_id = ANY($1) OR (branch_id = $2 AND assigned_user_id IS NULL))
-        """, target_user_ids, target_branch_id)
+        total_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE {lead_condition}", *lead_params)
+        new_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE l.status = 'NEW' AND {lead_condition}", *lead_params)
+        qualified_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE l.status = 'QUALIFIED' AND {lead_condition}", *lead_params)
 
-        qualified_leads = await conn.fetchval("""
-            SELECT count(*) FROM leads 
-            WHERE status = 'QUALIFIED' 
-              AND (assigned_user_id = ANY($1) OR (branch_id = $2 AND assigned_user_id IS NULL))
-        """, target_user_ids, target_branch_id)
 
         # Opportunities
         open_opps = await conn.fetchval("""
@@ -263,35 +282,37 @@ async def get_funnel_dashboard(
     )
 
     # 3. Drill-down: Branches Summary
-    branch_rows = await conn.fetch("""
-        SELECT 
-            b.branch_id, b.branch_code, b.name,
-            (SELECT count(*) FROM users u WHERE u.branch_id = b.branch_id) AS agents_count,
-            (SELECT count(*) FROM leads l WHERE l.branch_id = b.branch_id) AS leads_count,
-            (SELECT count(*) FROM opportunities o JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND o.stage NOT IN ('CLOSED_WON', 'CLOSED_LOST')) AS open_opps,
-            (
-                (SELECT count(*) FROM viewings v JOIN users u ON v.agent_user_id = u.user_id WHERE u.branch_id = b.branch_id) +
-                (SELECT count(*) FROM activities a JOIN activity_types at ON a.activity_type_id = at.activity_type_id JOIN users u ON a.user_id = u.user_id WHERE u.branch_id = b.branch_id AND at.code = 'VIEWING')
-            ) AS viewings_count,
-            (SELECT count(*) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND c.status IN ('ACTIVE', 'SIGNED')) AS contracts_count,
-            (SELECT COALESCE(SUM(c.contract_value), 0) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND c.status IN ('ACTIVE', 'SIGNED')) AS sales_val
-        FROM branches b
-        ORDER BY sales_val DESC
-    """)
-    branches_data = [
-        BranchFunnelItem(
-            branch_id=r["branch_id"],
-            branch_code=r["branch_code"],
-            name=r["name"],
-            agents_count=r["agents_count"],
-            leads_count=r["leads_count"],
-            open_opps=r["open_opps"],
-            viewings_count=r["viewings_count"] or 0,
-            contracts_count=r["contracts_count"],
-            sales_value=float(r["sales_val"] or 0)
-        )
-        for r in branch_rows
-    ]
+    branches_data = []
+    if scope != "OWN":
+        branch_rows = await conn.fetch("""
+            SELECT 
+                b.branch_id, b.branch_code, b.name,
+                (SELECT count(*) FROM users u WHERE u.branch_id = b.branch_id) AS agents_count,
+                (SELECT count(*) FROM leads l WHERE l.branch_id = b.branch_id) AS leads_count,
+                (SELECT count(*) FROM opportunities o JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND o.stage NOT IN ('CLOSED_WON', 'CLOSED_LOST')) AS open_opps,
+                (
+                    (SELECT count(*) FROM viewings v JOIN users u ON v.agent_user_id = u.user_id WHERE u.branch_id = b.branch_id) +
+                    (SELECT count(*) FROM activities a JOIN activity_types at ON a.activity_type_id = at.activity_type_id JOIN users u ON a.user_id = u.user_id WHERE u.branch_id = b.branch_id AND at.code = 'VIEWING')
+                ) AS viewings_count,
+                (SELECT count(*) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND c.status IN ('ACTIVE', 'SIGNED')) AS contracts_count,
+                (SELECT COALESCE(SUM(c.contract_value), 0) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND c.status IN ('ACTIVE', 'SIGNED')) AS sales_val
+            FROM branches b
+            ORDER BY sales_val DESC
+        """)
+        branches_data = [
+            BranchFunnelItem(
+                branch_id=r["branch_id"],
+                branch_code=r["branch_code"],
+                name=r["name"],
+                agents_count=r["agents_count"],
+                leads_count=r["leads_count"],
+                open_opps=r["open_opps"],
+                viewings_count=r["viewings_count"] or 0,
+                contracts_count=r["contracts_count"],
+                sales_value=float(r["sales_val"] or 0)
+            )
+            for r in branch_rows
+        ]
 
     # 4. Drill-down: Agents Breakdown
     agent_where = "1=1"
@@ -387,29 +408,42 @@ async def get_funnel_dashboard(
     # 6. Live Pulse Stream: Unified Activities, Tasks, Communications, Lead Updates
     pulse_where = "1=1"
     pulse_params = []
-    if target_user_ids is not None:
-        pulse_where = "user_id = ANY($1)"
-        pulse_params = [target_user_ids]
-    elif target_branch_id:
-        pulse_where = "branch_id = $1"
-        pulse_params = [target_branch_id]
+    if scope == "GLOBAL":
+        pulse_where = "1=1"
+        pulse_params = []
+    elif scope == "BRANCH" and target_branch_id:
+        pulse_where = "(branch_id = $1 OR user_id = ANY($2))"
+        pulse_params = [target_branch_id, target_user_ids or []]
+    elif scope == "TEAM" and target_user_ids:
+        if target_branch_id:
+            pulse_where = "(user_id = ANY($1) OR (branch_id = $2 AND user_id IS NULL))"
+            pulse_params = [target_user_ids, target_branch_id]
+        else:
+            pulse_where = "user_id = ANY($1)"
+            pulse_params = [target_user_ids]
+    elif scope == "OWN" and target_user_ids:
+        uid = target_user_ids[0]
+        pulse_where = "(user_id = $1 OR lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = $1))"
+        pulse_params = [uid]
 
     pulse_query = f"""
     WITH combined AS (
         SELECT 
             a.activity_id AS id,
             CASE WHEN UPPER(COALESCE(at.code, '')) = 'VIEWING' THEN 'VIEWING' ELSE 'ACTIVITY' END AS event_type,
-            a.subject AS title,
+            COALESCE(wt.standard_title_en, a.subject) AS title,
             COALESCE(a.description, 'Activity logged') AS description,
-            COALESCE(a.completed_at, a.scheduled_at, now()) AS occurred_at,
-            u.full_name AS actor_name,
-            u.branch_id,
+            COALESCE(a.completed_at, a.scheduled_at, a.created_at, now()) AS occurred_at,
+            COALESCE(u.full_name, 'System') AS actor_name,
+            COALESCE(u.branch_id, l.branch_id) AS branch_id,
             a.user_id,
             a.lead_id,
             COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name
         FROM activities a
+        LEFT JOIN workflow_templates wt ON a.template_id = wt.template_id
         LEFT JOIN activity_types at ON a.activity_type_id = at.activity_type_id
         LEFT JOIN users u ON a.user_id = u.user_id
+        LEFT JOIN leads l ON a.lead_id = l.lead_id
         LEFT JOIN customers c ON a.customer_id = c.customer_id
         
         UNION ALL
@@ -419,8 +453,9 @@ async def get_funnel_dashboard(
             'VIEWING' AS event_type,
             ('Property Viewing: Unit ' || COALESCE(un.unit_number, 'N/A') || ' (' || v.status || ')') AS title,
             COALESCE(v.outcome, v.notes, 'Scheduled / conducted property tour') AS description,
-            COALESCE(v.scheduled_start, now()) AS occurred_at,
-            u.full_name AS actor_name,
+            CASE WHEN v.scheduled_start > now() THEN now() - interval '2 hours' ELSE v.scheduled_start END AS occurred_at,
+            COALESCE(u.full_name, 'Agent') AS actor_name,
+
             u.branch_id,
             v.agent_user_id AS user_id,
             NULL AS lead_id,
@@ -435,16 +470,18 @@ async def get_funnel_dashboard(
         SELECT 
             t.task_id AS id,
             'TASK' AS event_type,
-            t.title AS title,
+            COALESCE(wt.standard_title_en, t.title) AS title,
             ('Priority: ' || t.priority || ' | Status: ' || t.status) AS description,
-            COALESCE(t.due_at, now()) AS occurred_at,
-            u.full_name AS actor_name,
-            u.branch_id,
+            COALESCE(t.completed_at, t.created_at, now()) AS occurred_at,
+            COALESCE(u.full_name, 'Unassigned') AS actor_name,
+            COALESCE(u.branch_id, l.branch_id) AS branch_id,
             t.assigned_user_id AS user_id,
             t.lead_id,
             COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name
         FROM tasks t
+        LEFT JOIN workflow_templates wt ON t.template_id = wt.template_id
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
+        LEFT JOIN leads l ON t.lead_id = l.lead_id
         LEFT JOIN customers c ON t.customer_id = c.customer_id
         
         UNION ALL
@@ -452,33 +489,33 @@ async def get_funnel_dashboard(
         SELECT 
             cm.communication_id AS id,
             'COMMUNICATION' AS event_type,
-            (cm.channel || ' (' || cm.direction || '): ' || COALESCE(cm.subject, 'Message')) AS title,
+            (cm.channel || ' (' || cm.direction || '): ' || COALESCE(wt.standard_title_en, cm.subject, 'Message')) AS title,
             COALESCE(SUBSTRING(cm.body FROM 1 FOR 120), '') AS description,
-            COALESCE(cm.sent_at, now()) AS occurred_at,
+            COALESCE(cm.sent_at, cm.created_at, now()) AS occurred_at,
             'Agent / Bot' AS actor_name,
             l.branch_id,
             l.assigned_user_id AS user_id,
             cm.lead_id,
             COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name
         FROM communications cm
+        LEFT JOIN workflow_templates wt ON cm.template_id = wt.template_id
         LEFT JOIN customers c ON cm.customer_id = c.customer_id
         LEFT JOIN leads l ON cm.lead_id = l.lead_id
         
         UNION ALL
         
         SELECT 
-            le.lead_event_id AS id,
+            l.lead_id AS id,
             'LEAD_UPDATE' AS event_type,
-            ('Lead ' || le.lead_id || ': ' || le.event_type) AS title,
-            COALESCE(SUBSTRING(le.metadata_json::text FROM 1 FOR 120), '') AS description,
-            COALESCE(le.event_at, now()) AS occurred_at,
-            u.full_name AS actor_name,
+            ('Inbound Lead: ' || l.inquiry_type || ' — ' || COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'New Customer')) AS title,
+            ('Priority: ' || l.priority || ' | Status: ' || l.status || CASE WHEN l.assigned_user_id IS NULL THEN ' (Unassigned)' ELSE (' (Agent: ' || COALESCE(u.full_name, 'Assigned') || ')') END) AS description,
+            COALESCE(l.created_at, now()) AS occurred_at,
+            COALESCE(u.full_name, 'System / Inbound') AS actor_name,
             l.branch_id,
             l.assigned_user_id AS user_id,
-            le.lead_id,
+            l.lead_id,
             COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name
-        FROM lead_events le
-        LEFT JOIN leads l ON le.lead_id = l.lead_id
+        FROM leads l
         LEFT JOIN users u ON l.assigned_user_id = u.user_id
         LEFT JOIN customers c ON l.customer_id = c.customer_id
     )
@@ -487,6 +524,7 @@ async def get_funnel_dashboard(
     ORDER BY occurred_at DESC
     LIMIT 40;
     """
+
     pulse_rows = await conn.fetch(pulse_query, *pulse_params)
     live_pulse = [
         LivePulseEvent(

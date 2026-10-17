@@ -7,6 +7,8 @@ from app.database import get_db
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.customers import CustomerOut, CustomerCreate, CustomerUpdate, Customer360Out
 from app.routers.auth import resolve_user_data_scope
+from app.services.workflow_engine import WorkflowEngine
+
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
@@ -219,24 +221,26 @@ async def create_customer(payload: CustomerCreate, conn: asyncpg.Connection = De
     if not org_id:
         raise HTTPException(status_code=500, detail="No active organization found")
 
-    nid_hash = None
-    if payload.national_id and payload.national_id.strip():
-        nid_hash = hashlib.sha256(payload.national_id.strip().encode()).hexdigest()
-
-    customer_id = await conn.fetchval(
-        """
-        INSERT INTO customers (
-            organization_id, customer_type, first_name, last_name, company_name,
-            nationality_code, preferred_language, mobile, email, national_id_hash, status
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE'
-        ) RETURNING customer_id
-        """,
-        org_id, payload.customer_type.upper(), payload.first_name, payload.last_name, payload.company_name,
-        payload.nationality_code, payload.preferred_language, payload.mobile, payload.email, nid_hash
+    customer_id, is_duplicate, cust_info = await WorkflowEngine.find_or_create_customer(
+        conn=conn,
+        org_id=org_id,
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        mobile=payload.mobile,
+        email=payload.email,
+        national_id=payload.national_id,
+        company_name=payload.company_name,
+        customer_type=payload.customer_type.upper() if payload.customer_type else "INDIVIDUAL"
     )
+
     row = await conn.fetchrow(f"{CUSTOMER_SELECT_QUERY} WHERE customer_id = $1", customer_id)
-    return ResponseEnvelope(data=CustomerOut(**dict(row)), meta=BaseMeta())
+    cust_out = CustomerOut(**dict(row))
+    if is_duplicate:
+        cust_out.is_duplicate = True
+        matched_label = cust_info.get("matched_by") or "بيانات الاتصال"
+        cust_out.duplicate_note = f"تم العثور على ملف عميل قائم مطابق عبر {matched_label} ({cust_info.get('full_name')}) وتم استرجاع ملفه بدلاً من تكراره."
+    return ResponseEnvelope(data=cust_out, meta=BaseMeta())
+
 
 @router.patch("/{customer_id}", response_model=ResponseEnvelope[CustomerOut])
 async def update_customer(customer_id: str, payload: CustomerUpdate, conn: asyncpg.Connection = Depends(get_db)):

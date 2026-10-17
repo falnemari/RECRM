@@ -417,7 +417,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="office_title_header">Al-Nemari Real Estate Services</span>
             <span class="badge-header" data-i18n="badge_tasks">Tasks & Communications</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
@@ -428,12 +428,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="lbl_font_prefix">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -461,8 +461,8 @@
 
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="office_banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="office_banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
 
     <div class="content">
@@ -523,7 +523,7 @@
                         <option value="LOW" data-i18n="opt_low">Low</option>
                     </select>
                     <select id="task-agent-filter" class="select-filter" onchange="onTaskAgentFilterChange()">
-                        <option value="">All Agents (جميع الوسطاء)</option>
+                        <option value="" data-i18n="opt_all_agents">All Agents</option>
                     </select>
                     <div id="task-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
                         <span id="task-agent-scope-text">Showing user data only</span>
@@ -567,13 +567,13 @@
                     <input type="text" id="act-search" class="search-input" placeholder="Search subject, description..." onkeyup="filterActivities()">
                     <select id="act-type" class="select-filter" onchange="loadActivities()">
                         <option value="" data-i18n="opt_all_types">All Types</option>
-                        <option value="CALL">Phone Call (مكالمة هاتفية)</option>
-                        <option value="WHATSAPP">WhatsApp (واتساب)</option>
-                        <option value="EMAIL">Email (بريد إلكتروني)</option>
-                        <option value="MEETING">Meeting (اجتماع)</option>
-                        <option value="VIEWING">Property Viewing (معاينة عقار)</option>
-                        <option value="FOLLOW_UP">Follow-up (متابعة)</option>
-                        <option value="NOTE">Internal Note (ملاحظة داخلية)</option>
+                        <option value="CALL" data-i18n="opt_act_call">Phone Call</option>
+                        <option value="WHATSAPP" data-i18n="opt_act_whatsapp">WhatsApp</option>
+                        <option value="EMAIL" data-i18n="opt_act_email">Email</option>
+                        <option value="MEETING" data-i18n="opt_act_meeting">Meeting</option>
+                        <option value="VIEWING" data-i18n="opt_act_viewing">Property Viewing</option>
+                        <option value="FOLLOW_UP" data-i18n="opt_act_followup">Follow-up</option>
+                        <option value="NOTE" data-i18n="opt_act_note">Internal Note</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -617,8 +617,8 @@
                     </select>
                     <select id="comm-dir" class="select-filter" onchange="loadComms()">
                         <option value="" data-i18n="opt_all_dirs">All Directions</option>
-                        <option value="OUTBOUND">Outbound (صادر)</option>
-                        <option value="INBOUND">Inbound (وارد)</option>
+                        <option value="OUTBOUND" data-i18n="opt_dir_outbound">Outbound</option>
+                        <option value="INBOUND" data-i18n="opt_dir_inbound">Inbound</option>
                     </select>
                 </div>
                 <button class="btn" onclick="openNewCommModal()" data-i18n="btn_new_comm">+ Log Communication</button>
@@ -670,10 +670,10 @@
                     <div class="form-group">
                         <label data-i18n="lbl_priority">Priority *</label>
                         <select id="task-pri" required>
-                            <option value="URGENT">Urgent (عاجل)</option>
-                            <option value="HIGH">High (هام)</option>
-                            <option value="NORMAL" selected>Normal (عادي)</option>
-                            <option value="LOW">Low (منخفض)</option>
+                            <option value="URGENT" data-i18n="opt_urgent">Urgent</option>
+                            <option value="HIGH" data-i18n="opt_high">High</option>
+                            <option value="NORMAL" data-i18n="opt_normal" selected>Normal</option>
+                            <option value="LOW" data-i18n="opt_low">Low</option>
                         </select>
                     </div>
                 </div>
@@ -725,25 +725,25 @@
                     <div class="form-group">
                         <label data-i18n="lbl_act_type">Activity Type *</label>
                         <select id="act-type-select" onchange="onActTypeChange()" required>
-                            <option value="CALL">Phone Call (مكالمة)</option>
-                            <option value="WHATSAPP">WhatsApp (واتساب)</option>
-                            <option value="EMAIL">Email (بريد)</option>
-                            <option value="MEETING">Meeting (اجتماع)</option>
-                            <option value="VIEWING">Property Viewing (معاينة عقار)</option>
-                            <option value="NOTE">Internal Note (ملاحظة)</option>
+                            <option value="CALL" data-i18n="opt_act_call">Phone Call</option>
+                            <option value="WHATSAPP" data-i18n="opt_act_whatsapp">WhatsApp</option>
+                            <option value="EMAIL" data-i18n="opt_act_email">Email</option>
+                            <option value="MEETING" data-i18n="opt_act_meeting">Meeting</option>
+                            <option value="VIEWING" data-i18n="opt_act_viewing">Property Viewing</option>
+                            <option value="NOTE" data-i18n="opt_act_note">Internal Note</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_status">Status</label>
                         <select id="act-status-select">
-                            <option value="COMPLETED" selected>Completed (منجز)</option>
-                            <option value="PLANNED">Planned (مجدول)</option>
+                            <option value="COMPLETED" data-i18n="opt_act_completed" selected>Completed</option>
+                            <option value="PLANNED" data-i18n="opt_act_planned">Planned</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Appointment / Execution Time (الموعد / تاريخ التنفيذ)</label>
+                        <label data-i18n="lbl_act_datetime">Appointment / Execution Time</label>
                         <input type="datetime-local" id="act-datetime">
                     </div>
                     <div class="form-group">
@@ -812,8 +812,8 @@
                     <div class="form-group">
                         <label data-i18n="lbl_direction">Direction *</label>
                         <select id="comm-direction" required>
-                            <option value="OUTBOUND">Outbound (صادر)</option>
-                            <option value="INBOUND">Inbound (وارد)</option>
+                            <option value="OUTBOUND" data-i18n="opt_dir_outbound">Outbound</option>
+                            <option value="INBOUND" data-i18n="opt_dir_inbound">Inbound</option>
                         </select>
                     </div>
                 </div>
@@ -847,6 +847,128 @@
         </div>
     </div>
 
+    <!-- Task Completion Modal (Stage 2 Outcome Recording) -->
+    <div id="modal-complete-task" class="modal-overlay">
+        <div class="modal" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3 id="comp-modal-title" data-i18n="comp_modal_title">Record Task Outcome</h3>
+                <button class="close-btn" onclick="closeModal('modal-complete-task')">&times;</button>
+            </div>
+            <form id="form-complete-task" onsubmit="submitTaskCompletion(event)">
+                <input type="hidden" id="comp-task-id">
+                <input type="hidden" id="comp-template-id">
+                
+                <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-weight: 600; font-size: 0.95em; color: var(--primary);" id="comp-task-name">Task Name</div>
+                    <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 4px;" id="comp-task-context">Lead / Customer Info</div>
+                </div>
+
+                <!-- Outcome Selector Section -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label data-i18n="lbl_comp_outcome" style="font-weight: 600; display: block; margin-bottom: 8px;">Task Outcome *</label>
+                    <div id="comp-outcome-options" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Injected by completeTask -->
+                    </div>
+                </div>
+
+                <!-- Qualification Fields (Shown only when QUALIFIED is selected) -->
+                <div id="comp-qual-fields" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div data-i18n="lbl_comp_qual_header" style="font-weight: 600; font-size: 0.88em; color: #166534; margin-bottom: 10px;">⭐ Lead Qualification Criteria & Pipeline Promotion:</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_min">Minimum Budget (SAR)</label>
+                            <input type="number" id="comp-budget-min" placeholder="e.g. 1500000" class="search-input" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_budget_max">Maximum Budget (SAR)</label>
+                            <input type="number" id="comp-budget-max" placeholder="e.g. 2000000" class="search-input" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top: 8px;">
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_city">Preferred City</label>
+                            <select id="comp-city" class="select-filter" style="width: 100%;">
+                                <option value="">Select City</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
+                            <select id="comp-property-type" class="select-filter" style="width: 100%;">
+                                <option value="">Select Type</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage B: Callback Date/Time field (shown when CALLBACK_REQUESTED is selected) -->
+                <div id="comp-callback-fields" style="display: none; background: #fff7ed; border: 1.5px solid #ffedd5; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div data-i18n="lbl_comp_callback_header" style="font-weight: 600; font-size: 0.88em; color: #c2410c; margin-bottom: 8px;">⏰ Required Callback Date & Time *</div>
+                    <input type="datetime-local" id="comp-callback-datetime" class="search-input" style="width: 100%; background: #fff;">
+                </div>
+
+                <!-- Stage C: Property Matching & Recommendations (shown for TASK_OPPORTUNITY_MATCH_PROPERTIES) -->
+                <div id="comp-matching-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div data-i18n="lbl_comp_matching_header" style="font-weight: 600; font-size: 0.88em; color: #166534; margin-bottom: 8px;">🏢 Matching Properties Recommended for WhatsApp:</div>
+                    <div id="comp-matching-units-list" style="max-height: 140px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 0.88em;">
+                        Loading units...
+                    </div>
+                </div>
+
+                <!-- Stage 3: Property Viewing Schedule Fields (Shown for TASK_VIEWING_SCHEDULE) -->
+                <div id="comp-viewing-fields" style="display: none; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.9em; color: #0369a1; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <span>👁️</span> <span data-i18n="lbl_comp_viewing_header">Site Visit Scheduling:</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label data-i18n="lbl_comp_viewing_unit" style="font-weight: 600; font-size: 0.85em; display: block; margin-bottom: 4px;">Selected Unit *</label>
+                        <select id="comp-viewing-unit" class="select-filter" style="width: 100%; background: #fff; font-size: 0.88em;">
+                            <option value="">Loading units...</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="lbl_comp_viewing_datetime" style="font-weight: 600; font-size: 0.85em;">Viewing Date & Time *</label>
+                            <input type="datetime-local" id="comp-viewing-datetime" class="search-input" style="width: 100%; background: #fff;">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="lbl_comp_viewing_duration" style="font-weight: 600; font-size: 0.85em;">Duration</label>
+                            <select id="comp-viewing-duration" class="select-filter" style="width: 100%; background: #fff;">
+                                <option value="30" data-i18n="dur_30">30 Minutes</option>
+                                <option value="45" data-i18n="dur_45" selected>45 Minutes (Default)</option>
+                                <option value="60" data-i18n="dur_60">60 Minutes (1 Hour)</option>
+                                <option value="90" data-i18n="dur_90">90 Minutes (1.5 Hours)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label data-i18n="lbl_comp_viewing_location" style="font-weight: 600; font-size: 0.85em;">Location & Key Arrangements</label>
+                        <input type="text" id="comp-viewing-location" placeholder="e.g. In front of tower main entrance / keys with security" class="search-input" style="width: 100%; background: #fff;">
+                    </div>
+                </div>
+
+                <!-- Stage 3/4: Viewing Report Offer Fields (Shown for TASK_VIEWING_REPORT when INTERESTED) -->
+                <div id="comp-viewing-report-fields" style="display: none; background: #fefce8; border: 1.5px solid #fef08a; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div data-i18n="lbl_comp_offer_header" style="font-weight: 600; font-size: 0.88em; color: #854d0e; margin-bottom: 8px;">💰 Proposed Offer Amount (Optional):</div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_comp_offer_amount" style="font-size: 0.82em; font-weight: 600;">Proposed Offer Amount (SAR)</label>
+                        <input type="number" id="comp-offer-price" placeholder="e.g. 780000" class="search-input" style="width: 100%; background: #fff;">
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label data-i18n="lbl_comp_notes">Additional Notes & Attempt Details</label>
+                    <textarea id="comp-notes" rows="2" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:0.9em;" placeholder="Enter interaction details and customer feedback..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-complete-task')" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="comp-submit-btn" data-i18n="btn_confirm_outcome">Confirm & Save Outcome</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ============================================================== -->
     <!-- SCRIPT -->
     <!-- ============================================================== -->
@@ -860,6 +982,10 @@
 
         const i18nData = {
             en: {
+                office_title_header: "Al-Nemari Real Estate Services",
+                office_banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                office_banner_subtitle: "Muath Khidr Al-Nemari Real Estate Services Office",
+                lbl_font_prefix: "🔤 Font:",
                 badge_tasks: "Tasks & Communications",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
@@ -874,6 +1000,12 @@
                 opt_all_status: "All Statuses", opt_open: "Open", opt_completed: "Completed",
                 opt_all_priority: "All Priorities", opt_urgent: "Urgent", opt_high: "High", opt_normal: "Normal", opt_low: "Low",
                 opt_all_types: "All Types", opt_all_channels: "All Channels", opt_all_dirs: "All Directions",
+                opt_all_agents: "All Agents",
+                opt_act_call: "Phone Call", opt_act_whatsapp: "WhatsApp", opt_act_email: "Email",
+                opt_act_meeting: "Meeting", opt_act_viewing: "Property Viewing", opt_act_followup: "Follow-up",
+                opt_act_note: "Internal Note", opt_dir_outbound: "Outbound", opt_dir_inbound: "Inbound",
+                opt_act_completed: "Completed", opt_act_planned: "Planned",
+                lbl_act_datetime: "Appointment / Execution Time",
                 lbl_overdue_only: "Show Overdue Only",
                 btn_new_task: "+ New Task", btn_new_act: "+ Log Activity", btn_new_comm: "+ Log Communication",
                 th_task_title: "Task Title", th_priority: "Priority", th_due_date: "Due Date",
@@ -889,9 +1021,32 @@
                 lbl_agent: "Agent", lbl_customer: "Customer", lbl_channel: "Channel *", lbl_direction: "Direction *",
                 lbl_body: "Message Body *",
                 btn_cancel: "Cancel", btn_save_task: "Create Task", btn_save_act: "Log Activity", btn_save_comm: "Log Communication",
+                comp_modal_title: "Record Task Outcome",
+                lbl_comp_outcome: "Task Outcome *",
+                lbl_comp_qual_header: "⭐ Lead Qualification Criteria & Pipeline Promotion:",
+                lbl_budget_min: "Minimum Budget (SAR)", lbl_budget_max: "Maximum Budget (SAR)",
+                lbl_pref_city: "Preferred City", lbl_pref_prop_type: "Preferred Property Type",
+                lbl_comp_callback_header: "⏰ Required Callback Date & Time *",
+                lbl_comp_matching_header: "🏢 Matching Properties Recommended for WhatsApp:",
+                lbl_comp_viewing_header: "Site Visit Scheduling:",
+                lbl_comp_viewing_unit: "Selected Unit *",
+                lbl_comp_viewing_datetime: "Viewing Date & Time *",
+                lbl_comp_viewing_duration: "Duration",
+                dur_30: "30 Minutes", dur_45: "45 Minutes (Default)", dur_60: "60 Minutes (1 Hour)", dur_90: "90 Minutes (1.5 Hours)",
+                lbl_comp_viewing_location: "Location & Key Arrangements",
+                lbl_comp_offer_header: "💰 Proposed Offer Amount (Optional):",
+                lbl_comp_offer_amount: "Proposed Offer Amount (SAR)",
+                lbl_comp_notes: "Additional Notes & Attempt Details",
+                btn_confirm_outcome: "Confirm & Save Outcome",
+                font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
                 lang_label: "عربي"
             },
             ar: {
+                office_title_header: "مكتب معاذ خضر النمري للخدمات العقارية",
+                office_banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                office_banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
+                lbl_font_prefix: "🔤 الخط:",
                 badge_tasks: "المهام والاتصالات اليومية",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
@@ -906,6 +1061,12 @@
                 opt_all_status: "جميع الحالات", opt_open: "جارية", opt_completed: "مكتملة",
                 opt_all_priority: "جميع الأولويات", opt_urgent: "عاجل", opt_high: "هام", opt_normal: "عادي", opt_low: "منخفض",
                 opt_all_types: "جميع الأنواع", opt_all_channels: "جميع القنوات", opt_all_dirs: "جميع الاتجاهات",
+                opt_all_agents: "جميع الوسطاء",
+                opt_act_call: "مكالمة هاتفية", opt_act_whatsapp: "واتساب", opt_act_email: "بريد إلكتروني",
+                opt_act_meeting: "اجتماع", opt_act_viewing: "معاينة عقار", opt_act_followup: "متابعة",
+                opt_act_note: "ملاحظة داخلية", opt_dir_outbound: "صادر", opt_dir_inbound: "وارد",
+                opt_act_completed: "منجز", opt_act_planned: "مجدول",
+                lbl_act_datetime: "الموعد / تاريخ التنفيذ",
                 lbl_overdue_only: "عرض المتأخرات فقط",
                 btn_new_task: "+ مهمة جديدة", btn_new_act: "+ تسجيل نشاط", btn_new_comm: "+ تسجيل مراسلة",
                 th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_due_date: "تاريخ الاستحقاق",
@@ -921,6 +1082,23 @@
                 lbl_agent: "الموظف / الوكيل", lbl_customer: "العميل", lbl_channel: "القناة *", lbl_direction: "الاتجاه *",
                 lbl_body: "نص الرسالة *",
                 btn_cancel: "إلغاء", btn_save_task: "حفظ المهمة", btn_save_act: "تسجيل النشاط", btn_save_comm: "تسجيل المراسلة",
+                comp_modal_title: "تسجيل إنجاز المهمة والنتيجة",
+                lbl_comp_outcome: "النتيجة المعتمدة للمهمة *",
+                lbl_comp_qual_header: "⭐ استيفاء معايير تأهيل الطلب والترقية لفرصة بيعية:",
+                lbl_budget_min: "الحد الأدنى للميزانية (SAR)", lbl_budget_max: "الحد الأعلى للميزانية (SAR)",
+                lbl_pref_city: "المدينة المفضلة", lbl_pref_prop_type: "نوع العقار المفضل",
+                lbl_comp_callback_header: "⏰ موعد معاودة الاتصال المطلوب *",
+                lbl_comp_matching_header: "🏢 الوحدات العقارية المطابقة والمقترح إرسالها للعميل عبر الواتساب:",
+                lbl_comp_viewing_header: "جدولة وتأكيد موعد المعاينة الميدانية:",
+                lbl_comp_viewing_unit: "الوحدة العقارية المعاينة *",
+                lbl_comp_viewing_datetime: "تاريخ ووقت المعاينة *",
+                lbl_comp_viewing_duration: "المدة المتوقعة",
+                dur_30: "30 دقيقة", dur_45: "45 دقيقة (افتراضي)", dur_60: "ساعة واحدة", dur_90: "ساعة ونصف",
+                lbl_comp_viewing_location: "موقع اللقاء وترتيبات المفاتيح",
+                lbl_comp_offer_header: "💰 بيانات العرض المالي المقترح من العميل (اختياري):",
+                lbl_comp_offer_amount: "مبلغ العرض المقترح (SAR)",
+                lbl_comp_notes: "ملاحظات إضافية وتفاصيل المحاولة",
+                btn_confirm_outcome: "تأكيد وحفظ النتيجة",
                 lang_label: "English"
             }
         };
@@ -949,6 +1127,165 @@
             });
         }
 
+        const WORKFLOW_TASK_TITLES = {
+            'TASK_LEAD_FIRST_CONTACT': { ar: 'الطلب — الاتصال الأولي', en: 'Lead — First Contact' },
+            'TASK_LEAD_ASSIGN': { ar: 'الطلب — توجيه وتعيين وسيط', en: 'Lead — Assign Sales Agent' },
+            'TASK_LEAD_FOLLOWUP': { ar: 'الطلب — اتصال متابعة', en: 'Lead — Follow-up Contact' },
+            'TASK_LEAD_QUALIFY': { ar: 'الطلب — استكمال معايير التأهيل', en: 'Lead — Complete Qualification' },
+            'TASK_LEAD_COMPLETE_INFO': { ar: 'الطلب — استكمال البيانات الناقصة', en: 'Lead — Complete Missing Information' },
+            'TASK_OPPORTUNITY_MATCH_PROPERTIES': { ar: 'الفرصة — مطابقة وترشيح العقارات', en: 'Opportunity — Match Properties' },
+            'TASK_VIEWING_SCHEDULE': { ar: 'المعاينة — جدولة الزيارة الميدانية', en: 'Viewing — Schedule Site Visit' },
+            'TASK_VIEWING_RESCHEDULE': { ar: 'المعاينة — إعادة جدولة موعد الزيارة', en: 'Viewing — Reschedule Site Visit' },
+            'TASK_VIEWING_REPORT': { ar: 'المعاينة — رفع تقرير وتقييم الزيارة', en: 'Viewing — Submit Inspection Report' },
+            'TASK_OFFER_SUBMIT': { ar: 'العرض — تقديم العرض المالي للوحدة', en: 'Offer — Submit Formal Offer' }
+        };
+
+        const WORKFLOW_ACT_TITLES = {
+            'ACT_LEAD_CREATED': { ar: 'الطلب — إنشاء وتعيين الطلب', en: 'Lead — Created & Assigned' },
+            'ACT_LEAD_ROUTED': { ar: 'الطلب — توجيه لمدير الفرع', en: 'Lead — Routed to Branch Manager' },
+            'ACT_LEAD_ASSIGNED': { ar: 'الطلب — تعيين وتوجيه الوسيط', en: 'Lead — Assigned to Agent' },
+            'ACT_LEAD_FIRST_CONTACT': { ar: 'الطلب — تسجيل الاتصال الأولي', en: 'Lead — First Contact Recorded' },
+            'ACT_LEAD_FOLLOWUP': { ar: 'الطلب — تسجيل اتصال متابعة', en: 'Lead — Follow-up Recorded' },
+            'ACT_LEAD_QUALIFIED': { ar: 'الطلب — اكتمال التأهيل والترقية لفرصة', en: 'Lead — Qualified & Converted' },
+            'ACT_OPPORTUNITY_PROPERTIES_PRESENTED': { ar: 'الفرصة — استعراض وترشيح العقارات للعميل', en: 'Opportunity — Properties Presented' },
+            'ACT_VIEWING_SCHEDULED': { ar: 'المعاينة — تأكيد موعد الزيارة الميدانية', en: 'Viewing — Site Visit Scheduled' },
+            'ACT_VIEWING_REPORT_SUBMITTED': { ar: 'المعاينة — توثيق تقرير وتقييم الزيارة', en: 'Viewing — Inspection Report Documented' },
+            'ACT_OFFER_SUBMITTED': { ar: 'العرض — تقديم العرض المالي المعتمد', en: 'Offer — Formal Offer Submitted' },
+            'ACT_TASK_REOPENED': { ar: 'المهمة — إعادة فتح وتراجع ذكي', en: 'Task — Reopened & Smart Undo' }
+        };
+
+        const WORKFLOW_COMM_TITLES = {
+            'COMM_LEAD_INITIAL_CONTACT': { ar: 'الطلب — إشعار استلام الطلب والترحيب', en: 'Lead — Welcome Notification' },
+            'COMM_OPPORTUNITY_RECOMMENDATIONS': { ar: 'الفرصة — إرسال توصيات الوحدات المقترحة', en: 'Opportunity — Property Recommendations' },
+            'COMM_VIEWING_CONFIRMATION': { ar: 'المعاينة — تأكيد موعد وموقع المعاينة', en: 'Viewing — Confirmation & Location' },
+            'COMM_VIEWING_REMINDER': { ar: 'المعاينة — تذكير بموعد الزيارة الميدانية', en: 'Viewing — Customer Reminder' }
+        };
+
+        function getLocalizedTaskTitle(title, templateId) {
+            const isAr = currentLang === 'ar';
+            if (templateId && WORKFLOW_TASK_TITLES[templateId]) {
+                return isAr ? WORKFLOW_TASK_TITLES[templateId].ar : WORKFLOW_TASK_TITLES[templateId].en;
+            }
+            for (const k in WORKFLOW_TASK_TITLES) {
+                if (title === WORKFLOW_TASK_TITLES[k].ar) return isAr ? WORKFLOW_TASK_TITLES[k].ar : WORKFLOW_TASK_TITLES[k].en;
+                if (title === WORKFLOW_TASK_TITLES[k].en) return isAr ? WORKFLOW_TASK_TITLES[k].ar : WORKFLOW_TASK_TITLES[k].en;
+            }
+            return title || (isAr ? 'مهمة' : 'Task');
+        }
+
+        function getLocalizedActSubject(subject, templateId) {
+            const isAr = currentLang === 'ar';
+            if (templateId && WORKFLOW_ACT_TITLES[templateId]) {
+                return isAr ? WORKFLOW_ACT_TITLES[templateId].ar : WORKFLOW_ACT_TITLES[templateId].en;
+            }
+            for (const k in WORKFLOW_ACT_TITLES) {
+                if (subject === WORKFLOW_ACT_TITLES[k].ar) return isAr ? WORKFLOW_ACT_TITLES[k].ar : WORKFLOW_ACT_TITLES[k].en;
+                if (subject === WORKFLOW_ACT_TITLES[k].en) return isAr ? WORKFLOW_ACT_TITLES[k].ar : WORKFLOW_ACT_TITLES[k].en;
+            }
+            if (!subject) return isAr ? 'نشاط' : 'Activity';
+            if (!isAr) {
+                if (subject.startsWith('معاينة عقار مع العميل (')) return subject.replace('معاينة عقار مع العميل (', 'Property viewing with client (');
+                if (subject === 'معاينة عقار مع العميل') return 'Property viewing with client';
+                if (subject.startsWith('اجتماع ومناقشة تفاصيل العرض مع (')) return subject.replace('اجتماع ومناقشة تفاصيل العرض مع (', 'Meeting & offer discussion with (');
+                if (subject === 'اجتماع ومناقشة تفاصيل العرض') return 'Meeting & offer discussion';
+                if (subject.startsWith('متابعة مجريات الصفقة مع (')) return subject.replace('متابعة مجريات الصفقة مع (', 'Deal follow-up with (');
+                if (subject === 'متابعة مجريات الصفقة') return 'Deal follow-up';
+                if (subject === 'الاتصال الأولي بالعميل') return 'First Contact with Client';
+                if (subject === 'اتصال متابعة') return 'Follow-up Call';
+                if (subject === 'مكالمة هاتفية') return 'Phone Call';
+                if (subject === 'محاولة اتصال لم يتم الرد عليها') return 'Unanswered Call Attempt';
+            }
+            return subject;
+        }
+
+        function getLocalizedCommSubject(subject, templateId) {
+            const isAr = currentLang === 'ar';
+            if (templateId && WORKFLOW_COMM_TITLES[templateId]) {
+                return isAr ? WORKFLOW_COMM_TITLES[templateId].ar : WORKFLOW_COMM_TITLES[templateId].en;
+            }
+            for (const k in WORKFLOW_COMM_TITLES) {
+                if (subject === WORKFLOW_COMM_TITLES[k].ar) return isAr ? WORKFLOW_COMM_TITLES[k].ar : WORKFLOW_COMM_TITLES[k].en;
+                if (subject === WORKFLOW_COMM_TITLES[k].en) return isAr ? WORKFLOW_COMM_TITLES[k].ar : WORKFLOW_COMM_TITLES[k].en;
+            }
+            if (!subject) return isAr ? 'مراسلة' : 'Message';
+            if (!isAr) {
+                if (subject.startsWith('تأكيد موعد المعاينة الميدانية للوحدة #')) {
+                    return subject.replace('تأكيد موعد المعاينة الميدانية للوحدة #', 'Site viewing confirmation for Unit #');
+                }
+                if (subject === 'توصيات عقارية مقترحة لطلبك العقاري') {
+                    return 'Property recommendations for your inquiry';
+                }
+            }
+            return subject;
+        }
+
+        function getLocalizedActTypeName(name, code) {
+            const isAr = currentLang === 'ar';
+            const c = code || name || '';
+            if (c === 'CALL') return isAr ? 'مكالمة هاتفية' : 'Phone Call';
+            if (c === 'WHATSAPP') return isAr ? 'واتساب' : 'WhatsApp';
+            if (c === 'EMAIL') return isAr ? 'بريد إلكتروني' : 'Email';
+            if (c === 'MEETING') return isAr ? 'اجتماع' : 'Meeting';
+            if (c === 'VIEWING') return isAr ? 'معاينة عقار' : 'Property Viewing';
+            if (c === 'FOLLOW_UP') return isAr ? 'متابعة' : 'Follow-up';
+            if (c === 'NOTE') return isAr ? 'ملاحظة داخلية' : 'Internal Note';
+            if (c === 'SYSTEM') return isAr ? 'نشاط نظام' : 'System Activity';
+            return name || code || '';
+        }
+
+        function getLocalizedActDesc(desc, templateId) {
+            if (!desc) return '--';
+            const isAr = currentLang === 'ar';
+            if (isAr) return desc;
+
+            let s = desc;
+            s = s.replace('تم استيفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة.', 'Qualification criteria met. Lead converted to active sales opportunity.')
+                 .replace('تم استفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة.', 'Qualification criteria met. Lead converted to active sales opportunity.')
+                 .replace('تم استلام وتعيين الطلب بنجاح للوسيط. مهلة الاتصال بالعميل: 30 دقيقة.', 'Lead received and assigned to agent. 30-min first contact SLA task created.')
+                 .replace('تم استلام وتعيين الطلب بنجاح. مهلة الاتصال بالعميل: 30 دقيقة.', 'Lead received and assigned. 30-min first contact SLA task created.')
+                 .replace('طلب جديد وارد بدون وسيط. تم توجيهه تلقائياً إلى مدير الفرع المعني لتعيين وسيط مبيعات خلال 15 دقيقة.', 'Unassigned inbound lead auto-routed to branch manager for agent assignment (15 min SLA).')
+                 .replace(/تم تعيين الطلب للوسيط \((.*?)\)\. تم إسناد مهمة الاتصال الأولي \(مهلة 30 دقيقة\)\./g, 'Lead assigned to agent ($1). First contact SLA task assigned (30 minutes).')
+                 .replace('الإنجاز قبل إنشاء زيارة ميدانية', 'Completed before scheduling site visit.')
+                 .replace('تم ترشيح وعرض الوحدات التالية على العميل:', 'Recommended and presented the following units to the client:')
+                 .replace('تم تسجيل عدم الرد وجدولة اتصال متابعة تلقائي بعد 3 ساعات.', 'No answer logged. Automatic follow-up scheduled after 3 hours.')
+                 .replace('تم التواصل مع العميل بنجاح وترقية حالة الطلب لـ CONTACTED وتوليد مهمة التأهيل!', 'Client contacted successfully. Lead moved to CONTACTED and qualification task generated.')
+                 .replace('تم استبعاد الطلب لعدم صحة بيانات الاتصال.', 'Lead disqualified due to invalid contact details.')
+                 .replace('تم استبعاد الطلب لعدم الجدية أو عدم مناسبة المعايير.', 'Lead disqualified due to lack of interest or unmatched criteria.')
+                 .replace('تم استبعاد الطلب لعدم توافر معايير التأهيل أو رغبة العميل.', 'Lead disqualified: qualification criteria not met or customer not interested.')
+                 .replace('طلب متابعة إضافية لاستكمال معايير التأهيل.', 'Additional follow-up requested to complete qualification criteria.')
+                 .replace('تم استكمال وتحديث بيانات الطلب بنجاح.', 'Lead data successfully completed and updated.')
+                 .replace('تم تسجيل محاولة التواصل مع العميل.', 'Contact attempt logged.')
+                 .replace('تم التواصل مع العميل وتحديث الحالة إلى متصل (CONTACTED).', 'Client contacted and status updated to CONTACTED.')
+                 .replace('محاولة اتصال لم يتم الرد عليها.', 'Contact attempt: No answer.')
+                 .replace('العميل غير مهتم بالعرض.', 'Client not interested in offer.')
+                 .replace('العميل مهتم جداً ومستعجل خلال يومين', 'Client is very interested and urgent within 2 days.')
+                 .replace(/تم تحديد موعد معاينة ميدانية للوحدة #([^\s]+) بتاريخ ([^\.]+)\./g, 'Scheduled property viewing for Unit #$1 on $2.')
+                 .replace(/تم توثيق تقرير المعاينة بنتيجة: (.*)/g, 'Viewing report documented with outcome: $1')
+                 .replace(/تم التراجع عن إكمال المهمة \x27(.*?)\x27 وإعادة فتحها وتصحيح المسار\./g, 'Task \x27$1\x27 reopened and downstream actions undone.')
+                 .replace(/تم العثور على ملف عميل قائم مطابق عبر (.*?) \((.*?) - (.*?)\) وتم ربط الطلب بملفه بدلاً من تكراره\./g, 'Existing customer profile found via $1 ($2 - $3). Lead linked to existing profile.')
+                 .replace('رقم الهوية / السجل (National ID / CR)', 'National ID / CR')
+                 .replace('رقم الجوال (Mobile Number)', 'Mobile Number')
+                 .replace('البريد الإلكتروني (Email Address)', 'Email Address')
+                 .replace('بيانات الاتصال', 'Contact details')
+                 .replace('تراجع من جدول المهام', 'Reopened from task list')
+                 .replace('تراجع فوري عبر شريط التراجع', 'Quick undo from action banner');
+            return s;
+        }
+
+        function getLocalizedCommBody(body, templateId) {
+            if (!body) return '--';
+            const isAr = currentLang === 'ar';
+            if (isAr) return body;
+
+            let b = body;
+            b = b.replace('مرحباً بك، يسعدنا ترشيح هذه الوحدات العقارية المطابقة لمتطلباتك:', 'Welcome! We are pleased to recommend these matching properties for your inquiry:')
+                 .replace('يسعدنا تحديد موعد للمعاينة الميدانية في الوقت الذي يناسبك.', 'We would be pleased to schedule a property viewing at your convenience.')
+                 .replace(/مرحباً بك، نود تأكيد موعد المعاينة الميدانية للوحدة #([^\s]+) بمشروع \((.*?)\)\. الموعد: ([^\.]+)\./g, 'Welcome! Confirming site visit for Unit #$1 at ($2). Time: $3.')
+                 .replace(/تأكيد موعد المعاينة الميدانية للوحدة #([^\s]+)/g, 'Site viewing confirmation for Unit #$1')
+                 .replace('توصيات عقارية مقترحة لطلبك العقاري', 'Property recommendations for your inquiry');
+            return b;
+        }
+
         function setLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('recrm_lang', lang);
@@ -961,7 +1298,19 @@
                     el.textContent = i18nData[currentLang][key];
                 }
             });
-            document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.placeholder = i18nData[currentLang][key];
+                }
+            });
+            const langLbl = document.getElementById('lang-label');
+            if (langLbl) langLbl.textContent = i18nData[currentLang].lang_label;
+
+            populateTaskAgentFilter();
+            if (tasksData && tasksData.length > 0) renderTasks(tasksData);
+            if (activitiesData && activitiesData.length > 0) renderActivities(activitiesData);
+            if (commsData && commsData.length > 0) renderComms(commsData);
         }
 
         function toggleLanguage() {
@@ -1033,6 +1382,7 @@
                 if (badge) badge.style.display = 'none';
             }
             loadTasks();
+            loadActivities();
             loadSummary();
         }
 
@@ -1047,11 +1397,12 @@
         function populateTaskAgentFilter() {
             const agSelect = document.getElementById('task-agent-filter');
             if (!agSelect || taskModalUsers.length === 0) return;
+            if (agSelect.disabled) return;
             const urlParams = new URLSearchParams(window.location.search);
             const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
             const curVal = agSelect.value || urlAgent || '';
             const isAr = currentLang === 'ar';
-            agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` +
+            agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` +
                 taskModalUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
             if (curVal) {
                 agSelect.value = curVal;
@@ -1085,35 +1436,48 @@
         function renderTasks(items) {
             const tbody = document.getElementById('tasks-tbody');
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px;">No tasks found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${currentLang === 'ar' ? 'لا توجد مهام مطابقة.' : 'No tasks found.'}</td></tr>`;
                 return;
             }
+            const isAr = currentLang === 'ar';
             tbody.innerHTML = items.map(t => {
                 const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
                 const sCls = t.status === 'COMPLETED' ? 'badge-completed' : (t.is_overdue ? 'badge-overdue' : 'badge-open');
-                const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() : 'No date';
+                const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() + ' ' + new Date(t.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isAr ? 'بدون موعد' : 'No date');
+                const isActionable = (t.status === 'OPEN' || t.status === 'PENDING' || t.status === 'IN_PROGRESS');
+                const displayTitle = getLocalizedTaskTitle(t.title, t.template_id);
+                const assignedName = t.assigned_user_name || (isAr ? 'غير مسند' : 'Unassigned');
                 return `
                     <tr>
                         <td><span class="id-badge">${t.task_id}</span></td>
                         <td class="tasks-title-cell">
-                            <strong>${t.title}</strong>
-                            ${t.is_overdue ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>' : ''}
+                            <strong>${displayTitle}</strong>
+                            ${t.template_id ? `<div style="font-size:0.7em; color:#64748b; font-family:monospace; margin-top:2px;">[${t.template_id}]</div>` : ''}
+                            ${t.is_overdue ? (isAr ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[متأخر]</span>' : '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>') : ''}
+                            ${t.escalation_level > 1 ? (isAr ? '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 مصعد للمدير</span>' : '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 Escalated to Manager</span>') : ''}
                         </td>
-                        <td><span class="badge ${pCls}">${t.priority}</span></td>
+                        <td><span class="badge ${pCls}">${isAr ? (t.priority === 'URGENT' ? 'عاجل' : (t.priority === 'HIGH' ? 'هام' : (t.priority === 'NORMAL' ? 'عادي' : (t.priority === 'LOW' ? 'منخفض' : t.priority)))) : t.priority}</span></td>
                         <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
-                        <td>${t.assigned_user_name || 'Unassigned'}</td>
+                        <td>${assignedName}</td>
                         <td class="tasks-rel-cell">
                             <div><strong>${t.customer_name || 'N/A'}</strong></div>
-                            ${t.lead_id ? `<div style="font-size:0.75em; color:#0284c7; margin-top:2px;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a></div>` : ''}
-                            ${t.opportunity_id ? `<div style="font-size:0.75em; color:#16a34a; margin-top:2px;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a></div>` : ''}
+                            ${t.lead_id ? `<div style="font-size:0.75em; color:#0284c7; margin-top:2px; display:flex; align-items:center; gap:4px;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${t.lead_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
+                            ${t.opportunity_id ? `<div style="font-size:0.75em; color:#16a34a; margin-top:2px; display:flex; align-items:center; gap:4px;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ oppId: '${t.opportunity_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
                         </td>
-                        <td><span class="badge ${sCls}">${t.status}</span></td>
+                        <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : t.status))) : t.status}</span></td>
                         <td>
-                            ${t.status === 'OPEN' ? `
-                                <button class="btn btn-success btn-sm" onclick="completeTask('${t.task_id}')">
-                                    ✓ Complete
+                            ${isActionable ? `
+                                <button class="btn btn-success btn-sm" onclick="completeTask('${t.task_id}', '${t.template_id || ''}')" style="font-size: 0.82em; padding: 5px 10px;">
+                                    ${isAr ? '✓ إنجاز وتسجيل النتيجة' : '✓ Complete Task'}
                                 </button>
-                            ` : `<span style="color:var(--success); font-size:0.85em;">✔ Done</span>`}
+                            ` : `
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="color:var(--success); font-size:0.85em; font-weight:600;">${isAr ? '✔ منجز' : '✔ Done'}</span>
+                                    <button class="btn btn-sm" onclick="promptReopenTask('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="font-size: 0.75em; padding: 3px 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'" title="${isAr ? 'إعادة فتح المهمة والتراجع الذكي عن العمليات التابعة' : 'Reopen task and smartly undo downstream actions'}">
+                                        ${isAr ? '↩️ تراجع / إعادة فتح' : '↩️ Undo / Reopen'}
+                                    </button>
+                                </div>
+                            `}
                         </td>
                     </tr>
                 `;
@@ -1132,25 +1496,707 @@
             renderTasks(filtered);
         }
 
-        async function completeTask(taskId) {
-            try {
-                const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/complete`, { method: 'POST' });
-                if (res.ok) {
-                    loadTasks();
-                    loadSummary();
-                } else {
-                    alert("Failed to complete task");
+        let referenceCities = [];
+        let referencePropertyTypes = [];
+
+        async function ensureReferenceCatalogsLoaded() {
+            if (referenceCities.length === 0 || referencePropertyTypes.length === 0) {
+                try {
+                    const [cRes, ptRes] = await Promise.all([
+                        fetch(`${API_BASE}/api/v1/cities`).then(r => r.ok ? r.json() : null),
+                        fetch(`${API_BASE}/api/v1/property-types`).then(r => r.ok ? r.json() : null)
+                    ]);
+                    if (cRes && cRes.data) referenceCities = cRes.data;
+                    if (ptRes && ptRes.data) referencePropertyTypes = ptRes.data;
+                } catch (e) {
+                    console.error("Failed to load reference catalogs:", e);
                 }
-            } catch (err) {
-                alert("Error: " + err);
             }
         }
+
+        async function completeTask(taskId, templateId) {
+            await ensureReferenceCatalogsLoaded();
+            const t = tasksData.find(x => x.task_id === taskId);
+            const isAr = currentLang === 'ar';
+            document.getElementById('comp-task-id').value = taskId;
+            document.getElementById('comp-template-id').value = templateId || '';
+            document.getElementById('comp-task-name').textContent = t ? getLocalizedTaskTitle(t.title, t.template_id) : `Task #${taskId}`;
+            
+            let contextParts = [];
+            if (t && t.customer_name) contextParts.push(`${isAr ? 'العميل: ' : 'Customer: '}${t.customer_name}`);
+            if (t && t.lead_id) contextParts.push(`${isAr ? 'طلب رقم: ' : 'Lead #: '}${t.lead_id}`);
+            if (t && t.opportunity_id) contextParts.push(`${isAr ? 'فرصة رقم: ' : 'Opp #: '}${t.opportunity_id}`);
+            if (t && t.assigned_user_name) contextParts.push(`${isAr ? 'المسؤول: ' : 'Assigned: '}${t.assigned_user_name}`);
+            document.getElementById('comp-task-context').textContent = contextParts.join(' | ') || (isAr ? 'سجل المهمة التشغيلي' : 'Operational Task Context');
+
+            document.getElementById('comp-notes').value = '';
+            document.getElementById('comp-budget-min').value = '';
+            document.getElementById('comp-budget-max').value = '';
+
+            const compNotes = document.getElementById('comp-notes');
+            if (compNotes) compNotes.placeholder = isAr ? 'أدخل تفاصيل التجاوب وملاحظات العميل...' : 'Enter customer feedback and attempt details...';
+            const viewingLoc = document.getElementById('comp-viewing-location');
+            if (viewingLoc) viewingLoc.placeholder = isAr ? 'مثال: أمام المدخل الشرقي للبرج / المفاتيح مع الحارس' : 'e.g. In front of tower main entrance / keys with security';
+
+            // Populate Cities & Property Types in Qualification Fields
+            const cityEl = document.getElementById('comp-city');
+            cityEl.innerHTML = `<option value="">${isAr ? 'اختر المدينة المفضلة' : 'Select Preferred City'}</option>` + 
+                referenceCities.map(c => `<option value="${c.city_id}">${isAr ? (c.name_ar || c.name_en) : c.name_en}</option>`).join('');
+
+            const ptEl = document.getElementById('comp-property-type');
+            ptEl.innerHTML = `<option value="">${isAr ? 'اختر نوع العقار المفضل' : 'Select Preferred Property Type'}</option>` + 
+                referencePropertyTypes.map(p => `<option value="${p.property_type_id}">${isAr ? (p.name_ar || p.name_en) : p.name_en}</option>`).join('');
+
+            const container = document.getElementById('comp-outcome-options');
+            const qualFields = document.getElementById('comp-qual-fields');
+            const cbFields = document.getElementById('comp-callback-fields');
+            const matchFields = document.getElementById('comp-matching-fields');
+            const viewingFields = document.getElementById('comp-viewing-fields');
+            const viewingReportFields = document.getElementById('comp-viewing-report-fields');
+            if (qualFields) qualFields.style.display = 'none';
+            if (cbFields) cbFields.style.display = 'none';
+            if (matchFields) matchFields.style.display = 'none';
+            if (viewingFields) viewingFields.style.display = 'none';
+            if (viewingReportFields) viewingReportFields.style.display = 'none';
+
+            // Set default callback datetime to tomorrow 11:00 AM
+            const cbInput = document.getElementById('comp-callback-datetime');
+            if (cbInput) {
+                const d = new Date();
+                d.setDate(d.getDate() + 1);
+                d.setHours(11, 0, 0, 0);
+                const pad = (n) => String(n).padStart(2, '0');
+                cbInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            }
+
+            if (templateId === 'TASK_LEAD_FIRST_CONTACT' || templateId === 'TASK_LEAD_FOLLOWUP') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="CONNECTED" checked onchange="toggleCallbackFields(false); toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📞 تم التواصل بنجاح' : '📞 Connected'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية حالة الطلب إلى (CONTACTED) وتوليد مهمة التأهيل تلقائياً' : 'Promote lead to CONTACTED and automatically generate qualification task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="NO_ANSWER" onchange="toggleCallbackFields(false); toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '📵 لم يرد / مشغول / تعذر الوصول' : '📵 No Answer / Busy'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة متابعة تلقائية (سقف 3 محاولات ثم إغلاق كغير مستجيب)' : 'Schedule automatic follow-up (up to 3 attempts before closing as unreachable)'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #ffedd5; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="CALLBACK_REQUESTED" onchange="toggleCallbackFields(true); toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#d97706;">${isAr ? '⏰ طلب معاودة الاتصال لاحقاً' : '⏰ Callback Requested'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديد موعد وتوقيت إعادة الاتصال بالعميل' : 'Specify date and time to call the client back'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="INVALID_CONTACT" onchange="toggleCallbackFields(false); toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#b91c1c;">${isAr ? '📵 رقم خاطئ / تعذر الاتصال نهائياً' : '📵 Invalid Contact / Wrong Number'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب لعدم صحة بيانات الاتصال' : 'Disqualify lead due to invalid contact details'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="NOT_INTERESTED" onchange="toggleCallbackFields(false); toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '🚫 غير مهتم بالطلب' : '🚫 Not Interested'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب وتحديث حالته إلى ملغى' : 'Disqualify lead and archive inquiry'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_LEAD_COMPLETE_INFO') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="INFO_COMPLETED" checked onchange="toggleQualFields(true)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ تم استكمال وتحديث بيانات الطلب' : '✓ Information Completed'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث متطلبات الميزانية والمدينة ونوع العقار على الطلب' : 'Update budget range, preferred city and property type'}</div>
+                        </div>
+                    </label>
+                `;
+                if (qualFields) qualFields.style.display = 'block';
+
+            } else if (templateId === 'TASK_LEAD_QUALIFY') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="QUALIFIED" checked onchange="toggleQualFields(true)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '⭐ استيفاء معايير التأهيل' : '⭐ Qualified'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحويل الطلب لفرصة بيعية نشطة، وتوليد مهمة مطابقة وترشيح العقارات' : 'Promote to active deal opportunity and generate property matching task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="FOLLOWUP_NEEDED" onchange="toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '⏳ يحتاج متابعة إضافية' : '⏳ Needs Additional Follow-up'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة اتصال متابعة جديد لاستكمال متطلبات وميزانية العميل' : 'Schedule new follow-up call to verify budget and requirements'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="DISQUALIFIED" onchange="toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '❌ غير مؤهل' : '❌ Disqualified'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب لعدم الجدية أو عدم مناسبة المعايير' : 'Disqualify lead due to lack of serious interest or unmatched criteria'}</div>
+                        </div>
+                    </label>
+                `;
+                if (qualFields) qualFields.style.display = 'block';
+            } else if (templateId === 'TASK_LEAD_ASSIGN') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="ASSIGNED" checked onchange="toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ تم توجيه وتعيين وسيط المبيعات' : '✓ Agent Assigned'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إتمام التعيين وتوليد مهمة الاتصال الأولي للوسيط بمهلة 30 دقيقة' : 'Complete assignment and spawn 30-min first contact SLA task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="PRESENTED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '🏢 تم ترشيح العقارات وإرسالها للعميل عبر الواتساب' : '🏢 Properties Presented via WhatsApp'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق إرسال مقترحات العقارات وتوليد مهمة جدولة المعاينة الميدانية' : 'Record sent property recommendations and spawn site visit scheduling task'}</div>
+                        </div>
+                    </label>
+                `;
+                if (matchFields) matchFields.style.display = 'block';
+                populateMatchingUnits(t);
+
+            } else if (templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="SCHEDULED" checked onchange="toggleViewingScheduleFields(true)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '👁️ تم الاتفاق وتأكيد موعد المعاينة الميدانية' : '👁️ Site Visit Scheduled & Confirmed'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل موعد المعاينة، وتوليد مهمة تقرير المعاينة وترقية الصفقة لـ (VIEWING)' : 'Book site visit, advance deal to VIEWING, and generate viewing report task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="RESCHEDULE_NEEDED" onchange="toggleViewingScheduleFields(false)">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '⏳ تعذر التنسيق / إعادة الجدولة' : '⏳ Reschedule Needed'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة موعد متابعة لاحق للتنسيق مع العميل والمالك' : 'Schedule follow-up date to coordinate with buyer and owner'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="CANCELLED" onchange="toggleViewingScheduleFields(false)">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '🚫 إلغاء المعاينة من طرف العميل' : '🚫 Viewing Cancelled by Client'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إلغاء المعاينة وتوثيق أسباب الاعتذار' : 'Cancel site visit and record reason'}</div>
+                        </div>
+                    </label>
+                `;
+                if (viewingFields) viewingFields.style.display = 'block';
+                populateViewingModalUnits(t);
+
+            } else if (templateId === 'TASK_VIEWING_REPORT') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="INTERESTED" checked onchange="toggleViewingReportOffer(true)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '⭐ العميل مهتم ويرغب بتقديم عرض' : '⭐ Interested — Ready to Submit Offer'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية الصفقة لمرحلة التفاوض (NEGOTIATION) وتوليد مهمة تقديم العرض المالي بمهلة 12 ساعة' : 'Promote deal to NEGOTIATION and generate 12-hour offer submission task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bae6fd; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="NEEDS_ANOTHER_UNIT" onchange="toggleViewingReportOffer(false)">
+                        <div>
+                            <strong style="color:#0369a1;">${isAr ? '🔄 العقار لم يناسبه ويرغب بمعاينة وحدة بديلة' : '🔄 Needs Alternative Unit'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'بقاء الصفقة في مرحلة المعاينة وتوليد مهمة جدولة معاينة جديدة لوحدة بديلة' : 'Keep deal in viewing stage and spawn new viewing schedule task for alternative unit'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="NOT_INTERESTED" onchange="toggleViewingReportOffer(false)">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '🚫 غير مناسب / صرف النظر' : '🚫 Not Interested'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق أسباب عدم مناسبة العقار للعميل' : 'Document client feedback and archive opportunity'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="NO_SHOW" onchange="toggleViewingReportOffer(false)">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '⚠️ لم يحضر العميل للموعد' : '⚠️ Client No Show'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق تخلف العميل وتوليد مهمة إعادة الجدولة التلقائية فوراً' : 'Document client absence and automatically generate reschedule task'}</div>
+                        </div>
+                    </label>
+                `;
+                if (viewingReportFields) viewingReportFields.style.display = 'block';
+            } else if (templateId === 'TASK_OFFER_MANAGER_APPROVAL') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="APPROVED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ اعتماد العرض المالي للمدير وإرساله للعميل' : '✓ Approve Discounted Offer (Manager Approval)'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث حالة العرض إلى (SUBMITTED) وإرسال المقترح للعميل عبر الواتساب وتوليد مهمة المتابعة' : 'Advance offer to SUBMITTED, send proposal to client via WhatsApp and spawn follow-up task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="REJECTED">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '✕ رفض العرض وإعادته للتفاوض' : '✕ Reject Discounted Offer'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'رفض نسبة الخصم وإعادة العرض للوسيط للتفاوض ورفع القيمة' : 'Reject discount and return to sales agent for negotiation'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_OFFER_FOLLOWUP') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="ACCEPTED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ موافقة العميل على العرض والبدء بالحجز' : '✓ Client Accepted Offer'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث العرض إلى (ACCEPTED) وتوليد مهمة التحقق من توفر الوحدة وحجزها (Stage F)' : 'Promote offer to ACCEPTED and spawn unit availability & reservation task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="COUNTER">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '💬 طلب تفاوض / تقديم عرض مضاد' : '💬 Counter Offer Requested'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل تفاصيل العرض المضاد وتحديث حالة العرض إلى (COUNTER)' : 'Record counter offer details and update status'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="REJECTED">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '✕ اعتذار العميل عن قبول العرض' : '✕ Offer Rejected by Client'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل أسباب الرفض واستبعاد الفرصة أو البحث عن بديل' : 'Document rejection reason and archive opportunity'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_RESERVATION_VERIFY_AVAILABILITY') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="CONFIRMED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '🔒 تأكيد توفر الوحدة وحجزها وتثبيت القفل' : '🔒 Verify Availability & Reserve Unit'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'قفل الوحدة كـ (RESERVED) وتوليد مهمة متابعة تحصيل العربون خلال 48 ساعة' : 'Lock unit as RESERVED and spawn 48-hour earnest deposit collection task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_RESERVATION_DEPOSIT_FOLLOWUP') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="DEPOSIT_VERIFIED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '💰 تم التحقق من استلام العربون بالحساب البنكي' : '💰 Earnest Deposit Verified in Bank'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية الحجز إلى (CONFIRMED) وتوليد مهمة إعداد مسودة العقد (Stage G) للشؤون القانونية' : 'Promote reservation to CONFIRMED and spawn contract draft task for Legal'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="CANCELLED">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '🚫 تعذر سداد العربون وإلغاء الحجز' : '🚫 Cancel Reservation & Release Unit'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إلغاء الحجز وإعادة إتاحة الوحدة في المخزون المتاح (AVAILABLE)' : 'Cancel reservation and release unit back to AVAILABLE inventory'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_CONTRACT_DRAFT') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="DRAFT_CREATED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📝 تم إعداد مسودة العقد وإرسالها للمراجعة' : '📝 Contract Draft Prepared'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إنشاء مسودة العقد وتوليد مهمة المراجعة الداخلية للمستشار القانوني' : 'Create contract draft record and spawn internal legal review task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_CONTRACT_INTERNAL_REVIEW') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="APPROVED_FOR_SIGNATURE" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '⚖️ اعتماد المسودة القانونية وجاهزية العقد للتوقيع' : '⚖️ Legal Approval for Signature'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية العقد إلى (PENDING_SIGNATURE) وإرسال إرشادات ورابط التوقيع للعميل' : 'Advance contract to PENDING_SIGNATURE and send signing instructions'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_CONTRACT_SIGNATURE') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="SIGNED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✍️ توثيق توقيع العقد رسمياً وجدولة الدفعات' : '✍️ Record Formal Contract Signature'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية العقد إلى (SIGNED)، تحويل الحجز رسمياً، وجدولة الأقساط ومطابقة المالية' : 'Advance contract to SIGNED, convert reservation, schedule payments and reconcile'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_CONTRACT_HANDOVER') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="HANDOVER_COMPLETED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '🔑 إتمام تسليم الوحدة وإغلاق الصفقة بنجاح' : '🔑 Complete Property Handover & Close Won'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث حالة الوحدة إلى (SOLD)، وتفعيل العقد وإغلاق الصفقة كـ (CLOSED_WON)' : 'Mark unit SOLD, activate contract, and advance opportunity to CLOSED_WON'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_CONTRACT_RECONCILIATION') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="RECONCILED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '💳 تم التحقق من مطابقة الدفعات والقيود المالية' : '💳 Financial Payments Reconciled'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تأكيد مطابقة الحسابات وسداد الدفعة الأولى وقيد العمولات' : 'Confirm deposit matching, first installment check, and commission ledger'}</div>
+                        </div>
+                    </label>
+                `;
+            } else {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="COMPLETED" checked onchange="toggleQualFields(false)">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ إنجاز المهمة بنجاح' : '✓ Task Completed Successfully'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تم تنفيذ المطلوب وتحديث السجل' : 'Action finished and records updated'}</div>
+                        </div>
+                    </label>
+                `;
+            }
+
+            openModal('modal-complete-task');
+        }
+
+        function toggleCallbackFields(show) {
+            const el = document.getElementById('comp-callback-fields');
+            if (el) el.style.display = show ? 'block' : 'none';
+        }
+
+        function toggleQualFields(show) {
+            const el = document.getElementById('comp-qual-fields');
+            if (el) el.style.display = show ? 'block' : 'none';
+        }
+
+        function toggleViewingScheduleFields(show) {
+            const el = document.getElementById('comp-viewing-fields');
+            if (el) el.style.display = show ? 'block' : 'none';
+        }
+
+        function toggleViewingReportOffer(show) {
+            const el = document.getElementById('comp-viewing-report-fields');
+            if (el) el.style.display = show ? 'block' : 'none';
+        }
+
+        async function populateMatchingUnits(task) {
+            const listEl = document.getElementById('comp-matching-units-list');
+            if (!listEl) return;
+            const isAr = currentLang === 'ar';
+            listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'جاري البحث في المخزون المتاح...' : 'Loading available units...'}</span>`;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=20`);
+                const json = await res.json();
+                const units = json.data || [];
+                if (units.length === 0) {
+                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات متاحة' : 'No available units'}</span>`;
+                    return;
+                }
+                listEl.innerHTML = units.slice(0, 6).map((u, idx) => `
+                    <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+                        <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${idx < 3 ? 'checked' : ''}>
+                        <span><strong>#${u.unit_number}</strong> (${u.building_name || (isAr ? 'المبنى' : 'Building')}) — ${u.property_type_name || (isAr ? 'عقار' : 'Property')} | ${Number(u.asking_price || u.rent_price || 0).toLocaleString()} SAR</span>
+                    </label>
+                `).join('');
+            } catch (err) {
+                listEl.innerHTML = `<span style="color:#ef4444;">${isAr ? 'خطأ في تحميل الوحدات' : 'Error loading units'}</span>`;
+            }
+        }
+
+        async function populateViewingModalUnits(task) {
+            const unitSel = document.getElementById('comp-viewing-unit');
+            const dtInput = document.getElementById('comp-viewing-datetime');
+            const isAr = currentLang === 'ar';
+
+            // Set default date/time to tomorrow at 16:00 (4:00 PM)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(16, 0, 0, 0);
+            const pad = (n) => String(n).padStart(2, '0');
+            const defaultDt = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth()+1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`;
+            if (dtInput) dtInput.value = defaultDt;
+
+            if (!unitSel) return;
+            unitSel.innerHTML = `<option value="">-- ${isAr ? 'جاري تحميل الوحدات العقارية...' : 'Loading units...'} --</option>`;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                const json = await res.json();
+                const invUnits = json.data || [];
+
+                let shortlisted = [];
+                if (task.opportunity_id) {
+                    try {
+                        const oppUnitsRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${task.opportunity_id}/units`);
+                        if (oppUnitsRes.ok) {
+                            const oppUnitsJson = await oppUnitsRes.json();
+                            shortlisted = oppUnitsJson.data || [];
+                        }
+                    } catch (_) {}
+                }
+
+                let optionsHtml = '';
+                if (shortlisted.length > 0) {
+                    optionsHtml += `<optgroup label="${isAr ? '⭐ الوحدات المرشحة للطلب / الصفقة' : '⭐ Shortlisted Deal Units'}">` +
+                        shortlisted.map(u => {
+                            const pName = isAr ? (u.project_name_ar || u.project_name_en) : (u.project_name_en || u.project_name_ar);
+                            const price = u.asking_price || u.rent_price || 0;
+                            return `<option value="${u.unit_id}">★ Unit #${u.unit_number || u.unit_id} - ${pName || ''} | ${Number(price).toLocaleString()} SAR</option>`;
+                        }).join('') + `</optgroup>`;
+                }
+
+                const remaining = invUnits.filter(u => !shortlisted.some(su => su.unit_id === u.unit_id));
+                if (remaining.length > 0) {
+                    optionsHtml += `<optgroup label="${isAr ? '🏢 مخزون الوحدات المتاحة بالشركة' : '🏢 Company Available Units'}">` +
+                        remaining.map(u => {
+                            const pName = isAr ? (u.project_name_ar || u.project_name_en) : (u.project_name_en || u.project_name_ar);
+                            const price = u.asking_price || u.rent_price || 0;
+                            return `<option value="${u.unit_id}">Unit #${u.unit_number} - ${pName || ''} | ${u.bedrooms || 0} Beds | ${Number(price).toLocaleString()} SAR</option>`;
+                        }).join('') + `</optgroup>`;
+                }
+
+                unitSel.innerHTML = optionsHtml || `<option value="">-- ${isAr ? 'لا توجد وحدات متاحة' : 'No available units'} --</option>`;
+                if (shortlisted.length > 0) {
+                    unitSel.value = shortlisted[0].unit_id;
+                }
+            } catch (err) {
+                console.error('Failed to load viewing units:', err);
+                unitSel.innerHTML = `<option value="">-- ${isAr ? 'خطأ في تحميل الوحدات' : 'Error loading units'} --</option>`;
+            }
+        }
+
+        async function submitTaskCompletion(e) {
+            e.preventDefault();
+            const taskId = document.getElementById('comp-task-id').value;
+            const templateId = document.getElementById('comp-template-id').value;
+            const outcomeEl = document.querySelector('input[name="comp_outcome"]:checked');
+            const outcome = outcomeEl ? outcomeEl.value : 'CONNECTED';
+            const notes = document.getElementById('comp-notes').value.trim();
+
+            const payload = { outcome, notes };
+
+            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED') {
+                const bMin = document.getElementById('comp-budget-min').value;
+                const bMax = document.getElementById('comp-budget-max').value;
+                const city = document.getElementById('comp-city').value;
+                const pType = document.getElementById('comp-property-type').value;
+
+                if (bMin) payload.budget_min = parseFloat(bMin);
+                if (bMax) payload.budget_max = parseFloat(bMax);
+                if (city) payload.preferred_city_id = city;
+                if (pType) payload.preferred_property_type_id = pType;
+            }
+
+            if (outcome === 'CALLBACK_REQUESTED') {
+                const cbVal = document.getElementById('comp-callback-datetime')?.value;
+                if (!cbVal) {
+                    alert(currentLang === 'ar' ? 'يرجى تحديد موعد معاودة الاتصال المطلوب' : 'Please specify callback date and time');
+                    return;
+                }
+                payload.callback_at = new Date(cbVal).toISOString();
+            }
+
+            if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+                const chks = document.querySelectorAll('input[name="comp_match_unit"]:checked');
+                payload.unit_ids = Array.from(chks).map(c => c.value);
+            }
+
+            if ((templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE') && outcome === 'SCHEDULED') {
+                const uId = document.getElementById('comp-viewing-unit')?.value;
+                const dtVal = document.getElementById('comp-viewing-datetime')?.value;
+                const durVal = document.getElementById('comp-viewing-duration')?.value;
+                const locVal = document.getElementById('comp-viewing-location')?.value;
+
+                if (!uId) {
+                    alert(currentLang === 'ar' ? 'يرجى اختيار الوحدة العقارية المعاينة أولاً' : 'Please select a unit to inspect');
+                    return;
+                }
+                if (!dtVal) {
+                    alert(currentLang === 'ar' ? 'يرجى تحديد تاريخ ووقت المعاينة الميدانية' : 'Please specify viewing date and time');
+                    return;
+                }
+
+                payload.unit_id = uId;
+                payload.scheduled_start = new Date(dtVal).toISOString();
+                payload.viewing_duration_minutes = parseInt(durVal || '45', 10);
+                payload.location_notes = locVal || '';
+            }
+
+            if (templateId === 'TASK_VIEWING_REPORT') {
+                const offerVal = document.getElementById('comp-offer-price')?.value;
+                if (offerVal) payload.offer_amount = parseFloat(offerVal);
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    closeModal('modal-complete-task');
+                    const isAr = currentLang === 'ar';
+                    if (outcome === 'CONNECTED') {
+                        showToast(isAr ? "تم إنجاز المهمة وتسجيل الاتصال بنجاح، وترقية الطلب لـ CONTACTED وتوليد مهمة التأهيل!" : "Task completed and call logged. Lead moved to CONTACTED and qualification task generated!", "success");
+                    } else if (outcome === 'NO_ANSWER') {
+                        showToast(isAr ? "تم توثيق عدم الرد وجدولة مهمة متابعة تلقائية (سقف 3 محاولات)." : "No answer logged. Automatic follow-up scheduled (max 3 attempts).", "warning");
+                    } else if (outcome === 'CALLBACK_REQUESTED') {
+                        showToast(isAr ? "⏰ تم تسجيل طلب معاودة الاتصال وجدولة المهمة في الموعد المحدد بنجاح!" : "⏰ Callback requested logged and follow-up scheduled successfully!", "success");
+                    } else if (outcome === 'INVALID_CONTACT') {
+                        showToast(isAr ? "📵 تم توثيق عدم صحة بيانات الاتصال واستبعاد الطلب." : "📵 Invalid contact info logged and lead disqualified.", "info");
+                    } else if (outcome === 'QUALIFIED') {
+                        showToast(isAr ? "تهانينا! تم تأهيل الطلب بنجاح وترقيته إلى فرصة بيعية نشطة ومطابقة العقارات!" : "Congratulations! Lead qualified and promoted to active deal with property matching!", "success");
+                    } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+                        showToast(isAr ? "🏢 تم توثيق ترشيح العقارات وإرسال التوصيات للعميل وتوليد مهمة جدولة المعاينة!" : "🏢 Property shortlist documented, recommendations sent, and viewing task generated!", "success");
+                    } else if (outcome === 'ASSIGNED') {
+                        showToast(isAr ? "تم إنجاز مهمة توجيه الطلب وتعيين الوسيط بنجاح!" : "Lead routing completed and agent assigned successfully!", "success");
+                    } else if ((templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE') && outcome === 'SCHEDULED') {
+                        showToast(isAr ? "👁️ تم تسجيل وتأكيد موعد المعاينة الميدانية بنجاح، وترقية الصفقة لـ (VIEWING) وتوليد مهمة تقرير المعاينة!" : "👁️ Viewing visit confirmed and scheduled. Deal moved to VIEWING stage!", "success");
+                    } else if (templateId === 'TASK_VIEWING_REPORT' && outcome === 'INTERESTED') {
+                        showToast(isAr ? "⭐ تم رفع تقرير المعاينة بنجاح وترقية الصفقة لمرحلة التفاوض (NEGOTIATION) وتوليد مهمة تقديم العرض المالي!" : "⭐ Viewing report submitted successfully. Deal advanced to NEGOTIATION stage!", "success");
+                    } else if (templateId === 'TASK_VIEWING_REPORT' && outcome === 'NEEDS_ANOTHER_UNIT') {
+                        showToast(isAr ? "🔄 تم توثيق رغبة العميل ببديل وجدولة مهمة معاينة جديدة لوحدة أخرى!" : "🔄 Client requested alternative unit. New viewing task scheduled!", "info");
+                    } else if (templateId === 'TASK_VIEWING_REPORT' && outcome === 'NO_SHOW') {
+                        showToast(isAr ? "⚠️ تم توثيق تخلف العميل عن الحضور وتوليد مهمة إعادة الجدولة تلقائياً!" : "⚠️ Client no-show documented. Reschedule task created automatically!", "warning");
+                    } else if (templateId === 'TASK_OFFER_MANAGER_APPROVAL') {
+                        showToast(isAr ? "✓ تمت معالجة قرار المدير على العرض المالي بنجاح!" : "✓ Manager offer decision recorded successfully!", "success");
+                    } else if (templateId === 'TASK_OFFER_FOLLOWUP') {
+                        showToast(isAr ? "✓ تم تسجيل نتيجة متابعة العرض وتحديث المسار بنجاح!" : "✓ Offer follow-up outcome recorded successfully!", "success");
+                    } else if (templateId === 'TASK_RESERVATION_VERIFY_AVAILABILITY') {
+                        showToast(isAr ? "🔒 تم التحقق من توفر الوحدة وقفل الحجز وتوليد مهمة متابعة العربون (48 ساعة)!" : "🔒 Unit locked and 48-hour deposit follow-up task spawned!", "success");
+                    } else if (templateId === 'TASK_RESERVATION_DEPOSIT_FOLLOWUP') {
+                        showToast(isAr ? (outcome === 'CANCELLED' ? "🚫 تم إلغاء الحجز وإعادة إتاحة الوحدة في المخزون المتاح." : "💰 تم التحقق من استلام العربون بنجاح وتوليد مهمة إعداد مسودة العقد (Stage G)!") : (outcome === 'CANCELLED' ? "Reservation cancelled and unit released." : "Deposit verified and contract drafting task spawned for Legal!"), "success");
+                    } else if (templateId === 'TASK_CONTRACT_DRAFT') {
+                        showToast(isAr ? "📝 تم إعداد مسودة العقد وتوليد مهمة المراجعة القانونية الداخلية!" : "📝 Contract draft created and internal legal review task spawned!", "success");
+                    } else if (templateId === 'TASK_CONTRACT_INTERNAL_REVIEW') {
+                        showToast(isAr ? "⚖️ تمت المراجعة القانونية بنجاح وترقية العقد للتوقيع وإشعار العميل!" : "⚖️ Legal review approved! Moved to signature stage with instructions sent to client!", "success");
+                    } else if (templateId === 'TASK_CONTRACT_SIGNATURE') {
+                        showToast(isAr ? "✍️ تم توثيق توقيع العقد رسمياً وجدولة الدفعات ومطابقة الحسابات!" : "✍️ Signed contract recorded! Reservation converted and installments scheduled!", "success");
+                    } else if (templateId === 'TASK_CONTRACT_HANDOVER') {
+                        showToast(isAr ? "🏆 تم إتمام تسليم العقار وإغلاق الصفقة (CLOSED_WON) وتحديث الوحدة إلى مباعة!" : "🏆 Property handover completed! Deal closed as WON and unit marked as SOLD!", "success");
+                    } else if (templateId === 'TASK_CONTRACT_RECONCILIATION') {
+                        showToast(isAr ? "💳 تم التحقق من مطابقة الدفعات والقيود المالية بنجاح!" : "💳 Financial reconciliation verified successfully!", "success");
+                    } else {
+                        showToast(isAr ? "تم تسجيل النتيجة وتحديث حالة المعاملة بنجاح." : "Outcome saved and record status updated successfully.", "info");
+                    }
+                    showUndoBanner(taskId, document.getElementById('comp-task-name')?.textContent || `Task #${taskId}`);
+                    loadTasks();
+                    loadSummary();
+                    loadActivities();
+                } else {
+                    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}: ${res.statusText || 'Server Error'}` }));
+                    alert((currentLang === 'ar' ? "خطأ: " : "Error: ") + (err.detail || JSON.stringify(err)));
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // --- Smart Reopen & Quick Undo Handling ---
+        function showUndoBanner(taskId, taskTitle) {
+            let banner = document.getElementById('task-undo-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'task-undo-banner';
+                banner.style.position = 'fixed';
+                banner.style.bottom = '28px';
+                banner.style.left = '50%';
+                banner.style.transform = 'translateX(-50%)';
+                banner.style.background = '#1e293b';
+                banner.style.color = 'white';
+                banner.style.padding = '12px 22px';
+                banner.style.borderRadius = '8px';
+                banner.style.boxShadow = '0 10px 25px rgba(0,0,0,0.25)';
+                banner.style.display = 'flex';
+                banner.style.alignItems = 'center';
+                banner.style.gap = '14px';
+                banner.style.zIndex = '9999';
+                banner.style.fontSize = '0.92em';
+                banner.style.border = '1px solid #334155';
+                document.body.appendChild(banner);
+            }
+            const isAr = currentLang === 'ar';
+            banner.innerHTML = `
+                <span>${isAr ? 'تم إنجاز المهمة بنجاح.' : 'Task marked as completed.'}</span>
+                <button id="btn-quick-undo" style="background:#38bdf8; color:#0f172a; border:none; padding:5px 12px; border-radius:5px; font-weight:700; cursor:pointer;">
+                    ↩️ ${isAr ? 'تراجع فوري (Undo)' : 'Quick Undo'}
+                </button>
+                <span id="undo-countdown" style="font-size:0.8em; color:#94a3b8;">(30s)</span>
+                <button onclick="dismissUndoBanner()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1em; line-height:1;" title="Dismiss">✕</button>
+            `;
+            banner.style.display = 'flex';
+
+            let secondsLeft = 30;
+            if (window._undoTimer) clearInterval(window._undoTimer);
+            window._undoTimer = setInterval(() => {
+                secondsLeft--;
+                const cd = document.getElementById('undo-countdown');
+                if (cd) cd.textContent = `(${secondsLeft}s)`;
+                if (secondsLeft <= 0) {
+                    dismissUndoBanner();
+                }
+            }, 1000);
+
+            const btn = document.getElementById('btn-quick-undo');
+            if (btn) {
+                btn.onclick = () => {
+                    dismissUndoBanner();
+                    executeReopenTask(taskId, isAr ? 'تراجع فوري عبر شريط التراجع' : 'Immediate quick undo');
+                };
+            }
+        }
+
+        function dismissUndoBanner() {
+            if (window._undoTimer) clearInterval(window._undoTimer);
+            const banner = document.getElementById('task-undo-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        async function promptReopenTask(taskId, taskTitle) {
+            const isAr = currentLang === 'ar';
+            const confirmMsg = isAr 
+                ? `هل تريد بالتأكيد التراجع عن إكمال المهمة:\n"${taskTitle}"\n\nسيتم إعادة فتح المهمة، وإلغاء/حذف أية مهام أو مواعيد معاينة تابعة ترتبت عليها تلقائياً.`
+                : `Are you sure you want to undo completion for task:\n"${taskTitle}"?\n\nThis will reopen the task to PENDING and safely rollback downstream tasks and scheduled viewings.`;
+            
+            if (!confirm(confirmMsg)) return;
+            executeReopenTask(taskId, isAr ? 'تراجع من جدول المهام' : 'Reopened from task list');
+        }
+
+        async function executeReopenTask(taskId, reason) {
+            const isAr = currentLang === 'ar';
+            try {
+                const uId = (window.currentUser && window.currentUser.user_id) || 'user-51';
+                const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/reopen`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': uId
+                    },
+                    body: JSON.stringify({ reason: reason || 'Smart reopen undo' })
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    showToast(isAr ? '↩️ تم التراجع عن إكمال المهمة وإعادة فتحها وإلغاء العمليات اللاحقة بنجاح!' : '↩️ Task reopened and downstream jobs rolled back successfully!', 'success', 5000);
+                    loadTasks();
+                    loadSummary();
+                    loadActivities();
+                } else {
+                    const errDetail = json.detail || (isAr ? 'تعذر التراجع عن إكمال المهمة.' : 'Failed to undo task completion.');
+                    alert(isAr ? `⚠️ تعذر التراجع:\n${errDetail}` : `⚠️ Undo Blocked:\n${errDetail}`);
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
 
         // --- Tab 2: Activities ---
         async function loadActivities() {
             const type = document.getElementById('act-type').value;
+            const agent = document.getElementById('task-agent-filter')?.value || '';
             let url = `${API_BASE}/api/v1/activities?page_size=50`;
             if (type) url += `&activity_type=${type}`;
+            if (agent) url += `&user_id=${encodeURIComponent(agent)}`;
 
             try {
                 const res = await fetch(url);
@@ -1165,8 +2211,9 @@
 
         function renderActivities(items) {
             const tbody = document.getElementById('acts-tbody');
+            const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No activities recorded.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد أنشطة مسجلة.' : 'No activities recorded.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(a => {
@@ -1181,16 +2228,18 @@
 
                 const dateStr = a.completed_at || a.scheduled_at;
                 const dt = dateStr ? new Date(dateStr).toLocaleString() : 'N/A';
+                const typeName = getLocalizedActTypeName(a.activity_type_name, a.activity_type_code);
+                const subj = getLocalizedActSubject(a.subject, a.template_id);
 
                 return `
                     <tr>
-                        <td class="col-act-type"><span class="channel-tag ${tagCls}">${icon} ${a.activity_type_name || code}</span></td>
-                        <td class="col-act-subj"><strong>${a.subject || '--'}</strong></td>
-                        <td class="col-act-desc" style="color:var(--text-muted); font-size:0.85em;">${a.description || '--'}</td>
-                        <td class="col-act-agent">${a.user_name || 'Agent'}</td>
+                        <td class="col-act-type"><span class="channel-tag ${tagCls}">${icon} ${typeName}</span></td>
+                        <td class="col-act-subj"><strong>${subj}</strong></td>
+                        <td class="col-act-desc" style="color:var(--text-muted); font-size:0.85em;">${getLocalizedActDesc(a.description, a.template_id)}</td>
+                        <td class="col-act-agent">${a.user_name || (isAr ? 'الوسيط' : 'Agent')}</td>
                         <td class="col-act-cust">${a.customer_name || 'N/A'}</td>
                         <td class="col-act-date">${dt}</td>
-                        <td class="col-act-status"><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${a.status}</span></td>
+                        <td class="col-act-status"><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${isAr ? (a.status === 'COMPLETED' ? 'منجز' : (a.status === 'PLANNED' ? 'مجدول' : a.status)) : (a.status === 'COMPLETED' ? 'Completed' : (a.status === 'PLANNED' ? 'Planned' : a.status))}</span></td>
                     </tr>
                 `;
             }).join('');
@@ -1226,8 +2275,9 @@
 
         function renderComms(items) {
             const tbody = document.getElementById('comms-tbody');
+            const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">No communications logged.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مراسلات مسجلة.' : 'No communications logged.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(c => {
@@ -1237,15 +2287,19 @@
                 else if (c.channel === 'SMS') chanCls = 'channel-sms';
 
                 const sentDate = c.sent_at ? new Date(c.sent_at).toLocaleString() : 'N/A';
+                const subj = getLocalizedCommSubject(c.subject, c.template_id);
+                const dirLabel = c.direction === 'OUTBOUND' || c.direction === 'OUT' ? (isAr ? 'صادر' : 'Outbound') : (isAr ? 'وارد' : 'Inbound');
+                const delivLabel = isAr ? (c.delivery_status === 'SENT' ? 'مرسل' : (c.delivery_status || 'مرسل')) : (c.delivery_status || 'SENT');
+
                 return `
                     <tr>
                         <td><span class="channel-tag ${chanCls}">${c.channel}</span></td>
-                        <td><span class="badge ${c.direction === 'OUTBOUND' ? 'badge-normal' : 'badge-high'}">${c.direction}</span></td>
-                        <td class="comms-subj-cell"><strong>${c.subject || '--'}</strong></td>
-                        <td class="comms-body-cell" style="color:var(--text-muted); font-size:0.85em;">${c.body || '--'}</td>
+                        <td><span class="badge ${c.direction === 'OUTBOUND' || c.direction === 'OUT' ? 'badge-normal' : 'badge-high'}">${dirLabel}</span></td>
+                        <td class="comms-subj-cell"><strong>${subj}</strong></td>
+                        <td class="comms-body-cell" style="color:var(--text-muted); font-size:0.85em;">${getLocalizedCommBody(c.body, c.template_id)}</td>
                         <td>${c.customer_name || 'N/A'}</td>
                         <td>${sentDate}</td>
-                        <td><span class="badge badge-completed">${c.delivery_status || 'SENT'}</span></td>
+                        <td><span class="badge badge-completed">${delivLabel}</span></td>
                     </tr>
                 `;
             }).join('');

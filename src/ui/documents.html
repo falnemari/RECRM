@@ -296,7 +296,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span class="badge-header" data-i18n="badge_docs">Document Vault & Compliance</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -307,12 +307,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -340,8 +340,8 @@
 
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
 
     <div class="content">
@@ -376,15 +376,15 @@
                 <input type="text" id="doc-search" class="search-input" placeholder="Search file, customer, unit, contract..." onkeyup="filterDocuments()">
                 <select id="doc-type-filter" class="select-filter" onchange="loadDocuments()">
                     <option value="" data-i18n="opt_all_types">All Document Types</option>
-                    <option value="TITLE_DEED">Title Deed (صك عقاري)</option>
-                    <option value="NATIONAL_ID">National ID (الهوية الوطنية / الإقامة)</option>
-                    <option value="PASSPORT">Passport (جواز السفر)</option>
-                    <option value="LEASE">Lease Agreement (عقد إيجار)</option>
-                    <option value="SALE_CONTRACT">Sale Contract (عقد بيع)</option>
-                    <option value="MANAGEMENT_CONTRACT">Management Agreement (عقد إدارة أملاك)</option>
-                    <option value="INVOICE">Invoice (فاتورة ضريبية)</option>
-                    <option value="PAYMENT_RECEIPT">Payment Receipt (سند قبض)</option>
-                    <option value="PROPERTY_PHOTO">Property Photo / Plan (مخطط / صورة)</option>
+                    <option value="TITLE_DEED" data-i18n="opt_type_deed">Title Deed</option>
+                    <option value="NATIONAL_ID" data-i18n="opt_type_id">National ID</option>
+                    <option value="PASSPORT" data-i18n="opt_type_passport">Passport</option>
+                    <option value="LEASE" data-i18n="opt_type_lease">Lease Agreement</option>
+                    <option value="SALE_CONTRACT" data-i18n="opt_type_sale">Sale Contract</option>
+                    <option value="MANAGEMENT_CONTRACT" data-i18n="opt_type_mgmt">Management Agreement</option>
+                    <option value="INVOICE" data-i18n="opt_type_invoice">Invoice</option>
+                    <option value="PAYMENT_RECEIPT" data-i18n="opt_type_receipt">Payment Receipt</option>
+                    <option value="PROPERTY_PHOTO" data-i18n="opt_type_photo">Property Photo / Plan</option>
                 </select>
                 <select id="doc-status-filter" class="select-filter" onchange="loadDocuments()">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
@@ -441,15 +441,15 @@
                 <div class="form-group">
                     <label data-i18n="lbl_doc_type">Document Classification Type *</label>
                     <select id="up-doc-type" required>
-                        <option value="TITLE_DEED">Title Deed (صك ملكية عقارية)</option>
-                        <option value="NATIONAL_ID">National ID (الهوية الوطنية / الإقامة)</option>
-                        <option value="PASSPORT">Passport (جواز السفر)</option>
-                        <option value="LEASE">Lease Agreement (عقد إيجار)</option>
-                        <option value="SALE_CONTRACT">Sale Contract (عقد بيع رسمي)</option>
-                        <option value="MANAGEMENT_CONTRACT">Management Agreement (عقد إدارة أملاك)</option>
-                        <option value="INVOICE">Tax Invoice (فاتورة ضريبية)</option>
-                        <option value="PAYMENT_RECEIPT">Payment Receipt (سند قبض)</option>
-                        <option value="PROPERTY_PHOTO">Property Photo / Plan (مخطط / صورة)</option>
+                        <option value="TITLE_DEED" data-i18n="opt_type_deed">Title Deed</option>
+                        <option value="NATIONAL_ID" data-i18n="opt_type_id">National ID</option>
+                        <option value="PASSPORT" data-i18n="opt_type_passport">Passport</option>
+                        <option value="LEASE" data-i18n="opt_type_lease">Lease Agreement</option>
+                        <option value="SALE_CONTRACT" data-i18n="opt_type_sale">Sale Contract</option>
+                        <option value="MANAGEMENT_CONTRACT" data-i18n="opt_type_mgmt">Management Agreement</option>
+                        <option value="INVOICE" data-i18n="opt_type_invoice">Tax Invoice</option>
+                        <option value="PAYMENT_RECEIPT" data-i18n="opt_type_receipt">Payment Receipt</option>
+                        <option value="PROPERTY_PHOTO" data-i18n="opt_type_photo">Property Photo / Plan</option>
                     </select>
                 </div>
                 <div class="form-row">
@@ -519,6 +519,14 @@
 
         const i18nData = {
             en: {
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 badge_docs: "Document Vault & Compliance",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
@@ -530,6 +538,15 @@
                 kpi_access_events: "Audit Access Logs", kpi_access_sub: "Total views & downloads",
                 opt_all_types: "All Document Types", opt_all_status: "All Statuses",
                 opt_active: "Active", opt_archived: "Archived",
+                opt_type_deed: "Title Deed",
+                opt_type_id: "National ID",
+                opt_type_passport: "Passport",
+                opt_type_lease: "Lease Agreement",
+                opt_type_sale: "Sale Contract",
+                opt_type_mgmt: "Management Agreement",
+                opt_type_invoice: "Invoice",
+                opt_type_receipt: "Payment Receipt",
+                opt_type_photo: "Property Photo / Plan",
                 lbl_expiring_only: "Expiring Soon Only", btn_upload: "+ Upload / Attach Document",
                 th_file_name: "Document File", th_doc_type: "Type", th_linked_entity: "Linked Entity",
                 th_issue_date: "Issued Date", th_expiry_date: "Expiry Date", th_status: "Status", th_actions: "Actions",
@@ -541,6 +558,14 @@
                 lang_label: "عربي"
             },
             ar: {
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
                 badge_docs: "خزينة المستندات والتحقق",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
@@ -552,6 +577,15 @@
                 kpi_access_events: "سجلات تدقيق الوصول", kpi_access_sub: "إجمالي عمليات التحميل والمعاينة",
                 opt_all_types: "جميع تصنيفات المستندات", opt_all_status: "جميع الحالات",
                 opt_active: "ساري", opt_archived: "مؤرشف",
+                opt_type_deed: "صك ملكية عقارية",
+                opt_type_id: "الهوية الوطنية / الإقامة",
+                opt_type_passport: "جواز السفر",
+                opt_type_lease: "عقد إيجار",
+                opt_type_sale: "عقد بيع رسمي",
+                opt_type_mgmt: "عقد إدارة أملاك",
+                opt_type_invoice: "فاتورة ضريبية",
+                opt_type_receipt: "سند قبض",
+                opt_type_photo: "مخطط / صورة عقار",
                 lbl_expiring_only: "المستندات المنتهية قريباً فقط", btn_upload: "+ إرفاق / رفع مستند جديد",
                 th_file_name: "اسم الملف / الوثيقة", th_doc_type: "التصنيف", th_linked_entity: "الجهة المرتبطة",
                 th_issue_date: "تاريخ الإصدار", th_expiry_date: "تاريخ الانتهاء", th_status: "الحالة", th_actions: "الإجراءات",
@@ -599,6 +633,7 @@
                 }
             });
             document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+            if (docsData && docsData.length) renderDocuments(docsData);
         }
 
         function toggleLanguage() {

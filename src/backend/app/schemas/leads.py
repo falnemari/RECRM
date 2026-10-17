@@ -43,6 +43,8 @@ class LeadOut(BaseModel):
     units: List[LeadUnitItem] = []
     first_contact_due_at: Optional[datetime] = None
     first_contact_at: Optional[datetime] = None
+    is_duplicate_customer: Optional[bool] = False
+    duplicate_customer_note: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -52,6 +54,7 @@ class LeadCreate(BaseModel):
     last_name: Optional[str] = None
     mobile: Optional[str] = None
     email: Optional[str] = None
+    national_id: Optional[str] = None
     lead_source_id: Optional[str] = None
     assigned_user_id: Optional[str] = None
     unit_id: Optional[str] = None
@@ -101,4 +104,15 @@ class LeadNoteOut(BaseModel):
     created_by_user_name: Optional[str] = None
     note: str
     created_at: datetime
+
+class LeadQualifyIn(BaseModel):
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    preferred_property_type_id: Optional[str] = None
+    preferred_city_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class LeadContactIn(BaseModel):
+    outcome: Optional[str] = "CONNECTED"
+    notes: Optional[str] = None
 

@@ -240,7 +240,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_inventory">Inventory</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -251,12 +251,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -283,8 +283,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font" data-i18n="banner_title">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
     
     <div class="content">
@@ -318,7 +318,7 @@
                 <option value="" data-i18n="opt_all_buildings">All Buildings & Projects</option>
             </select>
             <select id="unit-agent-filter" onchange="fetchUnits()">
-                <option value="">All Agents (جميع الوسطاء)</option>
+                <option value="" data-i18n="opt_all_agents">All Agents</option>
             </select>
             <div id="unit-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
                 <span id="unit-agent-scope-text">Showing user data only</span>
@@ -366,14 +366,14 @@
     <div class="modal-overlay" id="add-project-modal" style="z-index: 1200;">
         <div class="modal" style="max-width: 550px;">
             <div class="modal-header">
-                <h3 class="modal-title" data-i18n="modal_add_project_title">🏗️ Add New Project (إضافة مشروع)</h3>
+                <h3 class="modal-title" data-i18n="modal_add_project_title">🏗️ Add New Project</h3>
                 <button type="button" class="close-btn" onclick="closeAddProjectModal()">&times;</button>
             </div>
             <form onsubmit="saveNewProject(event)">
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_proj_name_ar">Project Name (Arabic) *</label>
-                        <input type="text" id="add-proj-name-ar" placeholder="e.g. مشروع أبراج النرجس" required>
+                        <input type="text" id="add-proj-name-ar" placeholder="e.g. Al Narges Towers" required>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_proj_name_en">Project Name (English) *</label>
@@ -382,18 +382,18 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_city">City / المدينة</label>
+                        <label data-i18n="lbl_city">City</label>
                         <select id="add-proj-city">
-                            <option value="">-- Any City / اختر المدينة --</option>
+                            <option value="" data-i18n="opt_select_city">-- Any City --</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_status">Status / الحالة</label>
+                        <label data-i18n="lbl_status">Status</label>
                         <select id="add-proj-status">
-                            <option value="ACTIVE">ACTIVE (نشط / متاح)</option>
-                            <option value="UNDER_CONSTRUCTION">UNDER_CONSTRUCTION (تحت الإنشاء)</option>
-                            <option value="COMPLETED">COMPLETED (مكتمل)</option>
-                            <option value="PLANNED">PLANNED (مخطط مستقبلي)</option>
+                            <option value="ACTIVE" data-i18n="opt_status_active">Active / Available</option>
+                            <option value="UNDER_CONSTRUCTION" data-i18n="opt_status_uc">Under Construction</option>
+                            <option value="COMPLETED" data-i18n="opt_status_completed">Completed</option>
+                            <option value="PLANNED" data-i18n="opt_status_planned">Planned</option>
                         </select>
                     </div>
                 </div>
@@ -409,32 +409,32 @@
     <div class="modal-overlay" id="add-building-modal" style="z-index: 1100;">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
-                <h3 class="modal-title" data-i18n="modal_add_building_title">🏢 Add New Building (إضافة مبنى)</h3>
+                <h3 class="modal-title" data-i18n="modal_add_building_title">🏢 Add New Building</h3>
                 <button type="button" class="close-btn" onclick="closeAddBuildingModal()">&times;</button>
             </div>
             <form onsubmit="saveNewBuilding(event)">
                 <div class="form-row">
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label style="margin: 0;" data-i18n="lbl_project">Project / المشروع التابع له *</label>
+                            <label style="margin: 0;" data-i18n="lbl_project">Project *</label>
                             <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddProjectModal()">+ New Project</button>
                         </div>
                         <select id="add-bld-project-id" required>
-                            <option value="">-- Select Project / اختر المشروع --</option>
+                            <option value="" data-i18n="opt_select_project">-- Select Project --</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_building_code">Building Code (كود المبنى) *</label>
+                        <label data-i18n="lbl_building_code">Building Code *</label>
                         <input type="text" id="add-bld-code" placeholder="e.g. BLD-A, TOWER-01" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_building_name">Building Name / اسم المبنى</label>
-                        <input type="text" id="add-bld-name" placeholder="e.g. برج الياسمين / Al Yasmin Tower">
+                        <label data-i18n="lbl_building_name">Building Name</label>
+                        <input type="text" id="add-bld-name" placeholder="e.g. Al Yasmin Tower">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_floors_count">Floors Count / عدد الطوابق</label>
+                        <label data-i18n="lbl_floors_count">Floors Count</label>
                         <input type="number" id="add-bld-floors" min="1" placeholder="e.g. 10">
                     </div>
                 </div>
@@ -489,10 +489,10 @@
                     <div class="form-group">
                         <label data-i18n="lbl_unit_status">Status *</label>
                         <select id="add-status" required>
-                            <option value="AVAILABLE">AVAILABLE (متاح)</option>
-                            <option value="RESERVED">RESERVED (محجوز)</option>
-                            <option value="SOLD">SOLD (مباع)</option>
-                            <option value="RENTED">RENTED (مؤجر)</option>
+                            <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
+                            <option value="RESERVED" data-i18n="opt_reserved">RESERVED</option>
+                            <option value="SOLD" data-i18n="opt_sold">SOLD</option>
+                            <option value="RENTED" data-i18n="opt_rented">RENTED</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -503,7 +503,7 @@
 
                 <div class="form-row-3">
                     <div class="form-group">
-                        <label data-i18n="lbl_area_sqm">Area (sqm / م²)</label>
+                        <label data-i18n="lbl_area_sqm">Area (sqm)</label>
                         <input type="number" step="0.1" id="add-area-sqm" placeholder="e.g. 125.5">
                     </div>
                     <div class="form-group">
@@ -522,28 +522,28 @@
                         <input type="number" id="add-parking" min="0" placeholder="e.g. 1">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_orientation">Orientation / الواجهة</label>
+                        <label data-i18n="lbl_orientation">Orientation</label>
                         <select id="add-orientation">
-                            <option value="">-- Not specified --</option>
-                            <option value="NORTH">NORTH (شمالية)</option>
-                            <option value="SOUTH">SOUTH (جنوبية)</option>
-                            <option value="EAST">EAST (شرقية)</option>
-                            <option value="WEST">WEST (غربية)</option>
-                            <option value="NORTH_EAST">NORTH_EAST (شمالية شرقية)</option>
-                            <option value="NORTH_WEST">NORTH_WEST (شمالية غربية)</option>
-                            <option value="SOUTH_EAST">SOUTH_EAST (جنوبية شرقية)</option>
-                            <option value="SOUTH_WEST">SOUTH_WEST (جنوبية غربية)</option>
+                            <option value="" data-i18n="opt_not_specified">-- Not specified --</option>
+                            <option value="NORTH" data-i18n="opt_orient_north">NORTH</option>
+                            <option value="SOUTH" data-i18n="opt_orient_south">SOUTH</option>
+                            <option value="EAST" data-i18n="opt_orient_east">EAST</option>
+                            <option value="WEST" data-i18n="opt_orient_west">WEST</option>
+                            <option value="NORTH_EAST" data-i18n="opt_orient_ne">NORTH_EAST</option>
+                            <option value="NORTH_WEST" data-i18n="opt_orient_nw">NORTH_WEST</option>
+                            <option value="SOUTH_EAST" data-i18n="opt_orient_se">SOUTH_EAST</option>
+                            <option value="SOUTH_WEST" data-i18n="opt_orient_sw">SOUTH_WEST</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_asking_price">Sale Price (SAR / سعر البيع)</label>
+                        <label data-i18n="lbl_asking_price">Sale Price (SAR)</label>
                         <input type="number" step="100" id="add-asking-price" placeholder="e.g. 450000">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_rent_price">Rent Price (SAR/yr / إيجار سنوي)</label>
+                        <label data-i18n="lbl_rent_price">Rent Price (SAR/yr)</label>
                         <input type="number" step="100" id="add-rent-price" placeholder="e.g. 35000">
                     </div>
                 </div>
@@ -552,13 +552,13 @@
                     <div class="form-group">
                         <label data-i18n="lbl_owner_customer">Owner (Customer)</label>
                         <select id="add-owner-id" onchange="onAddUnitOwnerChange()">
-                            <option value="" data-i18n="opt_direct_agency">-- Direct / Agency (مباشر للمكتب) --</option>
+                            <option value="" data-i18n="opt_direct_agency">-- Direct / Agency --</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_assigned_agent">Assigned Agent</label>
                         <select id="add-assigned-user" onchange="onAddUnitAgentChange()">
-                            <option value="" data-i18n="opt_unassigned">-- Unassigned (غير مسند) --</option>
+                            <option value="" data-i18n="opt_unassigned">-- Unassigned --</option>
                         </select>
                     </div>
                 </div>
@@ -609,10 +609,10 @@
                     <div class="form-group">
                         <label data-i18n="lbl_unit_status">Status *</label>
                         <select id="edit-status" required>
-                            <option value="AVAILABLE">AVAILABLE (متاح)</option>
-                            <option value="RESERVED">RESERVED (محجوز)</option>
-                            <option value="SOLD">SOLD (مباع)</option>
-                            <option value="RENTED">RENTED (مؤجر)</option>
+                            <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
+                            <option value="RESERVED" data-i18n="opt_reserved">RESERVED</option>
+                            <option value="SOLD" data-i18n="opt_sold">SOLD</option>
+                            <option value="RENTED" data-i18n="opt_rented">RENTED</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -623,7 +623,7 @@
 
                 <div class="form-row-3">
                     <div class="form-group">
-                        <label data-i18n="lbl_area_sqm">Area (sqm / م²)</label>
+                        <label data-i18n="lbl_area_sqm">Area (sqm)</label>
                         <input type="number" step="0.1" id="edit-area-sqm">
                     </div>
                     <div class="form-group">
@@ -642,28 +642,28 @@
                         <input type="number" id="edit-parking" min="0">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_orientation">Orientation / الواجهة</label>
+                        <label data-i18n="lbl_orientation">Orientation</label>
                         <select id="edit-orientation">
-                            <option value="">-- Not specified --</option>
-                            <option value="NORTH">NORTH (شمالية)</option>
-                            <option value="SOUTH">SOUTH (جنوبية)</option>
-                            <option value="EAST">EAST (شرقية)</option>
-                            <option value="WEST">WEST (غربية)</option>
-                            <option value="NORTH_EAST">NORTH_EAST (شمالية شرقية)</option>
-                            <option value="NORTH_WEST">NORTH_WEST (شمالية غربية)</option>
-                            <option value="SOUTH_EAST">SOUTH_EAST (جنوبية شرقية)</option>
-                            <option value="SOUTH_WEST">SOUTH_WEST (جنوبية غربية)</option>
+                            <option value="" data-i18n="opt_not_specified">-- Not specified --</option>
+                            <option value="NORTH" data-i18n="opt_orient_north">NORTH</option>
+                            <option value="SOUTH" data-i18n="opt_orient_south">SOUTH</option>
+                            <option value="EAST" data-i18n="opt_orient_east">EAST</option>
+                            <option value="WEST" data-i18n="opt_orient_west">WEST</option>
+                            <option value="NORTH_EAST" data-i18n="opt_orient_ne">NORTH_EAST</option>
+                            <option value="NORTH_WEST" data-i18n="opt_orient_nw">NORTH_WEST</option>
+                            <option value="SOUTH_EAST" data-i18n="opt_orient_se">SOUTH_EAST</option>
+                            <option value="SOUTH_WEST" data-i18n="opt_orient_sw">SOUTH_WEST</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_asking_price">Sale Price (SAR / سعر البيع)</label>
+                        <label data-i18n="lbl_asking_price">Sale Price (SAR)</label>
                         <input type="number" step="100" id="edit-asking-price">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_rent_price">Rent Price (SAR/yr / إيجار سنوي)</label>
+                        <label data-i18n="lbl_rent_price">Rent Price (SAR/yr)</label>
                         <input type="number" step="100" id="edit-rent-price">
                     </div>
                 </div>
@@ -783,12 +783,14 @@
         const i18nData = {
             en: {
                 badge_inventory: "Inventory",
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Services Office",
+                font_label: "🔤 Font:",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
-                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
-                banner_subtitle: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Integrated Real Estate Marketing & Management",
                 page_title: "Property Inventory & Units",
                 loading_inventory: "Loading live property inventory from database...",
                 search_placeholder: "Search by unit number, unit_id or project...",
@@ -868,10 +870,30 @@
                 badge_reserved: "RESERVED",
                 badge_sold: "SOLD",
                 badge_rented: "RENTED",
+                opt_all_agents: "All Agents",
+                opt_select_city: "-- Any City --",
+                opt_status_active: "Active / Available",
+                opt_status_uc: "Under Construction",
+                opt_status_completed: "Completed",
+                opt_status_planned: "Planned",
+                opt_select_project: "-- Select Project --",
+                opt_not_specified: "-- Not specified --",
+                opt_orient_north: "NORTH",
+                opt_orient_south: "SOUTH",
+                opt_orient_east: "EAST",
+                opt_orient_west: "WEST",
+                opt_orient_ne: "NORTH_EAST",
+                opt_orient_nw: "NORTH_WEST",
+                opt_orient_se: "SOUTH_EAST",
+                opt_orient_sw: "SOUTH_WEST",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
                 lang_label: "عربي"
             },
             ar: {
                 badge_inventory: "المخزون العقاري",
+                font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك", nav_tasks: "المهام والأنشطة", nav_documents: "المستندات والملفات",
@@ -957,6 +979,24 @@
                 badge_reserved: "محجوز",
                 badge_sold: "مباع",
                 badge_rented: "مؤجر",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                opt_all_agents: "جميع الوسطاء",
+                opt_select_city: "-- أي مدينة --",
+                opt_status_active: "نشط / متاح",
+                opt_status_uc: "تحت الإنشاء",
+                opt_status_completed: "مكتمل",
+                opt_status_planned: "مخطط مستقبلي",
+                opt_select_project: "-- اختر المشروع --",
+                opt_not_specified: "-- غير محدد --",
+                opt_orient_north: "شمالية",
+                opt_orient_south: "جنوبية",
+                opt_orient_east: "شرقية",
+                opt_orient_west: "غربية",
+                opt_orient_ne: "شمالية شرقية",
+                opt_orient_nw: "شمالية غربية",
+                opt_orient_se: "جنوبية شرقية",
+                opt_orient_sw: "جنوبية غربية",
                 lang_label: "English"
             }
         };
@@ -1356,7 +1396,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
                 const curAg = unitAgFilter.value || urlAgent || '';
-                unitAgFilter.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` + 
+                unitAgFilter.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` + 
                     cachedUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
                 if (curAg) {
                     unitAgFilter.value = curAg;

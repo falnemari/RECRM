@@ -7,11 +7,12 @@ import asyncpg
 from app.database import get_db
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.contracts import (
-    ContractOut, ContractCreate, ContractDetailOut, ConvertReservationIn,
+    ContractOut, ContractCreate, ContractDetailOut, ConvertReservationIn, AdvanceContractIn,
     PaymentOut, PaymentCreate, RecordPaymentIn,
     CommissionOut, CommissionCreate,
     FinanceSummary
 )
+from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(tags=["Contracts, Payments & Commissions"])
 
@@ -228,11 +229,57 @@ async def create_contract(payload: ContractCreate, conn: asyncpg.Connection = De
     row = await conn.fetchrow(f"{CONTRACT_SELECT_QUERY} WHERE c.contract_id = $1", contract_id)
     return ResponseEnvelope(data=ContractOut(**dict(row)), meta=BaseMeta())
 
+@router.post("/reservations/{reservation_id}/initiate-contract", response_model=ResponseEnvelope[ContractOut], status_code=status.HTTP_201_CREATED)
+async def initiate_contract(
+    reservation_id: str,
+    payload: ConvertReservationIn,
+    conn: asyncpg.Connection = Depends(get_db),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id")
+):
+    try:
+        async with conn.transaction():
+            res = await WorkflowEngine.initiate_contract_draft(
+                conn=conn,
+                reservation_id=reservation_id,
+                contract_type=payload.contract_type or "SALE",
+                contract_value=payload.contract_value,
+                start_date=payload.start_date,
+                end_date=payload.end_date,
+                user_id=x_user_id
+            )
+            contract_id = res["contract_id"]
+            row = await conn.fetchrow(f"{CONTRACT_SELECT_QUERY} WHERE c.contract_id = $1", contract_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return ResponseEnvelope(data=ContractOut(**dict(row)), meta=BaseMeta())
+
+@router.post("/contracts/{contract_id}/advance", response_model=ResponseEnvelope[dict])
+async def advance_contract(
+    contract_id: str,
+    payload: AdvanceContractIn,
+    conn: asyncpg.Connection = Depends(get_db),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id")
+):
+    try:
+        async with conn.transaction():
+            res = await WorkflowEngine.advance_contract_lifecycle(
+                conn=conn,
+                contract_id=contract_id,
+                action=payload.action,
+                user_id=x_user_id
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return ResponseEnvelope(data=res, meta=BaseMeta())
+
 @router.post("/reservations/{reservation_id}/convert-to-contract", response_model=ResponseEnvelope[ContractOut], status_code=status.HTTP_201_CREATED)
 async def convert_reservation_to_contract(
     reservation_id: str,
     payload: ConvertReservationIn,
-    conn: asyncpg.Connection = Depends(get_db)
+    conn: asyncpg.Connection = Depends(get_db),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id")
 ):
     async with conn.transaction():
         # 1. Fetch reservation
@@ -274,8 +321,18 @@ async def convert_reservation_to_contract(
         # 5. Mark reservation as CONVERTED
         await conn.execute("UPDATE reservations SET status = 'CONVERTED' WHERE reservation_id = $1", reservation_id)
 
-        # 6. Update Unit status to SOLD
+        # 6. Update Unit status to SOLD with unit_status_history
         await conn.execute("UPDATE units SET status = 'SOLD', updated_at = now() WHERE unit_id = $1", res["unit_id"])
+        hist_id = await conn.fetchval("SELECT 'ush-' || nextval('seq_unit_status_history_id')")
+        await conn.execute(
+            """
+            INSERT INTO unit_status_history (
+                unit_status_history_id, unit_id, old_status, new_status,
+                changed_by_user_id, changed_at, reason
+            ) VALUES ($1, $2, 'RESERVED', 'SOLD', $3, now(), $4)
+            """,
+            hist_id, res["unit_id"], x_user_id, f"تم تحويل الحجز إلى عقد بيع نافذ {contract_number}"
+        )
 
         # 7. Create default payment schedule (Installment 1 = deposit if any, Installment 2 = remaining)
         deposit = float(res["deposit_amount"] or 0)
@@ -320,6 +377,22 @@ async def convert_reservation_to_contract(
                 """,
                 contract_id, agent_id, comm_amount
             )
+
+        # 9. Register Activity ACT_CONTRACT_SIGNED
+        opp_id = await conn.fetchval("SELECT opportunity_id FROM reservations WHERE reservation_id = $1", reservation_id)
+        if opp_id:
+            await conn.execute("UPDATE opportunities SET stage = 'CLOSED_WON', updated_at = NOW() WHERE opportunity_id = $1", opp_id)
+
+        await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_CONTRACT_SIGNED",
+            user_id=x_user_id or agent_id,
+            customer_id=res["customer_id"],
+            opportunity_id=opp_id,
+            outcome="SIGNED",
+            notes=f"تم توقيع العقد {contract_number} وإغلاق الصفقة بنجاح.",
+            completed_at=datetime.now(timezone.utc)
+        )
 
     row = await conn.fetchrow(f"{CONTRACT_SELECT_QUERY} WHERE c.contract_id = $1", contract_id)
     return ResponseEnvelope(data=ContractOut(**dict(row)), meta=BaseMeta())

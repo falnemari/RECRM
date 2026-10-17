@@ -148,7 +148,6 @@ async def list_units(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []

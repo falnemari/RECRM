@@ -247,7 +247,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_admin">Administration & Governance</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -258,12 +258,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -290,7 +290,7 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font" data-i18n="banner_title">مكتب معاذ خضر النمري للخدمات العقارية</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
         <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
     
@@ -364,7 +364,7 @@
                         <span><strong data-i18n="lbl_tax_no">Tax No:</strong> <span id="org-tax-no">300000000100003</span></span>
                         <span><strong data-i18n="lbl_currency">Currency:</strong> <span id="org-currency">SAR</span></span>
                         <span><strong data-i18n="lbl_timezone">Timezone:</strong> <span id="org-timezone">Asia/Riyadh</span></span>
-                        <span><strong data-i18n="lbl_country">Country:</strong> <span id="org-country">SA (المملكة العربية السعودية)</span></span>
+                        <span><strong data-i18n="lbl_country">Country:</strong> <span id="org-country">SA (Saudi Arabia)</span></span>
                     </div>
                 </div>
             </div>
@@ -373,8 +373,8 @@
                 <input type="text" id="bld-search" placeholder="Search branches by code, name, id..." style="flex-grow: 1; min-width: 220px;" oninput="fetchBranches()">
                 <select id="bld-status" onchange="fetchBranches()">
                     <option value="" data-i18n="opt_all_statuses">All Statuses</option>
-                    <option value="ACTIVE" data-i18n="opt_active">ACTIVE (نشط)</option>
-                    <option value="INACTIVE" data-i18n="opt_inactive">INACTIVE (غير نشط)</option>
+                    <option value="ACTIVE" data-i18n="opt_active">ACTIVE</option>
+                    <option value="INACTIVE" data-i18n="opt_inactive">INACTIVE</option>
                 </select>
                 <button class="btn btn-sm" onclick="fetchBranches()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
             </div>
@@ -507,8 +507,8 @@
                 <input type="text" id="login-search" placeholder="Search by user name, email, IP, event ID..." style="flex-grow: 1; min-width: 220px;" oninput="fetchLoginEvents()">
                 <select id="login-status-filter" onchange="fetchLoginEvents()">
                     <option value="" data-i18n="opt_all_auth_status">All Auth Outcomes</option>
-                    <option value="true" data-i18n="opt_auth_success">SUCCESS (ناجح)</option>
-                    <option value="false" data-i18n="opt_auth_failed">FAILED (فاشل)</option>
+                    <option value="true" data-i18n="opt_auth_success">SUCCESS</option>
+                    <option value="false" data-i18n="opt_auth_failed">FAILED</option>
                 </select>
                 <select id="login-type-filter" onchange="fetchLoginEvents()">
                     <option value="" data-i18n="opt_all_event_types">All Event Types</option>
@@ -716,13 +716,19 @@
 
         const i18nData = {
             en: {
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
                 badge_admin: "Administration & Governance",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
                 nav_management: "Property Management", nav_tasks: "Tasks & Activities", nav_documents: "Documents & Files",
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Security", nav_api: "API Docs",
-                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
-                banner_subtitle: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 page_title: "Security, Roles & Organization Governance",
                 page_subtitle: "Manage branches, operational staff, RBAC permission matrices and data scopes",
                 kpi_branches: "Branches",
@@ -743,13 +749,15 @@
                 tab_audit: "Audit Logs",
                 tab_login_events: "Login History",
                 opt_all_statuses: "All Statuses",
+                opt_active: "ACTIVE",
+                opt_inactive: "INACTIVE",
                 opt_all_branches: "All Branches",
                 opt_all_roles: "All Roles",
                 opt_all_entities: "All Entities",
                 opt_all_actions: "All Actions",
                 opt_all_auth_status: "All Auth Outcomes",
-                opt_auth_success: "SUCCESS (ناجح)",
-                opt_auth_failed: "FAILED (فاشل)",
+                opt_auth_success: "SUCCESS",
+                opt_auth_failed: "FAILED",
                 opt_all_event_types: "All Event Types",
                 lbl_tax_no: "Tax No:",
                 lbl_currency: "Currency:",
@@ -785,6 +793,12 @@
                 lang_label: "عربي"
             },
             ar: {
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
                 badge_admin: "الإدارة والحوكمة والأمان",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
@@ -812,6 +826,8 @@
                 tab_audit: "سجل العمليات والرقابة",
                 tab_login_events: "سجل الدخول والمصادقة",
                 opt_all_statuses: "جميع الحالات",
+                opt_active: "نشط (ACTIVE)",
+                opt_inactive: "غير نشط (INACTIVE)",
                 opt_all_branches: "جميع الفروع",
                 opt_all_roles: "جميع الأدوار",
                 opt_all_entities: "جميع الكيانات",
@@ -1743,7 +1759,7 @@
                     document.getElementById('org-timezone').textContent = org.timezone;
                 }
                 if (document.getElementById('org-country')) {
-                    document.getElementById('org-country').textContent = org.country_code === 'SA' ? 'SA (المملكة العربية السعودية)' : org.country_code;
+                    document.getElementById('org-country').textContent = org.country_code === 'SA' ? (currentLang === 'ar' ? 'SA (المملكة العربية السعودية)' : 'SA (Saudi Arabia)') : org.country_code;
                 }
             } catch (err) {
                 console.warn(err);

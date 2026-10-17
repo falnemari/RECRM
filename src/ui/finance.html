@@ -156,7 +156,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Finance & Legal</span>
         </div>
         <div class="header-actions">
@@ -167,12 +167,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -199,8 +199,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
     
     <div class="content">
@@ -276,13 +276,14 @@
             <div class="controls-bar">
                 <input type="text" id="res-search" placeholder="Search by reservation #, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="fetchReservations()">
                 <select id="res-status" onchange="fetchReservations()">
-                    <option value="">All Statuses (جميع الحالات)</option>
-                    <option value="ACTIVE">ACTIVE (حجز ساري ومؤكد)</option>
-                    <option value="CONVERTED">CONVERTED (تم تحويله لعقد)</option>
-                    <option value="EXPIRED">EXPIRED (منتهي الصلاحية)</option>
-                    <option value="CANCELLED">CANCELLED (ملغي)</option>
+                    <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="ACTIVE" data-i18n="opt_status_active">ACTIVE</option>
+                    <option value="CONVERTED" data-i18n="opt_status_converted">CONVERTED</option>
+                    <option value="EXPIRED" data-i18n="opt_status_expired">EXPIRED</option>
+                    <option value="CANCELLED" data-i18n="opt_status_cancelled">CANCELLED</option>
                 </select>
                 <button class="btn btn-sm" onclick="fetchReservations()">🔄 Refresh</button>
+                <button class="btn btn-warning" onclick="triggerProcessExpiredReservations()" data-i18n="btn_process_expired">⏱ Process Expired Reservations</button>
                 <button class="btn btn-success" onclick="openConvertModal()" data-i18n="btn_convert_res">+ Convert Reservation to Contract</button>
             </div>
 
@@ -290,14 +291,14 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Reservation #</th>
-                            <th>Customer / Buyer</th>
-                            <th>Target Unit</th>
-                            <th>Earnest Deposit (العربون)</th>
-                            <th>Reserved Date</th>
-                            <th>Expiry / Validity</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th data-i18n="th_res_number">Reservation #</th>
+                            <th data-i18n="th_customer_buyer">Customer / Buyer</th>
+                            <th data-i18n="th_target_unit">Target Unit</th>
+                            <th data-i18n="th_earnest_deposit">Earnest Deposit</th>
+                            <th data-i18n="th_reserved_date">Reserved Date</th>
+                            <th data-i18n="th_expiry_date">Expiry / Validity</th>
+                            <th data-i18n="th_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="reservations-tbody">
@@ -311,11 +312,11 @@
         <div id="tab-payments" style="display: none;">
             <div class="controls-bar">
                 <select id="payment-status" onchange="fetchPayments()">
-                    <option value="">All Payment Statuses</option>
-                    <option value="DUE">DUE (مستحق)</option>
-                    <option value="PARTIAL">PARTIAL (جزئي)</option>
-                    <option value="PAID">PAID (مسدد)</option>
-                    <option value="OVERDUE">OVERDUE (متأخر)</option>
+                    <option value="" data-i18n="opt_all_pay_statuses">All Payment Statuses</option>
+                    <option value="DUE" data-i18n="opt_pay_due">DUE</option>
+                    <option value="PARTIAL" data-i18n="opt_pay_partial">PARTIAL</option>
+                    <option value="PAID" data-i18n="opt_pay_paid">PAID</option>
+                    <option value="OVERDUE" data-i18n="opt_pay_overdue">OVERDUE</option>
                 </select>
             </div>
 
@@ -344,10 +345,10 @@
         <div id="tab-commissions" style="display: none;">
             <div class="controls-bar">
                 <select id="commission-status" onchange="fetchCommissions()">
-                    <option value="">All Commission Statuses</option>
-                    <option value="PENDING">PENDING (قيد الاعتماد)</option>
-                    <option value="APPROVED">APPROVED (معتمد)</option>
-                    <option value="PAID">PAID (مصروف)</option>
+                    <option value="" data-i18n="opt_all_comm_statuses">All Commission Statuses</option>
+                    <option value="PENDING" data-i18n="opt_comm_pending">PENDING</option>
+                    <option value="APPROVED" data-i18n="opt_comm_approved">APPROVED</option>
+                    <option value="PAID" data-i18n="opt_comm_paid">PAID</option>
                 </select>
             </div>
 
@@ -396,16 +397,63 @@
                     <div class="form-group">
                         <label data-i18n="lbl_pay_method">Payment Method *</label>
                         <select id="pay-method">
-                            <option value="BANK_TRANSFER">Bank Wire Transfer (تحويل بنكي)</option>
-                            <option value="CHEQUE">Certified Cheque (شيك مصرفي)</option>
-                            <option value="CARD">POS / Card (بطاقة مصرفية)</option>
-                            <option value="CASH">Cash Deposit (نقدي)</option>
+                            <option value="BANK_TRANSFER" data-i18n="opt_method_wire">Bank Wire Transfer</option>
+                            <option value="CHEQUE" data-i18n="opt_method_cheque">Certified Cheque</option>
+                            <option value="CARD" data-i18n="opt_method_card">POS / Card</option>
+                            <option value="CASH" data-i18n="opt_method_cash">Cash Deposit</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closePayModal()">Cancel</button>
                     <button type="submit" class="btn btn-success" data-i18n="btn_confirm_pay">Confirm & Record Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: VERIFY RESERVATION DEPOSIT -->
+    <div class="modal-overlay" id="verify-deposit-modal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header" style="background: #166534; color: white;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>💰</span>
+                    <span data-i18n="modal_verify_deposit_title">Verify Earnest Deposit</span>
+                </h3>
+                <button class="close-btn" onclick="closeVerifyDepositModal()" style="color: white;">&times;</button>
+            </div>
+            <form id="verify-deposit-form" onsubmit="submitVerifyDeposit(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="vdep-res-id">
+                    <div class="form-group">
+                        <label data-i18n="lbl_res_num">Reservation Number</label>
+                        <input type="text" id="vdep-res-num" readonly style="background: #f1f5f9; font-weight: 700;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_dep_expected">Required Deposit Amount (SAR)</label>
+                        <input type="text" id="vdep-amount-exp" readonly style="background: #f1f5f9; color: #166534; font-weight: 700;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_dep_received">Amount Received & Confirmed (SAR) *</label>
+                        <input type="number" id="vdep-amount-rec" step="0.01" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_method">Payment / Transfer Method *</label>
+                        <select id="vdep-method">
+                            <option value="BANK_TRANSFER" selected>Bank Wire Transfer</option>
+                            <option value="CHEQUE">Certified Bank Cheque</option>
+                            <option value="CARD">POS / Card</option>
+                            <option value="CASH">Cash Deposit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_ref">Bank Reference / Receipt #</label>
+                        <input type="text" id="vdep-ref" placeholder="e.g. TX-998822 / Bank AlRajhi">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeVerifyDepositModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" style="background: #166534;">✓ Confirm Deposit Verification</button>
                 </div>
             </form>
         </div>
@@ -423,7 +471,7 @@
                     <div class="form-group">
                         <label data-i18n="lbl_select_res">Select Active Reservation *</label>
                         <select id="conv-res-select" required onchange="populateReservationDetails()">
-                            <option value="">-- Choose active reservation --</option>
+                            <option value="" data-i18n="opt_choose_res">-- Choose active reservation --</option>
                         </select>
                     </div>
 
@@ -453,8 +501,8 @@
                     <div class="form-group">
                         <label data-i18n="lbl_con_type">Contract Type</label>
                         <select id="conv-type">
-                            <option value="SALE">Final Sale & Purchase Agreement (عقد بيع نهائي)</option>
-                            <option value="LEASE">Lease Contract (عقد إيجار)</option>
+                            <option value="SALE" data-i18n="opt_con_sale">Final Sale & Purchase Agreement</option>
+                            <option value="LEASE" data-i18n="opt_con_lease">Lease Contract</option>
                         </select>
                     </div>
                 </div>
@@ -516,23 +564,23 @@
                     <!-- Card 1: Buyer / Customer Info -->
                     <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                         <div style="font-weight: 700; font-size: 0.95em; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                            <span>👤</span> <span data-i18n="sec_buyer_info">Buyer / Client Information (بيانات المشتري)</span>
+                            <span>👤</span> <span data-i18n="sec_buyer_info">Buyer / Client Information</span>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.88em;">
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Client Name (الاسم):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_client_name">Client Name:</span>
                                 <strong id="det-res-cust-name" style="color: var(--text-main);">--</strong>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Phone / Mobile (الجوال):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_phone">Phone / Mobile:</span>
                                 <span id="det-res-cust-mobile-wrap">--</span>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">National / CR ID (الهوية/السجل):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_national_id">National / CR ID:</span>
                                 <span id="det-res-cust-id" style="font-family: monospace; font-weight: 600;">--</span>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Email (البريد):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_email">Email:</span>
                                 <span id="det-res-cust-email" style="font-size: 0.85em; word-break: break-all;">--</span>
                             </div>
                         </div>
@@ -541,23 +589,23 @@
                     <!-- Card 2: Property & Unit Specifications -->
                     <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                         <div style="font-weight: 700; font-size: 0.95em; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                            <span>🏢</span> <span data-i18n="sec_unit_specs">Unit & Project Specifications (الوحدة والمشروع)</span>
+                            <span>🏢</span> <span data-i18n="sec_unit_specs">Unit & Project Specifications</span>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.88em;">
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Unit # (رقم الوحدة):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_unit_number">Unit #:</span>
                                 <strong id="det-res-unit-num" style="font-size: 1.05em; color: var(--primary);">--</strong>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Project / Building (المشروع/المبنى):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_proj_bld">Project / Building:</span>
                                 <span id="det-res-project-building">--</span>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Type / Floor (النوع / الدور):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_type_floor">Type / Floor:</span>
                                 <span id="det-res-prop-type">--</span>
                             </div>
                             <div>
-                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;">Area / Layout (المساحة والتفصيل):</span>
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_area_layout">Area / Layout:</span>
                                 <span id="det-res-unit-specs">--</span>
                             </div>
                         </div>
@@ -568,25 +616,25 @@
                 <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
                     <div style="font-weight: 700; font-size: 0.95em; color: #166534; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span>💰</span> <span data-i18n="sec_earnest_deposit">Earnest Deposit & Financial Ledger (سجل العربون المالي)</span>
+                            <span>💰</span> <span data-i18n="sec_earnest_deposit">Earnest Deposit & Financial Ledger</span>
                         </div>
-                        <span class="badge badge-signed" style="background: #15803d; color: #fff;" data-i18n="badge_paid_receipt">✓ Earnest Paid (العربون مسدد)</span>
+                        <span class="badge badge-signed" style="background: #15803d; color: #fff;" data-i18n="badge_paid_receipt">✓ Earnest Paid</span>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
                         <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #86efac;">
-                            <span style="font-size: 0.8em; color: #166534; font-weight: 600; display: block;" data-i18n="lbl_deposit_amount">Deposit Paid (العربون):</span>
+                            <span style="font-size: 0.8em; color: #166534; font-weight: 600; display: block;" data-i18n="lbl_deposit_amount">Deposit Paid:</span>
                             <div id="det-res-deposit" style="font-size: 1.4em; font-weight: 800; color: #15803d; margin-top: 2px;">-- SAR</div>
                         </div>
                         <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_unit_asking_price">Target Sale Price (سعر البيع):</span>
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_unit_asking_price">Target Sale Price:</span>
                             <div id="det-res-unit-price" style="font-size: 1.2em; font-weight: 700; color: var(--navy); margin-top: 2px;">-- SAR</div>
                         </div>
                         <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_balance_to_contract">Balance after Deposit (المتبقي):</span>
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_balance_to_contract">Balance after Deposit:</span>
                             <div id="det-res-balance" style="font-size: 1.2em; font-weight: 700; color: #ea580c; margin-top: 2px;">-- SAR</div>
                         </div>
                         <div style="background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_deposit_pct">Deposit Ratio (نسبة العربون):</span>
+                            <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600; display: block;" data-i18n="lbl_deposit_pct">Deposit Ratio:</span>
                             <div id="det-res-deposit-pct" style="font-size: 1.2em; font-weight: 700; color: var(--primary); margin-top: 2px;">-- %</div>
                         </div>
                     </div>
@@ -598,26 +646,26 @@
                 <!-- Timeline & Representation Box -->
                 <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
                     <div>
-                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_reserved_at">Booking Date (تاريخ الحجز):</span>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_reserved_at">Booking Date:</span>
                         <strong id="det-res-reserved-at">--</strong>
                     </div>
                     <div>
-                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_expires_at">Expiry Date (تاريخ انتهاء الحجز):</span>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_expires_at">Expiry Date:</span>
                         <strong id="det-res-expires-at">--</strong>
                     </div>
                     <div>
-                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_assigned_broker">Handling Broker / Agent (الوسيط):</span>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_assigned_broker">Handling Broker / Agent:</span>
                         <strong id="det-res-agent">--</strong>
                     </div>
                     <div>
-                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_linked_deal">Opportunity / Contract (الصفقة/العقد):</span>
+                        <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_linked_deal">Opportunity / Contract:</span>
                         <span id="det-res-contract-link">--</span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <button type="button" class="btn btn-sm" onclick="printReservationNotice()" style="background: #e2e8f0; color: #0f172a; font-weight: 600;">🖨️ <span data-i18n="btn_print_receipt">Print Notice (طباعة الإشعار)</span></button>
+                    <button type="button" class="btn btn-sm" onclick="printReservationNotice()" style="background: #e2e8f0; color: #0f172a; font-weight: 600;">🖨️ <span data-i18n="btn_print_receipt">Print Notice</span></button>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn btn-sm" onclick="closeReservationDetailModal()" data-i18n="btn_close">Close</button>
@@ -627,14 +675,14 @@
         </div>
     </div>
 
-    <!-- MODAL: CONTRACT DETAILS (عرض تفاصيل العقد المالي) -->
+    <!-- MODAL: CONTRACT DETAILS -->
     <div class="modal-overlay" id="contract-detail-modal">
         <div class="modal" style="max-width: 820px;">
             <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white;">
                 <div>
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                         <span>📜</span>
-                        <span>Contract Details (تفاصيل العقد المالي)</span>
+                        <span data-i18n="modal_contract_detail_title">Contract Details</span>
                         <span class="id-badge" id="det-con-number" style="background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3);">--</span>
                     </h3>
                 </div>
@@ -668,6 +716,7 @@
                 tab_contracts: "Contracts & Sales Agreements", tab_reservations: "Unit Reservations & Earnest Deposits",
                 tab_payments: "Payment Schedules & Receivables", tab_commissions: "Broker Commission Payouts",
                 btn_convert_res: "+ Convert Reservation to Contract",
+                btn_process_expired: "⏱ Process Expired Reservations",
                 th_con_num: "Contract #", th_con_type: "Type", th_con_customer: "Customer", th_con_unit: "Unit #",
                 th_con_value: "Value (SAR)", th_con_paid: "Paid (SAR)", th_con_bal: "Balance (SAR)", th_con_status: "Status",
                 th_pay_ref: "Reference #", th_pay_due_date: "Due Date", th_pay_amount_due: "Amount Due",
@@ -685,7 +734,56 @@
                 lbl_deposit_pct: "Deposit Ratio:", note_earnest_credit: "This deposit is legally credited towards Installment 1 / Down payment upon contract execution.",
                 lbl_reserved_at: "Booking Date:", lbl_expires_at: "Expiry Date:",
                 lbl_assigned_broker: "Handling Broker / Agent:", lbl_linked_deal: "Opportunity / Contract:",
-                btn_print_receipt: "Print Notice", btn_convert_contract: "Convert to Contract", btn_close: "Close"
+                btn_print_receipt: "Print Notice", btn_convert_contract: "Convert to Contract", btn_close: "Close",
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                opt_all_statuses: "All Statuses",
+                opt_status_active: "ACTIVE",
+                opt_status_converted: "CONVERTED",
+                opt_status_expired: "EXPIRED",
+                opt_status_cancelled: "CANCELLED",
+                th_res_number: "Reservation #",
+                th_customer_buyer: "Customer / Buyer",
+                th_target_unit: "Target Unit",
+                th_earnest_deposit: "Earnest Deposit",
+                th_reserved_date: "Reserved Date",
+                th_expiry_date: "Expiry / Validity",
+                th_status: "Status",
+                opt_all_pay_statuses: "All Payment Statuses",
+                opt_pay_due: "DUE",
+                opt_pay_partial: "PARTIAL",
+                opt_pay_paid: "PAID",
+                opt_pay_overdue: "OVERDUE",
+                opt_all_comm_statuses: "All Commission Statuses",
+                opt_comm_pending: "PENDING",
+                opt_comm_approved: "APPROVED",
+                opt_comm_paid: "PAID",
+                opt_method_wire: "Bank Wire Transfer",
+                opt_method_cheque: "Certified Cheque",
+                opt_method_card: "POS / Card",
+                opt_method_cash: "Cash Deposit",
+                opt_choose_res: "-- Choose active reservation --",
+                opt_con_sale: "Final Sale & Purchase Agreement",
+                opt_con_lease: "Lease Contract",
+                lbl_client_name: "Client Name:",
+                lbl_phone: "Phone / Mobile:",
+                lbl_national_id: "National / CR ID:",
+                lbl_email: "Email:",
+                lbl_unit_number: "Unit #:",
+                lbl_proj_bld: "Project / Building:",
+                lbl_type_floor: "Type / Floor:",
+                lbl_area_layout: "Area / Layout:",
+                modal_contract_detail_title: "Contract Details",
+                modal_verify_deposit_title: "Verify Earnest Deposit Receipt",
+                lbl_res_num: "Reservation Number",
+                lbl_dep_expected: "Required Deposit Amount (SAR)",
+                lbl_dep_received: "Amount Received & Confirmed (SAR) *"
             },
             ar: {
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
@@ -697,6 +795,7 @@
                 tab_contracts: "العقود والاتفاقيات", tab_reservations: "حجوزات الوحدات وعربون الشراء",
                 tab_payments: "جدول الدفعات والمستحقات", tab_commissions: "عمولات المبيعات والوسطاء",
                 btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
+                btn_process_expired: "⏱ فحص وإلغاء الحجوزات المنتهية",
                 th_con_num: "رقم العقد", th_con_type: "النوع", th_con_customer: "العميل", th_con_unit: "رقم الوحدة",
                 th_con_value: "قيمة العقد (ريال)", th_con_paid: "المسدد (ريال)", th_con_bal: "المتبقي (ريال)", th_con_status: "الحالة",
                 th_pay_ref: "الرقم المرجعي", th_pay_due_date: "تاريخ الاستحقاق", th_pay_amount_due: "المبلغ المستحق",
@@ -714,7 +813,56 @@
                 lbl_deposit_pct: "نسبة العربون:", note_earnest_credit: "يتم احتساب وقيد هذا العربون كدفعة أولى مقدمة تلقائياً عند إبرام العقد الرسمي.",
                 lbl_reserved_at: "تاريخ الحجز:", lbl_expires_at: "تاريخ انتهاء الحجز:",
                 lbl_assigned_broker: "الوسيط المسؤول:", lbl_linked_deal: "الصفقة / العقد المرتبط:",
-                btn_print_receipt: "طباعة إشعار الحجز", btn_convert_contract: "تحويل إلى عقد رسمي", btn_close: "إغلاق"
+                btn_print_receipt: "طباعة إشعار الحجز", btn_convert_contract: "تحويل إلى عقد رسمي", btn_close: "إغلاق",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                opt_all_statuses: "جميع الحالات",
+                opt_status_active: "حجز ساري ومؤكد",
+                opt_status_converted: "تم تحويله لعقد",
+                opt_status_expired: "منتهي الصلاحية",
+                opt_status_cancelled: "ملغي",
+                th_res_number: "رقم الحجز",
+                th_customer_buyer: "العميل / المشتري",
+                th_target_unit: "الوحدة",
+                th_earnest_deposit: "العربون",
+                th_reserved_date: "تاريخ الحجز",
+                th_expiry_date: "صلاحية الحجز",
+                th_status: "الحالة",
+                opt_all_pay_statuses: "جميع حالات الدفعات",
+                opt_pay_due: "مستحق",
+                opt_pay_partial: "جزئي",
+                opt_pay_paid: "مسدد",
+                opt_pay_overdue: "متأخر",
+                opt_all_comm_statuses: "جميع حالات العمولات",
+                opt_comm_pending: "قيد الاعتماد",
+                opt_comm_approved: "معتمد",
+                opt_comm_paid: "مصروف",
+                opt_method_wire: "تحويل بنكي",
+                opt_method_cheque: "شيك مصرفي معتمد",
+                opt_method_card: "بطاقة مصرفية / مدى",
+                opt_method_cash: "إيداع نقدي",
+                opt_choose_res: "-- اختر حجز نشط --",
+                opt_con_sale: "عقد بيع نهائي",
+                opt_con_lease: "عقد إيجار",
+                lbl_client_name: "اسم العميل:",
+                lbl_phone: "الجوال:",
+                lbl_national_id: "الهوية / السجل:",
+                lbl_email: "البريد الإلكتروني:",
+                lbl_unit_number: "رقم الوحدة:",
+                lbl_proj_bld: "المشروع / المبنى:",
+                lbl_type_floor: "النوع / الدور:",
+                lbl_area_layout: "المساحة والتفصيل:",
+                modal_contract_detail_title: "تفاصيل العقد المالي",
+                modal_verify_deposit_title: "التحقق من استلام عربون الحجز",
+                lbl_res_num: "رقم الحجز",
+                lbl_dep_expected: "مبلغ العربون المطلوب (ريال)",
+                lbl_dep_received: "المبلغ المستلم والمؤكد (ريال) *"
             }
         };
 
@@ -815,7 +963,23 @@
                     return;
                 }
 
-                tbody.innerHTML = items.map(c => `
+                tbody.innerHTML = items.map(c => {
+                    let stBadge = 'badge-signed';
+                    let actionBtn = '';
+                    if (c.status === 'DRAFT') {
+                        stBadge = 'badge-due';
+                        actionBtn = `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة' : 'Approve Draft'}</button>`;
+                    } else if (c.status === 'PENDING_SIGNATURE') {
+                        stBadge = 'badge-due';
+                        actionBtn = `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق التوقيع' : 'Record Signature'}</button>`;
+                    } else if (c.status === 'SIGNED') {
+                        stBadge = 'badge-signed';
+                        actionBtn = `<button class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'تسليم وإغلاق' : 'Handover & Close'}</button>`;
+                    } else if (c.status === 'ACTIVE' || c.status === 'COMPLETED') {
+                        stBadge = 'badge-signed';
+                    }
+
+                    return `
                     <tr>
                         <td><span class="id-badge">${c.contract_number}</span></td>
                         <td><span class="badge" style="background: #e2e8f0;">${c.contract_type}</span></td>
@@ -827,12 +991,14 @@
                         <td><strong>${Number(c.contract_value || 0).toLocaleString()} SAR</strong></td>
                         <td style="color: #16a34a;">${Number(c.total_paid || 0).toLocaleString()} SAR</td>
                         <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
-                        <td><span class="badge badge-signed">${c.status}</span></td>
+                        <td><span class="badge ${stBadge}">${c.status}</span></td>
                         <td>
                             <button class="btn btn-sm" onclick="viewContractDetail('${c.contract_id}')">👁️ View Detail</button>
+                            ${actionBtn}
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
             } catch (e) {
                 document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
             }
@@ -1016,13 +1182,22 @@
                         expBadge = `<span class="badge" style="background: #f1f5f9; color: #475569;">Open validity</span>`;
                     }
 
-                    const stBadge = r.status === 'ACTIVE' 
-                        ? '<span class="badge badge-signed">ACTIVE</span>'
-                        : (r.status === 'CONVERTED' 
-                            ? '<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">CONVERTED</span>'
-                            : `<span class="badge badge-due">${r.status}</span>`);
+                    let stBadge = '';
+                    let resActions = `<button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>`;
 
-                    const canConvert = r.status === 'ACTIVE';
+                    if (r.status === 'ACTIVE') {
+                        stBadge = '<span class="badge badge-due" style="background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;">ACTIVE</span>';
+                        resActions += `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="openVerifyDepositModal('${r.reservation_id}', '${r.reservation_number}', ${r.deposit_amount || 0})">💰 ${currentLang === 'ar' ? 'التحقق من العربون' : 'Verify Deposit'}</button>`;
+                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${r.asking_price || r.rent_price || 0})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
+                    } else if (r.status === 'CONFIRMED') {
+                        stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight: 700;">✓ CONFIRMED</span>';
+                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${r.asking_price || r.rent_price || 0})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
+                        resActions += `<button class="btn btn-sm" style="background: #f1f5f9; color: #0f172a; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">➔ Convert</button>`;
+                    } else if (r.status === 'CONVERTED') {
+                        stBadge = '<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">CONVERTED</span>';
+                    } else {
+                        stBadge = `<span class="badge badge-due">${r.status}</span>`;
+                    }
 
                     return `
                         <tr>
@@ -1039,10 +1214,7 @@
                             <td>${r.reserved_at ? r.reserved_at.split('T')[0] : '--'}</td>
                             <td>${expBadge}</td>
                             <td>${stBadge}</td>
-                            <td>
-                                <button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>
-                                ${canConvert ? `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">📝 Convert</button>` : ''}
-                            </td>
+                            <td>${resActions}</td>
                         </tr>
                     `;
                 }).join('');
@@ -1226,7 +1398,7 @@
             const nidEl = document.getElementById('det-res-cust-id');
             if (nid) {
                 if (nid.length > 20) {
-                    nidEl.innerHTML = `<span title="${nid}" style="font-family: monospace; font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">🔒 ${nid.substring(0, 8)}...${nid.substring(nid.length - 6)}</span> <span style="font-size:0.75em; color:var(--text-muted);">(Verified / موثق)</span>`;
+                    nidEl.innerHTML = `<span title="${nid}" style="font-family: monospace; font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">🔒 ${nid.substring(0, 8)}...${nid.substring(nid.length - 6)}</span> <span style="font-size:0.75em; color:var(--text-muted);">(${currentLang === 'ar' ? 'موثق' : 'Verified'})</span>`;
                 } else {
                     nidEl.textContent = nid;
                 }
@@ -1353,7 +1525,7 @@
                     <div class="header">
                         <div>
                             <div class="title">${isAr ? 'إشعار تأكيد حجز وحدة واستلام عربون' : 'Property Unit Reservation & Deposit Notice'}</div>
-                            <div style="color: #64748b; margin-top: 4px;">مكتب معاذ خضر النمري للخدمات العقارية (رخصة فال)</div>
+                            <div style="color: #64748b; margin-top: 4px;">${isAr ? 'مكتب معاذ خضر النمري للخدمات العقارية (رخصة فال)' : 'Muath Khidr Al-Nemari Real Estate Services Office (VAL License)'}</div>
                         </div>
                         <div class="id-box">${r.reservation_number}</div>
                     </div>
@@ -1377,8 +1549,8 @@
                     </div>
 
                     <div class="footer">
-                        <div>تاريخ الطباعة: ${new Date().toLocaleString()}</div>
-                        <div>نظام إدارة العقارات RECRM • توثيق رسمي</div>
+                        <div>${isAr ? 'تاريخ الطباعة:' : 'Printed on:'} ${new Date().toLocaleString()}</div>
+                        <div>${isAr ? 'نظام إدارة العقارات RECRM • توثيق رسمي' : 'Real Estate Management System RECRM • Official Record'}</div>
                     </div>
 
                     <script>
@@ -1625,6 +1797,41 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Contract Lifecycle Workflow Progression -->
+                    ${(() => {
+                        if (c.status === 'DRAFT') {
+                            return `
+                                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <strong style="color: #1d4ed8;">⚖️ ${currentLang === 'ar' ? 'مسودة العقد جاهزة للمراجعة القانونية' : 'Legal Draft Ready for Approval'}</strong>
+                                        <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'اعتماد المسودة ينقل العقد إلى (PENDING_SIGNATURE) ويرسل إرشادات التوقيع للعميل' : 'Approval moves contract to PENDING_SIGNATURE and sends signature instructions to client'}</div>
+                                    </div>
+                                    <button class="btn btn-sm" style="background: #2563eb; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة القانونية' : 'Approve Draft for Signature'}</button>
+                                </div>
+                            `;
+                        } else if (c.status === 'PENDING_SIGNATURE') {
+                            return `
+                                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <strong style="color: #15803d;">✍️ ${currentLang === 'ar' ? 'العقد بانتظار توثيق التوقيع' : 'Contract Awaiting Signature Record'}</strong>
+                                        <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'توثيق التوقيع ينقل العقد إلى (SIGNED)، يحول الحجز رسمياً، ويولد جدول الأقساط' : 'Recording signature marks contract SIGNED, converts reservation, and schedules installments'}</div>
+                                    </div>
+                                    <button class="btn btn-sm" style="background: #16a34a; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق توقيع العقد' : 'Record Signed Contract'}</button>
+                                </div>
+                            `;
+                        } else if (c.status === 'SIGNED') {
+                            return `
+                                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <strong style="color: #b45309;">🔑 ${currentLang === 'ar' ? 'العقد موقّع وجاهز للتسليم وإغلاق الصفقة' : 'Signed Contract Ready for Handover'}</strong>
+                                        <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'إتمام التسليم يغير حالة الوحدة إلى (SOLD)، والصفقة إلى (CLOSED_WON) وتفعيل العقد' : 'Completing handover updates unit to SOLD, opportunity to CLOSED_WON, and contract to ACTIVE'}</div>
+                                    </div>
+                                    <button class="btn btn-sm" style="background: #d97706; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'إتمام التسليم وإغلاق الصفقة' : 'Complete Handover & Close Deal'}</button>
+                                </div>
+                            `;
+                        }
+                        return '';
+                    })()}
                 `;
 
                 body.innerHTML = html;
@@ -1635,6 +1842,137 @@
 
         function closeContractDetailModal() {
             document.getElementById('contract-detail-modal').style.display = 'none';
+        }
+
+        function openVerifyDepositModal(resId, resNum, depositAmt) {
+            document.getElementById('vdep-res-id').value = resId;
+            document.getElementById('vdep-res-num').value = resNum || resId;
+            document.getElementById('vdep-amount-exp').value = `${Number(depositAmt || 0).toLocaleString()} SAR`;
+            document.getElementById('vdep-amount-rec').value = depositAmt || '';
+            document.getElementById('vdep-ref').value = '';
+            document.getElementById('verify-deposit-modal').style.display = 'flex';
+        }
+
+        function closeVerifyDepositModal() {
+            document.getElementById('verify-deposit-modal').style.display = 'none';
+        }
+
+        async function submitVerifyDeposit(e) {
+            e.preventDefault();
+            const resId = document.getElementById('vdep-res-id').value;
+            const amount = parseFloat(document.getElementById('vdep-amount-rec').value);
+            const method = document.getElementById('vdep-method').value;
+            const ref = document.getElementById('vdep-ref').value.trim();
+
+            const isAr = currentLang === 'ar';
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations/${resId}/verify-deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount_received: amount,
+                        payment_method: method,
+                        payment_ref: ref || 'DEP-VERIFIED'
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to verify deposit');
+                }
+
+                closeVerifyDepositModal();
+                alert(isAr ? 'تم التحقق من العربون بنجاح! تم ترقية الحجز وتوليد مهمة إعداد مسودة العقد (TASK_CONTRACT_DRAFT) للشؤون القانونية.' : 'Earnest deposit verified! Reservation confirmed and contract drafting task spawned for Legal.');
+                fetchReservations();
+                loadSummary();
+                closeReservationDetailModal();
+            } catch (err) {
+                alert((isAr ? 'خطأ في التحقق من العربون: ' : 'Error: ') + err.message);
+            }
+        }
+
+        async function initiateContractFromReservation(reservationId, defaultVal = null) {
+            const isAr = currentLang === 'ar';
+            const valInput = prompt(isAr ? 'أدخل قيمة العقد الإجمالية (ريال):' : 'Enter total contract value (SAR):', defaultVal || '');
+            if (!valInput) return;
+            const val = parseFloat(valInput);
+            if (isNaN(val) || val <= 0) {
+                alert(isAr ? 'قيمة غير صحيحة' : 'Invalid value');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations/${reservationId}/initiate-contract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contract_type: 'SALE', contract_value: val })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to initiate contract draft');
+                }
+                const json = await res.json();
+                alert(isAr ? `تم إنشاء مسودة العقد بنجاح برقم ${json.data?.contract_number || ''} وإرسالها للمراجعة القانونية!` : 'Contract draft created and submitted for legal review!');
+                fetchReservations();
+                fetchContracts();
+                switchTab('contracts');
+            } catch (err) {
+                alert((isAr ? 'خطأ: ' : 'Error: ') + err.message);
+            }
+        }
+
+        async function advanceContractLifecycle(contractId, action) {
+            const isAr = currentLang === 'ar';
+            let confirmMsg = '';
+            if (action === 'APPROVE_DRAFT') {
+                confirmMsg = isAr ? 'اعتماد المسودة القانونية للعقد ونقله لمرحلة التوقيع وإشعار العميل عبر الواتساب؟' : 'Approve legal draft and move to signature stage with client notification?';
+            } else if (action === 'RECORD_SIGNATURE') {
+                confirmMsg = isAr ? 'توثيق توقيع العقد رسمياً؟ سيتم تحويل الحجز وتوليد جدول الدفعات ومطابقة المالية واستحقاق العمولة.' : 'Record formal contract signature? Reservation will convert and payment schedules generated.';
+            } else if (action === 'COMPLETE_HANDOVER') {
+                confirmMsg = isAr ? 'تأكيد اكتمال تسليم العقار وإغلاق الصفقة (مباع/مؤجر) بنجاح؟' : 'Confirm property handover and close deal as won?';
+            }
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/contracts/${contractId}/advance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to advance contract lifecycle');
+                }
+                alert(isAr ? 'تم تحديث مسار العقد بنجاح!' : 'Contract lifecycle advanced successfully!');
+                fetchContracts();
+                loadSummary();
+                closeContractDetailModal();
+            } catch (err) {
+                alert((isAr ? 'خطأ في معالجة العقد: ' : 'Contract error: ') + err.message);
+            }
+        }
+
+        async function triggerProcessExpiredReservations() {
+            const isAr = currentLang === 'ar';
+            if (!confirm(isAr ? 'فحص وتحديث الحجوزات المنتهية الصلاحية الآن؟ سيتم تحرير الوحدات للحجوزات التي انتهت مهلتها دون سداد العربون وتنبيه الإدارة بالحجوزات القريبة من الانتهاء.' : 'Scan and release expired reservations now? Unpaid units past SLA will be released back to inventory.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations/process-expired`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to process expired reservations');
+                }
+                const json = await res.json();
+                const releasedCount = json.data?.expired_and_released?.length || 0;
+                const reviewsCount = json.data?.approaching_expiry_reviews?.length || 0;
+                alert(isAr 
+                    ? `تم فحص الحجوزات: تم تحرير ${releasedCount} وحدة منتهية الصلاحية، وتوليد ${reviewsCount} مهمة مراجعة للمدير.`
+                    : `Reservation scan complete: ${releasedCount} expired unit(s) released, ${reviewsCount} manager review task(s) spawned.`);
+                fetchReservations();
+                loadSummary();
+            } catch (err) {
+                alert((isAr ? 'خطأ في فحص الحجوزات: ' : 'Error: ') + err.message);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

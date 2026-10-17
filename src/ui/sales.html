@@ -433,7 +433,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Al-Nemari Real Estate Services</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Pipeline</span>
         </div>
         <div class="header-actions">
@@ -444,12 +444,12 @@
                 </div>
             </div>
                         <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -476,8 +476,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
     
     <div class="content">
@@ -500,7 +500,7 @@
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <select id="opp-agent-filter" onchange="filterOpportunities()" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88em; background: #fff;">
-                    <option value="">All Agents (جميع الوسطاء)</option>
+                    <option value="" data-i18n="opt_all_agents">All Agents</option>
                 </select>
                 <div id="opp-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
                     <span id="opp-agent-scope-text">Showing user data only</span>
@@ -568,13 +568,14 @@
                 <input type="text" id="offer-search" placeholder="Search by offer ID, customer, unit #..." style="flex-grow: 1; min-width: 220px;" oninput="filterOffers()">
                 <select id="offer-status-filter" onchange="fetchOffers()">
                     <option value="" data-i18n="opt_all_offers">All Offer Statuses</option>
-                    <option value="ACCEPTED">ACCEPTED (مقبول)</option>
-                    <option value="SUBMITTED">SUBMITTED (مقدّم)</option>
-                    <option value="REJECTED">REJECTED (مرفوض)</option>
-                    <option value="COUNTER">COUNTER (عرض مضاد)</option>
+                    <option value="ACCEPTED" data-i18n="opt_status_accepted">Accepted</option>
+                    <option value="SUBMITTED" data-i18n="opt_status_submitted">Submitted</option>
+                    <option value="PENDING_APPROVAL" data-i18n="opt_status_pending_appr">Pending Manager Approval</option>
+                    <option value="REJECTED" data-i18n="opt_status_rejected">Rejected</option>
+                    <option value="COUNTER" data-i18n="opt_status_counter">Counter Offer</option>
                 </select>
                 <button class="btn-sm" onclick="fetchOffers()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
-                <button class="btn-primary" onclick="openNewOfferModal()" style="padding: 7px 16px; font-size: 0.88em; font-weight: 600;">+ <span data-i18n="btn_new_offer">+ New Offer (تقديم عرض جديد)</span></button>
+                <button class="btn-primary" onclick="openNewOfferModal()" style="padding: 7px 16px; font-size: 0.88em; font-weight: 600;">+ <span data-i18n="btn_new_offer">New Offer</span></button>
             </div>
             <div class="table-wrap">
                 <table>
@@ -602,64 +603,116 @@
     <div class="modal-overlay" id="new-offer-modal" style="display: none; z-index: 1500;">
         <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>📝 <span data-i18n="modal_new_offer_title">Submit Formal Offer (تقديم عرض سعر / شراء رسمي)</span></h3>
+                <h3>📝 <span data-i18n="modal_new_offer_title">Submit Formal Offer</span></h3>
                 <button class="close-btn" onclick="closeNewOfferModal()">&times;</button>
             </div>
             <form id="new-offer-form" onsubmit="submitNewOffer(event)">
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">🎯 الصفقة / العميل (Opportunity / Prospect) *</label>
+                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_opp_prospect">Opportunity / Customer *</label>
                     <select id="offer-opp-select" required onchange="onOfferOppChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                        <option value="">-- اختر الصفقة (Select Opportunity) --</option>
+                        <option value="" data-i18n="opt_select_opp">-- Select Opportunity --</option>
                     </select>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">🏢 الوحدة المستهدفة (Target Property Unit) *</label>
+                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_target_unit">Target Property Unit *</label>
                     <select id="offer-unit-select" required onchange="onOfferUnitChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                        <option value="">-- اختر الوحدة (Select Unit) --</option>
+                        <option value="" data-i18n="opt_select_unit">-- Select Unit --</option>
                     </select>
                 </div>
 
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 0.85em;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <span style="color: var(--text-muted);">السعر المطلوب للوحدة (Unit Asking Price):</span>
+                        <span style="color: var(--text-muted);" data-i18n="lbl_unit_asking">Unit Asking Price:</span>
                         <strong id="offer-unit-asking-price">-- SAR</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--text-muted);">ميزانية العميل القصوى (Customer Max Budget):</span>
+                        <span style="color: var(--text-muted);" data-i18n="lbl_customer_max_budget">Customer Max Budget:</span>
                         <strong id="offer-customer-budget" style="color: #16a34a;">-- SAR</strong>
                     </div>
                 </div>
 
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">💰 مبلغ العرض المقترح (Offer Amount SAR) *</label>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_offer_amount">Offer Amount (SAR) *</label>
                         <input type="number" id="offer-amount-input" required min="1000" step="100" placeholder="e.g. 480000" oninput="calculateOfferSpread()" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
                         <div id="offer-spread-display" style="font-size: 0.78em; margin-top: 3px; font-weight: 600;"></div>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;">📅 سريان العرض حتى (Valid Until) *</label>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_offer_valid">Valid Until *</label>
                         <input type="date" id="offer-valid-input" required style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
                     </div>
                 </div>
 
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-                    <button type="button" class="btn-sm" onclick="closeNewOfferModal()" style="padding: 7px 16px;">إلغاء (Cancel)</button>
-                    <button type="submit" class="btn-primary" style="padding: 7px 18px; font-weight: 700;">✓ إرسال العرض الرسمي (Submit Offer)</button>
+                    <button type="button" class="btn-sm" onclick="closeNewOfferModal()" style="padding: 7px 16px;" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding: 7px 18px; font-weight: 700;" data-i18n="btn_submit_offer">✓ Submit Formal Offer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Unit Reservation Modal -->
+    <div class="modal-overlay" id="reserve-unit-modal" style="display: none; z-index: 1550;">
+        <div class="modal-box" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3>🔒 <span data-i18n="modal_reserve_unit_title">Reserve Property Unit</span></h3>
+                <button class="close-btn" onclick="closeReserveUnitModal()">&times;</button>
+            </div>
+            <form id="reserve-unit-form" onsubmit="submitUnitReservation(event)">
+                <input type="hidden" id="res-opp-id">
+                <input type="hidden" id="res-cust-id">
+                <input type="hidden" id="res-unit-id">
+
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px; margin-bottom: 14px; font-size: 0.88em;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="color: #166534; font-weight: 600;" data-i18n="lbl_res_cust">Buyer / Customer:</span>
+                        <strong id="res-disp-cust" style="color: #166534;">--</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #166534; font-weight: 600;" data-i18n="lbl_res_unit">Unit Selected:</span>
+                        <strong id="res-disp-unit" style="color: var(--primary);">--</strong>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_res_deposit">Earnest Deposit (SAR) *</label>
+                        <input type="number" id="res-deposit-input" required min="1000" step="100" placeholder="e.g. 25000" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                        <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 2px;">Default: 5% of agreement value</div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_res_validity">Lock Validity Period *</label>
+                        <select id="res-validity-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
+                            <option value="24">24 Hours (Fast-track)</option>
+                            <option value="48" selected>48 Hours (Standard Rule)</option>
+                            <option value="72">72 Hours (Extended Approval)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 4px;" data-i18n="lbl_res_notes">Reservation Notes & Payment Instructions</label>
+                    <textarea id="res-notes-input" rows="2" placeholder="e.g. Wire transfer deposit to Escrow Account within 48h..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;"></textarea>
+                </div>
+
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                    <button type="button" class="btn-sm" onclick="closeReserveUnitModal()" style="padding: 7px 16px;" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding: 7px 18px; font-weight: 700; background: #16a34a; border-color: #15803d;" data-i18n="btn_confirm_reserve">🔒 Confirm & Lock Unit</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Opportunity Units Modal -->
-    <div class="modal-overlay" id="opp-units-modal">
+    <div class="modal-overlay" id="opp-units-modal" style="z-index: 1400;">
         <div class="modal-box modal-box-lg">
             <div class="modal-header">
-                <h3 id="opp-units-modal-title">Opportunity Units (الوحدات المرتبطة)</h3>
+                <h3 id="opp-units-modal-title" data-i18n="modal_opp_units_title">Opportunity Units</h3>
                 <button class="close-btn" onclick="closeOppUnitsModal()">&times;</button>
             </div>
             <div class="modal-body" id="opp-units-modal-body" style="max-height: 82vh; overflow-y: auto;">
-                <div style="text-align: center; padding: 20px;">Loading linked units...</div>
+                <div style="text-align: center; padding: 20px;" data-i18n="loading">Loading linked units...</div>
             </div>
         </div>
     </div>
@@ -677,7 +730,12 @@
                     <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                             <strong id="opp-detail-cust-name" style="font-size: 1.05em; color: var(--navy);">--</strong>
-                            <span class="badge badge-primary" id="opp-detail-stage-badge">--</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; font-weight: 600; padding: 2px 8px; border-radius: 4px; cursor: pointer;" onclick="openSituationModal({ oppId: document.getElementById('opp-detail-id').value })" title="Situation & Operational Journey / مسار المعاملة">
+                                    📍 <span data-i18n="btn_situation">مسار المعاملة</span>
+                                </button>
+                                <span class="badge badge-primary" id="opp-detail-stage-badge">--</span>
+                            </div>
                         </div>
                         <div style="font-size: 0.85em; color: var(--text-muted);">
                             <span>📞 <span id="opp-detail-cust-mobile">--</span></span> |
@@ -688,16 +746,16 @@
                     <div class="form-group">
                         <label data-i18n="lbl_opp_stage">Pipeline Stage *</label>
                         <select id="opp-detail-stage" required>
-                            <option value="QUALIFIED">1. Qualification (تأهيل الطلب)</option>
-                            <option value="VIEWING">2. Viewing (المعاينات والزيارات)</option>
-                            <option value="NEGOTIATION">3. Offer & Negotiation (تقديم العروض والتفاوض)</option>
-                            <option value="WON">4. Closed / Won (إتمام البيع بنجاح 🏆)</option>
-                            <option value="LOST">5. Closed / Lost (صفقة خاسرة أو ملغاة ❌)</option>
+                            <option value="QUALIFIED" data-i18n="opt_stage_1">1. Qualification</option>
+                            <option value="VIEWING" data-i18n="opt_stage_2">2. Viewing</option>
+                            <option value="NEGOTIATION" data-i18n="opt_stage_3">3. Offer & Negotiation</option>
+                            <option value="WON" data-i18n="opt_stage_4">4. Closed / Won 🏆</option>
+                            <option value="LOST" data-i18n="opt_stage_5">5. Closed / Lost ❌</option>
                         </select>
                     </div>
 
                     <div style="margin-bottom: 16px;">
-                        <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 6px;">Quick Transition / انتقال سريع:</span>
+                        <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 6px;" data-i18n="quick_transition">Quick Transition:</span>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             <button type="button" class="btn-sm" onclick="setDetailStage('QUALIFIED')">1. Qualification</button>
                             <button type="button" class="btn-sm" onclick="setDetailStage('VIEWING')">2. Viewing</button>
@@ -727,7 +785,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeOppDetailModal()" data-i18n="btn_cancel">Cancel</button>
-                    <button type="button" class="btn-sm" id="btn-detail-view-units" onclick="openLinkedUnitsFromDetail()">🏢 View Units</button>
+                    <button type="button" class="btn-sm" id="btn-detail-view-units" onclick="openLinkedUnitsFromDetail()" data-i18n="btn_view_units">🏢 View Units</button>
                     <button type="button" class="btn-sm" onclick="logActivityFromOppDetail()" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 600; cursor: pointer;" title="Log viewing, call, meeting or note for this deal">📝 + Activity</button>
                     <button type="button" class="btn-sm" onclick="logViewingFromOppDetail()" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; font-weight: 600; cursor: pointer;" title="Schedule viewing for this deal">👁️ + Viewing</button>
                     <button type="submit" class="btn-primary" data-i18n="btn_save_changes">Save Changes</button>
@@ -740,7 +798,7 @@
     <div class="modal-overlay" id="deal-activity-modal" style="z-index: 1200;">
         <div class="modal-box" style="max-width: 580px;">
             <div class="modal-header">
-                <h3>📝 <span>Log Deal Activity (تسجيل نشاط للصفقة)</span></h3>
+                <h3>📝 <span data-i18n="modal_deal_activity_title">Log Deal Activity</span></h3>
                 <button class="close-btn" onclick="closeDealActivityModal()">&times;</button>
             </div>
             <form id="deal-activity-form" onsubmit="submitDealActivity(event)">
@@ -763,32 +821,32 @@
 
                     <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                         <div class="form-group">
-                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Activity Type (نوع النشاط) *</label>
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_act_type">Activity Type *</label>
                             <select id="deal-act-type" required onchange="onDealActTypeChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                                <option value="VIEWING">👁️ Property Viewing (معاينة عقار)</option>
-                                <option value="MEETING">🤝 Client Meeting (اجتماع مع العميل)</option>
-                                <option value="CALL">📞 Phone Call (مكالمة هاتفية)</option>
-                                <option value="WHATSAPP">💬 WhatsApp Chat (مراسلة واتساب)</option>
-                                <option value="FOLLOW_UP">🔄 Follow-Up (متابعة واهتمام)</option>
-                                <option value="NOTE">📝 Internal Note (ملاحظة داخلية)</option>
+                                <option value="VIEWING" data-i18n="opt_act_viewing">👁️ Property Viewing</option>
+                                <option value="MEETING" data-i18n="opt_act_meeting">🤝 Client Meeting</option>
+                                <option value="CALL" data-i18n="opt_act_call">📞 Phone Call</option>
+                                <option value="WHATSAPP" data-i18n="opt_act_whatsapp">💬 WhatsApp Chat</option>
+                                <option value="FOLLOW_UP" data-i18n="opt_act_followup">🔄 Follow-Up</option>
+                                <option value="NOTE" data-i18n="opt_act_note">📝 Internal Note</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Status (حالة النشاط) *</label>
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_act_status">Status *</label>
                             <select id="deal-act-status" required style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
-                                <option value="COMPLETED" selected>✓ Completed (تم التنفيذ)</option>
-                                <option value="PLANNED">⏰ Planned / Scheduled (مجدول مستقبلاً)</option>
+                                <option value="COMPLETED" selected data-i18n="opt_act_completed">✓ Completed</option>
+                                <option value="PLANNED" data-i18n="opt_act_planned">⏰ Planned / Scheduled</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                         <div class="form-group">
-                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Date & Time (التاريخ والموعد)</label>
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_act_datetime">Date & Time</label>
                             <input type="datetime-local" id="deal-act-datetime" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
                         </div>
                         <div class="form-group">
-                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Assigned Agent (الوسيط المسؤول)</label>
+                            <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_opp_agent">Assigned Agent</label>
                             <select id="deal-act-agent" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
                                 <option value="">-- Unassigned --</option>
                             </select>
@@ -796,30 +854,30 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Subject / Summary (عنوان النشاط) *</label>
+                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_act_subject">Subject / Summary *</label>
                         <input type="text" id="deal-act-subject" placeholder="e.g. Conducted unit viewing with client" required style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Details & Outcome Notes (ملاحظات المعاينة أو النشاط)</label>
+                        <label style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px;" data-i18n="lbl_act_notes">Details & Outcome Notes</label>
                         <textarea id="deal-act-desc" rows="3" placeholder="Key outcomes, customer impressions, price feedback, or next steps..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em;"></textarea>
                     </div>
 
                     <div id="deal-act-advance-box" style="margin-bottom: 10px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88em; cursor: pointer; color: #166534; font-weight: 500;">
                             <input type="checkbox" id="deal-act-advance-stage" checked style="width: 16px; height: 16px; cursor: pointer;">
-                            <span>Move deal to <strong>Stage 2: Viewing (نقل الصفقة تلقائياً إلى مرحلة المعاينة)</strong></span>
+                            <span data-i18n="lbl_act_advance_stage">Move deal to Stage 2: Viewing</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid #e2e8f0;">
-                    <a id="deal-act-open-tasks-link" href="#" target="_blank" style="font-size: 0.8em; color: var(--primary); text-decoration: none;">
+                    <a id="deal-act-open-tasks-link" href="#" target="_blank" style="font-size: 0.8em; color: var(--primary); text-decoration: none;" data-i18n="open_tasks_hub">
                         Open full tasks & activities hub ➔
                     </a>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn-secondary" onclick="closeDealActivityModal()" data-i18n="btn_cancel">Cancel</button>
-                        <button type="submit" class="btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 600;">✓ Save Activity</button>
+                        <button type="submit" class="btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 600;" data-i18n="btn_save_activity">✓ Save Activity</button>
                     </div>
                 </div>
             </form>
@@ -905,9 +963,11 @@
                 nav_marketing: "Marketing & Campaigns",
                 nav_listings: "Property Listings",
                 nav_admin: "Admin & Governance", nav_api: "API Docs",
+                font_label: "🔤 Font:",
                 page_title: "Sales Pipeline Board",
                 tab_pipeline: "Pipeline Board",
                 tab_offers: "Purchase & Lease Offers",
+                opt_all_agents: "All Agents",
                 col_qual: "Qualification",
                 col_viewing: "Viewing",
                 col_neg: "Offer / Negotiation",
@@ -922,21 +982,73 @@
                 th_valid: "Valid Until",
                 th_actions: "Actions",
                 opt_all_offers: "All Offer Statuses",
-                btn_view_units: "View Units (الوحدات)",
+                opt_status_accepted: "Accepted",
+                opt_status_submitted: "Submitted",
+                opt_status_rejected: "Rejected",
+                opt_status_counter: "Counter Offer",
+                opt_status_pending_appr: "Pending Manager Approval",
+                modal_reserve_unit_title: "Reserve Property Unit",
+                lbl_res_cust: "Buyer / Customer:",
+                lbl_res_unit: "Unit Selected:",
+                lbl_res_deposit: "Earnest Deposit (SAR) *",
+                lbl_res_validity: "Lock Validity Period *",
+                lbl_res_notes: "Reservation Notes & Instructions",
+                btn_confirm_reserve: "🔒 Confirm & Lock Unit",
+                btn_new_offer: "New Offer",
+                btn_view_units: "🏢 View Units",
                 btn_refresh: "Refresh Pipeline",
                 btn_new_opp: "New Opportunity",
                 modal_opp_detail_title: "Opportunity Details & Stage Progression",
                 modal_new_opp_title: "New Sales Opportunity",
+                modal_new_offer_title: "Submit Formal Offer",
+                lbl_opp_prospect: "Opportunity / Customer *",
+                opt_select_opp: "-- Select Opportunity --",
+                lbl_target_unit: "Target Property Unit *",
+                opt_select_unit: "-- Select Unit --",
+                lbl_unit_asking: "Unit Asking Price:",
+                lbl_customer_max_budget: "Customer Max Budget:",
+                lbl_offer_amount: "Offer Amount (SAR) *",
+                lbl_offer_valid: "Valid Until *",
+                btn_submit_offer: "✓ Submit Formal Offer",
+                modal_opp_units_title: "Opportunity Units",
+                opt_stage_1: "1. Qualification",
+                opt_stage_2: "2. Viewing",
+                opt_stage_3: "3. Offer & Negotiation",
+                opt_stage_4: "4. Closed / Won 🏆",
+                opt_stage_5: "5. Closed / Lost ❌",
+                quick_transition: "Quick Transition:",
+                modal_deal_activity_title: "Log Deal Activity",
+                lbl_act_type: "Activity Type *",
+                opt_act_viewing: "👁️ Property Viewing",
+                opt_act_meeting: "🤝 Client Meeting",
+                opt_act_call: "📞 Phone Call",
+                opt_act_whatsapp: "💬 WhatsApp Chat",
+                opt_act_followup: "🔄 Follow-Up",
+                opt_act_note: "📝 Internal Note",
+                lbl_act_status: "Status *",
+                opt_act_completed: "✓ Completed",
+                opt_act_planned: "⏰ Planned / Scheduled",
+                lbl_act_datetime: "Date & Time",
+                lbl_act_subject: "Subject / Summary *",
+                lbl_act_notes: "Details & Outcome Notes",
+                lbl_act_advance_stage: "Move deal to Stage 2: Viewing automatically",
+                open_tasks_hub: "Open full tasks & activities hub ➔",
+                btn_save_activity: "✓ Save Activity",
                 lbl_select_customer: "Customer *",
                 lbl_related_lead: "Related Lead / Inquiry",
                 lbl_opp_stage: "Pipeline Stage *",
                 lbl_opp_agent: "Assigned Sales Agent",
                 lbl_expected_val: "Expected Deal Value (SAR)",
                 lbl_close_date: "Expected Close Date",
+                btn_situation: "Situation",
                 btn_save_changes: "Save Changes",
                 btn_cancel: "Cancel",
                 btn_create_opp: "Create Opportunity",
                 loading: "Loading data...",
+                nav_brand: "Al-Nemari Real Estate Services",
+                font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 lang_label: "عربي"
             },
             ar: {
@@ -952,9 +1064,15 @@
                 nav_marketing: "التسويق والحملات",
                 nav_listings: "العروض والإعلانات",
                 nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                font_label: "🔤 الخط:",
                 page_title: "مسار المبيعات والصفقات",
                 tab_pipeline: "مسار الصفقات (Pipeline)",
                 tab_offers: "عروض الشراء والتفاوض",
+                opt_all_agents: "جميع الوسطاء",
                 col_qual: "مرحلة التأهيل",
                 col_viewing: "معاينة العقار",
                 col_neg: "تقديم العرض والتفاوض",
@@ -969,17 +1087,65 @@
                 th_valid: "صالح حتى",
                 th_actions: "الإجراءات",
                 opt_all_offers: "جميع حالات العروض",
+                opt_status_accepted: "مقبول",
+                opt_status_submitted: "مقدّم",
+                opt_status_rejected: "مرفوض",
+                opt_status_counter: "عرض مضاد",
+                opt_status_pending_appr: "بانتظار موافقة المدير",
+                modal_reserve_unit_title: "حجز الوحدة العقارية",
+                lbl_res_cust: "المشتري / العميل:",
+                lbl_res_unit: "الوحدة المختارة:",
+                lbl_res_deposit: "مبلغ العربون المطلوب (ريال) *",
+                lbl_res_validity: "مهلة تثبيت الحجز *",
+                lbl_res_notes: "ملاحظات وإرشادات سداد العربون",
+                btn_confirm_reserve: "🔒 تثبيت وقفل حجز الوحدة",
+                btn_new_offer: "تقديم عرض جديد",
                 btn_view_units: "الوحدات المرتبطة",
                 btn_refresh: "تحديث المسار",
                 btn_new_opp: "فرصة جديدة",
                 modal_opp_detail_title: "تفاصيل الفرصة البيعية ومسار المرحلة",
                 modal_new_opp_title: "إنشاء فرصة بيعية جديدة",
+                modal_new_offer_title: "تقديم عرض سعر / شراء رسمي",
+                lbl_opp_prospect: "الصفقة / العميل *",
+                opt_select_opp: "-- اختر الصفقة --",
+                lbl_target_unit: "الوحدة العقارية المستهدفة *",
+                opt_select_unit: "-- اختر الوحدة --",
+                lbl_unit_asking: "السعر المطلوب للوحدة:",
+                lbl_customer_max_budget: "ميزانية العميل القصوى:",
+                lbl_offer_amount: "مبلغ العرض المقترح (ريال) *",
+                lbl_offer_valid: "سريان العرض حتى *",
+                btn_submit_offer: "✓ إرسال العرض الرسمي",
+                modal_opp_units_title: "الوحدات المرتبطة بالصفقة",
+                opt_stage_1: "1. تأهيل الطلب",
+                opt_stage_2: "2. المعاينات والزيارات",
+                opt_stage_3: "3. تقديم العروض والتفاوض",
+                opt_stage_4: "4. إتمام البيع بنجاح 🏆",
+                opt_stage_5: "5. صفقة خاسرة أو ملغاة ❌",
+                quick_transition: "انتقال سريع:",
+                modal_deal_activity_title: "تسجيل نشاط للصفقة",
+                lbl_act_type: "نوع النشاط *",
+                opt_act_viewing: "👁️ معاينة عقار",
+                opt_act_meeting: "🤝 اجتماع مع العميل",
+                opt_act_call: "📞 مكالمة هاتفية",
+                opt_act_whatsapp: "💬 مراسلة واتساب",
+                opt_act_followup: "🔄 متابعة واهتمام",
+                opt_act_note: "📝 ملاحظة داخلية",
+                lbl_act_status: "حالة النشاط *",
+                opt_act_completed: "✓ تم التنفيذ",
+                opt_act_planned: "⏰ مجدول مستقبلاً",
+                lbl_act_datetime: "التاريخ والموعد",
+                lbl_act_subject: "عنوان النشاط *",
+                lbl_act_notes: "ملاحظات المعاينة أو النشاط",
+                lbl_act_advance_stage: "نقل الصفقة تلقائياً إلى مرحلة المعاينة",
+                open_tasks_hub: "الانتقال لمركز المهام والأنشطة ➔",
+                btn_save_activity: "✓ حفظ وتوثيق النشاط",
                 lbl_select_customer: "اختيار العميل *",
                 lbl_related_lead: "الطلب / الاستفسار المرتبط",
                 lbl_opp_stage: "مرحلة الصفقة في المسار *",
                 lbl_opp_agent: "الوسيط المسؤول",
                 lbl_expected_val: "قيمة الصفقة المتوقعة (ريال)",
                 lbl_close_date: "تاريخ الإغلاق المتوقع",
+                btn_situation: "مسار المعاملة",
                 btn_save_changes: "حفظ التعديلات",
                 btn_cancel: "إلغاء",
                 btn_create_opp: "إنشاء الفرصة",
@@ -1058,7 +1224,7 @@
                 const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
                 const curVal = agSelect.value || urlAgent || '';
                 const isAr = currentLang === 'ar';
-                agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء (All Agents)' : 'All Agents (جميع الوسطاء)'}</option>` + 
+                agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` + 
                     refUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
                 if (curVal) {
                     agSelect.value = curVal;
@@ -1325,6 +1491,7 @@
                             </div>
                             <div style="display: flex; gap: 4px; margin-top: 8px; justify-content: space-between; align-items: center;" onclick="event.stopPropagation()">
                                 <div style="display: flex; gap: 4px;">
+                                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ oppId: '${o.opportunity_id}' })" title="Situation & Operational Journey / مسار المعاملة">📍 ${currentLang === 'ar' ? 'المسار' : 'Situation'}</button>
                                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')" title="View or assign units to this deal">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
                                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 7px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;" onclick="openDealActivityModal('${o.opportunity_id}')" title="Log viewing, call or meeting for this deal">📝 ${currentLang === 'ar' ? 'نشاط' : 'Activity'}</button>
                                 </div>
@@ -1997,30 +2164,42 @@
             }
         }
 
-        async function quickUpdateOfferStatus(offerId, newStatus, counterAmount = null) {
+        async function quickUpdateOfferStatus(offerId, decision, counterAmount = null) {
             const isAr = currentLang === 'ar';
-            const confirmMsg = newStatus === 'ACCEPTED' 
-                ? (isAr ? 'هل أنت متأكد من قبول هذا العرض؟ سيتم نقل الصفقة للمرحلة التالية.' : 'Accept this offer and progress deal to reservation/contract?')
-                : (newStatus === 'REJECTED' 
-                    ? (isAr ? 'هل أنت متأكد من رفض هذا العرض؟' : 'Reject this offer?') 
-                    : (isAr ? 'تأكيد إرسال العرض المضاد؟' : 'Confirm counter offer?'));
+            let confirmMsg = '';
+            if (decision === 'APPROVED') {
+                confirmMsg = isAr ? 'اعتماد العرض المالي المخفض كمدير وإرساله رسمياً للعميل؟' : 'Approve discounted offer as Manager and send to client?';
+            } else if (decision === 'ACCEPTED') {
+                confirmMsg = isAr ? 'هل أنت متأكد من قبول هذا العرض؟ سيتم نقل الصفقة لمرحلة الحجز وتوليد مهمة حجز الوحدة.' : 'Accept offer? Deal will advance and spawn unit reservation task.';
+            } else if (decision === 'REJECTED') {
+                confirmMsg = isAr ? 'هل أنت متأكد من رفض هذا العرض؟' : 'Reject this offer?';
+            } else if (decision === 'COUNTERED' || decision === 'COUNTER') {
+                confirmMsg = isAr ? 'تأكيد إرسال العرض المضاد؟' : 'Confirm counter offer?';
+            } else {
+                confirmMsg = isAr ? `تأكيد الإجراء (${decision})؟` : `Confirm action (${decision})?`;
+            }
 
             if (!confirm(confirmMsg)) return;
 
-            const payload = { status: newStatus };
-            if (counterAmount) payload.offer_amount = counterAmount;
+            const normDecision = (decision === 'COUNTER') ? 'COUNTERED' : decision;
+            const payload = { decision: normDecision };
+            if (counterAmount) payload.counter_amount = counterAmount;
 
             try {
-                const res = await fetch(`${API_BASE}/api/v1/offers/${offerId}`, {
-                    method: 'PATCH',
+                const res = await fetch(`${API_BASE}/api/v1/offers/${offerId}/record-decision`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!res.ok) throw new Error('Failed to update offer');
-                showToast(isAr ? `تم تحديث حالة العرض إلى ${newStatus}` : `Offer status updated to ${newStatus}`);
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to record offer decision');
+                }
+                showToast(isAr ? `تم تسجيل قرار العرض بنجاح (${normDecision})` : `Offer decision recorded (${normDecision})`);
                 fetchOffers();
+                fetchOpportunities();
             } catch (err) {
-                alert(err.message);
+                alert((isAr ? 'خطأ: ' : 'Error: ') + err.message);
             }
         }
 
@@ -2033,7 +2212,63 @@
                 alert(isAr ? 'قيمة غير صالحة' : 'Invalid amount');
                 return;
             }
-            quickUpdateOfferStatus(offerId, 'COUNTER', num);
+            quickUpdateOfferStatus(offerId, 'COUNTERED', num);
+        }
+
+        function openReserveUnitModal(oppId, unitId, custId, custName, unitNumber, agreedAmount) {
+            document.getElementById('res-opp-id').value = oppId || '';
+            document.getElementById('res-cust-id').value = custId || '';
+            document.getElementById('res-unit-id').value = unitId || '';
+            document.getElementById('res-disp-cust').textContent = custName || 'Customer';
+            document.getElementById('res-disp-unit').textContent = unitNumber ? `Unit ${unitNumber}` : 'Selected Unit';
+            
+            const defDeposit = agreedAmount ? Math.round(agreedAmount * 0.05) : 25000;
+            document.getElementById('res-deposit-input').value = defDeposit;
+            document.getElementById('res-notes-input').value = '';
+            document.getElementById('reserve-unit-modal').style.display = 'flex';
+        }
+
+        function closeReserveUnitModal() {
+            document.getElementById('reserve-unit-modal').style.display = 'none';
+        }
+
+        async function submitUnitReservation(e) {
+            e.preventDefault();
+            const oppId = document.getElementById('res-opp-id').value;
+            const custId = document.getElementById('res-cust-id').value;
+            const unitId = document.getElementById('res-unit-id').value;
+            const deposit = parseFloat(document.getElementById('res-deposit-input').value);
+            const validityHrs = parseInt(document.getElementById('res-validity-select').value || '48', 10);
+            const notes = document.getElementById('res-notes-input').value.trim();
+
+            const isAr = currentLang === 'ar';
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/reservations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        opportunity_id: oppId,
+                        customer_id: custId,
+                        unit_id: unitId,
+                        deposit_amount: deposit,
+                        expiry_hours: validityHrs,
+                        notes: notes
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to create reservation');
+                }
+
+                const json = await res.json();
+                closeReserveUnitModal();
+                showToast(isAr ? `تم حجز الوحدة بنجاح برقم (${json.data?.reservation_number || 'مؤكد'})!` : 'Unit reserved successfully!');
+                fetchOffers();
+                fetchOpportunities();
+            } catch (err) {
+                alert((isAr ? 'خطأ في حجز الوحدة: ' : 'Reservation error: ') + err.message);
+            }
         }
 
         async function fetchOffers() {
@@ -2079,11 +2314,19 @@
                 let badgeClass = 'badge-muted';
                 if (o.status === 'ACCEPTED') badgeClass = 'badge-success';
                 else if (o.status === 'REJECTED') badgeClass = 'badge-danger';
-                else if (o.status === 'COUNTER') badgeClass = 'badge-warning';
+                else if (o.status === 'COUNTER' || o.status === 'COUNTERED') badgeClass = 'badge-warning';
                 else if (o.status === 'SUBMITTED') badgeClass = 'badge-primary';
+                else if (o.status === 'PENDING_APPROVAL') badgeClass = 'badge-warning';
 
                 let actionBtns = '';
-                if (o.status === 'SUBMITTED') {
+                if (o.status === 'PENDING_APPROVAL') {
+                    actionBtns = `
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <button class="btn-sm" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'APPROVED')">✓ ${currentLang === 'ar' ? 'اعتماد المدير' : 'Approve'}</button>
+                            <button class="btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'REJECTED')">✕ ${currentLang === 'ar' ? 'رفض' : 'Reject'}</button>
+                        </div>
+                    `;
+                } else if (o.status === 'SUBMITTED') {
                     actionBtns = `
                         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                             <button class="btn-sm" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="quickUpdateOfferStatus('${o.offer_id}', 'ACCEPTED')">✓ ${currentLang === 'ar' ? 'قبول' : 'Accept'}</button>
@@ -2094,12 +2337,12 @@
                 } else if (o.status === 'ACCEPTED') {
                     actionBtns = `
                         <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                            <span style="font-size: 0.8em; color: #16a34a; font-weight: 700;">✓ ${currentLang === 'ar' ? 'عرض مقبول' : 'Accepted'}</span>
-                            <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'الحجز والعقد ➔' : 'Reservation ➔'}</a>
-                            <button class="btn-sm" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 7px; font-size: 0.78em; font-weight: 700;" onclick="viewOpportunityUnits('${o.opportunity_id}', '${o.customer_name || 'Opportunity'}')">🏢 ${currentLang === 'ar' ? 'الوحدات' : 'Units'}</button>
+                            <span style="font-size: 0.8em; color: #16a34a; font-weight: 700;">✓ ${currentLang === 'ar' ? 'مقبول' : 'Accepted'}</span>
+                            <button class="btn-sm" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="openReserveUnitModal('${o.opportunity_id}', '${o.unit_id}', '${o.customer_id}', '${(o.customer_name || '').replace(/'/g, "\\'")}', '${o.unit_number || ''}', ${o.offer_amount})">🔒 ${currentLang === 'ar' ? 'حجز الوحدة' : 'Reserve'}</button>
+                            <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'الحجز والعقد ➔' : 'Reservations ➔'}</a>
                         </div>
                     `;
-                } else if (o.status === 'COUNTER') {
+                } else if (o.status === 'COUNTER' || o.status === 'COUNTERED') {
                     actionBtns = `
                         <div style="display: flex; gap: 4px; align-items: center;">
                             <span style="font-size: 0.8em; color: #d97706; font-weight: 700;">⏳ ${currentLang === 'ar' ? 'بانتظار الرد' : 'Countered'}</span>
@@ -2300,7 +2543,7 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'بحث بالاسم / الرقم / المشروع' : 'Keyword / Unit # / Project'}</label>
-                                <input type="text" id="unit-filter-keyword" value="${savedKw}" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                <input type="text" id="unit-filter-keyword" value="${savedKw}" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyUnitFilters();}" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
                             </div>
 
                             <div>
@@ -2326,7 +2569,7 @@
 
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'أقصى ميزانية / سعر (ريال)' : 'Max Budget / Price (SAR)'}</label>
-                                <input type="number" id="unit-filter-maxprice" value="${savedMaxPrice}" placeholder="${isAr ? 'مثال: 750000' : 'e.g. 750000'}" oninput="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                <input type="number" id="unit-filter-maxprice" value="${savedMaxPrice}" placeholder="${isAr ? 'مثال: 750000' : 'e.g. 750000'}" oninput="applyUnitFilters()" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyUnitFilters();}" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
                             </div>
                         </div>
 
@@ -2401,9 +2644,14 @@
                 return `<div style="text-align: center; padding: 22px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم نموذج البحث أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the search form above to assign a unit.'}</div>`;
             }
             return `
-                <div style="font-weight: 700; font-size: 0.9em; margin-bottom: 8px; color: var(--navy); display: flex; align-items: center; gap: 6px;">
-                    <span>🏢</span>
-                    <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-weight: 700; font-size: 0.9em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                        <span>🏢</span>
+                        <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
+                    </div>
+                    <button type="button" class="btn-sm" onclick="sendMatchedPropertiesRecommendations('${oppId}')" style="background: #16a34a; color: white; border: none; font-weight: 600; padding: 6px 14px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Send WhatsApp Recommendations to client">
+                        <span>📲</span> <span>${isAr ? 'إرسال المقترحات عبر الواتساب (WhatsApp Recommendations)' : 'Send Recommendations via WhatsApp'}</span>
+                    </button>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
                     <thead>
@@ -2435,6 +2683,30 @@
                     </tbody>
                 </table>
             `;
+        }
+
+        async function sendMatchedPropertiesRecommendations(oppId) {
+            const isAr = currentLang === 'ar';
+            if (!confirm(isAr ? 'هل تود توثيق إرسال مقترحات هذه الوحدات للعميل عبر الواتساب وتوليد مهمة جدولة المعاينة الميدانية؟' : 'Send WhatsApp recommendations for these units and spawn a site visit scheduling task?')) {
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/present-units`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (res.ok) {
+                    alert(isAr ? '✓ تم إرسال توصيات الوحدات للعميل بنجاح عبر الواتساب وتوليد مهمة جدولة المعاينة الميدانية!' : 'Properties recommendations sent via WhatsApp and viewing schedule task generated!');
+                    document.getElementById('opp-units-modal').classList.remove('show');
+                    loadOpportunities();
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + (err.detail || JSON.stringify(err)));
+                }
+            } catch (e) {
+                alert('Network Error: ' + e.message);
+            }
         }
 
         function renderAssignedUnitsTable(oppId, oppTitle) {

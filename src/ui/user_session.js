@@ -98,6 +98,12 @@
         return getPageKeyFromHref(window.location.pathname);
     }
 
+    function isArabic() {
+        return (typeof currentLang !== 'undefined' && currentLang === 'ar') ||
+               (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') ||
+               (localStorage.getItem('recrm_lang') !== 'en');
+    }
+
     function canUserAccessPage(profile, pageHref) {
         const pageKey = getPageKeyFromHref(pageHref);
         const rule = PAGE_ACCESS_MAP[pageKey];
@@ -168,23 +174,41 @@
         const existingCard = document.getElementById('recrm-access-denied-container');
         if (existingCard) existingCard.remove();
 
+        const isAr = isArabic();
         const container = document.createElement('div');
         container.id = 'recrm-access-denied-container';
-        container.style.cssText = 'max-width: 860px; margin: 35px auto; padding: 0 20px; font-family: inherit; direction: rtl;';
+        container.style.cssText = `max-width: 860px; margin: 35px auto; padding: 0 20px; font-family: inherit; direction: ${isAr ? 'rtl' : 'ltr'};`;
 
         const isGuest = !currentUserProfile;
-        const userFullname = currentUserProfile ? currentUserProfile.full_name : 'غير مسجل الدخول (Guest)';
+        const userFullname = currentUserProfile ? currentUserProfile.full_name : (isAr ? 'غير مسجل الدخول' : 'Guest (Not Signed In)');
         const userId = currentUserProfile ? currentUserProfile.user_id : 'GUEST';
-        const branchName = currentUserProfile && currentUserProfile.branch_name ? currentUserProfile.branch_name : 'الإدارة العامة / غير مسند';
+        const branchName = currentUserProfile && currentUserProfile.branch_name ? currentUserProfile.branch_name : (isAr ? 'الإدارة العامة / غير مسند' : 'Headquarters / Unassigned');
         const userScope = currentUserProfile ? (currentUserProfile.effective_scope || 'GLOBAL') : 'NONE';
         const rolesList = currentUserProfile && currentUserProfile.roles && currentUserProfile.roles.length > 0 
             ? currentUserProfile.roles.map(r => r.name || r.role_code).join(', ') 
-            : 'لا يوجد';
+            : (isAr ? 'لا يوجد' : 'None');
 
         let scopeBg = '#10b981';
         if (userScope === 'OWN') scopeBg = '#f59e0b';
         else if (userScope === 'BRANCH') scopeBg = '#0284c7';
         else if (userScope === 'NONE') scopeBg = '#ef4444';
+
+        const pageName = isAr ? pageRule.nameAr : pageRule.nameEn;
+        const alertTitle = isAr ? '403 - غير مصرح بالوصول' : '403 - Access Denied';
+        const alertSub = isAr ? 'نظام التحكم المتقدم بالصلاحيات وعزل البيانات' : 'Role-Based Access Control & Multi-Tenant Isolation';
+        const explanation = isAr
+            ? `عذراً، الحساب النشط حالياً لا يمتلك الصلاحيات الإدارية أو الوظيفية للوصول إلى صفحة <strong style="color: #b91c1c; font-size: 1.1em;">${pageName}</strong>. يتم تقييد الوصول لهذه الصفحة التزاماً بسياسة حوكمة البيانات وعزل النطاقات التشغيلية في المنظمة.`
+            : `Sorry, your current account does not possess the permissions required to access <strong style="color: #b91c1c; font-size: 1.1em;">${pageName}</strong>. Access is restricted in accordance with data governance and scope isolation policies.`;
+
+        const identityTitle = isAr ? 'بيانات الجلسة والصلاحيات المسندة:' : 'Current Session Identity & Permissions:';
+        const lblActiveUser = isAr ? 'المستخدم النشط:' : 'Active User:';
+        const lblBranch = isAr ? 'الفرع التشغيلي:' : 'Operating Branch:';
+        const lblScope = isAr ? 'نطاق البيانات:' : 'Data Scope:';
+        const lblRoles = isAr ? 'الأدوار الممنوحة:' : 'Assigned Roles:';
+        const lblReqPerms = isAr ? '🔑 الصلاحيات المطلوبة لهذه الصفحة:' : '🔑 Required Permissions:';
+        const btnDashboard = isAr ? 'العودة للوحة المؤشرات الرئيسية' : 'Back to Dashboard';
+        const btnSwitch = isAr ? 'تبديل المستخدم' : 'Switch User';
+        const btnSignOut = isAr ? 'تسجيل الخروج' : 'Sign Out';
 
         container.innerHTML = `
             <div style="background: #ffffff; border: 2px solid #fecaca; border-radius: 16px; box-shadow: 0 12px 30px -5px rgba(220, 38, 38, 0.16); overflow: hidden;">
@@ -193,8 +217,8 @@
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <span style="font-size: 2.2em; background: rgba(255,255,255,0.2); width: 54px; height: 54px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🛡️🚫</span>
                         <div>
-                            <div style="font-size: 1.35em; font-weight: 800; letter-spacing: -0.3px;">403 - غير مصرح بالوصول / Access Denied</div>
-                            <div style="font-size: 0.88em; opacity: 0.92; margin-top: 3px;">نظام التحكم المتقدم بالصلاحيات وعزل البيانات (RBAC & Multi-Tenant Isolation)</div>
+                            <div style="font-size: 1.35em; font-weight: 800; letter-spacing: -0.3px;">${alertTitle}</div>
+                            <div style="font-size: 0.88em; opacity: 0.92; margin-top: 3px;">${alertSub}</div>
                         </div>
                     </div>
                     <span style="background: rgba(0,0,0,0.3); color: #fff; padding: 5px 14px; border-radius: 20px; font-size: 0.82em; font-weight: 800; letter-spacing: 0.5px;">HTTP 403 FORBIDDEN</span>
@@ -203,52 +227,50 @@
                 <!-- Explanation Body -->
                 <div style="padding: 26px 28px;">
                     <div style="font-size: 1.05em; color: #1e293b; line-height: 1.8; margin-bottom: 22px;">
-                        عذراً، الحساب النشط حالياً لا يمتلك الصلاحيات الإدارية أو الوظيفية للوصول إلى صفحة 
-                        <strong style="color: #b91c1c; font-size: 1.1em;">${pageRule.nameAr} (${pageRule.nameEn})</strong>.
-                        يتم تقييد الوصول لهذه الصفحة التزاماً بسياسة حوكمة البيانات وعزل النطاقات التشغيلية في المنظمة.
+                        ${explanation}
                     </div>
 
                     <!-- User Identity & Security Context Box -->
                     <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
                         <div style="font-weight: 700; color: #0f172a; margin-bottom: 12px; font-size: 0.95em; display: flex; align-items: center; gap: 8px;">
-                            <span>👤</span> <span>بيانات الجلسة والصلاحيات المسندة (Current Session Identity):</span>
+                            <span>👤</span> <span>${identityTitle}</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; font-size: 0.88em;">
                             <div>
-                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">المستخدم النشط:</span>
+                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">${lblActiveUser}</span>
                                 <strong>${userFullname}</strong> <span style="font-size: 0.85em; color: #64748b;">(${userId})</span>
                             </div>
                             <div>
-                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">الفرع التشغيلي:</span>
+                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">${lblBranch}</span>
                                 <strong>🏢 ${branchName}</strong>
                             </div>
                             <div>
-                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">نطاق البيانات:</span>
+                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">${lblScope}</span>
                                 <span style="background: ${scopeBg}; color: white; padding: 3px 9px; border-radius: 4px; font-weight: 700; font-size: 0.84em;">${userScope}</span>
                             </div>
                             <div>
-                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">الأدوار الممنوحة:</span>
+                                <span style="color: #64748b; display: block; font-size: 0.84em; margin-bottom: 2px;">${lblRoles}</span>
                                 <strong style="color: #0369a1;">${rolesList}</strong>
                             </div>
                         </div>
 
                         <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 0.86em; color: #475569; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-weight: 700; color: #0f172a;">🔑 الصلاحيات المطلوبة لهذه الصفحة:</span>
-                            <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${(pageRule.permissions || []).join(' أو ')}</span>
+                            <span style="font-weight: 700; color: #0f172a;">${lblReqPerms}</span>
+                            <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${(pageRule.permissions || []).join(isAr ? ' أو ' : ' OR ')}</span>
                         </div>
                     </div>
 
                     <!-- Fast Recovery Actions -->
                     <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
                         <a href="index.html" class="btn" style="background: #0284c7; color: white; text-decoration: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 0.9em; display: inline-flex; align-items: center; gap: 8px;">
-                            <span>🏠</span> <span>العودة للوحة المؤشرات الرئيسية (Dashboard)</span>
+                            <span>🏠</span> <span>${btnDashboard}</span>
                         </a>
                         <button type="button" onclick="window.openUserProfileModal()" class="btn" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                            <span>🔄</span> <span>تبديل المستخدم / Sign In</span>
+                            <span>🔄</span> <span>${btnSwitch}</span>
                         </button>
                         ${!isGuest ? `
                         <button type="button" onclick="window.signOutUser()" class="btn" style="background: #dc2626; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                            <span>🚪</span> <span>خروج (Sign Out)</span>
+                            <span>🚪</span> <span>${btnSignOut}</span>
                         </button>` : ''}
                     </div>
                 </div>
@@ -442,7 +464,9 @@
     function renderSignedOutHeader() {
         const nameDisplay = document.getElementById('user-name-display');
         if (nameDisplay) {
-            nameDisplay.innerHTML = `<span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 0.85em; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🚪 غير مسجل الدخول (اضغط لتسجيل الدخول / Sign In)</span>`;
+            const isAr = isArabic();
+            const label = isAr ? '🚪 غير مسجل الدخول (اضغط لتسجيل الدخول)' : '🚪 Not Signed In (Click to Sign In)';
+            nameDisplay.innerHTML = `<span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 0.85em; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${label}</span>`;
         }
     }
 
@@ -453,48 +477,56 @@
         const userId = currentUserProfile.user_id;
         const userName = currentUserProfile.full_name;
         const branchName = currentUserProfile.branch_name || '';
+        const isAr = isArabic();
 
         // 1. Sales Pipeline Page filter
         const oppAgFilter = document.getElementById('opp-agent-filter');
         if (oppAgFilter && isOwn) {
-            oppAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - صفقاتي فقط</option>`;
+            oppAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'صفقاتي فقط' : 'My Deals Only'}</option>`;
             oppAgFilter.disabled = true;
             if (typeof filterOpportunities === 'function') filterOpportunities();
-            showScopeNotificationBanner(`🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض الصفقات والفرص البيعية المسندة إليك فقط (${userName}).`);
+            showScopeNotificationBanner(isAr 
+                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض الصفقات والفرص البيعية المسندة إليك فقط (${userName}).`
+                : `🔒 Personal Data Isolation Active: Showing deals and opportunities assigned to you only (${userName}).`);
         }
 
         // 2. Leads Page filter
         const leadAgFilter = document.getElementById('agent-filter');
         if (leadAgFilter && isOwn) {
-            leadAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - طلباتي فقط</option>`;
+            leadAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'طلباتي فقط' : 'My Leads Only'}</option>`;
             leadAgFilter.disabled = true;
             if (typeof fetchLeads === 'function') fetchLeads(1);
-            showScopeNotificationBanner(`🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء والطلبات المسندة إليك فقط (${userName}).`);
+            showScopeNotificationBanner(isAr 
+                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء والطلبات المسندة إليك فقط (${userName}).`
+                : `🔒 Personal Data Isolation Active: Showing inquiries and leads assigned to you only (${userName}).`);
         }
 
         // 3. Tasks Page filter
         const taskAgFilter = document.getElementById('task-agent-filter');
         if (taskAgFilter && isOwn) {
-            taskAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - مهامي فقط</option>`;
+            taskAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'مهامي فقط' : 'My Tasks Only'}</option>`;
             taskAgFilter.disabled = true;
             if (typeof loadTasks === 'function') loadTasks();
+            if (typeof loadActivities === 'function') loadActivities();
             if (typeof loadSummary === 'function') loadSummary();
-            showScopeNotificationBanner(`🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض المهام والمتابعات المسندة إليك فقط (${userName}).`);
+            showScopeNotificationBanner(isAr 
+                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض المهام والمتابعات المسندة إليك فقط (${userName}).`
+                : `🔒 Personal Data Isolation Active: Showing tasks and follow-ups assigned to you only (${userName}).`);
         }
 
-        // 4. Properties Page filter
+        // 4. Properties Page: Property Inventory is open to all sales agents to market & match for leads
         const unitAgFilter = document.getElementById('unit-agent-filter');
-        if (unitAgFilter && isOwn) {
-            unitAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - وحداتي فقط</option>`;
-            unitAgFilter.disabled = true;
-            if (typeof fetchUnits === 'function') fetchUnits();
-            showScopeNotificationBanner(`🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض الوحدات العقارية المسندة إليك فقط (${userName}).`);
+        if (unitAgFilter) {
+            // Keep filter unlocked so agents can view full inventory or optionally filter by agent
+            unitAgFilter.disabled = false;
         }
 
         // 5. Customers Page (customers.html)
         const curPage = getCurrentPageKey();
         if (curPage === 'customers.html' && isOwn) {
-            showScopeNotificationBanner(`🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء المرتبطين بطلباتك ووحداتك وصفقاتك المسندة إليك فقط (${userName}).`);
+            showScopeNotificationBanner(isAr 
+                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء المرتبطين بطلباتك ووحداتك وصفقاتك المسندة إليك فقط (${userName}).`
+                : `🔒 Personal Data Isolation Active: Showing customers linked to your assigned records only (${userName}).`);
         }
 
         // 6. Dashboard Page (index.html)
@@ -502,9 +534,26 @@
             if (isOwn) {
                 dashboardState.userId = userId;
                 setDashboardScope('OWN');
+                const btnGlobal = document.getElementById('btn-scope-GLOBAL');
+                const btnBranch = document.getElementById('btn-scope-BRANCH');
+                const btnTeam = document.getElementById('btn-scope-TEAM');
+                const bSel = document.getElementById('dash-branch-select');
+                const aSel = document.getElementById('dash-agent-select');
+                if (btnGlobal) btnGlobal.style.display = 'none';
+                if (btnBranch) btnBranch.style.display = 'none';
+                if (btnTeam) btnTeam.style.display = 'none';
+                if (bSel) bSel.style.display = 'none';
+                if (aSel) aSel.style.display = 'none';
+                showScopeNotificationBanner(isAr 
+                    ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم استعراض لوحة التحكم الخاصة بك فقط (${userName}).`
+                    : `🔒 Personal Data Isolation Active: Displaying your personal dashboard metrics only (${userName}).`);
             } else if (isBranch && currentUserProfile.branch_id) {
                 dashboardState.branchId = currentUserProfile.branch_id;
                 setDashboardScope('BRANCH');
+                const btnGlobal = document.getElementById('btn-scope-GLOBAL');
+                if (btnGlobal) btnGlobal.style.display = 'none';
+                const bSel = document.getElementById('dash-branch-select');
+                if (bSel) bSel.disabled = true;
             }
         }
     }
@@ -515,6 +564,9 @@
         const banner = document.createElement('div');
         banner.id = 'recrm-scope-banner';
         banner.style.cssText = 'background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e3a8a; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.88em; font-weight: 600; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04); flex-wrap: wrap; gap: 8px;';
+        const isAr = isArabic();
+        const btnSwitchText = isAr ? '🔄 تبديل المستخدم' : '🔄 Switch User';
+        const btnAdminText = isAr ? 'العودة لمدير النظام (user-51)' : 'Back to Admin (user-51)';
         banner.innerHTML = `
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 1.2em;">🛡️</span>
@@ -522,10 +574,10 @@
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <button type="button" onclick="window.openUserProfileModal()" style="background: #0284c7; color: white; border: none; border-radius: 4px; padding: 5px 12px; font-size: 0.82em; cursor: pointer; font-weight: 700;">
-                    🔄 تبديل المستخدم / Sign In
+                    ${btnSwitchText}
                 </button>
                 <button type="button" onclick="window.switchActiveUser('user-51')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 5px 12px; font-size: 0.82em; cursor: pointer; font-weight: 700;">
-                    العودة لمدير النظام (user-51)
+                    ${btnAdminText}
                 </button>
             </div>
         `;
@@ -537,20 +589,40 @@
     }
 
     function ensureUserProfileModal() {
-        if (document.getElementById('user-profile-modal')) return;
+        const isAr = isArabic();
+        let modalDiv = document.getElementById('user-profile-modal');
+        if (modalDiv) {
+            const curLang = modalDiv.getAttribute('data-lang');
+            if (curLang === (isAr ? 'ar' : 'en')) return;
+            modalDiv.remove();
+        }
 
-        const modalDiv = document.createElement('div');
+        modalDiv = document.createElement('div');
         modalDiv.id = 'user-profile-modal';
+        modalDiv.setAttribute('data-lang', isAr ? 'ar' : 'en');
         modalDiv.className = 'modal-overlay';
-        modalDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 2000;';
+        modalDiv.style.cssText = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 2000; direction: ${isAr ? 'rtl' : 'ltr'};`;
         modalDiv.onclick = function(e) { if (e.target === modalDiv) window.closeUserProfileModal(); };
+
+        const modalTitle = isAr ? 'ملف المستخدم والأدوار وتسجيل الدخول' : 'User Profile & Authentication';
+        const lblBranch = isAr ? 'الفرع:' : 'Branch:';
+        const lblScope = isAr ? 'نطاق البيانات:' : 'Data Scope:';
+        const lblRoles = isAr ? 'الأدوار:' : 'Assigned Roles:';
+        const lblSwitch = isAr ? '🔄 تسجيل الدخول وتبديل المستخدم:' : '🔄 Switch Active User / Sign In:';
+        const tipSwitch = isAr ? '💡 القائمة مرتبة ومجمعة حسب الفروع 🏢. عند اختيار أي مستخدم والضغط على <strong>تسجيل الدخول / تبديل</strong>، سيتم تحديث جميع الصفحات فوراً.' : '💡 Grouped by branch 🏢. Selecting a user and clicking <strong>Switch User</strong> updates all pages immediately.';
+        const optLoading = isAr ? 'جاري تحميل المستخدمين والفروع...' : 'Loading users and branches...';
+        const btnSwitchText = isAr ? 'تسجيل الدخول / تبديل' : 'Switch User';
+        const btnSignOutText = isAr ? 'خروج' : 'Sign Out';
+        const lblPerms = isAr ? '📋 الصلاحيات الممنوحة للمستخدم الحالي:' : '📋 Active Granted Permissions:';
+        const adminText = isAr ? 'المدير العام الافتراضي: <strong>user-51</strong> (فهد خضر النمري)' : 'Default Administrator: <strong>user-51</strong> (Fahad Khader Alnemari)';
+        const btnCloseText = isAr ? 'إغلاق' : 'Close';
 
         modalDiv.innerHTML = `
             <div class="modal-box" style="max-width: 780px; width: 95%; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25); overflow: hidden; font-family: inherit;">
                 <div style="padding: 16px 20px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center;">
                     <div style="font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
                         <span>🛡️</span>
-                        <span>ملف المستخدم والأدوار وتسجيل الدخول (User Profile & Authentication)</span>
+                        <span>${modalTitle}</span>
                     </div>
                     <button onclick="window.closeUserProfileModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4em; cursor: pointer; line-height: 1;">&times;</button>
                 </div>
@@ -573,15 +645,15 @@
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.85em; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
                             <div>
-                                <span style="color: #64748b; font-size: 0.82em;">الفرع (Branch):</span>
+                                <span style="color: #64748b; font-size: 0.82em;">${lblBranch}</span>
                                 <strong id="modal-user-branch" style="display: block; color: #0f172a; font-size: 0.95em;">--</strong>
                             </div>
                             <div>
-                                <span style="color: #64748b; font-size: 0.82em;">نطاق البيانات (Data Scope):</span>
+                                <span style="color: #64748b; font-size: 0.82em;">${lblScope}</span>
                                 <strong id="modal-user-scope" style="display: block; color: #7c3aed; font-size: 0.95em;">GLOBAL</strong>
                             </div>
                             <div>
-                                <span style="color: #64748b; font-size: 0.82em;">الأدوار (Assigned Roles):</span>
+                                <span style="color: #64748b; font-size: 0.82em;">${lblRoles}</span>
                                 <div id="modal-user-roles" style="margin-top: 3px;">--</div>
                             </div>
                         </div>
@@ -590,20 +662,20 @@
                     <!-- Fast User Switcher & Sign In / Out -->
                     <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px 16px; margin-bottom: 18px;">
                         <label style="display: block; font-size: 0.9em; font-weight: 700; color: #1e3a8a; margin-bottom: 4px;">
-                            🔄 تسجيل الدخول وتبديل المستخدم (Sign In / Switch Active User):
+                            ${lblSwitch}
                         </label>
                         <div style="font-size: 0.8em; color: #475569; margin-bottom: 10px;">
-                            💡 القائمة مرتبة ومجمعة حسب الفروع 🏢. عند اختيار أي مستخدم والضغط على <strong>تسجيل الدخول / تبديل</strong>، سيتم تحديث جميع الصفحات والنوافذ المفتوحة فوراً لتعكس بيانات ونطاق ذلك المستخدم.
+                            ${tipSwitch}
                         </div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                             <select id="modal-user-switch-select" style="flex: 1; min-width: 320px; padding: 9px 12px; border-radius: 6px; border: 1.5px solid #93c5fd; font-size: 0.88em; background: white; font-weight: 500;">
-                                <option value="">جاري تحميل المستخدمين والفروع...</option>
+                                <option value="">${optLoading}</option>
                             </select>
                             <button type="button" class="btn" onclick="window.switchActiveUser()" style="padding: 9px 18px; font-size: 0.88em; background: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <span>🔑</span> <span>تسجيل الدخول / تبديل</span>
+                                <span>🔑</span> <span>${btnSwitchText}</span>
                             </button>
-                            <button type="button" class="btn" onclick="window.signOutUser()" style="padding: 9px 14px; font-size: 0.88em; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="تسجيل الخروج من الجلسة الحالية">
-                                <span>🚪</span> <span>خروج (Sign Out)</span>
+                            <button type="button" class="btn" onclick="window.signOutUser()" style="padding: 9px 14px; font-size: 0.88em; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Sign out">
+                                <span>🚪</span> <span>${btnSignOutText}</span>
                             </button>
                         </div>
                     </div>
@@ -611,7 +683,7 @@
                     <!-- Granted Permissions Section -->
                     <div>
                         <div style="font-weight: 700; font-size: 0.95em; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                            <span>📋 الصلاحيات الممنوحة للمستخدم الحالي (Active Permissions):</span>
+                            <span>${lblPerms}</span>
                             <span id="modal-perm-count-badge" style="font-size: 0.8em; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 700;">--</span>
                         </div>
                         <div id="modal-user-permissions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; padding: 2px;">
@@ -622,9 +694,9 @@
 
                 <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                     <div style="font-size: 0.82em; color: #64748b;">
-                        المدير العام الافتراضي: <strong>user-51</strong> (فهد خضر النمري)
+                        ${adminText}
                     </div>
-                    <button type="button" onclick="window.closeUserProfileModal()" style="background: #64748b; color: white; border: none; border-radius: 6px; padding: 6px 16px; cursor: pointer; font-weight: 600;">إغلاق (Close)</button>
+                    <button type="button" onclick="window.closeUserProfileModal()" style="background: #64748b; color: white; border: none; border-radius: 6px; padding: 6px 16px; cursor: pointer; font-weight: 600;">${btnCloseText}</button>
                 </div>
             </div>
         `;
@@ -636,13 +708,14 @@
         if (!currentUserProfile) await loadUserProfile();
         const modal = document.getElementById('user-profile-modal');
         if (!modal) return;
+        const isAr = isArabic();
         
         if (currentUserProfile) {
             document.getElementById('modal-user-fullname').textContent = currentUserProfile.full_name || '--';
             document.getElementById('modal-user-id').textContent = currentUserProfile.user_id || '--';
             document.getElementById('modal-user-email').textContent = currentUserProfile.email || '--';
             document.getElementById('modal-user-mobile').textContent = currentUserProfile.mobile || '--';
-            document.getElementById('modal-user-branch').textContent = currentUserProfile.branch_name || 'الإدارة العامة / غير مسند';
+            document.getElementById('modal-user-branch').textContent = currentUserProfile.branch_name || (isAr ? 'الإدارة العامة / غير مسند' : 'Headquarters / Unassigned');
             document.getElementById('modal-user-scope').textContent = currentUserProfile.effective_scope || 'GLOBAL';
             const statusBadge = document.getElementById('modal-user-status-badge');
             if (statusBadge) {
@@ -673,9 +746,9 @@
             }
         } else {
             // Signed out state display
-            document.getElementById('modal-user-fullname').textContent = 'غير مسجل الدخول (Signed Out)';
+            document.getElementById('modal-user-fullname').textContent = isAr ? 'غير مسجل الدخول' : 'Not Signed In';
             document.getElementById('modal-user-id').textContent = 'GUEST';
-            document.getElementById('modal-user-email').textContent = 'يرجى اختيار مستخدم لتسجيل الدخول';
+            document.getElementById('modal-user-email').textContent = isAr ? 'يرجى اختيار مستخدم لتسجيل الدخول' : 'Please select a user to sign in';
             document.getElementById('modal-user-mobile').textContent = '--';
             document.getElementById('modal-user-branch').textContent = '--';
             document.getElementById('modal-user-scope').textContent = 'NONE';
@@ -686,9 +759,9 @@
                 statusBadge.style.color = '#991b1b';
             }
             const rolesWrap = document.getElementById('modal-user-roles');
-            if (rolesWrap) rolesWrap.innerHTML = '<span style="color: #64748b;">لا يوجد</span>';
+            if (rolesWrap) rolesWrap.innerHTML = `<span style="color: #64748b;">${isAr ? 'لا يوجد' : 'None'}</span>`;
             const permsWrap = document.getElementById('modal-user-permissions');
-            if (permsWrap) permsWrap.innerHTML = '<div style="color: #64748b;">قم بتسجيل الدخول لمعاينة الصلاحيات</div>';
+            if (permsWrap) permsWrap.innerHTML = `<div style="color: #64748b;">${isAr ? 'قم بتسجيل الدخول لمعاينة الصلاحيات' : 'Sign in to view permissions'}</div>`;
         }
 
         // Populate switch user select grouped by branch
@@ -706,7 +779,7 @@
                     users.forEach(u => {
                         const bName = u.branch_name 
                             ? `${u.branch_name} (${u.branch_code || ''})` 
-                            : 'الإدارة العامة / غير مسند لفرع';
+                            : (isAr ? 'الإدارة العامة / غير مسند لفرع' : 'Headquarters / Unassigned Branch');
                         if (!branchesMap[bName]) branchesMap[bName] = [];
                         branchesMap[bName].push(u);
                     });
@@ -718,10 +791,10 @@
                             const rolesStr = (u.role_names && u.role_names.length > 0) ? u.role_names.join(', ') : (u.roles || []).join(', ');
                             const scope = u.effective_scope || 'GLOBAL';
                             let scopeLabel = `[${scope}]`;
-                            if (scope === 'OWN') scopeLabel = '[🔒 OWN - بياناته فقط]';
-                            else if (scope === 'BRANCH') scopeLabel = '[🏢 BRANCH - فرعه فقط]';
-                            else if (scope === 'TEAM') scopeLabel = '[👥 TEAM - فريقه فقط]';
-                            else if (scope === 'GLOBAL') scopeLabel = '[🌐 GLOBAL - شامل]';
+                            if (scope === 'OWN') scopeLabel = isAr ? '[🔒 OWN - بياناته فقط]' : '[🔒 OWN - Personal Only]';
+                            else if (scope === 'BRANCH') scopeLabel = isAr ? '[🏢 BRANCH - فرعه فقط]' : '[🏢 BRANCH - Branch Only]';
+                            else if (scope === 'TEAM') scopeLabel = isAr ? '[👥 TEAM - فريقه فقط]' : '[👥 TEAM - Team Only]';
+                            else if (scope === 'GLOBAL') scopeLabel = isAr ? '[🌐 GLOBAL - شامل]' : '[🌐 GLOBAL - All Branches]';
 
                             const activeUid = currentUserProfile ? currentUserProfile.user_id : '';
                             const isSelected = u.user_id === activeUid ? 'selected' : '';
@@ -760,7 +833,9 @@
     };
 
     window.signOutUser = function() {
-        if (!confirm('هل تريد تأكيد تسجيل الخروج من الحساب الحالي؟\nDo you want to sign out from the current user session?')) return;
+        const isAr = isArabic();
+        const msg = isAr ? 'هل تريد تأكيد تسجيل الخروج من الحساب الحالي؟' : 'Do you want to sign out from the current user session?';
+        if (!confirm(msg)) return;
         localStorage.setItem('recrm_user_id', 'GUEST');
         if (sessionChannel) {
             sessionChannel.postMessage({ type: 'USER_SIGNED_OUT' });

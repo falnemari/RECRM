@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends
 import asyncpg
@@ -35,8 +35,34 @@ async def list_lead_sources(conn: asyncpg.Connection = Depends(get_db)):
     )
 
 @router.get("/users", response_model=CollectionEnvelope[Dict[str, Any]])
-async def list_users(conn: asyncpg.Connection = Depends(get_db)):
-    rows = await conn.fetch("SELECT user_id, employee_no, full_name, email, mobile, status FROM users WHERE status = 'ACTIVE' ORDER BY full_name")
+async def list_users(
+    city_id: Optional[str] = None,
+    branch_id: Optional[str] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    conditions = ["u.status = 'ACTIVE'"]
+    params = []
+    p_idx = 1
+    if city_id:
+        conditions.append(f"b.city_id = ${p_idx}")
+        params.append(city_id)
+        p_idx += 1
+    if branch_id:
+        conditions.append(f"u.branch_id = ${p_idx}")
+        params.append(branch_id)
+        p_idx += 1
+
+    where_clause = " AND ".join(conditions)
+    query = f"""
+        SELECT 
+            u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status,
+            u.branch_id, b.name AS branch_name, b.city_id
+        FROM users u
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        WHERE {where_clause}
+        ORDER BY u.full_name
+    """
+    rows = await conn.fetch(query, *params)
     data = [dict(row) for row in rows]
     return CollectionEnvelope(
         data=data,

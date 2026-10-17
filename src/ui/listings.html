@@ -332,7 +332,7 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span class="badge-header" data-i18n="badge_listings">Listings & Syndication</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -343,12 +343,12 @@
                 </div>
             </div>
             <div class="font-selector-wrap" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em; margin-inline-end: 8px;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" class="arabic-font-select" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="lang-label">عربي</span></button>
@@ -375,8 +375,8 @@
 
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Real Estate Services, Marketing & Property Management</div>
     </div>
 
     <div class="content">
@@ -420,9 +420,9 @@
             </select>
             <select id="filter-status" onchange="fetchListings()">
                 <option value="" data-i18n="opt_all_status">All Statuses</option>
-                <option value="PUBLISHED">PUBLISHED (منشور نشط)</option>
-                <option value="PAUSED">PAUSED (متوقف مؤقتاً)</option>
-                <option value="EXPIRED">EXPIRED (منتهي الصلاحية)</option>
+                <option value="PUBLISHED" data-i18n="opt_published">PUBLISHED</option>
+                <option value="PAUSED" data-i18n="opt_paused">PAUSED</option>
+                <option value="EXPIRED" data-i18n="opt_expired">EXPIRED</option>
             </select>
             <button class="btn btn-primary" onclick="openNewListingModal()" data-i18n="btn_new_listing">+ New Listing</button>
         </div>
@@ -470,9 +470,9 @@
                         <div class="form-group">
                             <label data-i18n="lbl_source">Listing Channel *</label>
                             <select id="fl-source" required>
-                                <option value="WEBSITE">Direct Website</option>
-                                <option value="PORTAL_A">Portal A (Aqar / عقار)</option>
-                                <option value="PORTAL_B">Portal B (Bayut / بيوت)</option>
+                                <option value="WEBSITE" data-i18n="opt_chan_website">Direct Website</option>
+                                <option value="PORTAL_A" data-i18n="opt_chan_portal_a">Portal A (Aqar)</option>
+                                <option value="PORTAL_B" data-i18n="opt_chan_portal_b">Portal B (Bayut)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -482,7 +482,7 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_title_ar">Listing Title (Arabic) *</label>
-                        <input type="text" id="fl-title-ar" required placeholder="مثال: شقة فاخرة للإيجار بحي الملقا">
+                        <input type="text" id="fl-title-ar" required placeholder="e.g. Luxury Apartment in Al-Malqa (Arabic)" data-i18n-placeholder="ph_title_ar">
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_title_en">Listing Title (English) *</label>
@@ -490,7 +490,7 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_desc_ar">Marketing Description (Arabic)</label>
-                        <textarea id="fl-desc-ar" rows="3" placeholder="وصف تفصيلي لمزايا العقار والموقع والخدمات"></textarea>
+                        <textarea id="fl-desc-ar" rows="3" placeholder="Detailed marketing description (Arabic)" data-i18n-placeholder="ph_desc_ar"></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -500,8 +500,8 @@
                         <div class="form-group">
                             <label data-i18n="lbl_status">Initial Status</label>
                             <select id="fl-status">
-                                <option value="PUBLISHED">PUBLISHED (نشر فوري)</option>
-                                <option value="PAUSED">PAUSED (مسودة غير منشورة)</option>
+                                <option value="PUBLISHED" data-i18n="opt_init_published">PUBLISHED (Immediate)</option>
+                                <option value="PAUSED" data-i18n="opt_init_paused">PAUSED (Draft)</option>
                             </select>
                         </div>
                     </div>
@@ -540,6 +540,14 @@
 
         const i18nData = {
             en: {
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 badge_listings: "Listings & Syndication",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
                 nav_properties: "Properties", nav_sales: "Sales Pipeline", nav_finance: "Finance & Contracts",
@@ -549,18 +557,37 @@
                 kpi_portal_sub: "Broadcasted to external channels", kpi_direct_web: "Direct Website Listings",
                 kpi_website_sub: "Published on corporate website", kpi_paused: "Paused / Drafts",
                 opt_all_sources: "All Channels", opt_all_status: "All Statuses",
+                opt_published: "PUBLISHED",
+                opt_paused: "PAUSED",
+                opt_expired: "EXPIRED",
                 btn_new_listing: "+ New Listing",
                 th_unit: "Unit # & Type", th_title: "Listing Title", th_project_city: "Project & City",
                 th_pricing: "Asking / Rent Price", th_specs: "Specs (Beds/Area)", th_channel: "Channel",
                 th_status: "Status", th_dates: "Published Dates", th_actions: "Actions",
                 modal_new_listing_title: "Publish New Property Listing", lbl_select_unit: "Select Inventory Unit *",
                 lbl_source: "Listing Channel *", lbl_ext_id: "External Reference ID",
+                opt_chan_website: "Direct Website",
+                opt_chan_portal_a: "Portal A (Aqar)",
+                opt_chan_portal_b: "Portal B (Bayut)",
                 lbl_title_ar: "Listing Title (Arabic) *", lbl_title_en: "Listing Title (English) *",
                 lbl_desc_ar: "Marketing Description (Arabic)", lbl_expiry: "Expiration Date",
-                lbl_status: "Initial Status", btn_cancel: "Cancel", btn_save_listing: "Publish Listing",
+                lbl_status: "Initial Status",
+                opt_init_published: "PUBLISHED (Immediate)",
+                opt_init_paused: "PAUSED (Draft)",
+                ph_title_ar: "e.g. Luxury Apartment in Al-Malqa (Arabic)",
+                ph_desc_ar: "Detailed marketing description (Arabic)",
+                btn_cancel: "Cancel", btn_save_listing: "Publish Listing",
                 btn_close: "Close", lang_label: "عربي"
             },
             ar: {
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
                 badge_listings: "الإعلانات والنشر الخارجي",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
@@ -570,15 +597,26 @@
                 kpi_portal_sub: "مبثوثة عبر القنوات والمنصات الخارجية", kpi_direct_web: "عروض الموقع المباشرة",
                 kpi_website_sub: "منشورة عبر الموقع الإلكتروني المباشر", kpi_paused: "متوقفة / مسودات",
                 opt_all_sources: "جميع القنوات", opt_all_status: "جميع الحالات",
+                opt_published: "منشور نشط (PUBLISHED)",
+                opt_paused: "متوقف مؤقتاً (PAUSED)",
+                opt_expired: "منتهي الصلاحية (EXPIRED)",
                 btn_new_listing: "+ إعلان جديد",
                 th_unit: "رقم الوحدة ونوعها", th_title: "عنوان الإعلان", th_project_city: "المشروع والمدينة",
                 th_pricing: "سعر البيع / الإيجار", th_specs: "المواصفات (غرف/مساحة)", th_channel: "القناة",
                 th_status: "الحالة", th_dates: "تاريخ النشر والصلاحية", th_actions: "الإجراءات",
                 modal_new_listing_title: "نشر إعلان عقاري جديد", lbl_select_unit: "اختر الوحدة العقارية *",
                 lbl_source: "قناة النشر *", lbl_ext_id: "الرقم المرجعي الخارجي",
+                opt_chan_website: "الموقع الإلكتروني المباشر",
+                opt_chan_portal_a: "بوابة عقار (Portal A)",
+                opt_chan_portal_b: "بوابة بيوت (Portal B)",
                 lbl_title_ar: "عنوان الإعلان (بالعربية) *", lbl_title_en: "عنوان الإعلان (بالإنجليزية) *",
                 lbl_desc_ar: "الوصف التسويقي (بالعربية)", lbl_expiry: "تاريخ انتهاء الإعلان",
-                lbl_status: "حالة النشر المبدئية", btn_cancel: "إلغاء", btn_save_listing: "نشر الإعلان",
+                lbl_status: "حالة النشر المبدئية",
+                opt_init_published: "نشر فوري (PUBLISHED)",
+                opt_init_paused: "مسودة غير منشورة (PAUSED)",
+                ph_title_ar: "مثال: شقة فاخرة للإيجار بحي الملقا",
+                ph_desc_ar: "وصف تفصيلي لمزايا العقار والموقع والخدمات",
+                btn_cancel: "إلغاء", btn_save_listing: "نشر الإعلان",
                 btn_close: "إغلاق", lang_label: "English"
             }
         };
@@ -615,7 +653,13 @@
                 if (i18nData[lang][key]) el.textContent = i18nData[lang][key];
             });
 
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[lang][key]) el.placeholder = i18nData[lang][key];
+            });
+
             document.getElementById('lang-label').textContent = i18nData[lang].lang_label;
+            if (typeof fetchListings === 'function') fetchListings();
         }
 
         function toggleLanguage() {

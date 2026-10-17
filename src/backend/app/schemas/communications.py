@@ -13,10 +13,12 @@ class TasksSummaryOut(BaseModel):
 
 class TaskOut(BaseModel):
     task_id: str
+    template_id: Optional[str] = None
     title: str
     due_at: Optional[datetime] = None
     priority: str
     status: str
+    escalation_level: Optional[int] = 0
     assigned_user_id: Optional[str] = None
     assigned_user_name: Optional[str] = None
     customer_id: Optional[str] = None
@@ -25,7 +27,31 @@ class TaskOut(BaseModel):
     opportunity_id: Optional[str] = None
     is_overdue: bool = False
 
+class TaskCompleteIn(BaseModel):
+    outcome: Optional[str] = "CONNECTED"
+    notes: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    preferred_property_type_id: Optional[str] = None
+    preferred_city_id: Optional[str] = None
+    # Stage B Callback field
+    callback_at: Optional[datetime] = None
+    # Stage C Property Matching fields
+    unit_ids: Optional[list[str]] = None
+    # Stage 3 Property Viewing fields
+    unit_id: Optional[str] = None
+    scheduled_start: Optional[datetime] = None
+    scheduled_end: Optional[datetime] = None
+    viewing_duration_minutes: Optional[int] = 45
+    location_notes: Optional[str] = None
+    feedback_rating: Optional[str] = None
+    offer_amount: Optional[float] = None
+
+class TaskReopenIn(BaseModel):
+    reason: Optional[str] = None
+
 class TaskCreateIn(BaseModel):
+    template_id: Optional[str] = None
     title: str = Field(..., min_length=2)
     due_at: Optional[datetime] = None
     priority: Optional[str] = "NORMAL"
@@ -44,8 +70,10 @@ class TaskUpdateIn(BaseModel):
 
 class ActivityOut(BaseModel):
     activity_id: str
+    template_id: Optional[str] = None
     subject: str
     description: Optional[str] = None
+    outcome: Optional[str] = None
     activity_type_id: Optional[str] = None
     activity_type_code: Optional[str] = None
     activity_type_name: Optional[str] = None

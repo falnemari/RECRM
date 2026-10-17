@@ -78,6 +78,10 @@ class ConvertReservationIn(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
 
+class AdvanceContractIn(BaseModel):
+    action: str # APPROVE_DRAFT, RECORD_SIGNATURE, COMPLETE_HANDOVER
+    notes: Optional[str] = None
+
 class ContractDetailOut(BaseModel):
     contract: ContractOut
     payments: List[PaymentOut] = []

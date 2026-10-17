@@ -1,11 +1,17 @@
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from uuid import UUID
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
-from app.schemas.leads import LeadOut, LeadCreate, LeadUpdate, LeadNoteOut, LeadNoteCreate, LeadUnitItem
+from app.schemas.leads import (
+    LeadOut, LeadCreate, LeadUpdate, LeadNoteOut, LeadNoteCreate, LeadUnitItem,
+    LeadQualifyIn, LeadContactIn
+)
 from app.routers.auth import check_user_scope_override
+from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
 
@@ -207,72 +213,203 @@ async def get_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
     units = await fetch_lead_units(conn, lead_id)
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
 
+class LeadUnblockIn(BaseModel):
+    action: str
+    notes: Optional[str] = None
+
+@router.get("/{lead_id}/situation", response_model=ResponseEnvelope[dict])
+async def get_lead_situation_endpoint(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    """
+    360-Degree Operational Situation & Next Action Engine for a Lead:
+    Compiles complete milestone timeline, bottleneck/stalling status, and recommended actions.
+    """
+    try:
+        data = await WorkflowEngine.get_entity_situation(conn=conn, lead_id=lead_id)
+        return ResponseEnvelope(data=data, meta=BaseMeta())
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/{lead_id}/unblock", response_model=ResponseEnvelope[dict])
+async def unblock_lead_endpoint(
+    lead_id: str,
+    payload: LeadUnblockIn,
+    conn: asyncpg.Connection = Depends(get_db),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID")
+):
+    """
+    Executes a 1-click unblock action on any stalled lead.
+    """
+    try:
+        async with conn.transaction():
+            data = await WorkflowEngine.unblock_entity_situation(
+                conn=conn,
+                action=payload.action,
+                lead_id=lead_id,
+                user_id=x_user_id,
+                notes=payload.notes
+            )
+        return ResponseEnvelope(data=data, meta=BaseMeta())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("", response_model=ResponseEnvelope[LeadOut], status_code=status.HTTP_201_CREATED)
 async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(get_db)):
-    # Fetch default organization
     org_id = await conn.fetchval("SELECT organization_id FROM organizations LIMIT 1")
     if not org_id:
         raise HTTPException(status_code=500, detail="No active organization found")
 
-    customer_id = payload.customer_id
-    if not customer_id and (payload.first_name or payload.mobile):
-        # Create new customer record
-        customer_id = await conn.fetchval(
+    async with conn.transaction():
+        # 1. Customer Deduplication & Resolution
+        customer_id = payload.customer_id
+        is_duplicate_customer = False
+        duplicate_note = None
+
+        if not customer_id and (payload.first_name or payload.mobile or payload.email or payload.national_id):
+            customer_id, is_duplicate_customer, cust_info = await WorkflowEngine.find_or_create_customer(
+                conn=conn,
+                org_id=org_id,
+                first_name=payload.first_name,
+                last_name=payload.last_name,
+                mobile=payload.mobile,
+                email=payload.email,
+                national_id=payload.national_id,
+                customer_type="INDIVIDUAL"
+            )
+            if is_duplicate_customer:
+                matched_label = cust_info.get("matched_by") or "بيانات الاتصال"
+                duplicate_note = f"تم العثور على ملف عميل قائم مطابق عبر {matched_label} ({cust_info.get('full_name')} - {customer_id}) وتم ربط الطلب بملفه بدلاً من تكراره."
+
+        # 2. Determine Branch and Manager Assignment
+        assigned_user_id = payload.assigned_user_id
+        branch_id = None
+        branch_manager_id = None
+
+        if assigned_user_id:
+            branch_id = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", assigned_user_id)
+        else:
+            # Option 2: Route unassigned lead to Branch Manager based on preferred_city
+            branch_id, branch_manager_id = await WorkflowEngine.find_branch_and_manager_for_city(
+                conn=conn,
+                city_id=payload.preferred_city_id
+            )
+
+        # 3. SLA Deadlines
+        now_dt = datetime.now(timezone.utc)
+        first_contact_due_at = (now_dt + timedelta(minutes=30)) if assigned_user_id else None
+
+        # 4. Generate Sequential Lead ID
+        lead_id = await get_next_id(conn, "leads", "lead")
+
+        # 5. Insert Lead in 'NEW' status
+        await conn.execute(
             """
-            INSERT INTO customers (organization_id, customer_type, first_name, last_name, mobile, email, preferred_language, status)
-            VALUES ($1, 'INDIVIDUAL', $2, $3, $4, $5, 'ar', 'ACTIVE')
-            RETURNING customer_id
+            INSERT INTO leads (
+                lead_id, organization_id, customer_id, lead_source_id, assigned_user_id,
+                branch_id, unit_id, status, priority, inquiry_type, budget_min, budget_max,
+                bedrooms_min, area_min_sqm, preferred_city_id, preferred_property_type_id,
+                first_contact_due_at, created_at, updated_at
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, 'NEW', $8::text, $9, $10, $11, $12, $13, $14, $15,
+                $16, NOW(), NOW()
+            )
             """,
-            org_id, payload.first_name or "New", payload.last_name or "Lead", payload.mobile, payload.email
+            lead_id, org_id, customer_id, payload.lead_source_id, assigned_user_id,
+            branch_id, payload.unit_id or None, payload.priority, payload.inquiry_type,
+            payload.budget_min, payload.budget_max, payload.bedrooms_min, payload.area_min_sqm,
+            payload.preferred_city_id, payload.preferred_property_type_id, first_contact_due_at
         )
 
-    lead_id = await conn.fetchval(
-        """
-        INSERT INTO leads (
-            organization_id, customer_id, lead_source_id, assigned_user_id,
-            unit_id,
-            status, priority, inquiry_type, budget_min, budget_max,
-            bedrooms_min, area_min_sqm, preferred_city_id, preferred_property_type_id,
-            first_contact_due_at
-        ) VALUES (
-            $1, $2, $3, $4, $5, 'NEW', $6::text, $7, $8, $9, $10, $11, $12, $13,
-            CASE 
-                WHEN UPPER($6::text) = 'URGENT' THEN now() + interval '1 hour'
-                WHEN UPPER($6::text) = 'HIGH' THEN now() + interval '2 hours'
-                WHEN UPPER($6::text) = 'LOW' THEN now() + interval '48 hours'
-                ELSE now() + interval '24 hours'
-            END
-        ) RETURNING lead_id
-        """,
-        org_id, customer_id, payload.lead_source_id, payload.assigned_user_id,
-        payload.unit_id or None,
-        payload.priority, payload.inquiry_type, payload.budget_min, payload.budget_max,
-        payload.bedrooms_min, payload.area_min_sqm, payload.preferred_city_id, payload.preferred_property_type_id
-    )
-
-    primary_unit = payload.unit_id or (payload.unit_ids[0] if payload.unit_ids else None)
-    if payload.unit_ids:
-        for idx, uid in enumerate(payload.unit_ids):
-            is_prim = (uid == primary_unit) or (primary_unit is None and idx == 0)
+        # 6. Insert Unit Associations
+        primary_unit = payload.unit_id or (payload.unit_ids[0] if payload.unit_ids else None)
+        if payload.unit_ids:
+            for idx, uid in enumerate(payload.unit_ids):
+                is_prim = (uid == primary_unit) or (primary_unit is None and idx == 0)
+                await conn.execute("""
+                    INSERT INTO lead_units (lead_id, unit_id, is_primary)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (lead_id, unit_id) DO NOTHING
+                """, lead_id, uid, is_prim)
+        elif payload.unit_id:
             await conn.execute("""
                 INSERT INTO lead_units (lead_id, unit_id, is_primary)
-                VALUES ($1, $2, $3)
+                VALUES ($1, $2, TRUE)
                 ON CONFLICT (lead_id, unit_id) DO NOTHING
-            """, lead_id, uid, is_prim)
-    elif payload.unit_id:
-        await conn.execute("""
-            INSERT INTO lead_units (lead_id, unit_id, is_primary)
-            VALUES ($1, $2, TRUE)
-            ON CONFLICT (lead_id, unit_id) DO NOTHING
-        """, lead_id, payload.unit_id)
+            """, lead_id, payload.unit_id)
 
+        # 7. Workflow Engine: Task Spawning & Routing
+        if assigned_user_id:
+            # Direct agent assignment: spawn TASK_LEAD_FIRST_CONTACT (30m SLA)
+            await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_LEAD_FIRST_CONTACT",
+                lead_id=lead_id,
+                customer_id=customer_id,
+                assigned_user_id=assigned_user_id,
+                priority=payload.priority or "NORMAL",
+                custom_due_at=first_contact_due_at
+            )
+
+            # 8. Workflow Engine: Record Lead Creation Activity
+            activity_notes = "تم استلام وتعيين الطلب بنجاح للوسيط. مهلة الاتصال بالعميل: 30 دقيقة."
+            if duplicate_note:
+                activity_notes += f"\n{duplicate_note}"
+
+            await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_LEAD_CREATED",
+                user_id=assigned_user_id,
+                customer_id=customer_id,
+                lead_id=lead_id,
+                outcome="CREATED",
+                notes=activity_notes
+            )
+        else:
+            # Unassigned lead: Route to Branch Manager with TASK_LEAD_ASSIGN (15m SLA)
+            assign_due_at = now_dt + timedelta(minutes=15)
+            await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_LEAD_ASSIGN",
+                lead_id=lead_id,
+                customer_id=customer_id,
+                assigned_user_id=branch_manager_id,
+                priority="HIGH",
+                custom_due_at=assign_due_at
+            )
+
+            # 8. Workflow Engine: Record Lead Routing Activity
+            activity_notes = "طلب جديد وارد بدون وسيط. تم توجيهه تلقائياً إلى مدير الفرع المعني لتعيين وسيط مبيعات خلال 15 دقيقة."
+            if duplicate_note:
+                activity_notes += f"\n{duplicate_note}"
+
+            await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_LEAD_ROUTED",
+                user_id=branch_manager_id,
+                customer_id=customer_id,
+                lead_id=lead_id,
+                outcome="ROUTED",
+                notes=activity_notes
+            )
+
+
+    # 9. Return Created Lead with Duplication Indicators
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
     units = await fetch_lead_units(conn, lead_id)
-    return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
+    lead_dict = dict(row)
+    lead_dict["is_duplicate_customer"] = is_duplicate_customer
+    lead_dict["duplicate_customer_note"] = duplicate_note
+
+    return ResponseEnvelope(data=LeadOut(**lead_dict, units=units), meta=BaseMeta())
 
 @router.patch("/{lead_id}", response_model=ResponseEnvelope[LeadOut])
-async def update_lead(lead_id: str, payload: LeadUpdate, conn: asyncpg.Connection = Depends(get_db)):
+async def update_lead(
+    lead_id: str,
+    payload: LeadUpdate,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+
     updates = []
     params = []
     p_idx = 1
@@ -378,58 +515,31 @@ async def update_lead(lead_id: str, payload: LeadUpdate, conn: asyncpg.Connectio
         update_query = f"UPDATE leads SET {', '.join(updates)} WHERE lead_id = ${p_idx}"
         await conn.execute(update_query, *params)
 
+
+        # Trigger workflow lead assignment handler if assigned_user_id was updated
+        if payload.assigned_user_id:
+            await WorkflowEngine.on_lead_assigned(
+                conn=conn,
+                lead_id=lead_id,
+                assigned_user_id=payload.assigned_user_id,
+                assigner_user_id=x_user_id
+            )
+
+
         # Sync with Sales Pipeline opportunities if status changed
         if payload.status is not None:
             st = payload.status.upper()
             if st in ("QUALIFIED", "CONVERTED"):
-                existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
-                lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min, unit_id FROM leads WHERE lead_id = $1", lead_id)
-                if not existing_opp:
-                    if lead_row and lead_row["customer_id"]:
-                        opp_id = await get_next_id(conn, "opportunities", "opportunity")
-                        val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
-                        if lead_row["unit_id"]:
-                            u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", lead_row["unit_id"])
-                            if u_row and (val == 0 or val is None):
-                                val = float(u_row["asking_price"] or u_row["rent_price"] or 0.0)
-
-                        await conn.execute("""
-                            INSERT INTO opportunities (
-                                opportunity_id, lead_id, customer_id, assigned_user_id,
-                                stage, expected_value, created_at, updated_at
-                            ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
-                        """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
-
-                        # Transfer all shortlisted units to opportunity_units
-                        lu_rows = await conn.fetch("""
-                            SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
-                            FROM lead_units lu
-                            JOIN units un ON lu.unit_id = un.unit_id
-                            WHERE lu.lead_id = $1
-                        """, lead_id)
-                        for lu in lu_rows:
-                            u_price = float(lu["unit_price"] or val or 0.0)
-                            await conn.execute("""
-                                INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                                VALUES ($1, $2, $3, $4)
-                                ON CONFLICT (opportunity_id, unit_id) DO NOTHING
-                            """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
-                else:
-                    opp_id = existing_opp["opportunity_id"]
-                    lu_rows = await conn.fetch("""
-                        SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
-                        FROM lead_units lu
-                        JOIN units un ON lu.unit_id = un.unit_id
-                        WHERE lu.lead_id = $1
-                    """, lead_id)
-                    for lu in lu_rows:
-                        u_price = float(lu["unit_price"] or 0.0)
-                        await conn.execute("""
-                            INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                            VALUES ($1, $2, $3, $4)
-                            ON CONFLICT (opportunity_id, unit_id) DO NOTHING
-                        """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
-            elif st == "LOST":
+                await WorkflowEngine.on_lead_qualified(
+                    conn=conn,
+                    lead_id=lead_id,
+                    user_id=x_user_id,
+                    budget_min=payload.budget_min,
+                    budget_max=payload.budget_max,
+                    preferred_property_type_id=payload.preferred_property_type_id,
+                    preferred_city_id=payload.preferred_city_id
+                )
+            elif st in ("LOST", "DISQUALIFIED"):
                 await conn.execute("UPDATE opportunities SET stage = 'LOST', updated_at = now() WHERE lead_id = $1 AND stage NOT IN ('WON', 'LOST')", lead_id)
 
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
@@ -440,74 +550,132 @@ async def update_lead(lead_id: str, payload: LeadUpdate, conn: asyncpg.Connectio
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
 
 @router.post("/{lead_id}/contact", response_model=ResponseEnvelope[LeadOut])
-async def mark_lead_contacted(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    await conn.execute("""
-        UPDATE leads 
-        SET status = 'CONTACTED',
-            first_contact_at = COALESCE(first_contact_at, now()),
-            updated_at = now()
-        WHERE lead_id = $1
-    """, lead_id)
+async def mark_lead_contacted(
+    lead_id: str,
+    payload: Optional[LeadContactIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    outcome = (payload.outcome if payload and payload.outcome else "CONNECTED").upper()
+    notes = payload.notes if payload else None
+
+    async with conn.transaction():
+        lead_row = await conn.fetchrow("SELECT lead_id, customer_id, assigned_user_id, status FROM leads WHERE lead_id = $1", lead_id)
+        if not lead_row:
+            raise HTTPException(status_code=404, detail="Lead not found")
+
+        user_id = x_user_id or lead_row["assigned_user_id"] or "user-51"
+
+        # Look for open first contact or followup task
+        open_task = await conn.fetchrow(
+            """
+            SELECT task_id FROM tasks 
+            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+              AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            LIMIT 1
+            """,
+            lead_id
+        )
+
+        if open_task:
+            await WorkflowEngine.complete_task_with_outcome(
+                conn=conn,
+                task_id=open_task["task_id"],
+                user_id=user_id,
+                outcome=outcome,
+                notes=notes or "تم تسجيل محاولة التواصل مع العميل."
+            )
+        else:
+            now_dt = datetime.now(timezone.utc)
+            if outcome == "CONNECTED":
+                await conn.execute("""
+                    UPDATE leads 
+                    SET status = 'CONTACTED',
+                        first_contact_at = COALESCE(first_contact_at, now()),
+                        updated_at = now()
+                    WHERE lead_id = $1
+                """, lead_id)
+
+                await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_LEAD_FIRST_CONTACT",
+                    user_id=user_id,
+                    customer_id=lead_row["customer_id"],
+                    lead_id=lead_id,
+                    outcome="CONNECTED",
+                    notes=notes or "تم التواصل مع العميل وتحديث الحالة إلى متصل (CONTACTED)."
+                )
+
+                await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_LEAD_QUALIFY",
+                    lead_id=lead_id,
+                    customer_id=lead_row["customer_id"],
+                    assigned_user_id=lead_row["assigned_user_id"] or user_id,
+                    priority="HIGH"
+                )
+            elif outcome in ("NO_ANSWER", "BUSY", "UNREACHABLE"):
+                await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_LEAD_FOLLOWUP",
+                    user_id=user_id,
+                    customer_id=lead_row["customer_id"],
+                    lead_id=lead_id,
+                    outcome=outcome,
+                    notes=notes or "محاولة اتصال لم يتم الرد عليها.",
+                    completed_at=now_dt
+                )
+                followup_due = now_dt + timedelta(hours=3)
+                await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_LEAD_FOLLOWUP",
+                    lead_id=lead_id,
+                    customer_id=lead_row["customer_id"],
+                    assigned_user_id=lead_row["assigned_user_id"] or user_id,
+                    custom_due_at=followup_due,
+                    priority="NORMAL"
+                )
+            elif outcome in ("DISQUALIFIED", "NOT_INTERESTED"):
+                await conn.execute("""
+                    UPDATE leads 
+                    SET status = 'DISQUALIFIED',
+                        updated_at = now()
+                    WHERE lead_id = $1
+                """, lead_id)
+                await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_LEAD_FIRST_CONTACT",
+                    user_id=user_id,
+                    customer_id=lead_row["customer_id"],
+                    lead_id=lead_id,
+                    outcome="DISQUALIFIED",
+                    notes=notes or "العميل غير مهتم بالعرض.",
+                    completed_at=now_dt
+                )
+
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="Lead not found")
     units = await fetch_lead_units(conn, lead_id)
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
 
 @router.post("/{lead_id}/qualify", response_model=ResponseEnvelope[LeadOut])
-async def qualify_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def qualify_lead(
+    lead_id: str,
+    payload: Optional[LeadQualifyIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     async with conn.transaction():
-        await conn.execute("UPDATE leads SET status = 'QUALIFIED', updated_at = now() WHERE lead_id = $1", lead_id)
-
-        # Automatically create/link active opportunity in Sales Pipeline
-        existing_opp = await conn.fetchrow("SELECT opportunity_id FROM opportunities WHERE lead_id = $1", lead_id)
-        lead_row = await conn.fetchrow("SELECT customer_id, assigned_user_id, budget_max, budget_min, unit_id FROM leads WHERE lead_id = $1", lead_id)
-        if not existing_opp:
-            if lead_row and lead_row["customer_id"]:
-                opp_id = await get_next_id(conn, "opportunities", "opportunity")
-                val = float(lead_row["budget_max"] or lead_row["budget_min"] or 0.0)
-                if lead_row["unit_id"]:
-                    u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", lead_row["unit_id"])
-                    if u_row and (val == 0 or val is None):
-                        val = float(u_row["asking_price"] or u_row["rent_price"] or 0.0)
-
-                await conn.execute("""
-                    INSERT INTO opportunities (
-                        opportunity_id, lead_id, customer_id, assigned_user_id,
-                        stage, expected_value, created_at, updated_at
-                    ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
-                """, opp_id, lead_id, lead_row["customer_id"], lead_row["assigned_user_id"], val)
-
-                # Transfer all shortlisted units from lead_units to opportunity_units
-                lu_rows = await conn.fetch("""
-                    SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
-                    FROM lead_units lu
-                    JOIN units un ON lu.unit_id = un.unit_id
-                    WHERE lu.lead_id = $1
-                """, lead_id)
-                for lu in lu_rows:
-                    u_price = float(lu["unit_price"] or val or 0.0)
-                    await conn.execute("""
-                        INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                        VALUES ($1, $2, $3, $4)
-                        ON CONFLICT (opportunity_id, unit_id) DO NOTHING
-                    """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
-        else:
-            opp_id = existing_opp["opportunity_id"]
-            lu_rows = await conn.fetch("""
-                SELECT lu.unit_id, lu.is_primary, COALESCE(un.asking_price, un.rent_price) AS unit_price
-                FROM lead_units lu
-                JOIN units un ON lu.unit_id = un.unit_id
-                WHERE lu.lead_id = $1
-            """, lead_id)
-            for lu in lu_rows:
-                u_price = float(lu["unit_price"] or 0.0)
-                await conn.execute("""
-                    INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                    VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (opportunity_id, unit_id) DO NOTHING
-                """, opp_id, lu["unit_id"], lu["is_primary"], u_price)
+        await WorkflowEngine.on_lead_qualified(
+            conn=conn,
+            lead_id=lead_id,
+            user_id=x_user_id,
+            budget_min=payload.budget_min if payload else None,
+            budget_max=payload.budget_max if payload else None,
+            preferred_property_type_id=payload.preferred_property_type_id if payload else None,
+            preferred_city_id=payload.preferred_city_id if payload else None,
+            notes=payload.notes if payload else None
+        )
 
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
@@ -515,6 +683,7 @@ async def qualify_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db))
         raise HTTPException(status_code=404, detail="Lead not found")
     units = await fetch_lead_units(conn, lead_id)
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
+
 
 @router.get("/{lead_id}/notes", response_model=CollectionEnvelope[LeadNoteOut])
 async def list_lead_notes(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):

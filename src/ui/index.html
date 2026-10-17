@@ -453,17 +453,17 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
-            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;">مكتب معاذ خضر النمري للخدمات العقارية</span>
+            <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
             <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">KSA Baseline</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
             <div class="font-selector-wrap" style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 8px; color: #fff; font-size: 0.85em;">
-                <span style="margin-inline-end: 6px; opacity: 0.9;">🔤 الخط:</span>
+                <span style="margin-inline-end: 6px; opacity: 0.9;" data-i18n="font_label">🔤 Font:</span>
                 <select id="arabicFontSelect" onchange="setGlobalArabicFont(this.value)" style="background: transparent; color: #fff; border: none; font-size: 0.9em; font-family: var(--ar-font); outline: none; cursor: pointer;">
-                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;">كايرو (Cairo - احترافي عقاري)</option>
-                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;">تجوال (Tajawal - حديث ومعاصر)</option>
-                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;">المراعي (Almarai - أعمال ومؤسسي)</option>
-                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;">صقال مجلة (Sakkal Majalla)</option>
+                    <option value="'Cairo', 'Tajawal', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_cairo">Cairo</option>
+                    <option value="'Tajawal', 'Cairo', 'Almarai', sans-serif" style="color: #0f172a;" data-i18n="font_tajawal">Tajawal</option>
+                    <option value="'Almarai', 'Cairo', 'Tajawal', sans-serif" style="color: #0f172a;" data-i18n="font_almarai">Almarai</option>
+                    <option value="'Sakkal Majalla', 'Cairo', sans-serif" style="color: #0f172a;" data-i18n="font_sakkal">Sakkal Majalla</option>
                 </select>
             </div>
             <div id="user-session-widget" style="display: inline-flex; align-items: center;">
@@ -496,8 +496,8 @@
     
     <!-- Office Identity Strip Below Upper Tab -->
     <div class="sub-nav-banner">
-        <div class="banner-title ar-font">مكتب معاذ خضر النمري للخدمات العقارية</div>
-        <div class="banner-subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-title ar-font" data-i18n="banner_title">Muath Khidr Al-Nemari Real Estate Services Office</div>
+        <div class="banner-subtitle" data-i18n="banner_subtitle">Muath Khidr Al-Nemari Real Estate Services Office</div>
     </div>
     
     <div class="content">
@@ -525,12 +525,12 @@
             </div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <select id="dash-branch-select" onchange="onBranchFilterChange()" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85em; background: white; cursor: pointer;">
-                    <option value="">🏢 All Branches (جميع الفروع)</option>
+                    <option value="" data-i18n="opt_all_branches">🏢 All Branches</option>
                 </select>
                 <select id="dash-agent-select" onchange="onAgentFilterChange()" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85em; background: white; cursor: pointer;">
-                    <option value="">👤 All Agents (كافة الوسطاء)</option>
+                    <option value="" data-i18n="opt_all_agents">👤 All Agents</option>
                 </select>
-                <button class="btn btn-outline btn-sm" onclick="resetToGlobalScope()" title="Reset to Global Overview">↺ Reset</button>
+                <button class="btn btn-outline btn-sm" onclick="resetToGlobalScope()" title="Reset to Global Overview" data-i18n="btn_reset">↺ Reset</button>
             </div>
         </div>
 
@@ -628,12 +628,12 @@
                 </div>
 
                 <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <button class="pulse-filter-chip active" onclick="filterPulseFeed('ALL', this)">All (الكل)</button>
-                    <button class="pulse-filter-chip" id="chip-filter-viewing" data-filter="VIEWING" onclick="filterPulseFeed('VIEWING', this)" style="border-color: #bae6fd;">👁️ Viewings (معاينات)</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('ACTIVITY', this)">📞 Activities (أنشطة)</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('TASK', this)">📋 Tasks (مهام)</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('COMMUNICATION', this)">💬 Messages (مراسلات)</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('LEAD_UPDATE', this)">⚡ Lead Updates (طلبات)</button>
+                    <button class="pulse-filter-chip active" onclick="filterPulseFeed('ALL', this)" data-i18n="chip_all">All</button>
+                    <button class="pulse-filter-chip" id="chip-filter-viewing" data-filter="VIEWING" onclick="filterPulseFeed('VIEWING', this)" style="border-color: #bae6fd;" data-i18n="chip_viewings">👁️ Viewings</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('ACTIVITY', this)" data-i18n="chip_activities">📞 Activities</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('TASK', this)" data-i18n="chip_tasks">📋 Tasks</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('COMMUNICATION', this)" data-i18n="chip_messages">💬 Messages</button>
+                    <button class="pulse-filter-chip" onclick="filterPulseFeed('LEAD_UPDATE', this)" data-i18n="chip_lead_updates">⚡ Lead Updates</button>
                 </div>
 
                 <div id="live-pulse-list" style="flex-grow: 1; overflow-y: auto; max-height: 440px; display: flex; flex-direction: column; gap: 10px; padding-inline-end: 4px;">
@@ -847,6 +847,23 @@
                 th_property_unit: "Property / Unit",
                 th_expected_value: "Expected Value",
                 btn_refresh: "Refresh",
+                nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
+                font_label: "🔤 Font:",
+                font_cairo: "Cairo",
+                font_tajawal: "Tajawal",
+                font_almarai: "Almarai",
+                font_sakkal: "Sakkal Majalla",
+                banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
+                banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                btn_reset: "↺ Reset",
+                opt_all_branches: "🏢 All Branches",
+                opt_all_agents: "👤 All Agents",
+                chip_all: "All",
+                chip_viewings: "👁️ Viewings",
+                chip_activities: "📞 Activities",
+                chip_tasks: "📋 Tasks",
+                chip_messages: "💬 Messages",
+                chip_lead_updates: "⚡ Lead Updates",
                 lang_label: "عربي"
             },
             ar: {
@@ -949,6 +966,23 @@
                 th_property_unit: "العقار / الوحدة",
                 th_expected_value: "القيمة المتوقعة",
                 btn_refresh: "تحديث",
+                nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
+                font_label: "🔤 الخط:",
+                font_cairo: "كايرو",
+                font_tajawal: "تجوال",
+                font_almarai: "المراعي",
+                font_sakkal: "صقال مجلة",
+                banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
+                banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
+                btn_reset: "↺ إعادة ضبط",
+                opt_all_branches: "🏢 جميع الفروع",
+                opt_all_agents: "👤 كافة الوسطاء",
+                chip_all: "الكل",
+                chip_viewings: "👁️ معاينات",
+                chip_activities: "📞 أنشطة",
+                chip_tasks: "📋 مهام",
+                chip_messages: "💬 مراسلات",
+                chip_lead_updates: "⚡ طلبات",
                 lang_label: "English"
             }
         };
@@ -978,6 +1012,8 @@
                 lbl.textContent = i18nData[currentLang].lang_label;
             }
             localStorage.setItem('recrm_lang', currentLang);
+            populateFilters();
+            renderPulseFeed();
         }
 
         function toggleLanguage() {
@@ -1078,12 +1114,13 @@
                     fetch(`${API_BASE}/api/v1/admin/branches`),
                     fetch(`${API_BASE}/api/v1/auth/users`)
                 ]);
+                const isAr = currentLang === 'ar';
                 if (bRes.ok) {
                     const bJson = await bRes.json();
                     dashboardState.branchesList = bJson.data || [];
                     const bSel = document.getElementById('dash-branch-select');
                     if (bSel) {
-                        bSel.innerHTML = '<option value="">🏢 All Branches (جميع الفروع)</option>' +
+                        bSel.innerHTML = `<option value="">${isAr ? '🏢 جميع الفروع' : '🏢 All Branches'}</option>` +
                             dashboardState.branchesList.map(b => `<option value="${b.branch_id}">${b.branch_code} - ${b.name}</option>`).join('');
                         if (dashboardState.branchId) bSel.value = dashboardState.branchId;
                     }
@@ -1093,7 +1130,7 @@
                     dashboardState.agentsList = uJson.data || [];
                     const aSel = document.getElementById('dash-agent-select');
                     if (aSel) {
-                        aSel.innerHTML = '<option value="">👤 All Agents (كافة الوسطاء)</option>' +
+                        aSel.innerHTML = `<option value="">${isAr ? '👤 كافة الوسطاء' : '👤 All Agents'}</option>` +
                             dashboardState.agentsList.map(u => `<option value="${u.user_id}">${u.full_name} (${u.user_id})</option>`).join('');
                         if (dashboardState.userId) aSel.value = dashboardState.userId;
                     }
@@ -1236,18 +1273,26 @@
             const drill = dashboardState.cachedData.drilldown;
 
             // Render Breadcrumbs
-            let bcHtml = `<span class="breadcrumb-item ${dashboardState.drillLevel === 'BRANCHES' ? 'current' : ''}" onclick="drillToGlobal()">🌐 ${isAr ? 'المنظمة بالكامل' : 'Global Overview'}</span>`;
+            let bcHtml = '';
+            if (dashboardState.scope === 'OWN') {
+                const aName = dashboardState.cachedData.scope_info.user_name || 'My Workspace';
+                const bName = dashboardState.cachedData.scope_info.branch_name;
+                bcHtml = `<span class="breadcrumb-item current">👤 ${isAr ? 'مساحة العمل الشخصية' : 'Personal Workspace'}: ${aName} ${bName ? '(' + bName + ')' : ''}</span>`;
+                dashboardState.drillLevel = 'OPPORTUNITIES';
+            } else {
+                bcHtml = `<span class="breadcrumb-item ${dashboardState.drillLevel === 'BRANCHES' ? 'current' : ''}" onclick="drillToGlobal()">🌐 ${isAr ? 'المنظمة بالكامل' : 'Global Overview'}</span>`;
 
-            if (dashboardState.selectedBranch || dashboardState.drillLevel === 'AGENTS' || dashboardState.drillLevel === 'OPPORTUNITIES') {
-                const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info.branch_name || 'Selected Branch');
-                const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : dashboardState.cachedData.scope_info.branch_id;
-                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item ${dashboardState.drillLevel === 'AGENTS' ? 'current' : ''}" onclick="drillToBranch('${bId}', '${bName}')">🏢 ${bName}</span>`;
-            }
+                if (dashboardState.selectedBranch || dashboardState.drillLevel === 'AGENTS' || dashboardState.drillLevel === 'OPPORTUNITIES') {
+                    const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info.branch_name || 'Selected Branch');
+                    const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : dashboardState.cachedData.scope_info.branch_id;
+                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item ${dashboardState.drillLevel === 'AGENTS' ? 'current' : ''}" onclick="drillToBranch('${bId}', '${bName}')">🏢 ${bName}</span>`;
+                }
 
-            if (dashboardState.selectedAgent || dashboardState.drillLevel === 'OPPORTUNITIES') {
-                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info.user_name || 'Selected Agent');
-                const aId = dashboardState.selectedAgent ? dashboardState.selectedAgent.user_id : dashboardState.cachedData.scope_info.user_id;
-                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">👤 ${aName}</span>`;
+                if (dashboardState.selectedAgent || dashboardState.drillLevel === 'OPPORTUNITIES') {
+                    const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info.user_name || 'Selected Agent');
+                    const aId = dashboardState.selectedAgent ? dashboardState.selectedAgent.user_id : dashboardState.cachedData.scope_info.user_id;
+                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">👤 ${aName}</span>`;
+                }
             }
 
             if (bcContainer) bcContainer.innerHTML = bcHtml;
@@ -1420,6 +1465,80 @@
             renderPulseFeed();
         }
 
+        const WORKFLOW_TASK_MAP = {
+            'الطلب — الاتصال الأولي': 'Lead — First Contact',
+            'الطلب — توجيه وتعيين وسيط': 'Lead — Assign Sales Agent',
+            'الطلب — اتصال متابعة': 'Lead — Follow-up Contact',
+            'الطلب — استكمال معايير التأهيل': 'Lead — Complete Qualification',
+            'الطلب — استكمال البيانات الناقصة': 'Lead — Complete Missing Information',
+            'الفرصة — مطابقة وترشيح العقارات': 'Opportunity — Match Properties',
+            'المعاينة — جدولة الزيارة الميدانية': 'Viewing — Schedule Site Visit',
+            'المعاينة — إعادة جدولة موعد الزيارة': 'Viewing — Reschedule Site Visit',
+            'المعاينة — رفع تقرير وتقييم الزيارة': 'Viewing — Submit Inspection Report',
+            'العرض — تقديم العرض المالي للوحدة': 'Offer — Submit Formal Offer'
+        };
+
+        function localizePulseContent(ev, isAr) {
+            let title = ev.title || '';
+            let desc = ev.description || '';
+            let actor = ev.actor_name || '';
+
+            if (isAr) {
+                // Translate English to Arabic
+                for (const [ar, en] of Object.entries(WORKFLOW_TASK_MAP)) {
+                    if (title === en) title = ar;
+                }
+                title = title.replace(/^Inbound Lead:\s*/i, 'طلب وارد: ')
+                             .replace(/^Property Viewing:\s*/i, 'معاينة عقار: ');
+                desc = desc.replace(/Priority:\s*/gi, 'الأولوية: ')
+                           .replace(/Status:\s*/gi, 'الحالة: ')
+                           .replace(/\(Unassigned\)/gi, '(غير مسند)')
+                           .replace(/\(Agent:\s*/gi, '(الوسيط: ')
+                           .replace('Activity logged', 'تم تسجيل النشاط')
+                           .replace('Scheduled / conducted property tour', 'جولة معاينة عقارية مجدولة / منفذة');
+                actor = actor.replace('Unassigned', 'غير مسند')
+                             .replace('System / Inbound', 'النظام / وارد')
+                             .replace('System / Auto', 'النظام / آلي')
+                             .replace(/^System$/i, 'النظام');
+            } else {
+                // Translate Arabic to English
+                for (const [ar, en] of Object.entries(WORKFLOW_TASK_MAP)) {
+                    if (title === ar) title = en;
+                }
+                title = title.replace(/^طلب وارد:\s*/, 'Inbound Lead: ')
+                             .replace(/^معاينة عقار:\s*/, 'Property Viewing: ')
+                             .replace('الطلب — إنشاء وتعيين الطلب', 'Lead — Created & Assigned')
+                             .replace('الطلب — توجيه لمدير الفرع', 'Lead — Routed to Branch Manager')
+                             .replace('الطلب — تسجيل الاتصال الأولي', 'Lead — First Contact Recorded')
+                             .replace('الطلب — تسجيل اتصال متابعة', 'Lead — Follow-up Recorded')
+                             .replace('الطلب — اكتمال التأهيل والترقية لفرصة', 'Lead — Qualified & Converted')
+                             .replace('المعاينة — تأكيد موعد الزيارة الميدانية', 'Viewing — Site Visit Scheduled')
+                             .replace('المعاينة — توثيق تقرير وتقييم الزيارة', 'Viewing — Inspection Report Documented')
+                             .replace('العرض — تقديم العرض المالي المعتمد', 'Offer — Formal Offer Submitted')
+                             .replace('المهمة — إعادة فتح وتراجع ذكي', 'Task — Reopened & Smart Undo');
+
+                desc = desc.replace(/الأولوية:\s*/g, 'Priority: ')
+                           .replace(/الحالة:\s*/g, 'Status: ')
+                           .replace(/\(غير مسند\)/g, '(Unassigned)')
+                           .replace(/\(الوسيط:\s*/g, '(Agent: ')
+                           .replace('بانتظار التعيين / Unassigned', 'Unassigned')
+                           .replace('النظام / Inbound', 'System / Inbound')
+                           .replace('النظام / System', 'System')
+                           .replace('تم استيفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة.', 'Qualification criteria met. Lead converted to active sales opportunity.')
+                           .replace('تم استلام وتعيين الطلب بنجاح. مهلة الاتصال بالعميل: 30 دقيقة.', 'Lead received and assigned. 30-min first contact SLA task created.')
+                           .replace('طلب جديد وارد بدون وسيط. تم توجيهه تلقائياً إلى مدير الفرع المعني لتعيين وسيط مبيعات خلال 15 دقيقة.', 'Unassigned inbound lead auto-routed to branch manager for agent assignment.')
+                           .replace('الإنجاز قبل إنشاء زيارة ميدانية', 'Completed before scheduling site visit');
+
+                actor = actor.replace('بانتظار التعيين / Unassigned', 'Unassigned')
+                             .replace('النظام / Inbound', 'System / Inbound')
+                             .replace('النظام / System', 'System')
+                             .replace(/^النظام$/, 'System')
+                             .replace(/^غير مسند$/, 'Unassigned');
+            }
+
+            return { title, desc, actor };
+        }
+
         function renderPulseFeed() {
             const listEl = document.getElementById('live-pulse-list');
             if (!listEl || !dashboardState.cachedData) return;
@@ -1434,6 +1553,7 @@
                 return;
             }
 
+            const isAr = currentLang === 'ar';
             listEl.innerHTML = items.map(ev => {
                 let badgeClass = 'pulse-type-activity';
                 let icon = '📞';
@@ -1441,24 +1561,25 @@
                 if (ev.event_type === 'VIEWING') {
                     badgeClass = 'pulse-type-viewing';
                     icon = '👁️';
-                    typeLabel = 'VIEWING (معاينة)';
+                    typeLabel = isAr ? 'معاينة' : 'Viewing';
                 } else if (ev.event_type === 'TASK') {
                     badgeClass = 'pulse-type-task';
                     icon = '📋';
-                    typeLabel = 'TASK (مهمة)';
+                    typeLabel = isAr ? 'مهمة' : 'Task';
                 } else if (ev.event_type === 'COMMUNICATION') {
                     badgeClass = 'pulse-type-comm';
                     icon = '💬';
-                    typeLabel = 'MESSAGE (رسالة)';
+                    typeLabel = isAr ? 'رسالة' : 'Message';
                 } else if (ev.event_type === 'LEAD_UPDATE') {
                     badgeClass = 'pulse-type-lead';
                     icon = '⚡';
-                    typeLabel = 'LEAD (طلب)';
+                    typeLabel = isAr ? 'طلب' : 'Lead Update';
                 } else if (ev.event_type === 'ACTIVITY') {
-                    typeLabel = 'ACTIVITY (نشاط)';
+                    typeLabel = isAr ? 'نشاط' : 'Activity';
                 }
 
                 const timeStr = ev.occurred_at ? new Date(ev.occurred_at).toLocaleString() : 'Just now';
+                const localized = localizePulseContent(ev, isAr);
 
                 return `
                     <div class="pulse-card" ${ev.event_type === 'VIEWING' ? 'style="border-inline-start: 4px solid #0284c7; background: #f0f9ff;"' : ''}>
@@ -1466,10 +1587,10 @@
                             <span class="pulse-type-badge ${badgeClass}">${icon} ${typeLabel}</span>
                             <span style="font-size: 0.72em; color: var(--text-muted);">${timeStr}</span>
                         </div>
-                        <div style="font-weight: 700; color: #0f172a; margin-top: 3px;">${ev.title}</div>
-                        <div style="font-size: 0.85em; color: #475569; line-height: 1.35;">${ev.description}</div>
+                        <div style="font-weight: 700; color: #0f172a; margin-top: 3px;">${localized.title}</div>
+                        <div style="font-size: 0.85em; color: #475569; line-height: 1.35;">${localized.desc}</div>
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76em; color: var(--text-muted); margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 4px;">
-                            <span>👤 ${ev.actor_name || 'System / Auto'}</span>
+                            <span>👤 ${localized.actor || 'System / Auto'}</span>
                             ${ev.customer_name ? `<span>👥 <strong>${ev.customer_name}</strong></span>` : ''}
                         </div>
                     </div>
@@ -1484,8 +1605,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
             loadDashboardData();
+
+            // Auto-refresh when tab gains focus
+            window.addEventListener('focus', () => {
+                fetchFunnelData();
+            });
+
+            // Live periodic background pulse refresh every 30s
+            setInterval(() => {
+                if (!document.hidden) {
+                    fetchFunnelData();
+                }
+            }, 30000);
         });
     </script>
+
     <script src="common.js"></script>
     <script src="user_session.js"></script>
 </body>

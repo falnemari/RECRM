@@ -16,6 +16,8 @@ class CustomerOut(BaseModel):
     mobile: Optional[str] = None
     email: Optional[str] = None
     national_id_hash: Optional[str] = None
+    is_duplicate: Optional[bool] = False
+    duplicate_note: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime

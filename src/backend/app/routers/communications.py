@@ -8,10 +8,11 @@ from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvel
 from app.routers.auth import check_user_scope_override
 from app.schemas.communications import (
     TasksSummaryOut,
-    TaskOut, TaskCreateIn, TaskUpdateIn,
+    TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn,
     ActivityOut, ActivityCreateIn,
     CommunicationOut, CommunicationCreateIn
 )
+from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(tags=["Tasks & Communications"])
 
@@ -72,6 +73,9 @@ async def list_tasks(
     priority: Optional[str] = None,
     assigned_user_id: Optional[str] = None,
     customer_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
+    template_id: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     search: Optional[str] = None,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
@@ -103,8 +107,23 @@ async def list_tasks(
         params.append(customer_id)
         p_idx += 1
 
+    if lead_id:
+        conditions.append(f"t.lead_id = ${p_idx}")
+        params.append(lead_id)
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"t.opportunity_id = ${p_idx}")
+        params.append(opportunity_id)
+        p_idx += 1
+
+    if template_id:
+        conditions.append(f"t.template_id = ${p_idx}")
+        params.append(template_id)
+        p_idx += 1
+
     if is_overdue:
-        conditions.append("t.status = 'OPEN' AND t.due_at < NOW()")
+        conditions.append("t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW()")
 
     if search:
         s = f"%{search.strip()}%"
@@ -127,23 +146,25 @@ async def list_tasks(
     query = f"""
         SELECT 
             t.task_id,
+            t.template_id,
             t.title,
             t.due_at,
             t.priority,
             t.status,
+            COALESCE(t.escalation_level, 0) AS escalation_level,
             t.assigned_user_id,
             u.full_name AS assigned_user_name,
             t.customer_id,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             t.lead_id,
             t.opportunity_id,
-            CASE WHEN t.status = 'OPEN' AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
+            CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
         LEFT JOIN customers c ON t.customer_id = c.customer_id
         WHERE {where_clause}
         ORDER BY 
-            CASE t.status WHEN 'OPEN' THEN 1 ELSE 2 END,
+            CASE t.status WHEN 'OPEN' THEN 1 WHEN 'PENDING' THEN 1 WHEN 'IN_PROGRESS' THEN 1 ELSE 2 END,
             CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
             t.due_at ASC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -278,33 +299,88 @@ async def update_task(task_id: str, payload: TaskUpdateIn, conn: asyncpg.Connect
     return ResponseEnvelope(data={"task_id": str(task_id), "updated": True})
 
 @router.post("/tasks/{task_id}/complete", response_model=ResponseEnvelope[dict])
-async def complete_task(task_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    t = await conn.fetchrow("SELECT task_id, title, customer_id, assigned_user_id FROM tasks WHERE task_id = $1", task_id)
-    if not t:
-        raise HTTPException(status_code=404, detail="Task not found")
+async def complete_task(
+    task_id: str,
+    payload: Optional[TaskCompleteIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    outcome = payload.outcome if (payload and payload.outcome) else "CONNECTED"
+    notes = payload.notes if payload else None
+    user_id = x_user_id or "user-51"
 
-    now = datetime.now(timezone.utc)
+    q_data = None
+    viewing_data = None
+    if payload:
+        q_data = {
+            "budget_min": payload.budget_min,
+            "budget_max": payload.budget_max,
+            "preferred_property_type_id": payload.preferred_property_type_id,
+            "preferred_city_id": payload.preferred_city_id
+        }
+        if payload.unit_id or payload.scheduled_start or payload.feedback_rating or payload.offer_amount or payload.location_notes or payload.callback_at or payload.unit_ids:
+            viewing_data = {
+                "unit_id": payload.unit_id,
+                "unit_ids": payload.unit_ids,
+                "callback_at": payload.callback_at,
+                "scheduled_start": payload.scheduled_start,
+                "scheduled_end": payload.scheduled_end,
+                "viewing_duration_minutes": payload.viewing_duration_minutes,
+                "location_notes": payload.location_notes,
+                "feedback_rating": payload.feedback_rating,
+                "offer_amount": payload.offer_amount
+            }
+
     async with conn.transaction():
-        await conn.execute("UPDATE tasks SET status = 'COMPLETED' WHERE task_id = $1", task_id)
-        
-        # Log completed task activity in activities table
-        act_type = await conn.fetchrow("SELECT activity_type_id FROM activity_types WHERE code = 'FOLLOW_UP' LIMIT 1")
-        act_type_id = act_type["activity_type_id"] if act_type else None
-        
-        completed_act_id = await get_next_id(conn, "activities", "activity")
-        await conn.execute(
-            """
-            INSERT INTO activities (
-                activity_id, user_id, customer_id, activity_type_id,
-                subject, description, completed_at, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'COMPLETED')
-            """,
-            completed_act_id, t["assigned_user_id"], t["customer_id"], act_type_id,
-            f"Completed Task: {t['title']}", f"Task marked completed at {now.strftime('%Y-%m-%d %H:%M')}",
-            now
-        )
+        try:
+            result = await WorkflowEngine.complete_task_with_outcome(
+                conn=conn,
+                task_id=task_id,
+                user_id=user_id,
+                outcome=outcome,
+                notes=notes,
+                qualification_data=q_data,
+                viewing_data=viewing_data
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error completing task {task_id}: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to complete task: {str(e)}")
 
-    return ResponseEnvelope(data={"task_id": str(task_id), "status": "COMPLETED"})
+    return ResponseEnvelope(data=result)
+
+
+@router.post("/tasks/{task_id}/reopen", response_model=ResponseEnvelope[dict])
+async def reopen_task_endpoint(
+    task_id: str,
+    payload: Optional[TaskReopenIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Smart Reopen & Undo Endpoint:
+    Reverts an erroneously completed task back to PENDING and safely rolls back
+    unworked downstream jobs, stage advances, or scheduled viewings.
+    """
+    user_id = x_user_id or "user-51"
+    reason = payload.reason if payload else None
+
+    async with conn.transaction():
+        try:
+            result = await WorkflowEngine.reopen_task(
+                conn=conn,
+                task_id=task_id,
+                user_id=user_id,
+                reason=reason
+            )
+        except ValueError as e:
+            msg = str(e)
+            if "not found" in msg.lower() or "غير موجودة" in msg:
+                raise HTTPException(status_code=404, detail=msg)
+            raise HTTPException(status_code=400, detail=msg)
+
+    return ResponseEnvelope(data=result)
 
 
 # ---------------------------------------------------------
@@ -335,7 +411,7 @@ async def list_activities(
         p_idx += 1
 
     if user_id:
-        conditions.append(f"a.user_id = ${p_idx}")
+        conditions.append(f"(a.user_id = ${p_idx} OR a.lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = ${p_idx}))")
         params.append(user_id)
         p_idx += 1
 
