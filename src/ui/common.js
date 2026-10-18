@@ -713,14 +713,16 @@
             let pendingTasksHtml = '';
             if (d.pending_tasks && d.pending_tasks.length > 0) {
                 const listItems = d.pending_tasks.map(t => {
-                    const dueStr = t.due_date ? new Date(t.due_date).toLocaleString() : '--';
+                    const rawDue = t.due_at || t.due_date;
+                    const dueStr = rawDue ? new Date(rawDue).toLocaleString() : '--';
+                    const assignee = t.assigned_user_name || t.assignee_name || (isAr ? 'غير مسند' : 'Unassigned');
                     return `
                         <div style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                             <div>
                                 <div style="font-weight: 700; font-size: 0.9em; color: #0f172a;">${t.title}</div>
                                 <div style="font-size: 0.78em; color: #64748b; margin-top: 3px;">
                                     <span>🆔 ${t.task_id}</span> • 
-                                    <span>👤 ${t.assignee_name || (isAr ? 'غير مسند' : 'Unassigned')}</span> • 
+                                    <span>👤 ${assignee}</span> • 
                                     <span>⏰ ${dueStr}</span>
                                 </div>
                             </div>

@@ -4422,7 +4422,7 @@ class WorkflowEngine:
             LEFT JOIN users u ON t.assigned_user_id = u.user_id
             WHERE ($1::text IS NOT NULL AND t.lead_id = $1)
                OR ($2::text IS NOT NULL AND t.opportunity_id = $2)
-               OR ($3::text IS NOT NULL AND t.customer_id = $3)
+               OR ($1::text IS NULL AND $2::text IS NULL AND $3::text IS NOT NULL AND t.customer_id = $3)
             ORDER BY t.created_at ASC
             """,
             lead_id, opportunity_id, customer_id
@@ -4437,7 +4437,7 @@ class WorkflowEngine:
             LEFT JOIN users u ON a.user_id = u.user_id
             WHERE ($1::text IS NOT NULL AND a.lead_id = $1)
                OR ($2::text IS NOT NULL AND a.opportunity_id = $2)
-               OR ($3::text IS NOT NULL AND a.customer_id = $3)
+               OR ($1::text IS NULL AND $2::text IS NULL AND $3::text IS NOT NULL AND a.customer_id = $3)
             ORDER BY a.created_at ASC
             """,
             lead_id, opportunity_id, customer_id
@@ -4449,7 +4449,7 @@ class WorkflowEngine:
             """
             SELECT * FROM communications
             WHERE ($1::text IS NOT NULL AND lead_id = $1)
-               OR ($2::text IS NOT NULL AND customer_id = $2)
+               OR ($1::text IS NULL AND $2::text IS NOT NULL AND customer_id = $2)
             ORDER BY created_at ASC
             """,
             lead_id, customer_id
@@ -4467,9 +4467,10 @@ class WorkflowEngine:
             LEFT JOIN users ag ON v.agent_user_id = ag.user_id
             WHERE ($1::text IS NOT NULL AND v.opportunity_id = $1)
                OR ($2::text IS NOT NULL AND v.lead_id = $2)
+               OR ($1::text IS NULL AND $2::text IS NULL AND $3::text IS NOT NULL AND v.customer_id = $3)
             ORDER BY v.created_at ASC
             """,
-            opportunity_id, lead_id
+            opportunity_id, lead_id, customer_id
         )
         viewing_list = [dict(v) for v in viewings]
 
@@ -4486,31 +4487,54 @@ class WorkflowEngine:
         )
         offer_list = [dict(o) for o in offers]
 
-        # 6. Fetch reservations & contracts
-        reservations = await conn.fetch(
-            """
-            SELECT r.*, u.unit_number
-            FROM reservations r
-            LEFT JOIN units u ON r.unit_id = u.unit_id
-            WHERE ($1::text IS NOT NULL AND r.opportunity_id = $1)
-               OR ($2::text IS NOT NULL AND r.customer_id = $2)
-            ORDER BY r.reserved_at DESC
-            """,
-            opportunity_id, customer_id
-        )
-        res_list = [dict(r) for r in reservations]
+        # 6. Fetch reservations & contracts (strictly scoped to opportunity, never broad customer)
+        if opportunity_id:
+            reservations = await conn.fetch(
+                """
+                SELECT r.*, u.unit_number
+                FROM reservations r
+                LEFT JOIN units u ON r.unit_id = u.unit_id
+                WHERE r.opportunity_id = $1
+                ORDER BY r.reserved_at DESC
+                """,
+                opportunity_id
+            )
+            contracts = await conn.fetch(
+                """
+                SELECT c.*
+                FROM contracts c
+                JOIN reservations r ON c.reservation_id = r.reservation_id
+                WHERE r.opportunity_id = $1
+                ORDER BY c.signed_at DESC NULLS LAST, c.contract_id DESC
+                """,
+                opportunity_id
+            )
+        elif not lead_id and customer_id:
+            reservations = await conn.fetch(
+                """
+                SELECT r.*, u.unit_number
+                FROM reservations r
+                LEFT JOIN units u ON r.unit_id = u.unit_id
+                WHERE r.customer_id = $1
+                ORDER BY r.reserved_at DESC
+                """,
+                customer_id
+            )
+            contracts = await conn.fetch(
+                """
+                SELECT c.*
+                FROM contracts c
+                JOIN reservations r ON c.reservation_id = r.reservation_id
+                WHERE r.customer_id = $1
+                ORDER BY c.signed_at DESC NULLS LAST, c.contract_id DESC
+                """,
+                customer_id
+            )
+        else:
+            reservations = []
+            contracts = []
 
-        contracts = await conn.fetch(
-            """
-            SELECT c.*
-            FROM contracts c
-            JOIN reservations r ON c.reservation_id = r.reservation_id
-            WHERE ($1::text IS NOT NULL AND r.opportunity_id = $1)
-               OR ($2::text IS NOT NULL AND r.customer_id = $2)
-            ORDER BY c.signed_at DESC NULLS LAST, c.contract_id DESC
-            """,
-            opportunity_id, customer_id
-        )
+        res_list = [dict(r) for r in reservations]
         contract_list = [dict(c) for c in contracts]
 
         # 7. Analyze Stalling & Bottleneck
@@ -4684,10 +4708,13 @@ class WorkflowEngine:
         formatted_pending = []
         for pt in pending_tasks:
             pt_copy = dict(pt)
-            if pt_copy.get("due_at"):
-                pt_copy["due_at"] = pt_copy["due_at"].isoformat()
+            due_iso = pt_copy["due_at"].isoformat() if pt_copy.get("due_at") else None
+            pt_copy["due_at"] = due_iso
+            pt_copy["due_date"] = due_iso
             if pt_copy.get("created_at"):
                 pt_copy["created_at"] = pt_copy["created_at"].isoformat()
+            if "assignee_name" not in pt_copy and pt_copy.get("assigned_user_name"):
+                pt_copy["assignee_name"] = pt_copy["assigned_user_name"]
             formatted_pending.append(pt_copy)
 
         return {
@@ -4834,9 +4861,16 @@ class WorkflowEngine:
                 priority="HIGH"
             )
         elif norm_act == "SPAWN_FIRST_CONTACT":
+            first_contact_template = "TASK_LEAD_FIRST_CONTACT"
+            if lead_row:
+                inq_type = (lead_row.get("inquiry_type") or "").upper()
+                if inq_type == "RENT":
+                    first_contact_template = "TASK_RENT_LEAD_FIRST_CONTACT"
+                elif inq_type == "INVESTMENT":
+                    first_contact_template = "TASK_INVEST_LEAD_FIRST_CONTACT"
             spawned_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id="TASK_LEAD_FIRST_CONTACT",
+                template_id=first_contact_template,
                 lead_id=lead_id,
                 opportunity_id=opportunity_id,
                 customer_id=customer_id,
