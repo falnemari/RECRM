@@ -10,6 +10,7 @@ from app.schemas.reports import (
     BranchFunnelItem, AgentFunnelItem, OpportunityFunnelItem,
     LivePulseEvent, DrilldownData
 )
+from app.services.calculation_service import CalculationService
 
 router = APIRouter(prefix="/reports", tags=["Reports & Dashboards"])
 
@@ -558,4 +559,215 @@ async def get_funnel_dashboard(
     )
 
     return ResponseEnvelope(data=out, meta=BaseMeta())
+
+
+@router.get("/managerial-kpis", response_model=ResponseEnvelope[dict])
+async def get_managerial_kpis_report(
+    branch_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+    role_view: Optional[str] = Query(None),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Article 7 Equations for Managers and Team Performance:
+    Calculates Equations 7.1 to 7.5:
+      7.1 Lead Contact SLA Compliance Rate (%)
+      7.2 Cohort-based Lead-to-Transaction Conversion Rate (%)
+      7.3 On-Time Task Completion Rate (%) + Overdue Tasks Count
+      7.4 Viewing-to-Offer Conversion Rate (%)
+      7.5 Forecast vs. Actual Rental Income Variance (%)
+    Plus Role-Specific Perspective breakdowns.
+    """
+    current_user_id = x_user_id or "user-51"
+    user_row = await conn.fetchrow(
+        """
+        SELECT u.user_id, u.branch_id, array_remove(array_agg(r.role_code), NULL) as roles
+        FROM users u
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
+        WHERE u.user_id = $1
+        GROUP BY u.user_id, u.branch_id
+        """,
+        current_user_id
+    )
+    user_roles = [str(r) for r in (user_row["roles"] if user_row and user_row["roles"] else []) if r]
+    scope = resolve_user_data_scope(user_roles) if user_roles else "GLOBAL"
+    user_branch_id = user_row["branch_id"] if user_row else None
+
+    effective_branch_id = branch_id or (user_branch_id if scope in ("BRANCH", "TEAM") else None)
+    effective_user_id = user_id or (current_user_id if scope == "OWN" else None)
+
+    # 1. Lead Contact SLA Compliance (Eq 7.1)
+    sla_query = """
+        SELECT
+            count(*) as total_eligible_leads,
+            count(*) FILTER (WHERE first_contact_at IS NOT NULL AND first_contact_due_at IS NOT NULL AND first_contact_at <= first_contact_due_at) as contacted_within_sla,
+            count(*) FILTER (WHERE first_contact_at IS NULL AND first_contact_due_at IS NOT NULL AND first_contact_due_at < NOW()) as overdue_uncontacted
+        FROM leads
+        WHERE first_contact_due_at IS NOT NULL
+          AND status NOT IN ('DISQUALIFIED')
+    """
+    sla_params = []
+    p_i = 1
+    if effective_branch_id:
+        sla_query += f" AND branch_id = ${p_i}"
+        sla_params.append(effective_branch_id)
+        p_i += 1
+    if effective_user_id:
+        sla_query += f" AND assigned_user_id = ${p_i}"
+        sla_params.append(effective_user_id)
+        p_i += 1
+
+    sla_row = await conn.fetchrow(sla_query, *sla_params)
+    total_eligible_leads = sla_row["total_eligible_leads"] or 0
+    contacted_within_sla = sla_row["contacted_within_sla"] or 0
+    sla_compliance = CalculationService.calculate_sla_compliance_rate(
+        leads_contacted_within_sla=contacted_within_sla,
+        eligible_leads_due=total_eligible_leads
+    )
+
+    # 2. Lead-to-Transaction Conversion Rate (Eq 7.2)
+    conv_query = """
+        SELECT
+            count(*) as total_qualified_leads,
+            count(*) FILTER (WHERE status = 'WON') as won_leads
+        FROM leads
+        WHERE status IN ('QUALIFIED', 'WON', 'LOST')
+    """
+    conv_params = []
+    p_i = 1
+    if effective_branch_id:
+        conv_query += f" AND branch_id = ${p_i}"
+        conv_params.append(effective_branch_id)
+        p_i += 1
+    if effective_user_id:
+        conv_query += f" AND assigned_user_id = ${p_i}"
+        conv_params.append(effective_user_id)
+        p_i += 1
+
+    conv_row = await conn.fetchrow(conv_query, *conv_params)
+    total_qual = conv_row["total_qualified_leads"] or 0
+    won_leads = conv_row["won_leads"] or 0
+    conversion_kpi = CalculationService.calculate_cohort_conversion_rate(
+        successful_leads=won_leads,
+        total_qualified_leads_in_cohort=total_qual
+    )
+
+    # 3. Task Completion Rate & Overdue Tasks (Eq 7.3)
+    task_query = """
+        SELECT
+            count(*) FILTER (WHERE due_at IS NOT NULL AND (due_at <= NOW() OR (status = 'COMPLETED' AND completed_at <= due_at))) as tasks_due,
+            count(*) FILTER (WHERE status = 'COMPLETED' AND due_at IS NOT NULL AND completed_at IS NOT NULL AND completed_at <= due_at) as completed_on_time,
+            count(*) FILTER (WHERE status IN ('PENDING', 'OPEN', 'IN_PROGRESS') AND due_at < NOW()) as overdue_tasks
+        FROM tasks
+        WHERE 1=1
+    """
+    task_params = []
+    p_i = 1
+    if effective_user_id:
+        task_query += f" AND assigned_user_id = ${p_i}"
+        task_params.append(effective_user_id)
+        p_i += 1
+
+    task_row = await conn.fetchrow(task_query, *task_params)
+    tasks_due = task_row["tasks_due"] or 0
+    completed_on_time = task_row["completed_on_time"] or 0
+    overdue_tasks = task_row["overdue_tasks"] or 0
+    task_completion_kpi = CalculationService.calculate_task_completion_rate(
+        tasks_completed_on_time=completed_on_time,
+        tasks_due=tasks_due,
+        tasks_overdue=overdue_tasks
+    )
+
+    # 4. Viewing-to-Offer Conversion Rate (Eq 7.4)
+    view_query = """
+        SELECT
+            count(*) as completed_viewings,
+            count(*) FILTER (
+                WHERE v.outcome IN ('INTERESTED', 'OFFER_REQUESTED', 'OFFER_MADE')
+                   OR EXISTS (SELECT 1 FROM offers ofr WHERE ofr.opportunity_id = v.opportunity_id)
+            ) as viewings_followed_by_offer
+        FROM viewings v
+        WHERE v.status = 'COMPLETED'
+    """
+    view_params = []
+    if effective_user_id:
+        view_query += " AND v.agent_user_id = $1"
+        view_params.append(effective_user_id)
+
+    view_row = await conn.fetchrow(view_query, *view_params)
+    completed_viewings = view_row["completed_viewings"] or 0
+    viewings_with_offer = view_row["viewings_followed_by_offer"] or 0
+    viewing_kpi = CalculationService.calculate_viewing_to_offer_conversion(
+        offers_generated=viewings_with_offer,
+        eligible_completed_viewings=completed_viewings
+    )
+
+    # 5. Forecast versus Actual Rental Income Variance (Eq 7.5)
+    rent_query = """
+        SELECT
+            COALESCE(SUM(amount_paid), 0) as actual_income,
+            COALESCE(SUM(amount_due), 0) as forecast_income
+        FROM rent_collections
+    """
+    rent_row = await conn.fetchrow(rent_query)
+    actual_rent = float(rent_row["actual_income"] or 0.0)
+    forecast_rent = float(rent_row["forecast_income"] or 0.0)
+    rental_variance_kpi = CalculationService.calculate_forecast_rental_variance(
+        actual_income=actual_rent,
+        forecast_income=forecast_rent
+    )
+
+    # 6. Pipeline Breakdown by Purpose (RENT vs BUY vs INVEST)
+    purpose_rows = await conn.fetch(
+        """
+        SELECT 
+            COALESCE(inquiry_type, 'BUY') as inquiry_type,
+            count(*) as lead_count,
+            count(*) FILTER (WHERE status = 'WON') as won_count,
+            COALESCE(SUM(budget_max), 0) as total_budget
+        FROM leads
+        GROUP BY inquiry_type
+        ORDER BY lead_count DESC
+        """
+    )
+    pipeline_by_purpose = [
+        {
+            "inquiry_type": r["inquiry_type"],
+            "lead_count": r["lead_count"],
+            "won_count": r["won_count"],
+            "total_budget": float(r["total_budget"]),
+            "conversion_percent": round((r["won_count"] / r["lead_count"] * 100.0), 2) if r["lead_count"] > 0 else 0.0
+        }
+        for r in purpose_rows
+    ]
+
+    # 7. Role-Specific Perspective
+    primary_role = role_view or (user_roles[0] if user_roles else "GENERAL_MANAGER")
+
+    role_perspective = {
+        "active_role_view": primary_role,
+        "is_agent": "AGENT" in primary_role or "SALES" in primary_role,
+        "is_manager": "MANAGER" in primary_role or "DIRECTOR" in primary_role or "ADMIN" in primary_role,
+    }
+
+    return ResponseEnvelope(
+        data={
+            "lead_sla_compliance": sla_compliance,
+            "lead_to_transaction_conversion": conversion_kpi,
+            "task_completion_rate": task_completion_kpi,
+            "viewing_to_offer_conversion": viewing_kpi,
+            "forecast_vs_actual_rental_variance": rental_variance_kpi,
+            "pipeline_by_purpose": pipeline_by_purpose,
+            "role_perspective": role_perspective,
+            "scope_info": {
+                "scope": scope,
+                "branch_id": effective_branch_id,
+                "user_id": effective_user_id
+            }
+        },
+        meta=BaseMeta()
+    )
+
 

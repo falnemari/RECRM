@@ -420,6 +420,11 @@
                 <div class="kpi-value" id="kpi-overdue">--</div>
                 <div class="kpi-sub" data-i18n="kpi_overdue_sub">Unpaid past-due installments</div>
             </div>
+            <div class="kpi-card" style="border-top: 3px solid #7c3aed;">
+                <div class="kpi-title" data-i18n="kpi_rental_variance">Rental Income Variance</div>
+                <div class="kpi-value" id="kpi-rental-variance" style="color: #7c3aed;">--%</div>
+                <div class="kpi-sub" id="kpi-rental-variance-sub" data-i18n="kpi_rental_variance_sub">Actual vs. Forecast (Eq 7.5)</div>
+            </div>
         </div>
 
         <!-- Tab Navigation -->
@@ -982,6 +987,8 @@
                 font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
                 banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
                 banner_subtitle: "Real Estate Services, Marketing & Property Management",
+                kpi_rental_variance: "Rental Income Variance",
+                kpi_rental_variance_sub: "Actual vs. Forecast (Eq 7.5)",
                 lang_label: "عربي"
             },
             ar: {
@@ -1041,6 +1048,8 @@
                 opt_freq_semi: "نصف سنوي",
                 opt_freq_quarterly: "ربع سنوي",
                 opt_freq_monthly: "شهري",
+                kpi_rental_variance: "تباين الدخل التأجيري",
+                kpi_rental_variance_sub: "المحصل الفعلي مقارنة بالمتوقع (معادلة 7.5)",
                 lang_label: "English"
             }
         };
@@ -1119,6 +1128,21 @@
                 document.getElementById('kpi-rent').textContent = Number(d.total_active_rent_amount || 0).toLocaleString() + ' SAR';
                 document.getElementById('kpi-tickets').textContent = d.open_maintenance_tickets;
                 document.getElementById('kpi-overdue').textContent = d.overdue_rent_collections;
+
+                // Also fetch managerial rental variance (Eq 7.5)
+                const kpiRes = await fetch(`${API_BASE}/api/v1/reports/managerial-kpis`);
+                if (kpiRes.ok) {
+                    const kpiJson = await kpiRes.json();
+                    const rv = kpiJson.data?.forecast_vs_actual_rental_variance;
+                    if (rv) {
+                        const el = document.getElementById('kpi-rental-variance');
+                        const sub = document.getElementById('kpi-rental-variance-sub');
+                        if (el) el.textContent = rv.variance_percent !== null ? `${rv.variance_percent > 0 ? '+' : ''}${rv.variance_percent}%` : 'N/A';
+                        if (sub) sub.textContent = currentLang === 'ar'
+                            ? `الفعلي: ${Number(rv.actual_income).toLocaleString()} / المتوقع: ${Number(rv.forecast_income).toLocaleString()}`
+                            : `Actual: ${Number(rv.actual_income).toLocaleString()} / Forecast: ${Number(rv.forecast_income).toLocaleString()}`;
+                    }
+                }
             } catch (err) {
                 console.error("Error loading summary:", err);
             }

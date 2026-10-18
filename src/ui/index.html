@@ -598,6 +598,71 @@
             </div>
         </div>
 
+        <!-- ================= ARTICLE 7: MANAGERIAL & OPERATIONAL PERFORMANCE KPIS ================= -->
+        <div class="card-box" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.18em; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                        <span>📊</span>
+                        <span data-i18n="title_managerial_kpis">Managerial & Performance KPIs (Article 7)</span>
+                    </h3>
+                    <small style="color: var(--text-muted); font-size: 0.85em;" data-i18n="sub_managerial_kpis">Real-time SLA compliance, cohort conversions, task discipline, and income variance</small>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="role-perspective-badge" class="badge" style="background: #eff6ff; color: #1d4ed8; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe; font-size: 0.85em;">👤 General Manager View</span>
+                    <button class="btn btn-outline btn-sm" onclick="fetchManagerialKPIs()" style="padding: 4px 10px; font-size: 0.8em;">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+                </div>
+            </div>
+
+            <!-- 5 Formula KPI Cards (Eq 7.1 - 7.5) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <!-- Eq 7.1: SLA Compliance -->
+                <div class="funnel-kpi-card accent-cyan" style="border-inline-start: 4px solid #0284c7;">
+                    <div class="funnel-kpi-title" data-i18n="kpi_sla_compliance">⏱️ SLA Compliance Rate</div>
+                    <div class="funnel-kpi-value" id="kpi-m-sla" style="color: #0284c7;">--%</div>
+                    <div class="funnel-kpi-sub" id="sub-m-sla" data-i18n="sub_sla_compliance">Contacted within SLA window</div>
+                </div>
+
+                <!-- Eq 7.2: Cohort Conversion -->
+                <div class="funnel-kpi-card accent-indigo" style="border-inline-start: 4px solid #4f46e5;">
+                    <div class="funnel-kpi-title" data-i18n="kpi_cohort_conversion">🎯 Cohort Conversion</div>
+                    <div class="funnel-kpi-value" id="kpi-m-cohort" style="color: #4f46e5;">--%</div>
+                    <div class="funnel-kpi-sub" id="sub-m-cohort" data-i18n="sub_cohort_conversion">Won / Qualified in cohort</div>
+                </div>
+
+                <!-- Eq 7.3: On-Time Task Completion -->
+                <div class="funnel-kpi-card accent-emerald" style="border-inline-start: 4px solid #059669;">
+                    <div class="funnel-kpi-title" data-i18n="kpi_task_ontime">📋 On-Time Task Rate</div>
+                    <div class="funnel-kpi-value" id="kpi-m-task" style="color: #059669;">--%</div>
+                    <div class="funnel-kpi-sub" id="sub-m-task" data-i18n="sub_task_ontime">0 Overdue Tasks</div>
+                </div>
+
+                <!-- Eq 7.4: Viewing-to-Offer -->
+                <div class="funnel-kpi-card accent-amber" style="border-inline-start: 4px solid #d97706;">
+                    <div class="funnel-kpi-title" data-i18n="kpi_viewing_offer">👁️ Viewing-to-Offer</div>
+                    <div class="funnel-kpi-value" id="kpi-m-viewing" style="color: #d97706;">--%</div>
+                    <div class="funnel-kpi-sub" id="sub-m-viewing" data-i18n="sub_viewing_offer">Offers / Completed viewings</div>
+                </div>
+
+                <!-- Eq 7.5: Rental Variance -->
+                <div class="funnel-kpi-card accent-gold" style="border-inline-start: 4px solid #7c3aed;">
+                    <div class="funnel-kpi-title" data-i18n="kpi_rental_variance">💰 Rental Income Variance</div>
+                    <div class="funnel-kpi-value" id="kpi-m-variance" style="color: #7c3aed;">--%</div>
+                    <div class="funnel-kpi-sub" id="sub-m-variance" data-i18n="sub_rental_variance">Actual vs. Forecast</div>
+                </div>
+            </div>
+
+            <!-- Purpose Breakdown Strip (RENT vs BUY vs INVESTMENT) -->
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="font-weight: 600; font-size: 0.9em; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                    <span>🏷️</span> <span data-i18n="lbl_pipeline_by_purpose">Pipeline by Customer Purpose:</span>
+                </div>
+                <div id="purpose-breakdown-container" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <!-- Rendered dynamically: Rent, Buy, Investment badges -->
+                </div>
+            </div>
+        </div>
+
         <!-- ================= DRILLDOWN EXPLORER & LIVE PULSE STREAM (SPLIT VIEW) ================= -->
         <div class="drilldown-split-grid" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 32px;">
             <!-- LEFT COLUMN: HIERARCHICAL DRILLDOWN EXPLORER -->
@@ -864,6 +929,19 @@
                 chip_tasks: "📋 Tasks",
                 chip_messages: "💬 Messages",
                 chip_lead_updates: "⚡ Lead Updates",
+                title_managerial_kpis: "Managerial & Operational Performance KPIs (Article 7)",
+                sub_managerial_kpis: "Real-time SLA compliance, cohort conversions, task discipline, and income variance",
+                kpi_sla_compliance: "⏱️ SLA Compliance Rate",
+                sub_sla_compliance: "Contacted within SLA window",
+                kpi_cohort_conversion: "🎯 Cohort Conversion",
+                sub_cohort_conversion: "Won / Qualified in cohort",
+                kpi_task_ontime: "📋 On-Time Task Rate",
+                sub_task_ontime: "Completed on-time",
+                kpi_viewing_offer: "👁️ Viewing-to-Offer",
+                sub_viewing_offer: "Offers / Completed viewings",
+                kpi_rental_variance: "💰 Rental Income Variance",
+                sub_rental_variance: "Actual vs. Forecast",
+                lbl_pipeline_by_purpose: "Pipeline by Customer Purpose:",
                 lang_label: "عربي"
             },
             ar: {
@@ -983,6 +1061,19 @@
                 chip_tasks: "📋 مهام",
                 chip_messages: "💬 مراسلات",
                 chip_lead_updates: "⚡ طلبات",
+                title_managerial_kpis: "مؤشرات الأداء القيادية والتشغيلية (المادة 7)",
+                sub_managerial_kpis: "متابعة حية للالتزام باتفاقية الخدمة SLA، تحويل الأفواج، إنجاز المهام، وفروقات الدخل",
+                kpi_sla_compliance: "⏱️ الالتزام باتفاقية الخدمة SLA",
+                sub_sla_compliance: "تواصل أولي ضمن المهلة المحددة",
+                kpi_cohort_conversion: "🎯 تحويل الفوج البيعي",
+                sub_cohort_conversion: "عقود منجزة / طلبات مؤهلة بنفس الفوج",
+                kpi_task_ontime: "📋 معدل إنجاز المهام بالموعد",
+                sub_task_ontime: "المهام المنجزة بالموعد المحدد",
+                kpi_viewing_offer: "👁️ تحويل المعاينة إلى عرض",
+                sub_viewing_offer: "عروض مقدمة / معاينات مكتملة",
+                kpi_rental_variance: "💰 تباين الدخل التأجيري",
+                sub_rental_variance: "المحصل الفعلي مقارنة بالمتوقع",
+                lbl_pipeline_by_purpose: "الطلبات والفرص حسب الغرض العقاري:",
                 lang_label: "English"
             }
         };
@@ -1014,6 +1105,7 @@
             localStorage.setItem('recrm_lang', currentLang);
             populateFilters();
             renderPulseFeed();
+            if (dashboardState.managerialData) renderManagerialKPIs(dashboardState.managerialData);
         }
 
         function toggleLanguage() {
@@ -1055,6 +1147,7 @@
             selectedAgent: null,      // { user_id, full_name }
             pulseFilter: 'ALL',
             cachedData: null,
+            managerialData: null,
             branchesList: [],
             agentsList: []
         };
@@ -1074,6 +1167,9 @@
                 renderDrilldown();
                 renderPulseFeed();
 
+                // Concurrently refresh Article 7 Managerial KPIs
+                await fetchManagerialKPIs();
+
                 document.getElementById('db-status').textContent = 'PostgreSQL Connected';
                 const dot = document.querySelector('.status-dot');
                 if (dot) dot.style.background = '#16a34a';
@@ -1086,6 +1182,116 @@
                 document.getElementById('db-status').textContent = 'Backend Offline';
                 const dot = document.querySelector('.status-dot');
                 if (dot) dot.style.background = '#ef4444';
+            }
+        }
+
+        async function fetchManagerialKPIs() {
+            try {
+                let url = `${API_BASE}/api/v1/reports/managerial-kpis?`;
+                if (dashboardState.branchId) url += `branch_id=${encodeURIComponent(dashboardState.branchId)}&`;
+                if (dashboardState.userId) url += `user_id=${encodeURIComponent(dashboardState.userId)}&`;
+
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+
+                const res = await fetch(url, { headers });
+                if (!res.ok) throw new Error('Failed to load managerial KPIs');
+                const json = await res.json();
+                dashboardState.managerialData = json.data;
+                renderManagerialKPIs(json.data);
+            } catch (err) {
+                console.warn('Managerial KPIs error:', err);
+            }
+        }
+
+        function renderManagerialKPIs(d) {
+            if (!d) return;
+            const isAr = currentLang === 'ar';
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
+
+            // 1. SLA Compliance (Eq 7.1)
+            if (d.lead_sla_compliance) {
+                const sla = d.lead_sla_compliance;
+                setVal('kpi-m-sla', `${sla.sla_compliance_percent}%`);
+                setVal('sub-m-sla', isAr 
+                    ? `${sla.leads_contacted_within_sla} من ${sla.eligible_leads_due} طلب تم التجاوب معه`
+                    : `${sla.leads_contacted_within_sla} of ${sla.eligible_leads_due} leads contacted`);
+            }
+
+            // 2. Cohort Conversion (Eq 7.2)
+            if (d.lead_to_transaction_conversion) {
+                const c = d.lead_to_transaction_conversion;
+                setVal('kpi-m-cohort', `${c.conversion_rate_percent}%`);
+                setVal('sub-m-cohort', isAr
+                    ? `${c.successful_leads} فوز من ${c.total_qualified_leads_in_cohort} مؤهل`
+                    : `${c.successful_leads} won of ${c.total_qualified_leads_in_cohort} qualified`);
+            }
+
+            // 3. Task Completion Rate & Overdue Tasks (Eq 7.3)
+            if (d.task_completion_rate) {
+                const t = d.task_completion_rate;
+                setVal('kpi-m-task', `${t.on_time_completion_rate_percent}%`);
+                setVal('sub-m-task', isAr
+                    ? `${t.tasks_overdue} مهام متأخرة | ${t.tasks_completed_on_time} منجز بالموعد`
+                    : `${t.tasks_overdue} Overdue | ${t.tasks_completed_on_time} on-time`);
+            }
+
+            // 4. Viewing to Offer Conversion (Eq 7.4)
+            if (d.viewing_to_offer_conversion) {
+                const v = d.viewing_to_offer_conversion;
+                setVal('kpi-m-viewing', `${v.viewing_to_offer_conversion_percent}%`);
+                setVal('sub-m-viewing', isAr
+                    ? `${v.offers_generated} عروض من ${v.eligible_completed_viewings} معاينات`
+                    : `${v.offers_generated} offers from ${v.eligible_completed_viewings} viewings`);
+            }
+
+            // 5. Rental Income Variance (Eq 7.5)
+            if (d.forecast_vs_actual_rental_variance) {
+                const rv = d.forecast_vs_actual_rental_variance;
+                const pctStr = rv.variance_percent !== null ? `${rv.variance_percent > 0 ? '+' : ''}${rv.variance_percent}%` : (isAr ? 'غير متاح' : 'N/A');
+                setVal('kpi-m-variance', pctStr);
+                setVal('sub-m-variance', isAr
+                    ? `الفعلي: ${rv.actual_income.toLocaleString()} | المتوقع: ${rv.forecast_income.toLocaleString()} ر.س`
+                    : `Actual: ${rv.actual_income.toLocaleString()} | Forecast: ${rv.forecast_income.toLocaleString()} SAR`);
+            }
+
+            // Role Perspective Badge
+            if (d.role_perspective) {
+                const b = document.getElementById('role-perspective-badge');
+                if (b) {
+                    const r = d.role_perspective.active_role_view;
+                    b.textContent = isAr ? `منظور الدور: ${r}` : `Perspective: ${r}`;
+                }
+            }
+
+            // Pipeline by Purpose Container
+            if (d.pipeline_by_purpose) {
+                const container = document.getElementById('purpose-breakdown-container');
+                if (container) {
+                    const typeIcons = { 'BUY': '🏠', 'RENT': '🔑', 'INVESTMENT': '📈' };
+                    const typeLabels = {
+                        'BUY': isAr ? 'شراء وتملك' : 'Buy',
+                        'RENT': isAr ? 'إيجار' : 'Rent',
+                        'INVESTMENT': isAr ? 'استثمار' : 'Investment'
+                    };
+                    container.innerHTML = d.pipeline_by_purpose.map(p => {
+                        const icon = typeIcons[p.inquiry_type] || '📑';
+                        const label = typeLabels[p.inquiry_type] || p.inquiry_type;
+                        return `
+                            <div style="background: white; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.82em; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                <span>${icon}</span>
+                                <strong>${label}:</strong>
+                                <span style="color: var(--primary-light); font-weight: 600;">${p.lead_count} ${isAr ? 'طلبات' : 'leads'}</span>
+                                <span style="color: var(--text-muted);">(${p.won_count} ${isAr ? 'فوز' : 'won'})</span>
+                                <span style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-weight: 600; color: #334155;">${(p.total_budget || 0).toLocaleString()} SAR</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
         }
 
