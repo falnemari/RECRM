@@ -514,3 +514,4 @@ class CalculationService:
             "variance_percent": round(variance_percent, 2) if variance_percent is not None else None,
             "is_favorable": variance >= 0.0
         }
+

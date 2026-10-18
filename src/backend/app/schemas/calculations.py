@@ -51,3 +51,4 @@ class CommissionCalculationIn(BaseModel):
 class BalanceCalculationIn(BaseModel):
     amount_due: float
     amount_paid: float
+
