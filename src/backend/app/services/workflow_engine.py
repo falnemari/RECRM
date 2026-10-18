@@ -1568,9 +1568,18 @@ class WorkflowEngine:
                 offer_id
             )
             activity_notes = notes or f"تم رفض العرض المالي للوحدة {offer['unit_number']}."
+            lead_inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", offer["lead_id"]) if offer["lead_id"] else None
+            inq_norm = (lead_inq or "").upper()
+            if inq_norm == "RENT":
+                rematch_tmpl = "TASK_RENT_MATCH_PROPERTIES"
+            elif inq_norm in ("INVEST", "INVESTMENT"):
+                rematch_tmpl = "TASK_INVEST_COMPARE_RETURNS"
+            else:
+                rematch_tmpl = "TASK_OPPORTUNITY_MATCH_PROPERTIES"
+
             next_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id="TASK_OPPORTUNITY_MATCH_PROPERTIES",
+                template_id=rematch_tmpl,
                 lead_id=offer["lead_id"],
                 opportunity_id=offer["opportunity_id"],
                 customer_id=offer["customer_id"],
