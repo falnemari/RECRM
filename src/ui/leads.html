@@ -1708,7 +1708,8 @@
             clearCustomerSearch();
             deselectCustomer();
             document.getElementById('add-lead-form').reset();
-            populateLeadAgentsForCity('');
+            const activeUid = localStorage.getItem('recrm_user_id') || '';
+            populateLeadAgentsForCity('', activeUid);
             document.getElementById('add-lead-modal').style.display = 'flex';
         }
 
@@ -1726,16 +1727,11 @@
             const email = document.getElementById('srch-email')?.value.trim();
             const nationalId = document.getElementById('srch-national-id')?.value.trim();
 
-            if (!firstName && !lastName && !companyName && !mobile && !custId && !email && !nationalId && custType === 'ALL') {
-                alert('Please enter at least one field (First Name, Last Name, Company Name, Mobile, Customer ID, Email, or National ID/CR) to search.');
-                return;
-            }
-
             const resultsContainer = document.getElementById('srch-results');
             resultsContainer.style.display = 'block';
             resultsContainer.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.88em;">Searching customer database...</div>';
 
-            let queryParams = ['for_lookup=true'];
+            let queryParams = ['for_lookup=true', 'page_size=50'];
             if (custType && custType !== 'ALL') queryParams.push(`customer_type=${encodeURIComponent(custType)}`);
             if (firstName) queryParams.push(`first_name=${encodeURIComponent(firstName)}`);
             if (lastName) queryParams.push(`last_name=${encodeURIComponent(lastName)}`);

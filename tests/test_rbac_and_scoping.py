@@ -38,17 +38,22 @@ class TestRBACAndScoping(unittest.TestCase):
         res = self.client.get("/api/v1/finance/summary", headers={"X-User-ID": "user-3"})
         self.assertEqual(res.status_code, 403)
 
-    def test_customers_scoped_for_own_user(self):
-        res_user3 = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-3"})
-        self.assertEqual(res_user3.status_code, 200)
-        user3_total = res_user3.json()["meta"]["total"]
+    def test_user27_sales_agent_with_customer_read_can_see_all_customers(self):
+        # user-27 (Shahad Alnemari) is a SALES_AGENT with CUSTOMER_READ and CUSTOMER_WRITE permissions
+        res_user27 = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-27"})
+        self.assertEqual(res_user27.status_code, 200)
+        user27_total = res_user27.json()["meta"]["total"]
 
         res_sysadmin = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-51"})
         self.assertEqual(res_sysadmin.status_code, 200)
         sysadmin_total = res_sysadmin.json()["meta"]["total"]
 
-    def test_user43_global_scope_can_see_all_customers(self):
-        # user-43 has MARKETING, PROPERTY_MANAGER, and DOCUMENT_CONTROL with customer read/write permissions
+        # Any user granted CUSTOMER_READ must be qualified to view all customers in the directory
+        self.assertEqual(user27_total, sysadmin_total)
+        self.assertGreater(user27_total, 0)
+
+    def test_user43_can_see_all_customers(self):
+        # user-43 has CUSTOMER_READ and CUSTOMER_WRITE permissions
         res_user43 = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-43"})
         self.assertEqual(res_user43.status_code, 200)
         user43_total = res_user43.json()["meta"]["total"]
@@ -57,21 +62,45 @@ class TestRBACAndScoping(unittest.TestCase):
         self.assertEqual(res_sysadmin.status_code, 200)
         sysadmin_total = res_sysadmin.json()["meta"]["total"]
 
-        # user-43 must have global customer visibility
         self.assertEqual(user43_total, sysadmin_total)
         self.assertGreater(user43_total, 0)
 
-    def test_customer_lookup_for_lead_creation_bypasses_own_scope(self):
-        # When creating a lead (for_lookup=true or searching by mobile/name), customer lookup must find existing records
-        res_lookup = self.client.get("/api/v1/customers?for_lookup=true", headers={"X-User-ID": "user-3"})
+    def test_user_without_customer_read_is_scoped(self):
+        # user-21 (Document Control) does NOT have CUSTOMER_READ or CUSTOMER_WRITE permissions
+        res_user21 = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-21"})
+        self.assertEqual(res_user21.status_code, 200)
+        user21_total = res_user21.json()["meta"]["total"]
+
+        res_sysadmin = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-51"})
+        sysadmin_total = res_sysadmin.json()["meta"]["total"]
+
+        # Users lacking CUSTOMER_READ are restricted to only customers tied to their operational records
+        self.assertLess(user21_total, sysadmin_total)
+
+    def test_customer_lookup_for_lead_creation_bypasses_scope(self):
+        # Even for a user without general CUSTOMER_READ, customer search/lookup for transactions returns all matching records
+        res_lookup = self.client.get("/api/v1/customers?for_lookup=true", headers={"X-User-ID": "user-21"})
         self.assertEqual(res_lookup.status_code, 200)
         lookup_total = res_lookup.json()["meta"]["total"]
 
         res_sysadmin = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-51"})
         sysadmin_total = res_sysadmin.json()["meta"]["total"]
 
-        # An agent creating a lead must be able to lookup any existing customer in the CRM
         self.assertEqual(lookup_total, sysadmin_total)
+
+    def test_create_lead_through_user27(self):
+        # Verify lead creation through user-27 works seamlessly for existing customer
+        payload = {
+            "customer_id": "customer-21",
+            "assigned_user_id": "user-27",
+            "inquiry_type": "BUY",
+            "priority": "HIGH"
+        }
+        res = self.client.post("/api/v1/leads", json=payload, headers={"X-User-ID": "user-27"})
+        self.assertEqual(res.status_code, 201)
+        lead_data = res.json()["data"]
+        self.assertEqual(lead_data["assigned_user_id"], "user-27")
+        self.assertEqual(lead_data["customer_id"], "customer-21")
 
 if __name__ == "__main__":
     unittest.main()

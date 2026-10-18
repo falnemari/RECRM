@@ -523,7 +523,11 @@
 
         // 5. Customers Page (customers.html)
         const curPage = getCurrentPageKey();
-        if (curPage === 'customers.html' && isOwn) {
+        const hasCustAccess = currentUserProfile && currentUserProfile.permission_codes && 
+            (currentUserProfile.permission_codes.includes('CUSTOMER_READ') || 
+             currentUserProfile.permission_codes.includes('CUSTOMER_WRITE') || 
+             currentUserProfile.permission_codes.includes('ADMIN'));
+        if (curPage === 'customers.html' && isOwn && !hasCustAccess) {
             showScopeNotificationBanner(isAr 
                 ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء المرتبطين بطلباتك ووحداتك وصفقاتك المسندة إليك فقط (${userName}).`
                 : `🔒 Personal Data Isolation Active: Showing customers linked to your assigned records only (${userName}).`);

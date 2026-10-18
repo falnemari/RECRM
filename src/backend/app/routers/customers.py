@@ -59,34 +59,52 @@ async def list_customers(
         f and f.strip() for f in (search, mobile, email, national_id, customer_id, first_name, last_name, company_name)
     )
 
-    # Role-based & multi-tenant data scoping enforcement (applied for general browsing, bypassed for customer search/lookup)
-    if x_user_id and not is_lookup_query:
-        roles = await conn.fetch(
-            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
-            x_user_id
-        )
-        role_codes = [r["role_code"] for r in roles]
-        scope = resolve_user_data_scope(role_codes)
-        if scope == "OWN":
-            conditions.append(f"""
-                (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.assigned_user_id = ${p_idx})
-                 OR EXISTS (SELECT 1 FROM opportunities o WHERE o.customer_id = customers.customer_id AND o.assigned_user_id = ${p_idx})
-                 OR EXISTS (SELECT 1 FROM tasks t WHERE t.customer_id = customers.customer_id AND t.assigned_user_id = ${p_idx})
-                 OR EXISTS (SELECT 1 FROM units u WHERE u.owner_customer_id = customers.customer_id AND u.assigned_user_id = ${p_idx}))
-            """)
-            params.append(x_user_id)
-            p_idx += 1
-        elif scope == "BRANCH":
-            u_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
-            if u_branch:
+    # Role-based & multi-tenant data scoping enforcement
+    if x_user_id:
+        # 1. Fetch effective permissions granted to the requesting user
+        perm_rows = await conn.fetch("""
+            SELECT DISTINCT p.code
+            FROM user_roles ur
+            JOIN role_permissions rp ON ur.role_id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.permission_id
+            WHERE ur.user_id = $1
+        """, x_user_id)
+        user_perms = set(r["code"].upper() for r in perm_rows)
+
+        # 2. Check if user is qualified by permission (CUSTOMER_READ, CUSTOMER_WRITE, ADMIN)
+        has_customer_perm = any(p in user_perms for p in ("CUSTOMER_READ", "CUSTOMER_WRITE", "ADMIN"))
+
+        # 3. If user has explicit customer read/write permissions or is performing a customer lookup,
+        # they have full access to view/search customers across the organization.
+        # If a user DOES NOT have customer read/write permissions and is not doing a lookup,
+        # restrict their view to customers tied to their assigned operational records.
+        if not has_customer_perm and not is_lookup_query:
+            roles = await conn.fetch(
+                "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+                x_user_id
+            )
+            role_codes = [r["role_code"] for r in roles]
+            scope = resolve_user_data_scope(role_codes)
+            if scope == "OWN":
                 conditions.append(f"""
-                    (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.branch_id = ${p_idx})
-                     OR EXISTS (SELECT 1 FROM opportunities o JOIN users u_opp ON o.assigned_user_id = u_opp.user_id WHERE o.customer_id = customers.customer_id AND u_opp.branch_id = ${p_idx})
-                     OR EXISTS (SELECT 1 FROM tasks t JOIN users u_tsk ON t.assigned_user_id = u_tsk.user_id WHERE t.customer_id = customers.customer_id AND u_tsk.branch_id = ${p_idx})
-                     OR EXISTS (SELECT 1 FROM units un JOIN users u_un ON un.assigned_user_id = u_un.user_id WHERE un.owner_customer_id = customers.customer_id AND u_un.branch_id = ${p_idx}))
+                    (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.assigned_user_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM opportunities o WHERE o.customer_id = customers.customer_id AND o.assigned_user_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM tasks t WHERE t.customer_id = customers.customer_id AND t.assigned_user_id = ${p_idx})
+                     OR EXISTS (SELECT 1 FROM units u WHERE u.owner_customer_id = customers.customer_id AND u.assigned_user_id = ${p_idx}))
                 """)
-                params.append(u_branch)
+                params.append(x_user_id)
                 p_idx += 1
+            elif scope == "BRANCH":
+                u_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+                if u_branch:
+                    conditions.append(f"""
+                        (EXISTS (SELECT 1 FROM leads l WHERE l.customer_id = customers.customer_id AND l.branch_id = ${p_idx})
+                         OR EXISTS (SELECT 1 FROM opportunities o JOIN users u_opp ON o.assigned_user_id = u_opp.user_id WHERE o.customer_id = customers.customer_id AND u_opp.branch_id = ${p_idx})
+                         OR EXISTS (SELECT 1 FROM tasks t JOIN users u_tsk ON t.assigned_user_id = u_tsk.user_id WHERE t.customer_id = customers.customer_id AND u_tsk.branch_id = ${p_idx})
+                         OR EXISTS (SELECT 1 FROM units un JOIN users u_un ON un.assigned_user_id = u_un.user_id WHERE un.owner_customer_id = customers.customer_id AND u_un.branch_id = ${p_idx}))
+                    """)
+                    params.append(u_branch)
+                    p_idx += 1
 
     if customer_id and customer_id.strip():
         cid_val = customer_id.strip()
