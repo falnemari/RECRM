@@ -1224,7 +1224,11 @@
                 if (dashboardState.branchId) url += `&branch_id=${encodeURIComponent(dashboardState.branchId)}`;
                 if (dashboardState.userId) url += `&user_id=${encodeURIComponent(dashboardState.userId)}`;
 
-                const res = await fetch(url);
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+
+                const res = await fetch(url, { headers });
                 if (!res.ok) throw new Error('Failed to load funnel data');
                 const json = await res.json();
                 dashboardState.cachedData = json.data;

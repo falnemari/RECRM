@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
-from app.routers.auth import check_user_scope_override
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope
 from app.schemas.sales import (
     OpportunityOut, OpportunityUpdate, OpportunityCreateIn, ViewingOut, ViewingCreateIn, ReservationOut,
     OfferOut, OfferCreateIn, OfferUpdateIn, OfferDecisionIn, ReservationCreateIn, ReservationDepositVerifyIn,
@@ -109,11 +109,23 @@ async def list_opportunities(
     )
 
 @router.get("/opportunities/{opp_id}", response_model=ResponseEnvelope[OpportunityOut])
-async def get_opportunity(opp_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_opportunity(
+    opp_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     query = f"{OPP_SELECT_QUERY} WHERE o.opportunity_id = $1"
     row = await conn.fetchrow(query, opp_id)
     if not row:
         raise HTTPException(status_code=404, detail="Opportunity not found")
+    if x_user_id:
+        roles = await conn.fetch(
+            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+            x_user_id
+        )
+        scope = resolve_user_data_scope([r["role_code"] for r in roles])
+        if scope == "OWN" and row["assigned_user_id"] != x_user_id:
+            raise HTTPException(status_code=403, detail="Access denied: Opportunity belongs to another agent")
     return ResponseEnvelope(data=OpportunityOut(**dict(row)), meta=BaseMeta())
 
 class OpportunityUnblockIn(BaseModel):
@@ -122,11 +134,25 @@ class OpportunityUnblockIn(BaseModel):
 
 @router.get("/opportunities/{opp_id}/situation", response_model=ResponseEnvelope[dict])
 @router.get("/sales/opportunities/{opp_id}/situation", response_model=ResponseEnvelope[dict], include_in_schema=False)
-async def get_opportunity_situation_endpoint(opp_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_opportunity_situation_endpoint(
+    opp_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     """
     360-Degree Operational Situation & Next Action Engine for a Sales Opportunity:
     Compiles complete milestone timeline, bottleneck/stalling status, and recommended actions.
     """
+    if x_user_id:
+        opp_agent = await conn.fetchval("SELECT assigned_user_id FROM opportunities WHERE opportunity_id = $1", opp_id)
+        if opp_agent:
+            roles = await conn.fetch(
+                "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+                x_user_id
+            )
+            scope = resolve_user_data_scope([r["role_code"] for r in roles])
+            if scope == "OWN" and opp_agent != x_user_id:
+                raise HTTPException(status_code=403, detail="Access denied: Opportunity belongs to another agent")
     try:
         data = await WorkflowEngine.get_entity_situation(conn=conn, opportunity_id=opp_id)
         return ResponseEnvelope(data=data, meta=BaseMeta())
@@ -366,6 +392,7 @@ async def create_viewing(
 @router.get("/viewings/{viewing_id}", response_model=ResponseEnvelope[dict])
 async def get_viewing(
     viewing_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     query = """
@@ -397,6 +424,14 @@ async def get_viewing(
     row = await conn.fetchrow(query, viewing_id)
     if not row:
         raise HTTPException(status_code=404, detail="Viewing not found.")
+    if x_user_id:
+        roles = await conn.fetch(
+            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+            x_user_id
+        )
+        scope = resolve_user_data_scope([r["role_code"] for r in roles])
+        if scope == "OWN" and row["agent_user_id"] != x_user_id:
+            raise HTTPException(status_code=403, detail="Access denied: Viewing belongs to another agent")
     d = dict(row)
     if d.get("scheduled_start"):
         d["scheduled_start"] = d["scheduled_start"].isoformat()

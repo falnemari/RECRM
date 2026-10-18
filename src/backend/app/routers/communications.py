@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
-from app.routers.auth import check_user_scope_override
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope
 from app.schemas.communications import (
     TasksSummaryOut,
     TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn,
@@ -229,7 +229,11 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
     return ResponseEnvelope(data=out)
 
 @router.get("/tasks/{task_id}", response_model=ResponseEnvelope[TaskOut])
-async def get_task(task_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_task(
+    task_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     row = await conn.fetchrow(
         """
         SELECT 
@@ -254,6 +258,14 @@ async def get_task(task_id: str, conn: asyncpg.Connection = Depends(get_db)):
     )
     if not row:
         raise HTTPException(status_code=404, detail="Task not found")
+    if x_user_id:
+        roles = await conn.fetch(
+            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+            x_user_id
+        )
+        scope = resolve_user_data_scope([r["role_code"] for r in roles])
+        if scope == "OWN" and row["assigned_user_id"] != x_user_id:
+            raise HTTPException(status_code=403, detail="Access denied: Task belongs to another agent")
     return ResponseEnvelope(data=TaskOut(**dict(row)))
 
 @router.patch("/tasks/{task_id}", response_model=ResponseEnvelope[dict])

@@ -32,7 +32,7 @@
             nameAr: 'مسار المبيعات والصفقات',
             nameEn: 'Sales Pipeline',
             permissions: ['SALES_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT']
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT']
         },
         'finance.html': {
             nameAr: 'المالية والعقود',
@@ -44,7 +44,7 @@
             nameAr: 'إدارة الأملاك والتأجير',
             nameEn: 'Property Management',
             permissions: ['PM_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER', 'LEASING_AGENT']
+            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER']
         },
         'tasks.html': {
             nameAr: 'المهام والمتابعات',
@@ -142,18 +142,46 @@
     }
 
     function filterNavbarLinks() {
-        const navLinks = document.querySelectorAll('.nav ul li a');
+        // 1. Filter navbar items across all 12 operational pages
+        const navLinks = document.querySelectorAll('.nav ul li a, nav a');
         navLinks.forEach(a => {
             const href = a.getAttribute('href');
             if (!href) return;
-            const li = a.closest('li');
-            if (!li) return;
+            const li = a.closest('li') || a;
 
             const isAllowed = canUserAccessPage(currentUserProfile, href);
             if (isAllowed) {
                 li.style.display = '';
             } else {
                 li.style.display = 'none';
+            }
+        });
+
+        // 2. Filter Dashboard module cards on index.html
+        const moduleCards = document.querySelectorAll('.module-card');
+        moduleCards.forEach(card => {
+            const link = card.querySelector('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            const isAllowed = canUserAccessPage(currentUserProfile, href);
+            if (isAllowed) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // 3. Filter any action buttons or links targeting restricted pages
+        document.querySelectorAll('a.btn-drill[href], a.quick-link[href]').forEach(a => {
+            const href = a.getAttribute('href');
+            if (!href) return;
+            const isAllowed = canUserAccessPage(currentUserProfile, href);
+            if (isAllowed) {
+                a.style.display = '';
+            } else {
+                a.style.display = 'none';
             }
         });
     }

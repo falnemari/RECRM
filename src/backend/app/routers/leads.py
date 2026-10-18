@@ -10,7 +10,7 @@ from app.schemas.leads import (
     LeadOut, LeadCreate, LeadUpdate, LeadNoteOut, LeadNoteCreate, LeadUnitItem,
     LeadQualifyIn, LeadContactIn
 )
-from app.routers.auth import check_user_scope_override
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope
 from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
@@ -205,11 +205,23 @@ async def list_leads(
     )
 
 @router.get("/{lead_id}", response_model=ResponseEnvelope[LeadOut])
-async def get_lead(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_lead(
+    lead_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     query = f"{LEAD_SELECT_QUERY} WHERE l.lead_id = $1"
     row = await conn.fetchrow(query, lead_id)
     if not row:
         raise HTTPException(status_code=404, detail="Lead not found")
+    if x_user_id:
+        roles = await conn.fetch(
+            "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+            x_user_id
+        )
+        scope = resolve_user_data_scope([r["role_code"] for r in roles])
+        if scope == "OWN" and row["assigned_user_id"] != x_user_id:
+            raise HTTPException(status_code=403, detail="Access denied: Lead belongs to another agent")
     units = await fetch_lead_units(conn, lead_id)
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
 
@@ -218,11 +230,25 @@ class LeadUnblockIn(BaseModel):
     notes: Optional[str] = None
 
 @router.get("/{lead_id}/situation", response_model=ResponseEnvelope[dict])
-async def get_lead_situation_endpoint(lead_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def get_lead_situation_endpoint(
+    lead_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
     """
     360-Degree Operational Situation & Next Action Engine for a Lead:
     Compiles complete milestone timeline, bottleneck/stalling status, and recommended actions.
     """
+    if x_user_id:
+        lead_agent = await conn.fetchval("SELECT assigned_user_id FROM leads WHERE lead_id = $1", lead_id)
+        if lead_agent:
+            roles = await conn.fetch(
+                "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
+                x_user_id
+            )
+            scope = resolve_user_data_scope([r["role_code"] for r in roles])
+            if scope == "OWN" and lead_agent != x_user_id:
+                raise HTTPException(status_code=403, detail="Access denied: Lead belongs to another agent")
     try:
         data = await WorkflowEngine.get_entity_situation(conn=conn, lead_id=lead_id)
         return ResponseEnvelope(data=data, meta=BaseMeta())
