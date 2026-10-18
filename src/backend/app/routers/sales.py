@@ -363,6 +363,47 @@ async def create_viewing(
         )
     return ResponseEnvelope(data=res)
 
+@router.get("/viewings/{viewing_id}", response_model=ResponseEnvelope[dict])
+async def get_viewing(
+    viewing_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    query = """
+        SELECT 
+            v.viewing_id,
+            v.opportunity_id,
+            v.lead_id,
+            v.unit_id,
+            u.unit_number,
+            COALESCE(p.name_ar, p.name_en) AS project_name,
+            b.name AS building_name,
+            v.customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            v.agent_user_id,
+            ag.full_name AS agent_user_name,
+            v.scheduled_start,
+            v.scheduled_end,
+            v.status,
+            v.outcome,
+            v.notes
+        FROM viewings v
+        LEFT JOIN units u ON v.unit_id = u.unit_id
+        LEFT JOIN buildings b ON u.building_id = b.building_id
+        LEFT JOIN projects p ON b.project_id = p.project_id
+        LEFT JOIN customers c ON v.customer_id = c.customer_id
+        LEFT JOIN users ag ON v.agent_user_id = ag.user_id
+        WHERE v.viewing_id = $1
+    """
+    row = await conn.fetchrow(query, viewing_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Viewing not found.")
+    d = dict(row)
+    if d.get("scheduled_start"):
+        d["scheduled_start"] = d["scheduled_start"].isoformat()
+    if d.get("scheduled_end"):
+        d["scheduled_end"] = d["scheduled_end"].isoformat()
+    return ResponseEnvelope(data=d)
+
 @router.patch("/viewings/{viewing_id}", response_model=ResponseEnvelope[dict])
 async def update_viewing(
     viewing_id: str,

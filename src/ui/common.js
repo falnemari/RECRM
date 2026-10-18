@@ -859,7 +859,372 @@
     }
 
     // -------------------------------------------------------------------------
-    // 9. Global Namespace Export
+    // 9. Dedicated Property Viewing Manager & Edit Modals
+    // -------------------------------------------------------------------------
+    async function showEditViewingModal(viewingId, onSaved = null) {
+        if (!viewingId) return;
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'recrm-viewing-edit-overlay';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(3px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100002; direction: ${isAr ? 'rtl' : 'ltr'}; font-family: inherit;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 580px; width: 94%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+                <div style="padding: 16px 20px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                        <span>👁️</span>
+                        <span>${isAr ? 'تعديل بيانات المعاينة الميدانية' : 'Edit Property Viewing'}</span>
+                        <span style="font-family: monospace; font-size: 0.85em; background: #334155; padding: 2px 7px; border-radius: 4px;">#${viewingId}</span>
+                    </div>
+                    <button type="button" class="recrm-ve-close" style="background: none; border: none; color: #94a3b8; font-size: 1.4em; cursor: pointer;">&times;</button>
+                </div>
+                <div class="recrm-ve-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <div style="text-align: center; padding: 30px; color: #64748b;">
+                        <span style="display: inline-block; animation: recrmSpin 1s linear infinite; font-size: 1.8em;">⌛</span>
+                        <div style="margin-top: 10px; font-weight: 600;">${isAr ? 'جاري تحميل بيانات المعاينة...' : 'Loading viewing details...'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const closeBtn = overlay.querySelector('.recrm-ve-close');
+        const cleanup = () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 150);
+        };
+        closeBtn.onclick = cleanup;
+        overlay.onclick = (e) => { if (e.target === overlay) cleanup(); };
+
+        try {
+            const res = await apiRequest(`/api/v1/viewings/${encodeURIComponent(viewingId)}`);
+            const v = res.data;
+            const body = overlay.querySelector('.recrm-ve-body');
+
+            const toLocalIso = (isoStr) => {
+                if (!isoStr) return '';
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return '';
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+
+            const startVal = toLocalIso(v.scheduled_start);
+            const endVal = toLocalIso(v.scheduled_end);
+
+            body.innerHTML = `
+                <!-- Summary Card -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; color: #0f172a; font-size: 0.98em;">🏢 ${v.unit_number || isAr ? 'وحدة غير محددة' : 'Unit'} — ${v.project_name || v.building_name || ''}</span>
+                        <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.8em; padding: 3px 8px; border-radius: 4px;">${v.status || 'SCHEDULED'}</span>
+                    </div>
+                    <div style="font-size: 0.82em; color: #64748b; display: flex; flex-wrap: wrap; gap: 12px;">
+                        <span>👤 ${isAr ? 'العميل: ' : 'Customer: '} <strong>${v.customer_name || '--'}</strong></span>
+                        <span>🧑‍💼 ${isAr ? 'الوسيط: ' : 'Agent: '} <strong>${v.agent_user_name || '--'}</strong></span>
+                    </div>
+                </div>
+
+                <form id="recrm-ve-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                        <div>
+                            <label style="display: block; font-size: 0.84em; font-weight: 700; color: #334155; margin-bottom: 5px;">${isAr ? 'حالة المعاينة *' : 'Viewing Status *'}</label>
+                            <select id="recrm-ve-status" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88em; background: white;">
+                                <option value="SCHEDULED" ${v.status === 'SCHEDULED' ? 'selected' : ''}>📅 ${isAr ? 'مجدولة (SCHEDULED)' : 'Scheduled'}</option>
+                                <option value="COMPLETED" ${v.status === 'COMPLETED' ? 'selected' : ''}>✅ ${isAr ? 'تمت بنجاح (COMPLETED)' : 'Completed'}</option>
+                                <option value="CANCELLED" ${v.status === 'CANCELLED' ? 'selected' : ''}>❌ ${isAr ? 'ملغاة (CANCELLED)' : 'Cancelled'}</option>
+                                <option value="NO_SHOW" ${v.status === 'NO_SHOW' ? 'selected' : ''}>⚠️ ${isAr ? 'تخلف العميل عن الحضور (NO_SHOW)' : 'Client No-Show'}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.84em; font-weight: 700; color: #334155; margin-bottom: 5px;">${isAr ? 'نتيجة وقرار المعاينة' : 'Outcome / Decision'}</label>
+                            <select id="recrm-ve-outcome" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88em; background: white;">
+                                <option value="">-- ${isAr ? 'بدون تحديد' : 'Unspecified'} --</option>
+                                <option value="INTERESTED" ${v.outcome === 'INTERESTED' ? 'selected' : ''}>⭐ ${isAr ? 'مهتم ويرغب بتقديم عرض (INTERESTED)' : 'Interested (Offer candidate)'}</option>
+                                <option value="NEEDS_ANOTHER_UNIT" ${v.outcome === 'NEEDS_ANOTHER_UNIT' ? 'selected' : ''}>🔄 ${isAr ? 'يرغب بوحدة بديلة أخرى' : 'Needs alternative unit'}</option>
+                                <option value="OFFER_REQUESTED" ${v.outcome === 'OFFER_REQUESTED' ? 'selected' : ''}>💼 ${isAr ? 'طلب إعداد وتقديم عرض مالي' : 'Offer requested'}</option>
+                                <option value="REJECTED" ${v.outcome === 'REJECTED' ? 'selected' : ''}>❌ ${isAr ? 'غير مناسبة للعميل (مرفوضة)' : 'Rejected'}</option>
+                                <option value="NO_SHOW" ${v.outcome === 'NO_SHOW' ? 'selected' : ''}>⚠️ ${isAr ? 'تخلف عن الحضور' : 'No Show'}</option>
+                                <option value="PENDING_DECISION" ${v.outcome === 'PENDING_DECISION' ? 'selected' : ''}>⏳ ${isAr ? 'قيد دراسة ومشاورة العميل' : 'Pending decision'}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                        <div>
+                            <label style="display: block; font-size: 0.84em; font-weight: 700; color: #334155; margin-bottom: 5px;">${isAr ? 'تاريخ ووقت بدء المعاينة *' : 'Scheduled Start *'}</label>
+                            <input type="datetime-local" id="recrm-ve-start" value="${startVal}" required style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88em; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.84em; font-weight: 700; color: #334155; margin-bottom: 5px;">${isAr ? 'تاريخ ووقت انتهاء المعاينة' : 'Scheduled End'}</label>
+                            <input type="datetime-local" id="recrm-ve-end" value="${endVal}" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88em; background: white;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 0.84em; font-weight: 700; color: #334155; margin-bottom: 5px;">${isAr ? 'ملاحظات المعاينة وترتيبات المفاتيح' : 'Viewing Notes & Key Arrangements'}</label>
+                        <textarea id="recrm-ve-notes" rows="3" placeholder="${isAr ? 'سجل أي تفاصيل، ترتيبات استلام المفاتيح، أو انطباعات العميل أثناء الزيارة...' : 'Notes regarding key handover, client feedback, inspection findings...'}" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88em; resize: vertical;">${v.notes || ''}</textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+                        <button type="button" class="recrm-ve-cancel" style="padding: 8px 18px; border: 1px solid #cbd5e1; background: white; color: #334155; border-radius: 6px; font-weight: 600; font-size: 0.9em; cursor: pointer;">${isAr ? 'إلغاء' : 'Cancel'}</button>
+                        <button type="submit" style="padding: 8px 22px; border: none; background: #0284c7; color: white; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <span>💾</span> <span>${isAr ? 'حفظ التعديلات' : 'Save Changes'}</span>
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            body.querySelector('.recrm-ve-cancel').onclick = cleanup;
+            body.querySelector('#recrm-ve-form').onsubmit = async (ev) => {
+                ev.preventDefault();
+                const statusVal = document.getElementById('recrm-ve-status').value;
+                const outcomeVal = document.getElementById('recrm-ve-outcome').value || null;
+                const startRaw = document.getElementById('recrm-ve-start').value;
+                const endRaw = document.getElementById('recrm-ve-end').value;
+                const notesVal = document.getElementById('recrm-ve-notes').value.trim() || null;
+
+                const payload = {
+                    status: statusVal,
+                    outcome: outcomeVal,
+                    notes: notesVal
+                };
+                if (startRaw) payload.scheduled_start = new Date(startRaw).toISOString();
+                if (endRaw) payload.scheduled_end = new Date(endRaw).toISOString();
+
+                try {
+                    const updateRes = await apiRequest(`/api/v1/viewings/${encodeURIComponent(viewingId)}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify(payload)
+                    });
+                    showToast(isAr ? '✓ تم حفظ وتحديث بيانات المعاينة الميدانية بنجاح!' : '✓ Property viewing updated successfully!', 'success');
+                    cleanup();
+                    if (onSaved) onSaved(updateRes.data);
+                } catch (saveErr) {
+                    showToast((isAr ? 'فشل حفظ التعديلات: ' : 'Failed to update viewing: ') + (saveErr.message || saveErr), 'error');
+                }
+            };
+
+        } catch (loadErr) {
+            const body = overlay.querySelector('.recrm-ve-body');
+            if (body) {
+                body.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #991b1b; background: #fef2f2; border-radius: 8px;">
+                        <span style="font-size: 1.5em;">⚠️</span>
+                        <div style="font-weight: 700; margin-top: 6px;">${isAr ? 'تعذر جلب بيانات المعاينة' : 'Failed to load viewing'}</div>
+                        <div style="font-size: 0.85em; margin-top: 4px;">${loadErr.message || loadErr}</div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    async function showViewingsManagerModal() {
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'recrm-viewings-list-overlay';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(3px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100001; direction: ${isAr ? 'rtl' : 'ltr'}; font-family: inherit;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 1050px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+                <div style="padding: 16px 22px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.15em; display: flex; align-items: center; gap: 8px;">
+                            <span>👁️</span>
+                            <span>${isAr ? 'جدول وإدارة المعاينات الميدانية' : 'Property Viewings Management'}</span>
+                        </div>
+                        <small style="color: #94a3b8; font-size: 0.82em;">${isAr ? 'استعراض مواعيد المعاينات الميدانية، متابعة نتائج الزيارات وتعديل الحالات' : 'Track scheduled and completed unit tours, inspect client outcomes and edit viewing details'}</small>
+                    </div>
+                    <button type="button" class="recrm-vl-close" style="background: none; border: none; color: #94a3b8; font-size: 1.5em; cursor: pointer;">&times;</button>
+                </div>
+                
+                <div style="padding: 14px 22px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="recrm-vl-filters">
+                        <button type="button" class="recrm-vf-btn active" data-status="" style="padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #0284c7; color: white; font-size: 0.82em; font-weight: 600; cursor: pointer;">${isAr ? 'الكل' : 'All'}</button>
+                        <button type="button" class="recrm-vf-btn" data-status="SCHEDULED" style="padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #334155; font-size: 0.82em; font-weight: 600; cursor: pointer;">📅 ${isAr ? 'مجدولة' : 'Scheduled'}</button>
+                        <button type="button" class="recrm-vf-btn" data-status="COMPLETED" style="padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #334155; font-size: 0.82em; font-weight: 600; cursor: pointer;">✅ ${isAr ? 'منفذة' : 'Completed'}</button>
+                        <button type="button" class="recrm-vf-btn" data-status="CANCELLED" style="padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #334155; font-size: 0.82em; font-weight: 600; cursor: pointer;">❌ ${isAr ? 'ملغاة' : 'Cancelled'}</button>
+                        <button type="button" class="recrm-vf-btn" data-status="NO_SHOW" style="padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #334155; font-size: 0.82em; font-weight: 600; cursor: pointer;">⚠️ ${isAr ? 'تخلف العميل' : 'No-Show'}</button>
+                    </div>
+                    <button type="button" id="recrm-vl-refresh" style="padding: 5px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-size: 0.82em; cursor: pointer;">🔄 ${isAr ? 'تحديث' : 'Refresh'}</button>
+                </div>
+
+                <div class="recrm-vl-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <!-- Table rendered here -->
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const closeBtn = overlay.querySelector('.recrm-vl-close');
+        const cleanup = () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 150);
+        };
+        closeBtn.onclick = cleanup;
+        overlay.onclick = (e) => { if (e.target === overlay) cleanup(); };
+
+        let currentFilter = '';
+
+        const loadViewings = async () => {
+            const body = overlay.querySelector('.recrm-vl-body');
+            body.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #64748b;">
+                    <span style="display: inline-block; animation: recrmSpin 1s linear infinite; font-size: 1.8em;">⌛</span>
+                    <div style="margin-top: 10px; font-weight: 600;">${isAr ? 'جاري تحميل المعاينات...' : 'Loading viewings...'}</div>
+                </div>
+            `;
+
+            try {
+                let url = `/api/v1/viewings?page_size=100`;
+                if (currentFilter) url += `&status=${encodeURIComponent(currentFilter)}`;
+                const res = await apiRequest(url);
+                const list = res.data || [];
+
+                if (list.length === 0) {
+                    body.innerHTML = `
+                        <div style="text-align: center; padding: 50px 20px; color: #64748b;">
+                            <span style="font-size: 2.2em; display: block; margin-bottom: 8px;">👁️</span>
+                            <div style="font-weight: 600; font-size: 1.05em; color: #334155;">${isAr ? 'لا توجد أي معاينات مسجلة حالياً بهذه الحالة' : 'No viewings found for this filter'}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const rowsHtml = list.map(v => {
+                    const startStr = v.scheduled_start ? new Date(v.scheduled_start).toLocaleString() : '--';
+                    let stBadge = `<span style="background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em;">${v.status}</span>`;
+                    if (v.status === 'COMPLETED') {
+                        stBadge = `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em;">✅ ${isAr ? 'منفذة' : 'Completed'}</span>`;
+                    } else if (v.status === 'SCHEDULED') {
+                        stBadge = `<span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em;">📅 ${isAr ? 'مجدولة' : 'Scheduled'}</span>`;
+                    } else if (v.status === 'CANCELLED') {
+                        stBadge = `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em;">❌ ${isAr ? 'ملغاة' : 'Cancelled'}</span>`;
+                    } else if (v.status === 'NO_SHOW') {
+                        stBadge = `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em;">⚠️ ${isAr ? 'تخلف العميل' : 'No-Show'}</span>`;
+                    }
+
+                    return `
+                        <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                            <td style="padding: 10px 12px; font-weight: 700; font-family: monospace; color: #0f172a;">${v.viewing_id}</td>
+                            <td style="padding: 10px 12px;">
+                                <div style="font-weight: 700; color: #0284c7;">🏢 ${v.unit_number || '--'}</div>
+                                <div style="font-size: 0.82em; color: #64748b;">${v.project_name || v.building_name || '--'}</div>
+                            </td>
+                            <td style="padding: 10px 12px;">
+                                <div style="font-weight: 600; color: #1e293b;">${v.customer_name || '--'}</div>
+                            </td>
+                            <td style="padding: 10px 12px; color: #475569;">${v.agent_user_name || '--'}</td>
+                            <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${startStr}</td>
+                            <td style="padding: 10px 12px;">${stBadge}</td>
+                            <td style="padding: 10px 12px; max-width: 180px;">
+                                <div style="font-weight: 600; color: #0f172a;">${v.outcome || '--'}</div>
+                                <div style="font-size: 0.8em; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${v.notes || ''}">${v.notes || ''}</div>
+                            </td>
+                            <td style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">
+                                <div style="display: inline-flex; gap: 6px;">
+                                    <button type="button" class="recrm-row-edit-v-btn" data-id="${v.viewing_id}" style="padding: 4px 10px; background: #0284c7; color: white; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8em; cursor: pointer;">
+                                        ✏️ ${isAr ? 'تعديل' : 'Edit'}
+                                    </button>
+                                    ${v.lead_id || v.opportunity_id ? `
+                                        <button type="button" class="recrm-row-sit-btn" data-lead="${v.lead_id || ''}" data-opp="${v.opportunity_id || ''}" style="padding: 4px 8px; background: #0f172a; color: white; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8em; cursor: pointer;" title="Open Deal Situation">
+                                            🔍 ${isAr ? 'المسار' : 'Journey'}
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                body.innerHTML = `
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                    <th style="padding: 10px 12px;">${isAr ? 'المعرف' : 'ID'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'الوحدة والمشروع' : 'Unit & Project'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'العميل' : 'Customer'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'الوسيط المسؤول' : 'Agent'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'موعد المعاينة' : 'Date & Time'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'الحالة' : 'Status'}</th>
+                                    <th style="padding: 10px 12px;">${isAr ? 'النتيجة والملاحظات' : 'Outcome & Notes'}</th>
+                                    <th style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'الإجراءات' : 'Actions'}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                body.querySelectorAll('.recrm-row-edit-v-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const vid = btn.getAttribute('data-id');
+                        showEditViewingModal(vid, () => loadViewings());
+                    };
+                });
+                body.querySelectorAll('.recrm-row-sit-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const lid = btn.getAttribute('data-lead');
+                        const oid = btn.getAttribute('data-opp');
+                        openSituationModal(lid, oid);
+                    };
+                });
+
+            } catch (err) {
+                body.innerHTML = `
+                    <div style="padding: 24px; text-align: center; color: #991b1b; background: #fef2f2; border-radius: 8px;">
+                        <span style="font-size: 1.5em;">⚠️</span>
+                        <div style="font-weight: 700; margin-top: 6px;">${isAr ? 'تعذر جلب جدول المعاينات' : 'Failed to load viewings'}</div>
+                        <div style="font-size: 0.85em; margin-top: 4px;">${err.message || err}</div>
+                    </div>
+                `;
+            }
+        };
+
+        overlay.querySelectorAll('.recrm-vf-btn').forEach(btn => {
+            btn.onclick = () => {
+                overlay.querySelectorAll('.recrm-vf-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'white';
+                    b.style.color = '#334155';
+                });
+                btn.classList.add('active');
+                btn.style.background = '#0284c7';
+                btn.style.color = 'white';
+                currentFilter = btn.getAttribute('data-status');
+                loadViewings();
+            };
+        });
+
+        const refreshBtn = overlay.querySelector('#recrm-vl-refresh');
+        if (refreshBtn) refreshBtn.onclick = loadViewings;
+
+        await loadViewings();
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. Global Namespace Export
     // -------------------------------------------------------------------------
     const RECRM = {
         api,
@@ -867,7 +1232,9 @@
             toast: showToast,
             confirm: confirmDialog,
             renderPagination,
-            openSituationModal
+            openSituationModal,
+            showEditViewingModal,
+            showViewingsManagerModal
         },
         format,
         utils
@@ -881,5 +1248,10 @@
     window.formatCurrency = format.currency;
     window.formatDate = format.date;
     window.openSituationModal = openSituationModal;
+    window.showSituationModal = openSituationModal;
+    window.showEditViewingModal = showEditViewingModal;
+    window.showViewingsManagerModal = showViewingsManagerModal;
+    window.openEditViewingModal = showEditViewingModal;
+    window.openViewingsManagerModal = showViewingsManagerModal;
 
 })(window);

@@ -561,7 +561,7 @@
                 <div class="funnel-kpi-sub" data-i18n="sub_active_pipeline">Active Negotiations</div>
             </div>
             <!-- 5. Viewings -->
-            <div class="funnel-kpi-card accent-amber" onclick="quickFilterViewings()" style="cursor: pointer;" title="Click to filter live pulse feed to viewings">
+            <div class="funnel-kpi-card accent-amber" onclick="showViewingsManagerModal()" style="cursor: pointer;" title="Click to view and edit all property viewings">
                 <div class="funnel-kpi-title" data-i18n="kpi_viewings">Viewings</div>
                 <div class="funnel-kpi-value" id="kpi-f-viewings">--</div>
                 <div class="funnel-kpi-sub" data-i18n="sub_site_visits">Scheduled & Completed 🔍</div>
@@ -707,7 +707,67 @@
             </div>
         </div>
 
-        
+        <!-- ================= LEAD OPERATIONAL HISTORY & 360° JOURNEY AUDIT ================= -->
+        <div class="card-box" id="lead-history-section" style="background: white; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 14px; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 16px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25em; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <span>📜</span>
+                        <span data-i18n="title_lead_history">سجل وتاريخ مسار الطلب (Lead 360° Operational History)</span>
+                    </h3>
+                    <small style="color: #64748b; font-size: 0.86em;" data-i18n="sub_lead_history">عرض تفصيلي شامل لكل طلب بالمعرف والموضوع والمرحلة الحالية، مجدولاً بالمهام والأنشطة والمراسلات والمعاينات والعروض والحجوزات والعقود مع تاريخ وتوقيت وحالة كل إجراء (منجز أم لا)</small>
+                </div>
+                <!-- Action Tools & Lead Search / Select Bar -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="showViewingsManagerModal()" style="padding: 7px 12px; font-weight: 600; border-color: #0284c7; color: #0284c7;">
+                        👁️ <span data-i18n="btn_manage_viewings">إدارة المعاينات</span>
+                    </button>
+                    <select id="lead-history-quick-select" onchange="onLeadQuickSelect(this.value)" style="padding: 7px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.86em; background: white; max-width: 260px; cursor: pointer;">
+                        <option value="">-- اختر طلباً للاستعراض --</option>
+                    </select>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="text" id="lead-history-search-input" placeholder="معرف الطلب (مثال: lead-14)" style="padding: 7px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.86em; width: 170px;">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="loadLeadHistoryManual()" style="padding: 7px 14px; font-weight: 600;">🔍 عرض</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lead Address Header Card (Lead ID, Subject, Current Stage, Active/Stalled Status) -->
+            <div id="lead-history-address-card" style="display: none; margin-bottom: 20px;">
+                <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Lead Empty / Initial State -->
+            <div id="lead-history-empty-state" style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <span style="font-size: 2.2em; display: block; margin-bottom: 8px;">🔍</span>
+                <div style="font-weight: 600; font-size: 1.05em; color: #334155;">حدد أو ابحث عن أي طلب لاستعراض سجله التاريخي ومساره التشغيلي المجدول</div>
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 4px;">اختر من القائمة المنسدلة أعلاه أو اكتب معرف الطلب (مثال: lead-14, lead-2, lead-8, lead-3)</div>
+            </div>
+
+            <!-- Lead Tabled Breakdown Container (Tabs + Detailed Tables) -->
+            <div id="lead-history-content" style="display: none;">
+                <!-- Tab Buttons -->
+                <div class="tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 8px;">
+                    <button type="button" class="tab-btn active" id="tab-btn-lh-timeline" onclick="switchLeadHistoryTab('timeline')">🕒 السجل الزمني الشامل <span class="badge" id="badge-lh-timeline" style="background:#0284c7; color:white; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-tasks" onclick="switchLeadHistoryTab('tasks')">📋 المهام التنفيذية <span class="badge" id="badge-lh-tasks" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-activities" onclick="switchLeadHistoryTab('activities')">📝 سجل الأنشطة <span class="badge" id="badge-lh-activities" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-comms" onclick="switchLeadHistoryTab('comms')">💬 المراسلات <span class="badge" id="badge-lh-comms" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-viewings" onclick="switchLeadHistoryTab('viewings')">👁️ المعاينات الميدانية <span class="badge" id="badge-lh-viewings" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-offers" onclick="switchLeadHistoryTab('offers')">💼 العروض المالية <span class="badge" id="badge-lh-offers" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                    <button type="button" class="tab-btn" id="tab-btn-lh-contracts" onclick="switchLeadHistoryTab('contracts')">🔒 الحجوزات والعقود <span class="badge" id="badge-lh-contracts" style="background:#e2e8f0; color:#334155; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-inline-start:4px;">0</span></button>
+                </div>
+
+                <!-- Tab Panels -->
+                <div id="lh-panel-timeline" class="lh-tab-panel" style="display: block;"></div>
+                <div id="lh-panel-tasks" class="lh-tab-panel" style="display: none;"></div>
+                <div id="lh-panel-activities" class="lh-tab-panel" style="display: none;"></div>
+                <div id="lh-panel-comms" class="lh-tab-panel" style="display: none;"></div>
+                <div id="lh-panel-viewings" class="lh-tab-panel" style="display: none;"></div>
+                <div id="lh-panel-offers" class="lh-tab-panel" style="display: none;"></div>
+                <div id="lh-panel-contracts" class="lh-tab-panel" style="display: none;"></div>
+            </div>
+        </div>
+
         <div class="module-grid">
             <div class="module-card">
                 <div>
@@ -942,6 +1002,9 @@
                 kpi_rental_variance: "💰 Rental Income Variance",
                 sub_rental_variance: "Actual vs. Forecast",
                 lbl_pipeline_by_purpose: "Pipeline by Customer Purpose:",
+                title_lead_history: "Lead 360° Operational History",
+                sub_lead_history: "Complete audit breakdown by tasks, activities, communications, viewings, offers, and contracts with status and timestamps",
+                btn_manage_viewings: "Manage Viewings",
                 lang_label: "عربي"
             },
             ar: {
@@ -1074,6 +1137,9 @@
                 kpi_rental_variance: "💰 تباين الدخل التأجيري",
                 sub_rental_variance: "المحصل الفعلي مقارنة بالمتوقع",
                 lbl_pipeline_by_purpose: "الطلبات والفرص حسب الغرض العقاري:",
+                title_lead_history: "سجل وتاريخ مسار الطلب",
+                sub_lead_history: "عرض تفصيلي شامل لكل طلب بالمعرف والموضوع والمرحلة الحالية، مجدولاً بالمهام والأنشطة والمراسلات والمعاينات والعروض والحجوزات والعقود مع تاريخ وتوقيت وحالة كل إجراء (منجز أم لا)",
+                btn_manage_viewings: "إدارة المعاينات",
                 lang_label: "English"
             }
         };
@@ -1804,8 +1870,655 @@
             }).join('');
         }
 
+        // =========================================================================
+        // LEAD OPERATIONAL HISTORY & 360° JOURNEY AUDIT CONTROLLER
+        // =========================================================================
+        let currentLeadHistoryId = null;
+
+        async function initLeadHistory() {
+            try {
+                const res = await apiRequest('/api/v1/leads?page_size=50');
+                const list = res.data || [];
+                const sel = document.getElementById('lead-history-quick-select');
+                if (sel && list.length > 0) {
+                    const isAr = currentLang === 'ar';
+                    sel.innerHTML = `<option value="">-- ${isAr ? 'اختر طلباً من القائمة' : 'Select a lead to inspect'} --</option>` +
+                        list.map(l => {
+                            const cust = l.customer_name || 'Client';
+                            const inq = l.inquiry_type || 'LEAD';
+                            const st = l.status || 'NEW';
+                            return `<option value="${l.lead_id}">#${l.lead_id} • ${cust} (${inq}) [${st}]</option>`;
+                        }).join('');
+                }
+
+                // Check URL parameter ?lead_id=...
+                const urlParams = new URLSearchParams(window.location.search);
+                const qLeadId = urlParams.get('lead_id') || urlParams.get('id');
+                if (qLeadId) {
+                    if (sel) sel.value = qLeadId;
+                    const searchInput = document.getElementById('lead-history-search-input');
+                    if (searchInput) searchInput.value = qLeadId;
+                    await loadLeadHistory(qLeadId);
+                } else if (list.length > 0) {
+                    // Default to first active lead so the section is immediately populated
+                    const firstLead = list[0].lead_id;
+                    if (sel) sel.value = firstLead;
+                    const searchInput = document.getElementById('lead-history-search-input');
+                    if (searchInput) searchInput.value = firstLead;
+                    await loadLeadHistory(firstLead);
+                }
+            } catch (err) {
+                console.error('Failed to init lead history list:', err);
+            }
+        }
+
+        function onLeadQuickSelect(leadId) {
+            if (!leadId) return;
+            const searchInput = document.getElementById('lead-history-search-input');
+            if (searchInput) searchInput.value = leadId;
+            loadLeadHistory(leadId);
+        }
+
+        function loadLeadHistoryManual() {
+            const searchInput = document.getElementById('lead-history-search-input');
+            const val = (searchInput?.value || '').trim();
+            if (!val) {
+                showToast(currentLang === 'ar' ? 'يرجى إدخال معرف الطلب أولاً' : 'Please enter a Lead ID', 'warning');
+                return;
+            }
+            const sel = document.getElementById('lead-history-quick-select');
+            if (sel) sel.value = val;
+            loadLeadHistory(val);
+        }
+
+        async function loadLeadHistory(leadId) {
+            if (!leadId) return;
+            currentLeadHistoryId = leadId;
+            const isAr = currentLang === 'ar';
+
+            const emptyState = document.getElementById('lead-history-empty-state');
+            const addressCard = document.getElementById('lead-history-address-card');
+            const contentBox = document.getElementById('lead-history-content');
+
+            if (emptyState) emptyState.style.display = 'none';
+            if (addressCard) {
+                addressCard.style.display = 'block';
+                addressCard.innerHTML = `
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 20px; text-align: center; color: #64748b;">
+                        <span style="display: inline-block; animation: recrmSpin 1s linear infinite; font-size: 1.8em;">⌛</span>
+                        <div style="margin-top: 8px; font-weight: 700;">${isAr ? 'جاري تحميل السجل التاريخي والمسار التشغيلي للطلب...' : 'Loading lead operational history...'}</div>
+                    </div>
+                `;
+            }
+            if (contentBox) contentBox.style.display = 'none';
+
+            try {
+                const res = await apiRequest(`/api/v1/leads/${encodeURIComponent(leadId)}/situation`);
+                const d = res.data;
+
+                // 1. Render Address Header Card
+                renderLeadHistoryAddress(d, isAr);
+
+                // 2. Update Tab Badges
+                document.getElementById('badge-lh-timeline').textContent = (d.timeline || []).length;
+                document.getElementById('badge-lh-tasks').textContent = (d.tasks || []).length;
+                document.getElementById('badge-lh-activities').textContent = (d.activities || []).length;
+                document.getElementById('badge-lh-comms').textContent = (d.communications || []).length;
+                document.getElementById('badge-lh-viewings').textContent = (d.viewings || []).length;
+                document.getElementById('badge-lh-offers').textContent = (d.offers || []).length;
+                document.getElementById('badge-lh-contracts').textContent = ((d.reservations || []).length + (d.contracts || []).length);
+
+                // 3. Render Each Tab Panel Table
+                renderLHTimeline(d.timeline || [], isAr);
+                renderLHTasks(d.tasks || [], isAr);
+                renderLHActivities(d.activities || [], isAr);
+                renderLHComms(d.communications || [], isAr);
+                renderLHViewings(d.viewings || [], isAr);
+                renderLHOffers(d.offers || [], isAr);
+                renderLHContracts(d.reservations || [], d.contracts || [], isAr);
+
+                if (contentBox) contentBox.style.display = 'block';
+
+            } catch (err) {
+                if (addressCard) {
+                    addressCard.innerHTML = `
+                        <div style="padding: 22px; text-align: center; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 10px; color: #991b1b;">
+                            <span style="font-size: 1.6em;">⚠️</span>
+                            <div style="font-weight: 700; margin-top: 6px; font-size: 1.05em;">${isAr ? 'تعذر جلب سجل الطلب' : 'Failed to load lead history'}</div>
+                            <div style="font-size: 0.88em; color: #b91c1c; margin-top: 4px;">${err.message || err}</div>
+                            <button type="button" onclick="loadLeadHistory('${leadId}')" class="btn btn-sm btn-outline" style="margin-top: 12px; border-color: #dc2626; color: #dc2626;">${isAr ? 'إعادة المحاولة' : 'Retry'}</button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderLeadHistoryAddress(d, isAr) {
+            const card = document.getElementById('lead-history-address-card');
+            if (!card) return;
+
+            // Stalled / Active Status Banner
+            let statusBannerHtml = '';
+            if (d.is_stalled) {
+                const actionsHtml = (d.recommended_actions || []).map(act => `
+                    <button type="button" onclick="executeLeadHistoryUnblock('${act.action}', '${d.lead_id}')" style="
+                        background: #0284c7; color: white; border: none; padding: 7px 14px; border-radius: 6px;
+                        font-weight: 700; font-size: 0.84em; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.2s;
+                    ">
+                        ⚡ ${isAr ? act.label_ar : act.label_en}
+                    </button>
+                `).join('');
+
+                statusBannerHtml = `
+                    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 14px; margin-top: 14px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 1.4em; line-height: 1;">⚠️</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; color: #92400e; font-size: 0.96em;">
+                                    ${isAr ? 'المعاملة متعثرة تشغيلياً (بدون مهام جارية حالياً)' : 'Operationally Stalled Deal (0 Pending Tasks)'}
+                                </div>
+                                <div style="font-size: 0.86em; color: #b45309; margin-top: 4px; line-height: 1.4;">
+                                    ${isAr ? (d.stalled_reason_ar || '') : (d.stalled_reason_en || '')}
+                                </div>
+                                <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                    <span style="font-size: 0.82em; font-weight: 700; color: #78350f;">${isAr ? 'إجراءات فك التعثر الفورية:' : '1-Click Unblock Actions:'}</span>
+                                    ${actionsHtml || '<span style="font-size:0.82em; color:#92400e;">--</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                statusBannerHtml = `
+                    <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-top: 14px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.3em;">✅</span>
+                        <div>
+                            <span style="font-weight: 700; color: #166534; font-size: 0.92em;">${isAr ? 'المعاملة نشطة تشغيلياً ولديها مهام ومواعيد متابعة' : 'Transaction Active with Scheduled Work'}</span>
+                            <span style="font-size: 0.82em; color: #15803d; margin-inline-start: 8px;">(${isAr ? 'المهام الجارية: ' : 'Pending tasks: '} <strong>${(d.pending_tasks || []).length}</strong>)</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                        <!-- Lead Address Info -->
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+                                <span style="font-family: monospace; font-size: 1.05em; font-weight: 800; background: #0f172a; color: white; padding: 3px 10px; border-radius: 6px;">
+                                    ${d.lead_id}
+                                </span>
+                                ${d.opportunity_id ? `
+                                    <span style="font-family: monospace; font-size: 0.88em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 6px;">
+                                        💼 ${d.opportunity_id}
+                                    </span>
+                                ` : ''}
+                                <span style="font-weight: 700; font-size: 1.15em; color: #0f172a;">
+                                    ${d.lead_subject || `${isAr ? 'طلب عقار' : 'Property Inquiry'} — ${d.customer_name || 'Client'}`}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.88em; color: #475569; display: flex; flex-wrap: wrap; gap: 14px; align-items: center;">
+                                <span>👤 ${isAr ? 'العميل: ' : 'Customer: '} <strong style="color:#0f172a;">${d.customer_name || '--'}</strong></span>
+                                <span>📞 <strong style="color:#0f172a;">${d.customer_mobile || '--'}</strong></span>
+                                <span>🧑‍💼 ${isAr ? 'الوسيط المسؤول: ' : 'Agent: '} <strong style="color:#0f172a;">${d.assigned_agent_name || (isAr ? 'غير مسند' : 'Unassigned')}</strong></span>
+                                <span>👔 ${isAr ? 'المدير: ' : 'Manager: '} <strong style="color:#0f172a;">${d.manager_name || '--'}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Current Stage Pill -->
+                        <div style="text-align: ${isAr ? 'left' : 'right'};">
+                            <div style="font-size: 0.78em; font-weight: 700; color: #64748b; margin-bottom: 4px;">${isAr ? 'المرحلة الحالية' : 'Current Stage'}</div>
+                            <div style="background: #0284c7; color: white; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 0.92em; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.12);">
+                                <span>🚩</span> <span>${d.current_stage || '--'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${statusBannerHtml}
+                </div>
+            `;
+        }
+
+        async function executeLeadHistoryUnblock(actionCode, leadId) {
+            const isAr = currentLang === 'ar';
+            try {
+                const res = await apiRequest(`/api/v1/leads/${encodeURIComponent(leadId)}/unblock`, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: actionCode })
+                });
+                showToast(isAr ? '✓ تم فك التعثر وتوليد المهمة التالية بنجاح!' : '✓ Unblock action executed successfully!', 'success');
+                await loadLeadHistory(leadId);
+                await fetchFunnelData();
+            } catch (err) {
+                showToast((isAr ? 'فشل فك التعثر: ' : 'Failed to unblock: ') + (err.message || err), 'error');
+            }
+        }
+
+        function switchLeadHistoryTab(tabKey) {
+            const tabs = ['timeline', 'tasks', 'activities', 'comms', 'viewings', 'offers', 'contracts'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-lh-${t}`);
+                const panel = document.getElementById(`lh-panel-${t}`);
+                if (btn) {
+                    if (t === tabKey) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+                if (panel) {
+                    panel.style.display = (t === tabKey) ? 'block' : 'none';
+                }
+            });
+        }
+
+        // ================= TAB RENDERERS =================
+        function renderLHTimeline(timeline, isAr) {
+            const panel = document.getElementById('lh-panel-timeline');
+            if (!panel) return;
+            if (timeline.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد أحداث مسجلة في المخطط الزمني حتى الآن' : 'No timeline events recorded yet'}</div>`;
+                return;
+            }
+
+            const itemsHtml = timeline.map(item => {
+                const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : '--';
+                let icon = '📌';
+                let typeColor = '#0f172a';
+                let typeLabel = item.type;
+                if (item.type === 'TASK') { icon = '📋'; typeColor = '#4f46e5'; typeLabel = isAr ? 'مهمة' : 'Task'; }
+                else if (item.type === 'ACTIVITY') { icon = '📝'; typeColor = '#059669'; typeLabel = isAr ? 'نشاط' : 'Activity'; }
+                else if (item.type === 'COMMUNICATION') { icon = '💬'; typeColor = '#0284c7'; typeLabel = isAr ? 'مراسلة' : 'Comm'; }
+                else if (item.type === 'VIEWING') { icon = '👁️'; typeColor = '#d97706'; typeLabel = isAr ? 'معاينة' : 'Viewing'; }
+                else if (item.type === 'OFFER') { icon = '💼'; typeColor = '#7c3aed'; typeLabel = isAr ? 'عرض' : 'Offer'; }
+                else if (item.type === 'RESERVATION') { icon = '🔒'; typeColor = '#0891b2'; typeLabel = isAr ? 'حجز' : 'Reservation'; }
+                else if (item.type === 'CONTRACT') { icon = '🤝'; typeColor = '#16a34a'; typeLabel = isAr ? 'عقد' : 'Contract'; }
+
+                const situationBadge = item.is_done !== undefined 
+                    ? (item.is_done 
+                        ? `<span style="background:#dcfce7; color:#166534; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">✅ ${isAr ? 'منجز' : 'Done'}</span>` 
+                        : `<span style="background:#fef3c7; color:#92400e; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">⏳ ${isAr ? 'قيد التنفيذ' : 'Pending'}</span>`)
+                    : '';
+
+                return `
+                    <div style="display: flex; gap: 14px; position: relative; padding-bottom: 20px;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="width: 34px; height: 34px; border-radius: 50%; background: #f1f5f9; border: 2px solid ${typeColor}; display: flex; align-items: center; justify-content: center; font-size: 1.1em; z-index: 2;">
+                                ${icon}
+                            </div>
+                            <div style="flex: 1; width: 2px; background: #e2e8f0; margin-top: 4px;"></div>
+                        </div>
+                        <div style="flex: 1; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-weight: 700; font-size: 0.8em; color: ${typeColor}; background: #f8fafc; border: 1px solid ${typeColor}33; padding: 2px 7px; border-radius: 4px;">${typeLabel}</span>
+                                    <span style="font-weight: 700; font-size: 0.92em; color: #0f172a;">${item.subject || ''}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    ${situationBadge}
+                                    <span style="font-size: 0.78em; color: #64748b;">⏰ ${timeStr}</span>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.85em; color: #475569; line-height: 1.4;">${item.description || ''}</div>
+                            <div style="font-size: 0.76em; color: #94a3b8; margin-top: 6px; display: flex; justify-content: space-between;">
+                                <span>👤 ${item.user_name || 'System'}</span>
+                                <span style="font-family: monospace;">#${item.id || ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="padding: 10px 4px;">
+                    ${itemsHtml}
+                </div>
+            `;
+        }
+
+        function renderLHTasks(tasks, isAr) {
+            const panel = document.getElementById('lh-panel-tasks');
+            if (!panel) return;
+            if (tasks.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد مهام مسجلة لهذا الطلب' : 'No tasks recorded for this lead'}</div>`;
+                return;
+            }
+
+            const rowsHtml = tasks.map(t => {
+                const timeStr = t.date_time ? new Date(t.date_time).toLocaleString() : '--';
+                const dueStr = t.due_at ? new Date(t.due_at).toLocaleString() : '--';
+                const situationBadge = t.is_done
+                    ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'منجزة (Done)' : 'Completed (Done)'}</span>`
+                    : (t.situation === 'OVERDUE'
+                        ? `<span style="background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⚠️ ${isAr ? 'متأخرة (Overdue)' : 'Overdue'}</span>`
+                        : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${isAr ? 'قيد التنفيذ (Pending)' : 'Pending'}</span>`);
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px;">
+                            <div style="font-weight: 700; color: #0f172a;">${t.title}</div>
+                            <div style="font-size: 0.78em; color: #64748b; font-family: monospace;">#${t.task_id} • ${t.template_id || '--'}</div>
+                        </td>
+                        <td style="padding: 10px 12px; color: #475569;">👤 ${t.assigned_user_name || '--'}</td>
+                        <td style="padding: 10px 12px;"><span style="font-size:0.75em; font-weight:700; padding:2px 6px; border-radius:4px; background:#e0e7ff; color:#3730a3;">${t.priority || 'NORMAL'}</span></td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                        <td style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">
+                            <a href="tasks.html?task_id=${encodeURIComponent(t.task_id)}" class="btn-sm" style="background:#0f172a; color:white; padding:3px 9px; border-radius:4px; text-decoration:none; font-size:0.8em;" target="_blank">
+                                ${isAr ? 'فتح المهمة ↗' : 'Open ↗'}
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'التاريخ والوقت' : 'Date & Time'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'المهمة والمعرف' : 'Task & ID'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'المسؤول' : 'Assignee'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الأولوية' : 'Priority'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي (منجز أم لا)' : 'Situation (Done or Not)'}</th>
+                                <th style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'إجراء' : 'Action'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLHActivities(activities, isAr) {
+            const panel = document.getElementById('lh-panel-activities');
+            if (!panel) return;
+            if (activities.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد أنشطة مسجلة لهذا الطلب' : 'No activities recorded'}</div>`;
+                return;
+            }
+
+            const rowsHtml = activities.map(a => {
+                const timeStr = a.date_time ? new Date(a.date_time).toLocaleString() : '--';
+                const situationBadge = a.is_done
+                    ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'منجز (Done)' : 'Completed (Done)'}</span>`
+                    : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">📅 ${isAr ? 'مجدول (Planned)' : 'Planned'}</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px;"><span style="font-size:0.75em; font-weight:700; padding:2px 6px; border-radius:4px; background:#f1f5f9; color:#0f172a;">${a.activity_type}</span></td>
+                        <td style="padding: 10px 12px;">
+                            <div style="font-weight: 700; color: #0f172a;">${a.subject}</div>
+                            <div style="font-size: 0.8em; color: #64748b;">${a.description || ''}</div>
+                        </td>
+                        <td style="padding: 10px 12px; color: #475569;">👤 ${a.user_name || '--'}</td>
+                        <td style="padding: 10px 12px; font-weight: 600; color: #0284c7;">${a.outcome || '--'}</td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'التاريخ والوقت' : 'Date & Time'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'النوع' : 'Type'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموضوع والتفاصيل' : 'Subject & Description'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'المنفذ' : 'User'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'النتيجة' : 'Outcome'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي (منجز أم لا)' : 'Situation (Done or Not)'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLHComms(comms, isAr) {
+            const panel = document.getElementById('lh-panel-comms');
+            if (!panel) return;
+            if (comms.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد مراسلات مسجلة لهذا الطلب' : 'No communications recorded'}</div>`;
+                return;
+            }
+
+            const rowsHtml = comms.map(c => {
+                const timeStr = c.date_time ? new Date(c.date_time).toLocaleString() : '--';
+                const channelIcon = c.channel === 'WHATSAPP' ? '💬 WhatsApp' : (c.channel === 'SMS' ? '📱 SMS' : (c.channel === 'EMAIL' ? '📧 Email' : '📞 Call'));
+                const dirBadge = c.direction === 'IN' ? `<span style="color:#059669; font-weight:700;">📥 ${isAr ? 'وارد' : 'Inbound'}</span>` : `<span style="color:#0284c7; font-weight:700;">📤 ${isAr ? 'صادر' : 'Outbound'}</span>`;
+                const situationBadge = c.is_done
+                    ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'تم الإرسال والتسليم' : 'Sent & Delivered'}</span>`
+                    : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${isAr ? 'قيد الإرسال' : 'Pending'}</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #0f172a;">${channelIcon}</td>
+                        <td style="padding: 10px 12px;">${dirBadge}</td>
+                        <td style="padding: 10px 12px; max-width: 320px;">
+                            <div style="font-weight: 700; color: #0f172a;">${c.subject}</div>
+                            <div style="font-size: 0.8em; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.body || ''}">${c.body || '--'}</div>
+                        </td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'التاريخ والوقت' : 'Date & Time'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'القناة' : 'Channel'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الاتجاه' : 'Direction'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموضوع والرسالة' : 'Subject & Content'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي' : 'Situation'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLHViewings(viewings, isAr) {
+            const panel = document.getElementById('lh-panel-viewings');
+            if (!panel) return;
+            if (viewings.length === 0) {
+                panel.innerHTML = `
+                    <div style="text-align: center; padding: 36px 20px; color: #64748b;">
+                        <span style="font-size: 1.8em; display: block; margin-bottom: 6px;">👁️</span>
+                        <div>${isAr ? 'لا توجد معاينات ميدانية مسجلة لهذا الطلب حتى الآن' : 'No property viewings recorded for this lead yet'}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const rowsHtml = viewings.map(v => {
+                const startStr = v.scheduled_start ? new Date(v.scheduled_start).toLocaleString() : '--';
+                let situationBadge = `<span style="background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">${v.status}</span>`;
+                if (v.status === 'COMPLETED') {
+                    situationBadge = `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">✅ ${isAr ? 'تمت الزيارة (Done)' : 'Completed (Done)'}</span>`;
+                } else if (v.status === 'SCHEDULED') {
+                    situationBadge = `<span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">📅 ${isAr ? 'موعد مجدول (Pending)' : 'Scheduled (Pending)'}</span>`;
+                } else if (v.status === 'CANCELLED') {
+                    situationBadge = `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">❌ ${isAr ? 'ملغاة (Cancelled)' : 'Cancelled'}</span>`;
+                } else if (v.status === 'NO_SHOW') {
+                    situationBadge = `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">⚠️ ${isAr ? 'تخلف العميل (No-Show)' : 'No-Show'}</span>`;
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${startStr}</td>
+                        <td style="padding: 10px 12px;">
+                            <div style="font-weight: 700; color: #0284c7;">🏢 ${v.unit_number || '--'}</div>
+                            <div style="font-size: 0.8em; color: #64748b;">${v.project_name || '--'}</div>
+                        </td>
+                        <td style="padding: 10px 12px; color: #475569;">👤 ${v.agent_name || '--'}</td>
+                        <td style="padding: 10px 12px; max-width: 200px;">
+                            <div style="font-size: 0.82em; color: #334155;">${v.notes || '--'}</div>
+                        </td>
+                        <td style="padding: 10px 12px; font-weight: 600; color: #0f172a;">${v.outcome || '--'}</td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                        <td style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">
+                            <button type="button" onclick="showEditViewingModal('${v.viewing_id}', () => loadLeadHistory('${currentLeadHistoryId}'))" style="
+                                background: #0284c7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 0.82em; cursor: pointer;
+                            ">
+                                ✏️ ${isAr ? 'تعديل المعاينة' : 'Edit'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'موعد المعاينة' : 'Scheduled Date & Time'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الوحدة والمشروع' : 'Unit & Project'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الوسيط' : 'Agent'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الملاحظات وترتيبات المفاتيح' : 'Notes / Keys'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'النتيجة' : 'Outcome'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي (منجز أم لا)' : 'Situation (Done or Not)'}</th>
+                                <th style="padding: 10px 12px; text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'إجراء' : 'Action'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLHOffers(offers, isAr) {
+            const panel = document.getElementById('lh-panel-offers');
+            if (!panel) return;
+            if (offers.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد عروض مالية مسجلة لهذا الطلب حتى الآن' : 'No formal offers submitted for this lead yet'}</div>`;
+                return;
+            }
+
+            const rowsHtml = offers.map(o => {
+                const timeStr = o.date_time ? new Date(o.date_time).toLocaleString() : '--';
+                const validStr = o.valid_until ? new Date(o.valid_until).toLocaleDateString() : '--';
+                let situationBadge = `<span style="background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">${o.status}</span>`;
+                if (o.status === 'ACCEPTED') {
+                    situationBadge = `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">✅ ${isAr ? 'مقبول (Accepted)' : 'Accepted'}</span>`;
+                } else if (o.status === 'SUBMITTED') {
+                    situationBadge = `<span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">💼 ${isAr ? 'مقدم وقيد التفاوض' : 'Submitted (Active)'}</span>`;
+                } else if (o.status === 'REJECTED') {
+                    situationBadge = `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">❌ ${isAr ? 'مرفوض' : 'Rejected'}</span>`;
+                } else if (o.status === 'EXPIRED') {
+                    situationBadge = `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8em;">⏰ ${isAr ? 'منتهي الصلاحية' : 'Expired'}</span>`;
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #0284c7;">🏢 ${o.unit_number || '--'}</td>
+                        <td style="padding: 10px 12px; font-weight: 800; color: #065f46; font-size: 0.95em;">${(o.offer_amount || 0).toLocaleString()} SAR</td>
+                        <td style="padding: 10px 12px; color: #64748b;">${o.asking_price ? `${o.asking_price.toLocaleString()} SAR` : '--'}</td>
+                        <td style="padding: 10px 12px; color: #334155;">${validStr}</td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'تاريخ التقديم' : 'Submission Date'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الوحدة العقارية' : 'Unit #'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'قيمة العرض المالي' : 'Offer Amount'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'السعر المطلوب' : 'Asking Price'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'صلاحية العرض حتى' : 'Valid Until'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي' : 'Situation'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLHContracts(reservations, contracts, isAr) {
+            const panel = document.getElementById('lh-panel-contracts');
+            if (!panel) return;
+            if (reservations.length === 0 && contracts.length === 0) {
+                panel.innerHTML = `<div style="text-align: center; padding: 30px; color: #64748b;">${isAr ? 'لا توجد حجوزات أو عقود مبرمة لهذا الطلب حتى الآن' : 'No reservations or contracts signed yet'}</div>`;
+                return;
+            }
+
+            const resRowsHtml = reservations.map(r => {
+                const timeStr = r.reserved_at ? new Date(r.reserved_at).toLocaleString() : '--';
+                const situationBadge = r.is_done
+                    ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'حجز نشط ومؤكد (Active)' : 'Active (Confirmed)'}</span>`
+                    : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${r.status}</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px;"><span style="background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.8em;">🔒 ${isAr ? 'حجز وحدة' : 'Reservation'}</span></td>
+                        <td style="padding: 10px 12px; font-family: monospace; font-weight: 700; color: #0f172a;">${r.reservation_number || r.reservation_id}</td>
+                        <td style="padding: 10px 12px;">🏢 ${r.unit_number || '--'}</td>
+                        <td style="padding: 10px 12px; font-weight: 800; color: #0891b2;">${(r.deposit_amount || 0).toLocaleString()} SAR (${isAr ? 'عربون' : 'Deposit'})</td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const conRowsHtml = contracts.map(c => {
+                const timeStr = c.signed_at ? new Date(c.signed_at).toLocaleString() : (c.start_date || '--');
+                const situationBadge = `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'عقد نافذ ومكتمل (Active)' : 'Active Contract'}</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em; background: #f0fdf4;">
+                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                        <td style="padding: 10px 12px;"><span style="background:#dcfce7; color:#166534; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.8em;">🤝 ${isAr ? 'عقد بيع/إيجار رسمي' : 'Legal Contract'}</span></td>
+                        <td style="padding: 10px 12px; font-family: monospace; font-weight: 800; color: #065f46;">${c.contract_number || c.contract_id}</td>
+                        <td style="padding: 10px 12px;">--</td>
+                        <td style="padding: 10px 12px; font-weight: 800; color: #166534; font-size: 0.95em;">${(c.contract_value || 0).toLocaleString()} SAR</td>
+                        <td style="padding: 10px 12px;">${situationBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 0.82em; color: #475569;">
+                                <th style="padding: 10px 12px;">${isAr ? 'التاريخ والوقت' : 'Date & Time'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'النوع' : 'Type'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الرقم المرجعي' : 'Reference #'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الوحدة' : 'Unit'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'المبلغ المالي' : 'Financial Amount'}</th>
+                                <th style="padding: 10px 12px;">${isAr ? 'الموقف التشغيلي (منجز أم لا)' : 'Situation (Done or Not)'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${resRowsHtml}
+                            ${conRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         async function loadDashboardData() {
             await fetchFunnelData();
+            await initLeadHistory();
         }
 
         document.addEventListener('DOMContentLoaded', () => {

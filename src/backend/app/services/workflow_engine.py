@@ -4627,95 +4627,260 @@ class WorkflowEngine:
                 ]
 
         # 8. Build Chronological Journey Timeline
+        # 8. Build Chronological Journey Timeline (including Tasks, Activities, Comms, Viewings, Offers, Reservations, Contracts)
         timeline = []
+        for t in task_list:
+            is_done = (t["status"] == "COMPLETED")
+            t_ts = t.get("completed_at") or t.get("due_at") or t.get("created_at")
+            timeline.append({
+                "type": "TASK",
+                "id": t["task_id"],
+                "subject": t["title"],
+                "description": f"المكلف: {t.get('assigned_user_name') or 'غير مسند'} | الحالة: {t['status']}",
+                "status": t["status"],
+                "is_done": is_done,
+                "timestamp": t_ts.isoformat() if t_ts else None,
+                "user_name": t.get("assigned_user_name") or "Agent"
+            })
         for a in activity_list:
+            is_done = (a.get("completed_at") is not None) or (a.get("status") == "COMPLETED")
             timeline.append({
                 "type": "ACTIVITY",
                 "id": a["activity_id"],
                 "subject": a["subject"],
-                "description": a["description"],
-                "outcome": a["outcome"],
-                "timestamp": (a["completed_at"] or a["created_at"]).isoformat() if (a["completed_at"] or a["created_at"]) else None,
-                "user_name": a["user_name"]
+                "description": a.get("description") or "",
+                "outcome": a.get("outcome"),
+                "status": a.get("status") or ("COMPLETED" if is_done else "PLANNED"),
+                "is_done": is_done,
+                "timestamp": (a["completed_at"] or a["created_at"]).isoformat() if (a.get("completed_at") or a.get("created_at")) else None,
+                "user_name": a.get("user_name") or "System/Agent"
             })
         for c in comm_list:
+            is_done = (c.get("sent_at") is not None) or (c.get("delivery_status") in ("DELIVERED", "SENT"))
             timeline.append({
                 "type": "COMMUNICATION",
                 "id": c["communication_id"],
-                "subject": c["subject"],
-                "description": c["body"],
-                "channel": c["channel"],
-                "direction": c["direction"],
-                "timestamp": (c["sent_at"] or c["created_at"]).isoformat() if (c["sent_at"] or c["created_at"]) else None,
+                "subject": c.get("subject") or "Message",
+                "description": c.get("body") or "",
+                "channel": c.get("channel") or "SYSTEM",
+                "direction": c.get("direction") or "OUT",
+                "status": c.get("delivery_status") or "SENT",
+                "is_done": is_done,
+                "timestamp": (c.get("sent_at") or c.get("created_at")).isoformat() if (c.get("sent_at") or c.get("created_at")) else None,
                 "user_name": "System/Agent"
             })
         for v in viewing_list:
+            is_done = (v.get("status") == "COMPLETED")
             timeline.append({
                 "type": "VIEWING",
                 "id": v["viewing_id"],
-                "subject": f"معاينة الوحدة #{v['unit_number']}",
-                "description": f"الموعد: {v['scheduled_start']}. الحالة: {v['status']}",
-                "timestamp": v["created_at"].isoformat() if v["created_at"] else None,
-                "user_name": v["agent_name"]
+                "subject": f"معاينة الوحدة #{v.get('unit_number') or '--'}",
+                "description": f"المشروع: {v.get('project_name') or '--'} | الموعد: {v.get('scheduled_start')} | الحالة: {v.get('status')}",
+                "status": v.get("status") or "SCHEDULED",
+                "is_done": is_done,
+                "outcome": v.get("outcome") or "--",
+                "notes": v.get("notes") or "",
+                "timestamp": v["scheduled_start"].isoformat() if v.get("scheduled_start") else (v["created_at"].isoformat() if v.get("created_at") else None),
+                "user_name": v.get("agent_name") or "Agent"
             })
         for o in offer_list:
+            is_done = (o.get("status") in ("ACCEPTED", "REJECTED", "EXPIRED"))
             timeline.append({
                 "type": "OFFER",
                 "id": o["offer_id"],
-                "subject": f"عرض مالي للوحدة #{o['unit_number']}",
-                "description": f"المبلغ: {float(o['offer_amount'] or 0):,.2f} ريال. الحالة: {o['status']}",
-                "timestamp": o["valid_until"].isoformat() if o["valid_until"] else None,
+                "subject": f"عرض مالي للوحدة #{o.get('unit_number') or '--'}",
+                "description": f"المبلغ: {float(o['offer_amount'] or 0):,.2f} ريال. الحالة: {o.get('status')}",
+                "status": o.get("status") or "SUBMITTED",
+                "is_done": is_done,
+                "timestamp": o["valid_until"].isoformat() if o.get("valid_until") else None,
                 "user_name": "Sales Agent"
             })
         for r in res_list:
+            is_done = (r.get("status") in ("ACTIVE", "CONVERTED_TO_CONTRACT", "COMPLETED"))
             timeline.append({
                 "type": "RESERVATION",
                 "id": r["reservation_id"],
-                "subject": f"حجز الوحدة #{r['unit_number']}",
-                "description": f"رقم الحجز: {r['reservation_number']}. العربون: {float(r['deposit_amount'] or 0):,.2f} ريال. الحالة: {r['status']}",
-                "timestamp": r["reserved_at"].isoformat() if r["reserved_at"] else None,
+                "subject": f"حجز الوحدة #{r.get('unit_number') or '--'}",
+                "description": f"رقم الحجز: {r.get('reservation_number') or '--'}. العربون: {float(r['deposit_amount'] or 0):,.2f} ريال. الحالة: {r.get('status')}",
+                "status": r.get("status") or "ACTIVE",
+                "is_done": is_done,
+                "timestamp": r["reserved_at"].isoformat() if r.get("reserved_at") else None,
                 "user_name": "Operations"
             })
         for c in contract_list:
+            is_done = (c.get("status") in ("ACTIVE", "COMPLETED", "SIGNED"))
             timeline.append({
                 "type": "CONTRACT",
                 "id": c["contract_id"],
-                "subject": f"عقد رقم {c['contract_number']}",
-                "description": f"القيمة: {float(c['contract_value'] or 0):,.2f} ريال. الحالة: {c['status']}",
-                "timestamp": c["signed_at"].isoformat() if c["signed_at"] else now_dt.isoformat(),
+                "subject": f"عقد رقم {c.get('contract_number') or '--'}",
+                "description": f"القيمة: {float(c['contract_value'] or 0):,.2f} ريال. الحالة: {c.get('status')}",
+                "status": c.get("status") or "ACTIVE",
+                "is_done": is_done,
+                "timestamp": c["signed_at"].isoformat() if c.get("signed_at") else now_dt.isoformat(),
                 "user_name": "Legal"
             })
 
         timeline.sort(key=lambda x: str(x.get("timestamp") or ""))
 
-        # 9. Format Customer & Agent info
+        # 9. Format Customer & Agent info & Lead Subject
         cust_name = ""
         cust_mobile = ""
         agent_name = ""
         mgr_name = ""
+        lead_subject = ""
+        inquiry_type = lead_row.get("inquiry_type") if lead_row else None
+        lead_status = lead_row.get("status") if lead_row else None
+        lead_priority = lead_row.get("priority") if lead_row else None
+        lead_created_at = lead_row.get("created_at").isoformat() if (lead_row and lead_row.get("created_at")) else None
+
         if lead_row:
             cust_name = f"{lead_row['first_name'] or ''} {lead_row['last_name'] or ''}".strip() or lead_row["company_name"] or "Client"
             cust_mobile = lead_row["mobile"] or ""
             agent_name = lead_row["assigned_agent_name"] or ""
             mgr_name = lead_row["manager_name"] or ""
+            lead_subject = f"طلب {inquiry_type or 'عقار'} — {cust_name}"
         elif opp_row:
             cust_name = f"{opp_row['first_name'] or ''} {opp_row['last_name'] or ''}".strip() or opp_row["company_name"] or "Client"
             cust_mobile = opp_row["mobile"] or ""
             agent_name = opp_row["assigned_agent_name"] or ""
             mgr_name = opp_row["manager_name"] or ""
+            lead_subject = f"صفقة {opp_row.get('stage') or 'بيعية'} — {cust_name}"
 
-        # Format dates in tasks
-        formatted_pending = []
-        for pt in pending_tasks:
-            pt_copy = dict(pt)
-            due_iso = pt_copy["due_at"].isoformat() if pt_copy.get("due_at") else None
-            pt_copy["due_at"] = due_iso
-            pt_copy["due_date"] = due_iso
-            if pt_copy.get("created_at"):
-                pt_copy["created_at"] = pt_copy["created_at"].isoformat()
-            if "assignee_name" not in pt_copy and pt_copy.get("assigned_user_name"):
-                pt_copy["assignee_name"] = pt_copy["assigned_user_name"]
-            formatted_pending.append(pt_copy)
+        # 10. Format Detailed Structured Tables for Tabled UI Breakdown
+        formatted_tasks = []
+        for t in task_list:
+            is_done = (t["status"] == "COMPLETED")
+            due_dt = t.get("due_at")
+            created_dt = t.get("created_at")
+            completed_dt = t.get("completed_at")
+            dt_sort = completed_dt or due_dt or created_dt
+            formatted_tasks.append({
+                "task_id": t["task_id"],
+                "template_id": t.get("template_id"),
+                "title": t["title"],
+                "assigned_user_id": t.get("assigned_user_id"),
+                "assigned_user_name": t.get("assigned_user_name") or "غير مسند",
+                "assignee_name": t.get("assigned_user_name") or "غير مسند",
+                "priority": t.get("priority") or "NORMAL",
+                "status": t["status"],
+                "is_done": is_done,
+                "situation": "COMPLETED" if is_done else ("OVERDUE" if (due_dt and due_dt < now_dt and not is_done) else t["status"]),
+                "due_at": due_dt.isoformat() if due_dt else None,
+                "due_date": due_dt.isoformat() if due_dt else None,
+                "created_at": created_dt.isoformat() if created_dt else None,
+                "completed_at": completed_dt.isoformat() if completed_dt else None,
+                "date_time": dt_sort.isoformat() if dt_sort else None
+            })
+
+        formatted_activities = []
+        for a in activity_list:
+            is_done = (a.get("completed_at") is not None) or (a.get("status") == "COMPLETED")
+            c_dt = a.get("completed_at") or a.get("created_at")
+            formatted_activities.append({
+                "activity_id": a["activity_id"],
+                "activity_type": a.get("activity_type_code") or a.get("type") or "ACTIVITY",
+                "subject": a["subject"],
+                "description": a.get("description") or "",
+                "outcome": a.get("outcome") or "--",
+                "user_name": a.get("user_name") or "System/Agent",
+                "status": a.get("status") or ("COMPLETED" if is_done else "PLANNED"),
+                "is_done": is_done,
+                "situation": "COMPLETED" if is_done else "PLANNED",
+                "date_time": c_dt.isoformat() if c_dt else None
+            })
+
+        formatted_comms = []
+        for c in comm_list:
+            s_dt = c.get("sent_at") or c.get("created_at")
+            is_done = (c.get("sent_at") is not None) or (c.get("delivery_status") in ("DELIVERED", "SENT"))
+            formatted_comms.append({
+                "communication_id": c["communication_id"],
+                "channel": c.get("channel") or "SYSTEM",
+                "direction": c.get("direction") or "OUT",
+                "subject": c.get("subject") or "Message",
+                "body": c.get("body") or "",
+                "delivery_status": c.get("delivery_status") or "SENT",
+                "is_done": is_done,
+                "situation": c.get("delivery_status") or ("SENT" if is_done else "PENDING"),
+                "date_time": s_dt.isoformat() if s_dt else None
+            })
+
+        formatted_viewings = []
+        for v in viewing_list:
+            is_done = (v.get("status") == "COMPLETED")
+            v_dt = v.get("scheduled_start") or v.get("created_at")
+            formatted_viewings.append({
+                "viewing_id": v["viewing_id"],
+                "unit_id": v.get("unit_id"),
+                "unit_number": v.get("unit_number") or "--",
+                "project_name": v.get("project_name") or "--",
+                "agent_name": v.get("agent_name") or "Agent",
+                "agent_user_id": v.get("agent_user_id"),
+                "scheduled_start": v["scheduled_start"].isoformat() if v.get("scheduled_start") else None,
+                "scheduled_end": v["scheduled_end"].isoformat() if v.get("scheduled_end") else None,
+                "status": v.get("status") or "SCHEDULED",
+                "outcome": v.get("outcome") or "--",
+                "notes": v.get("notes") or "",
+                "is_done": is_done,
+                "situation": v.get("status") or "SCHEDULED",
+                "date_time": v_dt.isoformat() if v_dt else None
+            })
+
+        formatted_offers = []
+        for o in offer_list:
+            is_done = (o.get("status") in ("ACCEPTED", "REJECTED", "EXPIRED"))
+            o_dt = o.get("valid_until") or o.get("created_at")
+            formatted_offers.append({
+                "offer_id": o["offer_id"],
+                "unit_id": o.get("unit_id"),
+                "unit_number": o.get("unit_number") or "--",
+                "offer_amount": float(o["offer_amount"]) if o.get("offer_amount") is not None else 0.0,
+                "asking_price": float(o["asking_price"]) if o.get("asking_price") is not None else None,
+                "status": o.get("status") or "SUBMITTED",
+                "is_done": is_done,
+                "situation": o.get("status") or "SUBMITTED",
+                "valid_until": o["valid_until"].isoformat() if o.get("valid_until") else None,
+                "date_time": o_dt.isoformat() if o_dt else None
+            })
+
+        formatted_reservations = []
+        for r in res_list:
+            is_done = (r.get("status") in ("ACTIVE", "CONVERTED_TO_CONTRACT", "COMPLETED"))
+            r_dt = r.get("reserved_at")
+            formatted_reservations.append({
+                "reservation_id": r["reservation_id"],
+                "reservation_number": r.get("reservation_number") or "--",
+                "unit_id": r.get("unit_id"),
+                "unit_number": r.get("unit_number") or "--",
+                "deposit_amount": float(r["deposit_amount"]) if r.get("deposit_amount") is not None else 0.0,
+                "status": r.get("status") or "ACTIVE",
+                "is_done": is_done,
+                "situation": r.get("status") or "ACTIVE",
+                "reserved_at": r_dt.isoformat() if r_dt else None,
+                "expires_at": r["expires_at"].isoformat() if r.get("expires_at") else None,
+                "date_time": r_dt.isoformat() if r_dt else None
+            })
+
+        formatted_contracts = []
+        for c in contract_list:
+            is_done = (c.get("status") in ("ACTIVE", "COMPLETED", "SIGNED"))
+            c_dt = c.get("signed_at") or c.get("start_date")
+            formatted_contracts.append({
+                "contract_id": c["contract_id"],
+                "contract_number": c.get("contract_number") or "--",
+                "contract_type": c.get("contract_type") or "SALE",
+                "contract_value": float(c["contract_value"]) if c.get("contract_value") is not None else 0.0,
+                "status": c.get("status") or "ACTIVE",
+                "is_done": is_done,
+                "situation": c.get("status") or "ACTIVE",
+                "signed_at": c["signed_at"].isoformat() if c.get("signed_at") else None,
+                "start_date": c["start_date"].isoformat() if c.get("start_date") else None,
+                "end_date": c["end_date"].isoformat() if c.get("end_date") else None,
+                "date_time": c_dt.isoformat() if (c_dt and hasattr(c_dt, 'isoformat')) else (str(c_dt) if c_dt else None)
+            })
+
+        # Format pending tasks list (backward compatibility)
+        formatted_pending = [t for t in formatted_tasks if not t["is_done"]]
 
         return {
             "lead_id": lead_id,
@@ -4725,20 +4890,32 @@ class WorkflowEngine:
             "customer_mobile": cust_mobile,
             "assigned_agent_name": agent_name,
             "manager_name": mgr_name,
+            "lead_subject": lead_subject,
+            "inquiry_type": inquiry_type,
+            "lead_status": lead_status,
+            "lead_priority": lead_priority,
+            "lead_created_at": lead_created_at,
             "current_stage": current_stage,
             "is_stalled": is_stalled,
             "stalled_reason_ar": stalled_reason_ar,
             "stalled_reason_en": stalled_reason_en,
             "recommended_actions": recommended_actions,
             "timeline": timeline,
+            "tasks": formatted_tasks,
+            "activities": formatted_activities,
+            "communications": formatted_comms,
+            "viewings": formatted_viewings,
+            "offers": formatted_offers,
+            "reservations": formatted_reservations,
+            "contracts": formatted_contracts,
             "pending_tasks": formatted_pending,
-            "completed_tasks_count": len([t for t in task_list if t["status"] == "COMPLETED"]),
-            "activities_count": len(activity_list),
-            "communications_count": len(comm_list),
-            "viewings_count": len(viewing_list),
-            "offers_count": len(offer_list),
-            "reservations_count": len(res_list),
-            "contracts_count": len(contract_list)
+            "completed_tasks_count": len([t for t in formatted_tasks if t["is_done"]]),
+            "activities_count": len(formatted_activities),
+            "communications_count": len(formatted_comms),
+            "viewings_count": len(formatted_viewings),
+            "offers_count": len(formatted_offers),
+            "reservations_count": len(formatted_reservations),
+            "contracts_count": len(formatted_contracts)
         }
 
     @staticmethod
