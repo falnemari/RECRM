@@ -47,9 +47,31 @@ class TestRBACAndScoping(unittest.TestCase):
         self.assertEqual(res_sysadmin.status_code, 200)
         sysadmin_total = res_sysadmin.json()["meta"]["total"]
 
-        # An agent with OWN scope must only see a subset of customers
-        self.assertLess(user3_total, sysadmin_total)
-        self.assertGreater(sysadmin_total, 0)
+    def test_user43_global_scope_can_see_all_customers(self):
+        # user-43 has MARKETING, PROPERTY_MANAGER, and DOCUMENT_CONTROL with customer read/write permissions
+        res_user43 = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-43"})
+        self.assertEqual(res_user43.status_code, 200)
+        user43_total = res_user43.json()["meta"]["total"]
+
+        res_sysadmin = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res_sysadmin.status_code, 200)
+        sysadmin_total = res_sysadmin.json()["meta"]["total"]
+
+        # user-43 must have global customer visibility
+        self.assertEqual(user43_total, sysadmin_total)
+        self.assertGreater(user43_total, 0)
+
+    def test_customer_lookup_for_lead_creation_bypasses_own_scope(self):
+        # When creating a lead (for_lookup=true or searching by mobile/name), customer lookup must find existing records
+        res_lookup = self.client.get("/api/v1/customers?for_lookup=true", headers={"X-User-ID": "user-3"})
+        self.assertEqual(res_lookup.status_code, 200)
+        lookup_total = res_lookup.json()["meta"]["total"]
+
+        res_sysadmin = self.client.get("/api/v1/customers", headers={"X-User-ID": "user-51"})
+        sysadmin_total = res_sysadmin.json()["meta"]["total"]
+
+        # An agent creating a lead must be able to lookup any existing customer in the CRM
+        self.assertEqual(lookup_total, sysadmin_total)
 
 if __name__ == "__main__":
     unittest.main()

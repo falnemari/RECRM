@@ -8,13 +8,23 @@ router = APIRouter(tags=["Authentication & Session"])
 
 def resolve_user_data_scope(role_codes: List[str]) -> str:
     codes = set(r.upper() for r in role_codes)
-    if "SYS_ADMIN" in codes or "ADMIN" in codes or "AUDITOR" in codes or "VIEWER" in codes:
+    # 1. Executive and organization-wide governance roles have global visibility
+    if any(r in codes for r in ("SYS_ADMIN", "ADMIN", "GENERAL_MANAGER", "AUDITOR", "VIEWER")):
         return "GLOBAL"
-    if "SALES_MANAGER" in codes or "BRANCH_MANAGER" in codes:
+    # 2. Branch sales managers oversee their branch pipeline
+    if any(r in codes for r in ("SALES_MANAGER", "BRANCH_MANAGER")):
         return "BRANCH"
+    # 3. Organization-wide functional specialists (Marketing & Central Finance)
+    if any(r in codes for r in ("MARKETING", "ACCOUNTANT")):
+        return "GLOBAL"
+    # 4. Regional / Team directors
     if "SALES_DIRECTOR" in codes:
         return "TEAM"
-    if "SALES_AGENT" in codes or "LEASING_AGENT" in codes:
+    # 5. Branch operations (Property Managers & Document Controllers)
+    if any(r in codes for r in ("PROPERTY_MANAGER", "DOCUMENT_CONTROL")):
+        return "BRANCH"
+    # 6. Frontline individual agents (isolated to their own records)
+    if any(r in codes for r in ("SALES_AGENT", "LEASING_AGENT")):
         return "OWN"
     return "GLOBAL"
 

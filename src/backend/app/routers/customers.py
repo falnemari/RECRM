@@ -45,6 +45,7 @@ async def list_customers(
     mobile: Optional[str] = None,
     email: Optional[str] = None,
     national_id: Optional[str] = None,
+    for_lookup: bool = Query(False),
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -53,8 +54,13 @@ async def list_customers(
     params = []
     p_idx = 1
 
-    # Role-based & multi-tenant data scoping enforcement
-    if x_user_id:
+    # Check if this query is an explicit customer search/lookup (e.g. searching by phone, national ID, name, or for lead creation)
+    is_lookup_query = for_lookup or any(
+        f and f.strip() for f in (search, mobile, email, national_id, customer_id, first_name, last_name, company_name)
+    )
+
+    # Role-based & multi-tenant data scoping enforcement (applied for general browsing, bypassed for customer search/lookup)
+    if x_user_id and not is_lookup_query:
         roles = await conn.fetch(
             "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
             x_user_id

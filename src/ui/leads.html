@@ -1735,7 +1735,7 @@
             resultsContainer.style.display = 'block';
             resultsContainer.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.88em;">Searching customer database...</div>';
 
-            let queryParams = [];
+            let queryParams = ['for_lookup=true'];
             if (custType && custType !== 'ALL') queryParams.push(`customer_type=${encodeURIComponent(custType)}`);
             if (firstName) queryParams.push(`first_name=${encodeURIComponent(firstName)}`);
             if (lastName) queryParams.push(`last_name=${encodeURIComponent(lastName)}`);
