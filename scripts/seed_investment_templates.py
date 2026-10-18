@@ -180,3 +180,4 @@ async def seed_templates():
 
 if __name__ == "__main__":
     asyncio.run(seed_templates())
+
