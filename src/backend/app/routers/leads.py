@@ -338,8 +338,13 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
 
         # 7. Workflow Engine: Task Spawning & Routing
         if assigned_user_id:
-            is_rent = (payload.inquiry_type or "").upper() == "RENT"
-            contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT" if is_rent else "TASK_LEAD_FIRST_CONTACT"
+            inq = (payload.inquiry_type or "").upper()
+            if inq == "RENT":
+                contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT"
+            elif inq in ("INVEST", "INVESTMENT"):
+                contact_tmpl = "TASK_INVEST_LEAD_FIRST_CONTACT"
+            else:
+                contact_tmpl = "TASK_LEAD_FIRST_CONTACT"
             await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
                 template_id=contact_tmpl,

@@ -318,25 +318,37 @@ async def complete_task(
             "preferred_property_type_id": payload.preferred_property_type_id,
             "preferred_city_id": payload.preferred_city_id
         }
-        if payload.unit_id or payload.scheduled_start or payload.feedback_rating or payload.offer_amount or payload.location_notes or payload.callback_at or payload.unit_ids or payload.rent_amount or payload.start_date:
-            viewing_data = {
-                "unit_id": payload.unit_id,
-                "unit_ids": payload.unit_ids,
-                "callback_at": payload.callback_at,
-                "scheduled_start": payload.scheduled_start,
-                "scheduled_end": payload.scheduled_end,
-                "viewing_duration_minutes": payload.viewing_duration_minutes,
-                "location_notes": payload.location_notes,
-                "feedback_rating": payload.feedback_rating,
-                "offer_amount": payload.offer_amount,
-                "rent_amount": payload.rent_amount,
-                "start_date": payload.start_date,
-                "end_date": payload.end_date,
-                "payment_frequency": payload.payment_frequency,
-                "deposit_amount": payload.deposit_amount,
-                "installments_count": payload.installments_count,
-                "contract_number": payload.contract_number
-            }
+        viewing_data = {
+            "unit_id": payload.unit_id,
+            "unit_ids": payload.unit_ids,
+            "callback_at": payload.callback_at,
+            "scheduled_start": payload.scheduled_start,
+            "scheduled_end": payload.scheduled_end,
+            "viewing_duration_minutes": payload.viewing_duration_minutes,
+            "location_notes": payload.location_notes,
+            "feedback_rating": payload.feedback_rating,
+            "offer_amount": payload.offer_amount,
+            "rent_amount": payload.rent_amount,
+            "start_date": payload.start_date,
+            "end_date": payload.end_date,
+            "payment_frequency": payload.payment_frequency,
+            "deposit_amount": payload.deposit_amount,
+            "installments_count": payload.installments_count,
+            "contract_number": payload.contract_number,
+            "target_yield_percent": payload.target_yield_percent,
+            "investment_horizon_years": payload.investment_horizon_years,
+            "risk_tolerance": payload.risk_tolerance,
+            "investment_strategy": payload.investment_strategy,
+            "purchase_price": payload.purchase_price,
+            "cash_invested": payload.cash_invested,
+            "annual_pre_tax_cash_flow": payload.annual_pre_tax_cash_flow,
+            "annual_operating_expenses": payload.annual_operating_expenses,
+            "annual_vacancy_allowance": payload.annual_vacancy_allowance,
+            "acquisition_costs": payload.acquisition_costs,
+            "monthly_rent_forecast": payload.monthly_rent_forecast,
+            "actual_rental_income": payload.actual_rental_income,
+            "actual_expenses": payload.actual_expenses
+        }
 
     async with conn.transaction():
         try:

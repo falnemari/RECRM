@@ -7,6 +7,7 @@ from app.schemas.calculations import (
     InvestmentReturnsIn,
     CommissionCalculationIn,
     BalanceCalculationIn,
+    InvestmentComparisonIn,
 )
 from app.services.calculation_service import CalculationService
 
@@ -108,4 +109,18 @@ def calculate_balance_endpoint(payload: BalanceCalculationIn):
         return ResponseEnvelope(data=balance, meta=BaseMeta())
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/compare-investments", response_model=ResponseEnvelope[dict])
+def compare_investments_endpoint(payload: InvestmentComparisonIn):
+    try:
+        candidates_data = [c.model_dump() for c in payload.candidates]
+        result = CalculationService.compare_investment_properties(
+            candidates=candidates_data,
+            sort_by=payload.sort_by or "net_operating_yield_percent"
+        )
+        return ResponseEnvelope(data=result, meta=BaseMeta())
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 

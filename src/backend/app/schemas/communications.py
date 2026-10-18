@@ -54,6 +54,20 @@ class TaskCompleteIn(BaseModel):
     deposit_amount: Optional[float] = None
     installments_count: Optional[int] = 1
     contract_number: Optional[str] = None
+    # Investment criteria, baseline & return fields
+    target_yield_percent: Optional[float] = None
+    investment_horizon_years: Optional[int] = None
+    risk_tolerance: Optional[str] = None
+    investment_strategy: Optional[str] = None
+    purchase_price: Optional[float] = None
+    cash_invested: Optional[float] = None
+    annual_pre_tax_cash_flow: Optional[float] = None
+    annual_operating_expenses: Optional[float] = None
+    annual_vacancy_allowance: Optional[float] = None
+    acquisition_costs: Optional[float] = None
+    monthly_rent_forecast: Optional[float] = None
+    actual_rental_income: Optional[float] = None
+    actual_expenses: Optional[float] = None
 
 class TaskReopenIn(BaseModel):
     reason: Optional[str] = None

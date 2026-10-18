@@ -515,3 +515,55 @@ class CalculationService:
             "is_favorable": variance >= 0.0
         }
 
+    @classmethod
+    def compare_investment_properties(
+        cls,
+        candidates: List[Dict[str, Any]],
+        sort_by: str = "net_operating_yield_percent"
+    ) -> Dict[str, Any]:
+        """
+        Compares multiple investment candidate properties under uniform, documented assumptions.
+        Ranks properties based on specified metric (e.g. net_operating_yield_percent, gross_yield_percent, or cash_on_cash_return_percent).
+        """
+        results = []
+        for c in candidates:
+            p_price = float(c.get("purchase_price") or 0.0)
+            m_rent = float(c.get("monthly_rent") or 0.0)
+            vac = float(c.get("annual_vacancy_allowance") or 0.0)
+            opex = float(c.get("annual_operating_expenses") or 0.0)
+            acq = float(c.get("acquisition_costs") or 0.0)
+            cash_inv = float(c.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+            cf = float(c.get("annual_pre_tax_cash_flow") or max(0.0, (m_rent * 12.0) - vac - opex))
+
+            r_metrics = cls.calculate_rental_metrics(
+                monthly_rent=m_rent,
+                purchase_price=p_price,
+                annual_vacancy_allowance=vac,
+                annual_operating_expenses=opex,
+                acquisition_costs=acq
+            )
+            i_returns = cls.calculate_investment_returns(
+                purchase_price=p_price,
+                cash_invested=cash_inv,
+                annual_pre_tax_cash_flow=cf
+            )
+
+            item = {
+                "property_id": c.get("property_id"),
+                "property_title": c.get("property_title"),
+                **r_metrics,
+                **i_returns
+            }
+            results.append(item)
+
+        results.sort(key=lambda x: (x.get(sort_by) is not None, x.get(sort_by) or 0.0), reverse=True)
+
+        best_pick = results[0] if results else None
+        return {
+            "total_candidates": len(results),
+            "sorted_by": sort_by,
+            "best_candidate_id": best_pick.get("property_id") if best_pick else None,
+            "comparison": results
+        }
+
+

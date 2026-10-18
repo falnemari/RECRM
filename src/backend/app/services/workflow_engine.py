@@ -303,8 +303,13 @@ class WorkflowEngine:
 
         customer_id = lead["customer_id"]
         priority = lead["priority"] or "NORMAL"
-        is_rent = (lead["inquiry_type"] or "").upper() == "RENT"
-        contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT" if is_rent else "TASK_LEAD_FIRST_CONTACT"
+        inq = (lead["inquiry_type"] or "").upper()
+        if inq == "RENT":
+            contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT"
+        elif inq in ("INVEST", "INVESTMENT"):
+            contact_tmpl = "TASK_INVEST_LEAD_FIRST_CONTACT"
+        else:
+            contact_tmpl = "TASK_LEAD_FIRST_CONTACT"
 
         # 2. Complete open TASK_LEAD_ASSIGN if present
         open_assign_task = await conn.fetchrow(
@@ -332,11 +337,11 @@ class WorkflowEngine:
             notes=f"تم تعيين الطلب للوسيط ({agent_name}). تم إسناد مهمة الاتصال الأولي (مهلة 30 دقيقة)."
         )
 
-        # 3. Check for open first contact task (standard or rental)
+        # 3. Check for open first contact task (standard, rental, or investment)
         open_contact_task = await conn.fetchrow(
             """
             SELECT task_id FROM tasks 
-            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT') AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT') AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             LIMIT 1
             """,
             lead_id
@@ -568,7 +573,9 @@ class WorkflowEngine:
 
         effective_user_id = user_id or lead["assigned_user_id"] or "user-51"
         now_dt = datetime.now(timezone.utc)
-        is_rent = (lead["inquiry_type"] or "").upper() == "RENT"
+        inq = (lead["inquiry_type"] or "").upper()
+        is_rent = (inq == "RENT")
+        is_invest = (inq in ("INVEST", "INVESTMENT"))
 
         # 1. Complete open qualification or contact tasks for this lead
         await conn.execute(
@@ -576,7 +583,7 @@ class WorkflowEngine:
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
             WHERE lead_id = $2
-              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             """,
             now_dt, lead_id
@@ -666,12 +673,17 @@ class WorkflowEngine:
             opp_id, lead_id
         )
 
-        # 5. Record Activity ACT_LEAD_QUALIFIED or ACT_RENT_LEAD_QUALIFIED
-        qual_act_template = "ACT_RENT_LEAD_QUALIFIED" if is_rent else "ACT_LEAD_QUALIFIED"
-        qual_notes = notes or (
-            "تم استيفاء معايير استئجار الوحدة وترقية الطلب لفرصة إيجارية نشطة." if is_rent
-            else "تم استفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة."
-        )
+        # 5. Record Activity ACT_LEAD_QUALIFIED, ACT_RENT_LEAD_QUALIFIED, or ACT_INVEST_LEAD_QUALIFIED
+        if is_invest:
+            qual_act_template = "ACT_INVEST_LEAD_QUALIFIED"
+            qual_notes = notes or "تم استيفاء معايير تأهيل المستثمر وترقية الطلب لفرصة استثمارية نشطة."
+        elif is_rent:
+            qual_act_template = "ACT_RENT_LEAD_QUALIFIED"
+            qual_notes = notes or "تم استيفاء معايير استئجار الوحدة وترقية الطلب لفرصة إيجارية نشطة."
+        else:
+            qual_act_template = "ACT_LEAD_QUALIFIED"
+            qual_notes = notes or "تم استفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة."
+
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
             template_id=qual_act_template,
@@ -685,12 +697,14 @@ class WorkflowEngine:
             completed_at=now_dt
         )
 
-        # 6. Auto-spawn Next Task (Rental vs Sales)
+        # 6. Auto-spawn Next Task (Investment vs Rental vs Sales)
         has_primary_unit = await conn.fetchval(
             "SELECT count(*) FROM opportunity_units WHERE opportunity_id = $1 AND is_primary = TRUE",
             opp_id
         )
-        if is_rent:
+        if is_invest:
+            next_task_template = "TASK_INVEST_CONFIRM_OBJECTIVES"
+        elif is_rent:
             if has_primary_unit and has_primary_unit > 0:
                 next_task_template = "TASK_RENT_VIEWING_FOLLOW_UP"
             else:
@@ -719,6 +733,7 @@ class WorkflowEngine:
             "activity": activity,
             "viewing_task": next_task if next_task_template in ("TASK_VIEWING_SCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP") else None,
             "matching_task": next_task if next_task_template in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES") else None,
+            "invest_task": next_task if is_invest else None,
             "next_task": next_task
         }
 
@@ -3231,6 +3246,493 @@ class WorkflowEngine:
                 "business_transition": {"status": "MONITORED"}
             }
 
+        # =========================================================================
+        # Investment Pipeline Handling: Phase 3
+        # =========================================================================
+
+        # 1. TASK_INVEST_CONFIRM_OBJECTIVES
+        if tmpl_id == "TASK_INVEST_CONFIRM_OBJECTIVES":
+            v_data = viewing_data or {}
+            q_data = qualification_data or {}
+            t_cap = v_data.get("purchase_price") or q_data.get("budget_max") or 0.0
+            t_yield = v_data.get("target_yield_percent") or 8.0
+            horizon = v_data.get("investment_horizon_years") or 5
+            risk = (v_data.get("risk_tolerance") or "MEDIUM").upper()
+            strat = (v_data.get("investment_strategy") or "BALANCED").upper()
+
+            cand_unit_ids = list(v_data.get("unit_ids") or [])
+            if v_data.get("unit_id") and v_data["unit_id"] not in cand_unit_ids:
+                cand_unit_ids.append(v_data["unit_id"])
+            if cand_unit_ids and task["opportunity_id"]:
+                for idx, uid in enumerate(cand_unit_ids):
+                    await conn.execute(
+                        """
+                        INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+                        SELECT $1::varchar, $2::varchar, $3::boolean, COALESCE(asking_price, rent_price, 0)
+                        FROM units WHERE unit_id = $2::varchar
+                        ON CONFLICT (opportunity_id, unit_id) DO NOTHING
+                        """,
+                        task["opportunity_id"], uid, (idx == 0)
+                    )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            crit_summary = (
+                f"تم اعتماد وتأكيد الأهداف الاستثمارية: رأس المال المستهدف: {t_cap:,.2f} ريال | "
+                f"العائد المستهدف: {t_yield}% | الأفق الزمني: {horizon} سنوات | "
+                f"تحمل المخاطر: {risk} | الإستراتيجية: {strat}."
+            )
+            obj_notes = f"{crit_summary} {notes}" if notes else crit_summary
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_OBJECTIVES_CONFIRMED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome,
+                notes=obj_notes,
+                completed_at=now_dt
+            )
+
+            next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_INVEST_COMPARE_RETURNS",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                customer_id=task["customer_id"],
+                assigned_user_id=task["assigned_user_id"] or user_id,
+                priority="HIGH",
+                parent_task_id=task_id
+            )
+
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {
+                    "type": "INVEST_OBJECTIVES_CONFIRMED",
+                    "opportunity_id": task["opportunity_id"],
+                    "next_task": next_task
+                }
+            }
+
+        # 2. TASK_INVEST_COMPARE_RETURNS
+        if tmpl_id == "TASK_INVEST_COMPARE_RETURNS":
+            v_data = viewing_data or {}
+            sel_unit_id = v_data.get("unit_id")
+            p_price = float(v_data.get("purchase_price") or 0.0)
+            m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
+            vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
+            opex = float(v_data.get("annual_operating_expenses") or 0.0)
+            acq = float(v_data.get("acquisition_costs") or 0.0)
+            cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+            cf = float(v_data.get("annual_pre_tax_cash_flow") or max(0.0, (m_rent * 12.0) - vac - opex))
+
+            if sel_unit_id and p_price == 0.0:
+                u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", sel_unit_id)
+                if u_row:
+                    p_price = float(u_row["asking_price"] or 0.0)
+                    if m_rent == 0.0:
+                        m_rent = float(u_row["rent_price"] or (p_price * 0.08 / 12.0))
+                    if cash_inv <= 1.0 and p_price > 0:
+                        cash_inv = p_price
+                    if cf == 0.0:
+                        cf = max(0.0, (m_rent * 12.0) - vac - opex)
+
+            from app.services.calculation_service import CalculationService
+            rental_metrics = CalculationService.calculate_rental_metrics(
+                monthly_rent=m_rent,
+                purchase_price=p_price,
+                annual_vacancy_allowance=vac,
+                annual_operating_expenses=opex,
+                acquisition_costs=acq
+            )
+            invest_returns = CalculationService.calculate_investment_returns(
+                purchase_price=p_price,
+                cash_invested=cash_inv,
+                annual_pre_tax_cash_flow=cf
+            )
+
+            if sel_unit_id and task["opportunity_id"]:
+                await conn.execute(
+                    """
+                    INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+                    VALUES ($1, $2, TRUE, $3)
+                    ON CONFLICT (opportunity_id, unit_id) DO UPDATE SET is_primary = TRUE, offered_price = EXCLUDED.offered_price
+                    """,
+                    task["opportunity_id"], sel_unit_id, p_price
+                )
+                await conn.execute(
+                    "UPDATE opportunity_units SET is_primary = FALSE WHERE opportunity_id = $1 AND unit_id != $2",
+                    task["opportunity_id"], sel_unit_id
+                )
+                await conn.execute(
+                    "UPDATE opportunities SET expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2",
+                    p_price, task["opportunity_id"]
+                )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            comp_notes = notes or (
+                f"تمت دراسة ومقارنة العوائد الاستثمارية للوحدة ({sel_unit_id or 'المرشحة'}): "
+                f"سعر الشراء: {p_price:,.2f} ريال | العائد الإجمالي: {rental_metrics['gross_yield_percent']}% | "
+                f"عائد التشغيل الصافي: {rental_metrics['net_operating_yield_percent']}% | "
+                f"صافي الدخل التشغيلي (NOI): {rental_metrics['net_operating_income']:,.2f} ريال | "
+                f"العائد على النقد المستثمر (CoC): {invest_returns['cash_on_cash_return_percent']}%."
+            )
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_RETURNS_COMPARED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome,
+                notes=comp_notes,
+                completed_at=now_dt
+            )
+
+            next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_INVEST_VALIDATE_FINANCIALS",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                customer_id=task["customer_id"],
+                assigned_user_id=task["assigned_user_id"] or user_id,
+                priority="HIGH",
+                parent_task_id=task_id
+            )
+
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {
+                    "type": "INVEST_RETURNS_COMPARED",
+                    "metrics": rental_metrics,
+                    "returns": invest_returns,
+                    "next_task": next_task
+                }
+            }
+
+        # 3. TASK_INVEST_VALIDATE_FINANCIALS
+        if tmpl_id == "TASK_INVEST_VALIDATE_FINANCIALS":
+            norm_outcome = (outcome or "VALIDATED").upper()
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            if norm_outcome in ("VALIDATED", "APPROVED", "CONNECTED", "COMPLETED"):
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_INVEST_FINANCIALS_VALIDATED",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    task_id=task_id,
+                    outcome="VALIDATED",
+                    notes=notes or "تم تدقيق ومراجعة كافة الافتراضات المالية (الإيجار المتوقع، الشغور، النفقات التشغيلية، تكاليف الاستحواذ) بنجاح.",
+                    completed_at=now_dt
+                )
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_PREPARE_ACQUISITION_OFFER",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"type": "INVEST_FINANCIALS_VALIDATED", "next_task": next_task}
+                }
+            else:
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_INVEST_RETURNS_COMPARED",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    task_id=task_id,
+                    outcome=outcome,
+                    notes=notes or "تم التحفظ على الافتراضات المالية للوحدة المرشحة. تم إعادة توجيه المسار لمقارنة بدائل استثمارية أخرى.",
+                    completed_at=now_dt
+                )
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_COMPARE_RETURNS",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"type": "INVEST_REMATCH_SPAWNED", "next_task": next_task}
+                }
+
+        # 4. TASK_INVEST_PREPARE_ACQUISITION_OFFER
+        if tmpl_id == "TASK_INVEST_PREPARE_ACQUISITION_OFFER":
+            norm_outcome = (outcome or "OFFER_ACCEPTED").upper()
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            if norm_outcome in ("OFFER_ACCEPTED", "ACCEPTED", "WON", "COMPLETED"):
+                if task["opportunity_id"]:
+                    await conn.execute("UPDATE opportunities SET stage = 'WON', updated_at = NOW() WHERE opportunity_id = $1", task["opportunity_id"])
+                if lead_id:
+                    await conn.execute("UPDATE leads SET status = 'WON', updated_at = NOW() WHERE lead_id = $1", lead_id)
+
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_INVEST_ACQUISITION_OFFER_PREPARED",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    task_id=task_id,
+                    outcome="OFFER_ACCEPTED",
+                    notes=notes or "تم قبول عرض الاستحواذ بنجاح وترقية المعاملة لحالة الإتمام (WON).",
+                    completed_at=now_dt
+                )
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_BASELINE_PERFORMANCE",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"type": "INVEST_ACQUISITION_WON", "next_task": next_task}
+                }
+            else:
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_INVEST_RETURNS_COMPARED",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    task_id=task_id,
+                    outcome=outcome,
+                    notes=notes or "تم رفض أو عدم إتمام عرض الاستحواذ الحالي. تم فتح مسار المقارنة لاختيار وحدة بديلة للعميل.",
+                    completed_at=now_dt
+                )
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_COMPARE_RETURNS",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"type": "INVEST_REMATCH_SPAWNED", "next_task": next_task}
+                }
+
+        # 5. TASK_INVEST_BASELINE_PERFORMANCE
+        if tmpl_id == "TASK_INVEST_BASELINE_PERFORMANCE":
+            v_data = viewing_data or {}
+            p_price = float(v_data.get("purchase_price") or 0.0)
+            m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
+            opex = float(v_data.get("annual_operating_expenses") or 0.0)
+            vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
+            cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+
+            if task["opportunity_id"] and p_price == 0.0:
+                opp_v = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
+                p_price = float(opp_v or 0.0)
+                if cash_inv <= 1.0 and p_price > 0:
+                    cash_inv = p_price
+                if m_rent == 0.0 and p_price > 0:
+                    m_rent = p_price * 0.08 / 12.0
+
+            from app.services.calculation_service import CalculationService
+            r_metrics = CalculationService.calculate_rental_metrics(
+                monthly_rent=m_rent,
+                purchase_price=p_price,
+                annual_vacancy_allowance=vac,
+                annual_operating_expenses=opex
+            )
+            i_returns = CalculationService.calculate_investment_returns(
+                purchase_price=p_price,
+                cash_invested=cash_inv,
+                annual_pre_tax_cash_flow=r_metrics["net_operating_income"]
+            )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            base_notes = notes or (
+                f"تم تأسيس وتوثيق خط الأساس الاستثماري: تكلفة الاستحواذ: {p_price:,.2f} ريال | "
+                f"صافي الدخل التشغيلي المستهدف (NOI): {r_metrics['net_operating_income']:,.2f} ريال سنوياً | "
+                f"معدل العائد الصافي المستهدف: {r_metrics['net_operating_yield_percent']}% | "
+                f"العائد على النقد المستثمر (CoC): {i_returns['cash_on_cash_return_percent']}%."
+            )
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_BASELINE_ESTABLISHED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome="BASELINE_ESTABLISHED",
+                notes=base_notes,
+                completed_at=now_dt
+            )
+
+            next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_INVEST_MONITOR_ACTUAL_RETURNS",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                customer_id=task["customer_id"],
+                assigned_user_id=task["assigned_user_id"] or user_id,
+                priority="NORMAL",
+                parent_task_id=task_id
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {
+                    "type": "INVEST_BASELINE_ESTABLISHED",
+                    "baseline_metrics": r_metrics,
+                    "returns": i_returns,
+                    "next_task": next_task
+                }
+            }
+
+        # 6. TASK_INVEST_MONITOR_ACTUAL_RETURNS
+        if tmpl_id == "TASK_INVEST_MONITOR_ACTUAL_RETURNS":
+            v_data = viewing_data or {}
+            act_inc = float(v_data.get("actual_rental_income") or 0.0)
+            act_exp = float(v_data.get("actual_expenses") or 0.0)
+            forecast_inc = float(v_data.get("monthly_rent_forecast") or 0.0) * 12.0
+
+            if forecast_inc == 0.0 and task["opportunity_id"]:
+                opp_v = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
+                if opp_v and float(opp_v) > 0:
+                    forecast_inc = float(opp_v) * 0.08
+            if act_inc == 0.0 and forecast_inc > 0:
+                act_inc = forecast_inc
+
+            from app.services.calculation_service import CalculationService
+            var_data = CalculationService.calculate_forecast_rental_variance(
+                actual_income=act_inc,
+                forecast_income=forecast_inc
+            )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            mon_notes = notes or (
+                f"تمت مراجعة العوائد الفعلية ومقارنتها بخط الأساس: "
+                f"الدخل الفعلي: {act_inc:,.2f} ريال | المصروفات الفعلية: {act_exp:,.2f} ريال | "
+                f"انحراف الأداء عن التوقعات: {var_data['variance_percent'] if var_data['variance_percent'] is not None else 0.0}%."
+            )
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_RETURNS_MONITORED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome or "MONITORED",
+                notes=mon_notes,
+                completed_at=now_dt
+            )
+
+            next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_INVEST_PORTFOLIO_REVIEW",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                customer_id=task["customer_id"],
+                assigned_user_id=task["assigned_user_id"] or user_id,
+                priority="NORMAL",
+                parent_task_id=task_id
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {
+                    "type": "INVEST_RETURNS_MONITORED",
+                    "variance": var_data,
+                    "next_task": next_task
+                }
+            }
+
+        # 7. TASK_INVEST_PORTFOLIO_REVIEW
+        if tmpl_id == "TASK_INVEST_PORTFOLIO_REVIEW":
+            rec_outcome = (outcome or "HOLD").upper()
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_PORTFOLIO_REVIEWED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=rec_outcome,
+                notes=notes or f"تم إنجاز المراجعة الدورية للمحفظة الاستثمارية. التوصية المعتمدة: ({rec_outcome}).",
+                completed_at=now_dt
+            )
+
+            next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_INVEST_MONITOR_ACTUAL_RETURNS",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                customer_id=task["customer_id"],
+                assigned_user_id=task["assigned_user_id"] or user_id,
+                priority="NORMAL",
+                parent_task_id=task_id
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {
+                    "type": "INVEST_PORTFOLIO_REVIEWED",
+                    "recommendation": rec_outcome,
+                    "next_task": next_task
+                }
+            }
+
         # 4. Stage A Handling: TASK_LEAD_COMPLETE_INFO
         if tmpl_id == "TASK_LEAD_COMPLETE_INFO" and lead_id:
             q_data = qualification_data or {}
@@ -3278,7 +3780,7 @@ class WorkflowEngine:
 
         # 5. Determine and record corresponding Activity for other tasks
         act_template_id = "ACT_LEAD_FIRST_CONTACT"
-        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT"):
+        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT"):
             act_template_id = "ACT_LEAD_FIRST_CONTACT"
         elif tmpl_id == "TASK_LEAD_FOLLOWUP":
             act_template_id = "ACT_LEAD_FOLLOWUP"
@@ -3294,6 +3796,20 @@ class WorkflowEngine:
             act_template_id = "ACT_TENANCY_ACTIVATED"
         elif tmpl_id == "TASK_RENT_COLLECTION_MONITORING":
             act_template_id = "ACT_RENT_PAYMENT_COLLECTED"
+        elif tmpl_id == "TASK_INVEST_CONFIRM_OBJECTIVES":
+            act_template_id = "ACT_INVEST_OBJECTIVES_CONFIRMED"
+        elif tmpl_id == "TASK_INVEST_COMPARE_RETURNS":
+            act_template_id = "ACT_INVEST_RETURNS_COMPARED"
+        elif tmpl_id == "TASK_INVEST_VALIDATE_FINANCIALS":
+            act_template_id = "ACT_INVEST_FINANCIALS_VALIDATED"
+        elif tmpl_id == "TASK_INVEST_PREPARE_ACQUISITION_OFFER":
+            act_template_id = "ACT_INVEST_ACQUISITION_OFFER_PREPARED"
+        elif tmpl_id == "TASK_INVEST_BASELINE_PERFORMANCE":
+            act_template_id = "ACT_INVEST_BASELINE_ESTABLISHED"
+        elif tmpl_id == "TASK_INVEST_MONITOR_ACTUAL_RETURNS":
+            act_template_id = "ACT_INVEST_RETURNS_MONITORED"
+        elif tmpl_id == "TASK_INVEST_PORTFOLIO_REVIEW":
+            act_template_id = "ACT_INVEST_PORTFOLIO_REVIEWED"
 
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
@@ -3311,7 +3827,7 @@ class WorkflowEngine:
         # 6. Event-Driven Business Status Transitions for First Contact & Follow-up
         business_transition = None
 
-        if lead_id and tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP"):
+        if lead_id and tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP"):
             lead = await conn.fetchrow("SELECT status, assigned_user_id, inquiry_type FROM leads WHERE lead_id = $1", lead_id)
             if lead:
                 if outcome in ("QUALIFIED", "CONVERTED"):
@@ -3547,7 +4063,7 @@ class WorkflowEngine:
         viewing_reverted = None
 
         # A) First Contact & Follow-up reversions
-        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP") and lead_id:
+        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP") and lead_id:
             lead = await conn.fetchrow("SELECT status, assigned_user_id FROM leads WHERE lead_id = $1", lead_id)
             if lead and lead["status"] in ("CONTACTED", "UNREACHABLE", "DISQUALIFIED"):
                 prev_lead_status = "ASSIGNED" if lead["assigned_user_id"] else "NEW"
@@ -3556,7 +4072,7 @@ class WorkflowEngine:
                     """
                     SELECT count(*) FROM tasks 
                     WHERE lead_id = $1 AND task_id != $2 
-                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
                       AND status = 'COMPLETED'
                     """,
                     lead_id, task_id
@@ -3591,7 +4107,7 @@ class WorkflowEngine:
             if opp and opp["stage"] in ("QUALIFIED", "LOST"):
                 # If no other completed tasks or viewings exist on this opportunity, delete or revert it
                 opp_acts = await conn.fetchval(
-                    "SELECT count(*) FROM activities WHERE opportunity_id = $1 AND template_id NOT IN ('ACT_LEAD_QUALIFIED', 'ACT_RENT_LEAD_QUALIFIED')",
+                    "SELECT count(*) FROM activities WHERE opportunity_id = $1 AND template_id NOT IN ('ACT_LEAD_QUALIFIED', 'ACT_RENT_LEAD_QUALIFIED', 'ACT_INVEST_LEAD_QUALIFIED')",
                     opp["opportunity_id"]
                 )
                 if not opp_acts or opp_acts == 0:
@@ -3603,14 +4119,25 @@ class WorkflowEngine:
                     await conn.execute("UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1", opp["opportunity_id"])
                     opp_reverted = "QUALIFIED"
 
-        # C) Property Matching reversions
-        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES"):
+        # C) Property Matching & Investment Evaluation reversions
+        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_INVEST_CONFIRM_OBJECTIVES", "TASK_INVEST_COMPARE_RETURNS", "TASK_INVEST_VALIDATE_FINANCIALS"):
             if opp_id:
                 await conn.execute(
                     "UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1",
                     opp_id
                 )
                 opp_reverted = "QUALIFIED"
+
+        elif tmpl_id == "TASK_INVEST_PREPARE_ACQUISITION_OFFER":
+            if opp_id:
+                await conn.execute(
+                    "UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1",
+                    opp_id
+                )
+                opp_reverted = "QUALIFIED"
+            if lead_id:
+                await conn.execute("UPDATE leads SET status = 'QUALIFIED', updated_at = NOW() WHERE lead_id = $1", lead_id)
+                lead_reverted = "QUALIFIED"
 
         # D) Viewing Schedule reversions
         elif tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP"):

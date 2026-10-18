@@ -52,3 +52,21 @@ class BalanceCalculationIn(BaseModel):
     amount_due: float
     amount_paid: float
 
+
+class InvestmentCandidateIn(BaseModel):
+    property_id: Optional[str] = None
+    property_title: Optional[str] = None
+    purchase_price: float
+    monthly_rent: float
+    annual_vacancy_allowance: float = 0.0
+    annual_operating_expenses: float = 0.0
+    acquisition_costs: float = 0.0
+    cash_invested: Optional[float] = None
+    annual_pre_tax_cash_flow: Optional[float] = None
+
+
+class InvestmentComparisonIn(BaseModel):
+    candidates: list[InvestmentCandidateIn]
+    sort_by: Optional[str] = "net_operating_yield_percent"
+
+
