@@ -338,10 +338,11 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
 
         # 7. Workflow Engine: Task Spawning & Routing
         if assigned_user_id:
-            # Direct agent assignment: spawn TASK_LEAD_FIRST_CONTACT (30m SLA)
+            is_rent = (payload.inquiry_type or "").upper() == "RENT"
+            contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT" if is_rent else "TASK_LEAD_FIRST_CONTACT"
             await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id="TASK_LEAD_FIRST_CONTACT",
+                template_id=contact_tmpl,
                 lead_id=lead_id,
                 customer_id=customer_id,
                 assigned_user_id=assigned_user_id,

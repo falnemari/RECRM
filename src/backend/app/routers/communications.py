@@ -318,7 +318,7 @@ async def complete_task(
             "preferred_property_type_id": payload.preferred_property_type_id,
             "preferred_city_id": payload.preferred_city_id
         }
-        if payload.unit_id or payload.scheduled_start or payload.feedback_rating or payload.offer_amount or payload.location_notes or payload.callback_at or payload.unit_ids:
+        if payload.unit_id or payload.scheduled_start or payload.feedback_rating or payload.offer_amount or payload.location_notes or payload.callback_at or payload.unit_ids or payload.rent_amount or payload.start_date:
             viewing_data = {
                 "unit_id": payload.unit_id,
                 "unit_ids": payload.unit_ids,
@@ -328,7 +328,14 @@ async def complete_task(
                 "viewing_duration_minutes": payload.viewing_duration_minutes,
                 "location_notes": payload.location_notes,
                 "feedback_rating": payload.feedback_rating,
-                "offer_amount": payload.offer_amount
+                "offer_amount": payload.offer_amount,
+                "rent_amount": payload.rent_amount,
+                "start_date": payload.start_date,
+                "end_date": payload.end_date,
+                "payment_frequency": payload.payment_frequency,
+                "deposit_amount": payload.deposit_amount,
+                "installments_count": payload.installments_count,
+                "contract_number": payload.contract_number
             }
 
     async with conn.transaction():

@@ -2,9 +2,10 @@ from typing import Optional, List
 from uuid import UUID, uuid4
 from datetime import datetime, date, timezone, timedelta
 import random
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
+from app.services.workflow_engine import WorkflowEngine
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
 from app.schemas.management import (
     ManagementSummaryOut,
@@ -141,94 +142,47 @@ async def list_tenancies(
     )
 
 @router.post("/tenancies", response_model=ResponseEnvelope[TenancyOut], status_code=status.HTTP_201_CREATED)
-async def create_tenancy(payload: TenancyCreateIn, conn: asyncpg.Connection = Depends(get_db)):
-    # Verify unit
-    unit = await conn.fetchrow("SELECT unit_id, unit_number, status FROM units WHERE unit_id = $1", payload.unit_id)
-    if not unit:
-        raise HTTPException(status_code=404, detail="Unit not found")
+async def create_tenancy(
+    payload: TenancyCreateIn, 
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    try:
+        async with conn.transaction():
+            res = await WorkflowEngine.execute_tenancy_agreement(
+                conn=conn,
+                unit_id=payload.unit_id,
+                tenant_customer_id=payload.tenant_customer_id,
+                start_date=payload.start_date,
+                end_date=payload.end_date,
+                rent_amount=payload.rent_amount,
+                payment_frequency=payload.payment_frequency or "ANNUAL",
+                deposit_amount=payload.deposit_amount or 0.0,
+                contract_number=payload.contract_number,
+                lead_id=payload.lead_id,
+                opportunity_id=payload.opportunity_id,
+                user_id=x_user_id,
+                generate_installments=payload.generate_installments if payload.generate_installments is not None else True,
+                installments_count=payload.installments_count or 1
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    # Verify customer
-    cust = await conn.fetchrow("SELECT customer_id, first_name, last_name, company_name, mobile FROM customers WHERE customer_id = $1", payload.tenant_customer_id)
-    if not cust:
-        raise HTTPException(status_code=404, detail="Tenant customer not found")
-
-    contract_number = payload.contract_number
-    if not contract_number:
-        rnd = random.randint(1000, 9999)
-        contract_number = f"TEN-{payload.start_date.strftime('%Y%m')}-{rnd}"
-
-    tenancy_id = await get_next_id(conn, "tenancies", "tenancy")
-
-    async with conn.transaction():
-        # Insert tenancy
-        await conn.execute(
-            """
-            INSERT INTO tenancies (
-                tenancy_id, unit_id, tenant_customer_id, contract_number,
-                start_date, end_date, rent_amount, payment_frequency,
-                deposit_amount, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            """,
-            tenancy_id,
-            payload.unit_id,
-            payload.tenant_customer_id,
-            contract_number,
-            payload.start_date,
-            payload.end_date,
-            payload.rent_amount,
-            payload.payment_frequency,
-            payload.deposit_amount or 0.0,
-            payload.status or "ACTIVE"
-        )
-
-        # Update unit status to RENTED
-        if payload.status == "ACTIVE":
-            await conn.execute("UPDATE units SET status = 'RENTED' WHERE unit_id = $1", payload.unit_id)
-
-        # Generate rent collection installments if requested
-        if payload.generate_installments and payload.installments_count and payload.installments_count > 0:
-            count = payload.installments_count
-            amount_per_installment = round(payload.rent_amount / count, 2)
-            cur_due = payload.start_date
-            
-            # Days step depending on count
-            days_step = 30
-            if count == 1:
-                days_step = 0
-            elif count == 2:
-                days_step = 180
-            elif count == 4:
-                days_step = 90
-            elif count == 12:
-                days_step = 30
-
-            for i in range(count):
-                due_d = cur_due + timedelta(days=i * days_step) if i > 0 else cur_due
-                rc_id = await get_next_id(conn, "rent_collections", "rent_collection")
-                await conn.execute(
-                    """
-                    INSERT INTO rent_collections (
-                        rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status
-                    ) VALUES ($1, $2, $3, $4, 0, 'DUE')
-                    """,
-                    rc_id, tenancy_id, due_d, amount_per_installment
-                )
-
-    tenant_name = (f"{cust['first_name'] or ''} {cust['last_name'] or ''}").strip() or cust['company_name']
+    tenancy = res["tenancy"]
     out = TenancyOut(
-        tenancy_id=tenancy_id,
-        unit_id=payload.unit_id,
-        unit_number=unit["unit_number"],
-        tenant_customer_id=payload.tenant_customer_id,
-        tenant_name=tenant_name,
-        tenant_mobile=cust["mobile"],
-        contract_number=contract_number,
-        start_date=payload.start_date,
-        end_date=payload.end_date,
-        rent_amount=payload.rent_amount,
-        payment_frequency=payload.payment_frequency,
-        deposit_amount=payload.deposit_amount or 0.0,
-        status=payload.status or "ACTIVE"
+        tenancy_id=tenancy["tenancy_id"],
+        unit_id=tenancy["unit_id"],
+        unit_number=res.get("unit_number"),
+        tenant_customer_id=tenancy["tenant_customer_id"],
+        tenant_name=res.get("tenant_name"),
+        tenant_mobile=res.get("tenant_mobile"),
+        contract_number=tenancy["contract_number"],
+        start_date=tenancy["start_date"],
+        end_date=tenancy["end_date"],
+        rent_amount=float(tenancy["rent_amount"]),
+        payment_frequency=tenancy["payment_frequency"],
+        deposit_amount=float(tenancy["deposit_amount"]),
+        status=tenancy["status"]
     )
     return ResponseEnvelope(data=out)
 
@@ -423,6 +377,7 @@ async def create_rent_collection_installment(
 async def record_rent_payment(
     rent_collection_id: str,
     payload: RentCollectionPaymentIn,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     rc = await conn.fetchrow(
@@ -432,7 +387,7 @@ async def record_rent_payment(
             CAST(rc.amount_due AS FLOAT) AS amount_due,
             CAST(rc.amount_paid AS FLOAT) AS amount_paid,
             rc.status,
-            t.contract_number, u.unit_number,
+            t.contract_number, u.unit_number, t.tenant_customer_id,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name
         FROM rent_collections rc
         LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
@@ -455,14 +410,27 @@ async def record_rent_payment(
     now = datetime.now(timezone.utc)
     new_status = "PAID" if new_paid >= rc["amount_due"] else "PARTIAL"
 
-    await conn.execute(
-        """
-        UPDATE rent_collections
-        SET amount_paid = $1, paid_at = $2, status = $3
-        WHERE rent_collection_id = $4
-        """,
-        new_paid, now, new_status, rent_collection_id
-    )
+    async with conn.transaction():
+        await conn.execute(
+            """
+            UPDATE rent_collections
+            SET amount_paid = $1, paid_at = $2, status = $3
+            WHERE rent_collection_id = $4
+            """,
+            new_paid, now, new_status, rent_collection_id
+        )
+
+        # Record Activity ACT_RENT_PAYMENT_COLLECTED
+        rem_balance = round(rc["amount_due"] - new_paid, 2)
+        await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_RENT_PAYMENT_COLLECTED",
+            user_id=x_user_id or "user-51",
+            customer_id=rc["tenant_customer_id"],
+            outcome="PAID" if new_status == "PAID" else "PARTIAL",
+            notes=f"تم استلام دفعة إيجارية بمبلغ {payload.amount_paid:,.2f} ريال للعقد {rc['contract_number']}. الرصيد المتبقي: {rem_balance:,.2f} ريال.",
+            completed_at=now
+        )
 
     out = RentCollectionOut(
         rent_collection_id=rent_collection_id,

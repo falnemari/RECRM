@@ -38,6 +38,8 @@ class TenancyCreateIn(BaseModel):
     status: Optional[str] = "ACTIVE"
     generate_installments: Optional[bool] = True
     installments_count: Optional[int] = Field(1, ge=1, le=12)
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
 
 class RentCollectionOut(BaseModel):
     rent_collection_id: str

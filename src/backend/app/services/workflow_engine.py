@@ -12,6 +12,7 @@ Also handles customer deduplication and first-contact SLA enforcement.
 
 import re
 import hashlib
+import random
 import logging
 from typing import Optional, Dict, Any, Tuple, List
 from datetime import datetime, timezone, timedelta, date
@@ -296,12 +297,14 @@ class WorkflowEngine:
         agent_name = agent_row["full_name"] if agent_row else assigned_user_id
         user_branch_id = agent_row["branch_id"] if agent_row else None
 
-        lead = await conn.fetchrow("SELECT customer_id, priority, branch_id FROM leads WHERE lead_id = $1", lead_id)
+        lead = await conn.fetchrow("SELECT customer_id, priority, branch_id, inquiry_type FROM leads WHERE lead_id = $1", lead_id)
         if not lead:
             return {"status": "lead_not_found"}
 
         customer_id = lead["customer_id"]
         priority = lead["priority"] or "NORMAL"
+        is_rent = (lead["inquiry_type"] or "").upper() == "RENT"
+        contact_tmpl = "TASK_RENT_LEAD_FIRST_CONTACT" if is_rent else "TASK_LEAD_FIRST_CONTACT"
 
         # 2. Complete open TASK_LEAD_ASSIGN if present
         open_assign_task = await conn.fetchrow(
@@ -329,11 +332,11 @@ class WorkflowEngine:
             notes=f"تم تعيين الطلب للوسيط ({agent_name}). تم إسناد مهمة الاتصال الأولي (مهلة 30 دقيقة)."
         )
 
-        # 3. Check for open TASK_LEAD_FIRST_CONTACT
+        # 3. Check for open first contact task (standard or rental)
         open_contact_task = await conn.fetchrow(
             """
             SELECT task_id FROM tasks 
-            WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT' AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT') AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             LIMIT 1
             """,
             lead_id
@@ -354,7 +357,7 @@ class WorkflowEngine:
             # Spawn fresh contact task for new agent
             task_dict, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id="TASK_LEAD_FIRST_CONTACT",
+                template_id=contact_tmpl,
                 lead_id=lead_id,
                 customer_id=customer_id,
                 assigned_user_id=assigned_user_id,
@@ -407,7 +410,7 @@ class WorkflowEngine:
               AND (
                   ($2::text IS NOT NULL AND lead_id = $2) OR
                   ($3::text IS NOT NULL AND opportunity_id = $3) OR
-                  ($4::text IS NOT NULL AND customer_id = $4)
+                  ($2::text IS NULL AND $3::text IS NULL AND $4::text IS NOT NULL AND customer_id = $4)
               )
             LIMIT 1
             """,
@@ -554,7 +557,7 @@ class WorkflowEngine:
         lead = await conn.fetchrow(
             """
             SELECT customer_id, assigned_user_id, branch_id, status, budget_min, budget_max, 
-                   unit_id, preferred_city_id, preferred_property_type_id
+                   unit_id, preferred_city_id, preferred_property_type_id, inquiry_type
             FROM leads 
             WHERE lead_id = $1
             """,
@@ -565,6 +568,7 @@ class WorkflowEngine:
 
         effective_user_id = user_id or lead["assigned_user_id"] or "user-51"
         now_dt = datetime.now(timezone.utc)
+        is_rent = (lead["inquiry_type"] or "").upper() == "RENT"
 
         # 1. Complete open qualification or contact tasks for this lead
         await conn.execute(
@@ -572,7 +576,7 @@ class WorkflowEngine:
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
             WHERE lead_id = $2
-              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             """,
             now_dt, lead_id
@@ -662,29 +666,40 @@ class WorkflowEngine:
             opp_id, lead_id
         )
 
-        # 5. Record Activity ACT_LEAD_QUALIFIED
+        # 5. Record Activity ACT_LEAD_QUALIFIED or ACT_RENT_LEAD_QUALIFIED
+        qual_act_template = "ACT_RENT_LEAD_QUALIFIED" if is_rent else "ACT_LEAD_QUALIFIED"
+        qual_notes = notes or (
+            "تم استيفاء معايير استئجار الوحدة وترقية الطلب لفرصة إيجارية نشطة." if is_rent
+            else "تم استفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة."
+        )
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
-            template_id="ACT_LEAD_QUALIFIED",
+            template_id=qual_act_template,
             user_id=effective_user_id,
             customer_id=lead["customer_id"],
             lead_id=lead_id,
             opportunity_id=opp_id,
             task_id=parent_task_id,
             outcome="QUALIFIED",
-            notes=notes or "تم استفاء معايير التأهيل بنجاح وترقية الطلب لفرصة بيعية نشطة.",
+            notes=qual_notes,
             completed_at=now_dt
         )
 
-        # 6. Auto-spawn Stage C (or Stage D if primary unit pre-selected)
+        # 6. Auto-spawn Next Task (Rental vs Sales)
         has_primary_unit = await conn.fetchval(
             "SELECT count(*) FROM opportunity_units WHERE opportunity_id = $1 AND is_primary = TRUE",
             opp_id
         )
-        if has_primary_unit and has_primary_unit > 0:
-            next_task_template = "TASK_VIEWING_SCHEDULE"
+        if is_rent:
+            if has_primary_unit and has_primary_unit > 0:
+                next_task_template = "TASK_RENT_VIEWING_FOLLOW_UP"
+            else:
+                next_task_template = "TASK_RENT_MATCH_PROPERTIES"
         else:
-            next_task_template = "TASK_OPPORTUNITY_MATCH_PROPERTIES"
+            if has_primary_unit and has_primary_unit > 0:
+                next_task_template = "TASK_VIEWING_SCHEDULE"
+            else:
+                next_task_template = "TASK_OPPORTUNITY_MATCH_PROPERTIES"
 
         next_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
@@ -702,8 +717,8 @@ class WorkflowEngine:
             "lead_id": lead_id,
             "opportunity_id": opp_id,
             "activity": activity,
-            "viewing_task": next_task,
-            "matching_task": next_task if next_task_template == "TASK_OPPORTUNITY_MATCH_PROPERTIES" else None,
+            "viewing_task": next_task if next_task_template in ("TASK_VIEWING_SCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP") else None,
+            "matching_task": next_task if next_task_template in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES") else None,
             "next_task": next_task
         }
 
@@ -732,6 +747,11 @@ class WorkflowEngine:
         lead_id = opp["lead_id"]
         customer_id = opp["customer_id"]
         agent_id = opp["assigned_user_id"] or user_id
+
+        is_rent = False
+        if lead_id:
+            inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", lead_id)
+            is_rent = (inq or "").upper() == "RENT"
 
         # 1. Link provided units
         if unit_ids:
@@ -766,21 +786,23 @@ class WorkflowEngine:
             units_summary.append(f"وحدة #{r['unit_number']} ({r['project_name'] or 'المشروع'}) بسعر {float(r['price']):,.0f} ريال")
         units_text = " • " + "\n • ".join(units_summary) if units_summary else "مجموعة من الوحدات العقارية المختارة"
 
-        # 2. Complete open TASK_OPPORTUNITY_MATCH_PROPERTIES
+        # 2. Complete open matching tasks (standard or rental)
         await conn.execute(
             """
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
-            WHERE opportunity_id = $2 AND template_id = 'TASK_OPPORTUNITY_MATCH_PROPERTIES'
+            WHERE (opportunity_id = $2 OR ($3::text IS NOT NULL AND lead_id = $3))
+              AND template_id IN ('TASK_OPPORTUNITY_MATCH_PROPERTIES', 'TASK_RENT_MATCH_PROPERTIES')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             """,
-            now_dt, opportunity_id
+            now_dt, opportunity_id, lead_id
         )
 
-        # 3. Record Activity ACT_OPPORTUNITY_PROPERTIES_PRESENTED
+        # 3. Record Activity (ACT_RENT_PROPERTIES_MATCHED or ACT_OPPORTUNITY_PROPERTIES_PRESENTED)
+        act_template = "ACT_RENT_PROPERTIES_MATCHED" if is_rent else "ACT_OPPORTUNITY_PROPERTIES_PRESENTED"
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
-            template_id="ACT_OPPORTUNITY_PROPERTIES_PRESENTED",
+            template_id=act_template,
             user_id=agent_id,
             customer_id=customer_id,
             lead_id=lead_id,
@@ -806,10 +828,11 @@ class WorkflowEngine:
             comm_body
         )
 
-        # 5. Auto-spawn Stage D Task: TASK_VIEWING_SCHEDULE
+        # 5. Auto-spawn Viewing Task (TASK_RENT_VIEWING_FOLLOW_UP or TASK_VIEWING_SCHEDULE)
+        view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_SCHEDULE"
         viewing_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
-            template_id="TASK_VIEWING_SCHEDULE",
+            template_id=view_tmpl,
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             customer_id=customer_id,
@@ -928,7 +951,7 @@ class WorkflowEngine:
             scheduled_start, scheduled_end, all_notes, lead_id
         )
 
-        # 3. Complete any open TASK_VIEWING_SCHEDULE
+        # 3. Complete any open TASK_VIEWING_SCHEDULE or TASK_RENT_VIEWING_FOLLOW_UP
         if task_id:
             await conn.execute(
                 "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
@@ -938,7 +961,7 @@ class WorkflowEngine:
             """
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
-            WHERE template_id = 'TASK_VIEWING_SCHEDULE'
+            WHERE template_id IN ('TASK_VIEWING_SCHEDULE', 'TASK_RENT_VIEWING_FOLLOW_UP')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
               AND (
                   ($2::text IS NOT NULL AND lead_id = $2) OR
@@ -1105,6 +1128,17 @@ class WorkflowEngine:
         next_action = None
         new_stage = None
 
+        is_rent = False
+        if lead_id:
+            inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", lead_id)
+            is_rent = (inq or "").upper() == "RENT"
+        elif opportunity_id:
+            inq = await conn.fetchval(
+                "SELECT l.inquiry_type FROM opportunities o JOIN leads l ON o.lead_id = l.lead_id WHERE o.opportunity_id = $1",
+                opportunity_id
+            )
+            is_rent = (inq or "").upper() == "RENT"
+
         # 4. State Transitions based on outcome
         if outcome == "INTERESTED":
             new_stage = "NEGOTIATION"
@@ -1113,32 +1147,61 @@ class WorkflowEngine:
                     "UPDATE opportunities SET stage = 'NEGOTIATION', updated_at = NOW() WHERE opportunity_id = $1",
                     opportunity_id
                 )
-            # Auto-spawn Stage 4 Task: TASK_OFFER_SUBMIT with 12h SLA
-            offer_task, _ = await WorkflowEngine.spawn_task_from_template(
-                conn=conn,
-                template_id="TASK_OFFER_SUBMIT",
-                lead_id=lead_id,
-                opportunity_id=opportunity_id,
-                customer_id=customer_id,
-                assigned_user_id=agent_user_id,
-                priority="HIGH",
-                parent_task_id=task_id
-            )
-            next_action = {"type": "OFFER_TASK_SPAWNED", "task": offer_task}
+            if is_rent:
+                # Rental Pipeline: Auto-spawn TASK_RENT_PREPARE_TENANCY with 48h SLA
+                tenancy_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_RENT_PREPARE_TENANCY",
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=customer_id,
+                    assigned_user_id=agent_user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                next_action = {"type": "TENANCY_PREPARATION_SPAWNED", "task": tenancy_task}
+            else:
+                # Sales Pipeline: Auto-spawn Stage 4 Task TASK_OFFER_SUBMIT with 12h SLA
+                offer_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_OFFER_SUBMIT",
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=customer_id,
+                    assigned_user_id=agent_user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                next_action = {"type": "OFFER_TASK_SPAWNED", "task": offer_task}
 
-        elif outcome == "NEEDS_ANOTHER_UNIT":
+        elif outcome == "NEEDS_ANOTHER_UNIT" or (outcome == "NOT_INTERESTED" and is_rent):
             new_stage = "VIEWING"
-            # Auto-spawn new TASK_VIEWING_SCHEDULE
-            sched_task, _ = await WorkflowEngine.spawn_task_from_template(
-                conn=conn,
-                template_id="TASK_VIEWING_SCHEDULE",
-                lead_id=lead_id,
-                opportunity_id=opportunity_id,
-                customer_id=customer_id,
-                assigned_user_id=agent_user_id,
-                priority="NORMAL",
-                parent_task_id=task_id
-            )
+            if is_rent:
+                # Non-destructive alternative matching for rentals
+                match_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_RENT_MATCH_PROPERTIES",
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=customer_id,
+                    assigned_user_id=agent_user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                next_action = {"type": "RENT_MATCH_SPAWNED", "task": match_task}
+            else:
+                # Auto-spawn new TASK_VIEWING_SCHEDULE
+                sched_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_VIEWING_SCHEDULE",
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=customer_id,
+                    assigned_user_id=agent_user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                next_action = {"type": "VIEWING_TASK_SPAWNED", "task": sched_task}
         elif outcome in ("NO_SHOW", "CANCELLED"):
             new_stage = "VIEWING"
             # Auto-spawn Stage D Task: TASK_VIEWING_RESCHEDULE with 4h SLA
@@ -1529,6 +1592,239 @@ class WorkflowEngine:
             "activity": activity,
             "next_task": next_task,
             "new_stage": new_opp_stage
+        }
+
+    @staticmethod
+    async def execute_tenancy_agreement(
+        conn: asyncpg.Connection,
+        unit_id: str,
+        tenant_customer_id: str,
+        start_date: Any,
+        end_date: Optional[Any] = None,
+        rent_amount: float = 0.0,
+        payment_frequency: str = "ANNUAL",
+        deposit_amount: float = 0.0,
+        contract_number: Optional[str] = None,
+        lead_id: Optional[str] = None,
+        opportunity_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        generate_installments: bool = True,
+        installments_count: int = 1,
+        parent_task_id: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Rental Pipeline Execution Gateway:
+        =================================
+        Atomically executes tenancy contract and enforces business transitions:
+        1. Checks unit status with FOR UPDATE row-level lock.
+        2. Raises ValueError if unit is already RENTED or SOLD.
+        3. Verifies customer exists.
+        4. Generates tenancy_id and contract_number.
+        5. Inserts into tenancies table with status 'ACTIVE'.
+        6. Atomically updates units.status = 'RENTED'.
+        7. Inserts into unit_status_history with audit reason.
+        8. Generates rent collection installments if requested.
+        9. Completes open TASK_RENT_PREPARE_TENANCY tasks.
+        10. Spawns recurring TASK_RENT_COLLECTION_MONITORING task (72h SLA).
+        11. Records immutable audit activity ACT_TENANCY_ACTIVATED.
+        12. Advances opportunity stage to 'WON' and lead status to 'WON'.
+        """
+        now_dt = datetime.now(timezone.utc)
+        effective_user_id = user_id or "user-51"
+
+        # Normalize start_date and end_date to date objects
+        if isinstance(start_date, datetime):
+            s_date = start_date.date()
+        elif isinstance(start_date, str):
+            s_date = date.fromisoformat(start_date[:10])
+        elif isinstance(start_date, date):
+            s_date = start_date
+        else:
+            s_date = date.today()
+
+        if isinstance(end_date, datetime):
+            e_date = end_date.date()
+        elif isinstance(end_date, str):
+            e_date = date.fromisoformat(end_date[:10])
+        elif isinstance(end_date, date):
+            e_date = end_date
+        else:
+            e_date = s_date + timedelta(days=365)
+
+        # 1. Lock unit with FOR UPDATE
+        unit = await conn.fetchrow(
+            "SELECT unit_id, unit_number, status, rent_price, asking_price FROM units WHERE unit_id = $1 FOR UPDATE",
+            unit_id
+        )
+        if not unit:
+            raise ValueError(f"Unit '{unit_id}' not found.")
+        if unit["status"] in ("RENTED", "SOLD"):
+            raise ValueError(f"الوحدة {unit['unit_number']} غير متاحة للإيجار حالياً (الحالة الحالية: {unit['status']}).")
+
+        # 2. Verify Customer
+        cust = await conn.fetchrow(
+            "SELECT customer_id, first_name, last_name, company_name, mobile FROM customers WHERE customer_id = $1",
+            tenant_customer_id
+        )
+        if not cust:
+            raise ValueError(f"Customer '{tenant_customer_id}' not found.")
+        tenant_name = (f"{cust['first_name'] or ''} {cust['last_name'] or ''}").strip() or cust["company_name"]
+
+        # 3. Contract number & ID
+        if not contract_number:
+            rnd = random.randint(1000, 9999)
+            contract_number = f"TEN-{s_date.strftime('%Y%m')}-{rnd}"
+
+        tenancy_id = await get_next_id(conn, "tenancies", "tenancy")
+        final_rent = float(rent_amount) if rent_amount and float(rent_amount) > 0 else float(unit["rent_price"] or 30000.0)
+        final_deposit = float(deposit_amount or 0.0)
+
+        # 4. Insert Tenancy
+        await conn.execute(
+            """
+            INSERT INTO tenancies (
+                tenancy_id, unit_id, tenant_customer_id, contract_number,
+                start_date, end_date, rent_amount, payment_frequency,
+                deposit_amount, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE')
+            """,
+            tenancy_id, unit_id, tenant_customer_id, contract_number,
+            s_date, e_date, final_rent, payment_frequency or "ANNUAL",
+            final_deposit
+        )
+
+        # 5. Atomically update unit status to RENTED
+        await conn.execute("UPDATE units SET status = 'RENTED', updated_at = NOW() WHERE unit_id = $1", unit_id)
+        hist_id = await get_next_id(conn, "unit_status_history", "ush")
+        await conn.execute(
+            """
+            INSERT INTO unit_status_history (
+                unit_status_history_id, unit_id, old_status, new_status,
+                changed_by_user_id, changed_at, reason
+            ) VALUES ($1, $2, $3, 'RENTED', $4, NOW(), $5)
+            """,
+            hist_id, unit_id, unit["status"], effective_user_id, f"إبرام عقد إيجار {contract_number}"
+        )
+
+        # 6. Generate Rent Collection Installments
+        installments = []
+        if generate_installments and installments_count and installments_count > 0:
+            count = min(12, max(1, installments_count))
+            amount_per_installment = round(final_rent / count, 2)
+            days_step = 30
+            if count == 1:
+                days_step = 0
+            elif count == 2:
+                days_step = 180
+            elif count == 4:
+                days_step = 90
+            elif count == 12:
+                days_step = 30
+            else:
+                days_step = max(1, int(365 / count))
+
+            cur_due = s_date
+            for i in range(count):
+                due_d = cur_due + timedelta(days=i * days_step) if (i > 0 and days_step > 0) else cur_due
+                rc_id = await get_next_id(conn, "rent_collections", "rent_collection")
+                await conn.execute(
+                    """
+                    INSERT INTO rent_collections (
+                        rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status
+                    ) VALUES ($1, $2, $3, $4, 0, 'DUE')
+                    """,
+                    rc_id, tenancy_id, due_d, amount_per_installment
+                )
+                installments.append({
+                    "rent_collection_id": rc_id,
+                    "tenancy_id": tenancy_id,
+                    "due_date": due_d.isoformat(),
+                    "amount_due": amount_per_installment,
+                    "amount_paid": 0.0,
+                    "status": "DUE"
+                })
+
+        # 7. Complete open TASK_RENT_PREPARE_TENANCY tasks
+        if parent_task_id:
+            await conn.execute(
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                now_dt, parent_task_id
+            )
+        await conn.execute(
+            """
+            UPDATE tasks
+            SET status = 'COMPLETED', completed_at = $1
+            WHERE template_id = 'TASK_RENT_PREPARE_TENANCY'
+              AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+              AND (
+                  ($2::text IS NOT NULL AND lead_id = $2) OR
+                  ($3::text IS NOT NULL AND opportunity_id = $3) OR
+                  customer_id = $4
+              )
+            """,
+            now_dt, lead_id, opportunity_id, tenant_customer_id
+        )
+
+        # 8. Record Activity ACT_TENANCY_ACTIVATED
+        act_notes = notes or f"تم إبرام وتفعيل عقد الإيجار {contract_number} للوحدة #{unit['unit_number']} بقيمة إيجارية {final_rent:,.2f} ريال."
+        activity = await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_TENANCY_ACTIVATED",
+            user_id=effective_user_id,
+            customer_id=tenant_customer_id,
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            task_id=parent_task_id,
+            outcome="ACTIVE",
+            notes=act_notes,
+            completed_at=now_dt
+        )
+
+        # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING
+        monitoring_task, _ = await WorkflowEngine.spawn_task_from_template(
+            conn=conn,
+            template_id="TASK_RENT_COLLECTION_MONITORING",
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            customer_id=tenant_customer_id,
+            assigned_user_id=effective_user_id,
+            priority="NORMAL",
+            parent_task_id=parent_task_id
+        )
+
+        # 10. Update Lead and Opportunity to WON
+        if opportunity_id:
+            await conn.execute(
+                "UPDATE opportunities SET stage = 'WON', updated_at = NOW() WHERE opportunity_id = $1",
+                opportunity_id
+            )
+        if lead_id:
+            await conn.execute(
+                "UPDATE leads SET status = 'WON', updated_at = NOW() WHERE lead_id = $1",
+                lead_id
+            )
+
+        return {
+            "tenancy_id": tenancy_id,
+            "tenancy": {
+                "tenancy_id": tenancy_id,
+                "unit_id": unit_id,
+                "tenant_customer_id": tenant_customer_id,
+                "contract_number": contract_number,
+                "start_date": s_date,
+                "end_date": e_date,
+                "rent_amount": final_rent,
+                "payment_frequency": payment_frequency or "ANNUAL",
+                "deposit_amount": final_deposit,
+                "status": "ACTIVE"
+            },
+            "unit_number": unit["unit_number"],
+            "tenant_name": tenant_name,
+            "tenant_mobile": cust.get("mobile"),
+            "installments": installments,
+            "activity": activity,
+            "monitoring_task": monitoring_task
         }
 
     @staticmethod
@@ -2359,8 +2655,8 @@ class WorkflowEngine:
                     "business_transition": {"lead_id": lead_id, "followup_task": followup_task}
                 }
 
-        # 3. Stage C Handling: TASK_OPPORTUNITY_MATCH_PROPERTIES
-        if tmpl_id == "TASK_OPPORTUNITY_MATCH_PROPERTIES":
+        # 3. Stage C Handling: TASK_OPPORTUNITY_MATCH_PROPERTIES & TASK_RENT_MATCH_PROPERTIES
+        if tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES"):
             v_data = viewing_data or {}
             unit_ids = v_data.get("unit_ids") or []
             if not unit_ids and v_data.get("unit_id"):
@@ -2370,6 +2666,28 @@ class WorkflowEngine:
                 opp_id = await conn.fetchval("SELECT opportunity_id FROM opportunities WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 1", lead_id)
             if not opp_id:
                 raise ValueError("No opportunity linked to property matching task.")
+
+            if outcome in ("NONE_FOUND", "REVISE_CRITERIA"):
+                act_tmpl = "ACT_RENT_PROPERTIES_MATCHED" if tmpl_id == "TASK_RENT_MATCH_PROPERTIES" else "ACT_OPPORTUNITY_PROPERTIES_PRESENTED"
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id=act_tmpl,
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=opp_id,
+                    task_id=task_id,
+                    outcome=outcome,
+                    notes=notes or "لم يتم العثور على وحدات شاغرة مطابقة حالياً. سيتم تحديث معايير البحث.",
+                    completed_at=now_dt
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"status": "REVISE_CRITERIA"}
+                }
 
             pres_res = await WorkflowEngine.present_opportunity_properties(
                 conn=conn,
@@ -2388,9 +2706,30 @@ class WorkflowEngine:
                 "viewing_task": pres_res["viewing_task"]
             }
 
-        # 4. Stage D Handling: TASK_VIEWING_SCHEDULE & TASK_VIEWING_RESCHEDULE & TASK_VIEWING_REPORT
-        if tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE"):
+        # 4. Stage D Handling: TASK_VIEWING_SCHEDULE & TASK_VIEWING_RESCHEDULE & TASK_RENT_VIEWING_FOLLOW_UP
+        if tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP"):
             v_data = viewing_data or {}
+            # If completing viewing follow up with inspection outcome directly:
+            if tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP" and outcome in ("INTERESTED", "NOT_INTERESTED", "NEEDS_ANOTHER_UNIT", "NO_SHOW", "CANCELLED") and not v_data.get("scheduled_start"):
+                res = await WorkflowEngine.complete_property_viewing_report(
+                    conn=conn,
+                    task_id=task_id,
+                    user_id=user_id,
+                    outcome=outcome,
+                    feedback_notes=notes or v_data.get("location_notes"),
+                    offer_amount=v_data.get("offer_amount")
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": res["activity"],
+                    "business_transition": res,
+                    "viewing_id": res.get("viewing_id"),
+                    "new_stage": res.get("new_stage"),
+                    "next_action": res.get("next_action")
+                }
+
             unit_id = v_data.get("unit_id")
             if not unit_id:
                 if lead_id:
@@ -2786,6 +3125,112 @@ class WorkflowEngine:
                 "business_transition": res
             }
 
+        # Rental Pipeline Stage Handling: TASK_RENT_PREPARE_TENANCY
+        if tmpl_id == "TASK_RENT_PREPARE_TENANCY":
+            v_data = viewing_data or {}
+            norm_outcome = outcome.strip().upper()
+            if norm_outcome in ("EXECUTED", "AGREEMENT_EXECUTED", "COMPLETED", "APPROVED"):
+                unit_id = v_data.get("unit_id")
+                if not unit_id and task["opportunity_id"]:
+                    unit_id = await conn.fetchval(
+                        "SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1 ORDER BY is_primary DESC LIMIT 1",
+                        task["opportunity_id"]
+                    )
+                if not unit_id and lead_id:
+                    unit_id = await conn.fetchval("SELECT unit_id FROM leads WHERE lead_id = $1", lead_id)
+                if not unit_id:
+                    unit_id = await conn.fetchval("SELECT unit_id FROM units WHERE status = 'AVAILABLE' LIMIT 1") or "unit-2"
+
+                rent_amt = v_data.get("rent_amount")
+                if rent_amt is None and unit_id:
+                    rent_amt = await conn.fetchval("SELECT rent_price FROM units WHERE unit_id = $1", unit_id)
+                rent_amt = float(rent_amt or 30000.0)
+
+                s_date = v_data.get("start_date") or date.today()
+                e_date = v_data.get("end_date")
+                freq = v_data.get("payment_frequency") or "ANNUAL"
+                dep = float(v_data.get("deposit_amount") or 0.0)
+                inst_cnt = int(v_data.get("installments_count") or 1)
+                c_num = v_data.get("contract_number")
+
+                res = await WorkflowEngine.execute_tenancy_agreement(
+                    conn=conn,
+                    unit_id=unit_id,
+                    tenant_customer_id=task["customer_id"],
+                    start_date=s_date,
+                    end_date=e_date,
+                    rent_amount=rent_amt,
+                    payment_frequency=freq,
+                    deposit_amount=dep,
+                    contract_number=c_num,
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    user_id=user_id,
+                    generate_installments=True,
+                    installments_count=inst_cnt,
+                    parent_task_id=task_id,
+                    notes=notes
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": res["activity"],
+                    "business_transition": res
+                }
+            elif norm_outcome in ("REJECTED", "TERMS_REJECTED", "CANCELLED"):
+                match_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_RENT_MATCH_PROPERTIES",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_RENT_PROPERTIES_MATCHED",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    task_id=task_id,
+                    outcome=outcome,
+                    notes=notes or "تم رفض شروط عقد الإيجار المقترح. تم إعادة فتح مسار مطابقة وترشيح وحدات بديلة.",
+                    completed_at=now_dt
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"type": "RENT_MATCH_SPAWNED", "task": match_task}
+                }
+
+        # Rental Pipeline Handling: TASK_RENT_COLLECTION_MONITORING
+        if tmpl_id == "TASK_RENT_COLLECTION_MONITORING":
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_RENT_PAYMENT_COLLECTED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome,
+                notes=notes or "تمت مراجعة ومتابعة جدول دفعات الإيجار المستحقة.",
+                completed_at=now_dt
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {"status": "MONITORED"}
+            }
+
         # 4. Stage A Handling: TASK_LEAD_COMPLETE_INFO
         if tmpl_id == "TASK_LEAD_COMPLETE_INFO" and lead_id:
             q_data = qualification_data or {}
@@ -2833,12 +3278,22 @@ class WorkflowEngine:
 
         # 5. Determine and record corresponding Activity for other tasks
         act_template_id = "ACT_LEAD_FIRST_CONTACT"
-        if tmpl_id == "TASK_LEAD_FOLLOWUP":
+        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT"):
+            act_template_id = "ACT_LEAD_FIRST_CONTACT"
+        elif tmpl_id == "TASK_LEAD_FOLLOWUP":
             act_template_id = "ACT_LEAD_FOLLOWUP"
         elif tmpl_id == "TASK_LEAD_QUALIFY":
             act_template_id = "ACT_LEAD_QUALIFIED"
         elif tmpl_id == "TASK_LEAD_ASSIGN":
             act_template_id = "ACT_LEAD_ASSIGNED"
+        elif tmpl_id == "TASK_RENT_MATCH_PROPERTIES":
+            act_template_id = "ACT_RENT_PROPERTIES_MATCHED"
+        elif tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP":
+            act_template_id = "ACT_VIEWING_REPORT_SUBMITTED"
+        elif tmpl_id == "TASK_RENT_PREPARE_TENANCY":
+            act_template_id = "ACT_TENANCY_ACTIVATED"
+        elif tmpl_id == "TASK_RENT_COLLECTION_MONITORING":
+            act_template_id = "ACT_RENT_PAYMENT_COLLECTED"
 
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
@@ -2856,10 +3311,30 @@ class WorkflowEngine:
         # 6. Event-Driven Business Status Transitions for First Contact & Follow-up
         business_transition = None
 
-        if lead_id and tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP"):
-            lead = await conn.fetchrow("SELECT status, assigned_user_id FROM leads WHERE lead_id = $1", lead_id)
+        if lead_id and tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP"):
+            lead = await conn.fetchrow("SELECT status, assigned_user_id, inquiry_type FROM leads WHERE lead_id = $1", lead_id)
             if lead:
-                if outcome == "CONNECTED":
+                if outcome in ("QUALIFIED", "CONVERTED"):
+                    q_data = qualification_data or {}
+                    qual_res = await WorkflowEngine.on_lead_qualified(
+                        conn=conn,
+                        lead_id=lead_id,
+                        user_id=user_id,
+                        budget_min=q_data.get("budget_min"),
+                        budget_max=q_data.get("budget_max"),
+                        preferred_property_type_id=q_data.get("preferred_property_type_id"),
+                        preferred_city_id=q_data.get("preferred_city_id"),
+                        notes=notes,
+                        parent_task_id=task_id
+                    )
+                    return {
+                        "task_id": task_id,
+                        "status": "COMPLETED",
+                        "completed_at": now_dt.isoformat(),
+                        "activity": qual_res["activity"],
+                        "business_transition": qual_res
+                    }
+                elif outcome == "CONNECTED":
                     # Crucial Rule: ONLY marked CONTACTED when actual connection is recorded!
                     await conn.execute(
                         """
@@ -3072,7 +3547,7 @@ class WorkflowEngine:
         viewing_reverted = None
 
         # A) First Contact & Follow-up reversions
-        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP") and lead_id:
+        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP") and lead_id:
             lead = await conn.fetchrow("SELECT status, assigned_user_id FROM leads WHERE lead_id = $1", lead_id)
             if lead and lead["status"] in ("CONTACTED", "UNREACHABLE", "DISQUALIFIED"):
                 prev_lead_status = "ASSIGNED" if lead["assigned_user_id"] else "NEW"
@@ -3081,7 +3556,7 @@ class WorkflowEngine:
                     """
                     SELECT count(*) FROM tasks 
                     WHERE lead_id = $1 AND task_id != $2 
-                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
                       AND status = 'COMPLETED'
                     """,
                     lead_id, task_id
@@ -3116,7 +3591,7 @@ class WorkflowEngine:
             if opp and opp["stage"] in ("QUALIFIED", "LOST"):
                 # If no other completed tasks or viewings exist on this opportunity, delete or revert it
                 opp_acts = await conn.fetchval(
-                    "SELECT count(*) FROM activities WHERE opportunity_id = $1 AND template_id != 'ACT_LEAD_QUALIFIED'",
+                    "SELECT count(*) FROM activities WHERE opportunity_id = $1 AND template_id NOT IN ('ACT_LEAD_QUALIFIED', 'ACT_RENT_LEAD_QUALIFIED')",
                     opp["opportunity_id"]
                 )
                 if not opp_acts or opp_acts == 0:
@@ -3129,7 +3604,7 @@ class WorkflowEngine:
                     opp_reverted = "QUALIFIED"
 
         # C) Property Matching reversions
-        elif tmpl_id == "TASK_OPPORTUNITY_MATCH_PROPERTIES":
+        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES"):
             if opp_id:
                 await conn.execute(
                     "UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1",
@@ -3138,7 +3613,7 @@ class WorkflowEngine:
                 opp_reverted = "QUALIFIED"
 
         # D) Viewing Schedule reversions
-        elif tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE"):
+        elif tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP"):
             target_opp = opp_id
             if not target_opp and lead_id:
                 target_opp = await conn.fetchval(

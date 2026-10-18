@@ -46,6 +46,14 @@ class TaskCompleteIn(BaseModel):
     location_notes: Optional[str] = None
     feedback_rating: Optional[str] = None
     offer_amount: Optional[float] = None
+    # Rental agreement / tenancy fields
+    rent_amount: Optional[float] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    payment_frequency: Optional[str] = "ANNUAL"
+    deposit_amount: Optional[float] = None
+    installments_count: Optional[int] = 1
+    contract_number: Optional[str] = None
 
 class TaskReopenIn(BaseModel):
     reason: Optional[str] = None
