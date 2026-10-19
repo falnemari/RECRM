@@ -4808,6 +4808,8 @@ class WorkflowEngine:
             is_done = (c.get("sent_at") is not None) or (c.get("delivery_status") in ("DELIVERED", "SENT"))
             formatted_comms.append({
                 "communication_id": c["communication_id"],
+                "lead_id": c.get("lead_id") or lead_id,
+                "opportunity_id": c.get("opportunity_id") or opportunity_id,
                 "channel": c.get("channel") or "SYSTEM",
                 "direction": c.get("direction") or "OUT",
                 "subject": c.get("subject") or "Message",

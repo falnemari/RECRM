@@ -132,6 +132,10 @@ class CommunicationOut(BaseModel):
     customer_id: Optional[str] = None
     customer_name: Optional[str] = None
     lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    inquiry_type: Optional[str] = None
+    template_id: Optional[str] = None
+    business_cause: Optional[str] = None
     sent_at: Optional[datetime] = None
     delivery_status: Optional[str] = None
 
@@ -142,6 +146,8 @@ class CommunicationCreateIn(BaseModel):
     body: Optional[str] = None
     customer_id: Optional[str] = None
     lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    template_id: Optional[str] = None
     sent_at: Optional[datetime] = None
     delivery_status: Optional[str] = "SENT"
 

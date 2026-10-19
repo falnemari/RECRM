@@ -304,6 +304,13 @@
             max-width: 220px;
             line-height: 1.35;
         }
+        .comms-business-cell {
+            white-space: normal !important;
+            word-break: break-word;
+            min-width: 140px;
+            max-width: 220px;
+            line-height: 1.35;
+        }
         .comms-subj-cell {
             white-space: normal !important;
             word-break: break-word;
@@ -613,6 +620,7 @@
         <div id="pane-comms" class="tab-pane">
             <div class="toolbar">
                 <div class="filters">
+                    <input type="text" id="comm-search" class="search-input" placeholder="Search subject, body, lead..." onkeyup="filterComms()">
                     <select id="comm-channel" class="select-filter" onchange="loadComms()">
                         <option value="" data-i18n="opt_all_channels">All Channels</option>
                         <option value="WHATSAPP">WhatsApp</option>
@@ -635,6 +643,7 @@
                         <tr>
                             <th data-i18n="th_channel">Channel</th>
                             <th data-i18n="th_direction">Direction</th>
+                            <th data-i18n="th_comm_business">Business Context</th>
                             <th data-i18n="th_subject">Subject</th>
                             <th data-i18n="th_body">Message Preview</th>
                             <th data-i18n="th_customer">Customer</th>
@@ -643,7 +652,7 @@
                         </tr>
                     </thead>
                     <tbody id="comms-tbody">
-                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading communications...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading communications...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -844,6 +853,20 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_lead">Related Lead</label>
+                        <select id="comm-lead" onchange="onCommLeadChange()">
+                            <option value="">Select lead (optional)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_related_opp">Related Opportunity</label>
+                        <select id="comm-opp" onchange="onCommOppChange()">
+                            <option value="">Select opportunity (optional)</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-comm')" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn" data-i18n="btn_save_comm">Log Communication</button>
@@ -1016,7 +1039,7 @@
                 th_task_title: "Task Title", th_priority: "Priority", th_due_date: "Due Date",
                 th_assigned_to: "Assigned Agent", th_related_to: "Related Customer", th_status: "Status", th_actions: "Action",
                 th_type: "Type", th_lead_id: "Lead ID", th_subject: "Subject", th_description: "Details", th_agent: "Agent", th_customer: "Customer",
-                th_date: "Date / Time", th_channel: "Channel", th_direction: "Direction", th_body: "Message Preview",
+                th_date: "Date / Time", th_channel: "Channel", th_direction: "Direction", th_comm_business: "Business Context", th_body: "Message Preview",
                 th_sent_at: "Sent At", th_delivery: "Status",
                 modal_task_title: "Create New Task", modal_act_title: "Log Agent Activity", modal_comm_title: "Log Message / Communication",
                 lbl_task_title: "Task Title *", lbl_due_date: "Due Date & Time *", lbl_priority: "Priority *",
@@ -1077,7 +1100,7 @@
                 th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_due_date: "تاريخ الاستحقاق",
                 th_assigned_to: "الوكيل المكلف", th_related_to: "العميل المرتبط", th_status: "الحالة", th_actions: "الإجراء",
                 th_type: "النوع", th_lead_id: "رقم الطلب", th_subject: "الموضوع", th_description: "التفاصيل", th_agent: "الوكيل", th_customer: "العميل",
-                th_date: "التاريخ / الوقت", th_channel: "القناة", th_direction: "الاتجاه", th_body: "نص الرسالة",
+                th_date: "التاريخ / الوقت", th_channel: "القناة", th_direction: "الاتجاه", th_comm_business: "سياق المعاملة والطلب", th_body: "نص الرسالة",
                 th_sent_at: "تاريخ الإرسال", th_delivery: "الحالة",
                 modal_task_title: "تسجيل مهمة جديدة", modal_act_title: "تسجيل نشاط أو مكالمة", modal_comm_title: "تسجيل رسالة أو مراسلة",
                 lbl_task_title: "عنوان المهمة *", lbl_due_date: "تاريخ ووقت الاستحقاق *", lbl_priority: "الأولوية *",
@@ -2285,7 +2308,7 @@
                 renderComms(commsData);
             } catch (err) {
                 console.error(err);
-                document.getElementById('comms-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load communications.</td></tr>';
+                document.getElementById('comms-tbody').innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Failed to load communications.</td></tr>';
             }
         }
 
@@ -2293,7 +2316,7 @@
             const tbody = document.getElementById('comms-tbody');
             const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مراسلات مسجلة.' : 'No communications logged.'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مراسلات مسجلة.' : 'No communications logged.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(c => {
@@ -2307,10 +2330,45 @@
                 const dirLabel = c.direction === 'OUTBOUND' || c.direction === 'OUT' ? (isAr ? 'صادر' : 'Outbound') : (isAr ? 'وارد' : 'Inbound');
                 const delivLabel = isAr ? (c.delivery_status === 'SENT' ? 'مرسل' : (c.delivery_status || 'مرسل')) : (c.delivery_status || 'SENT');
 
+                let businessHtml = [];
+
+                if (c.lead_id) {
+                    businessHtml.push(`
+                        <div style="display:inline-flex; align-items:center; gap:4px;">
+                            <a href="leads.html?search=${encodeURIComponent(c.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${c.lead_id}</a>
+                            <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${c.lead_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
+                        </div>
+                    `);
+                }
+
+                if (c.opportunity_id) {
+                    businessHtml.push(`
+                        <div style="display:inline-flex; align-items:center; gap:4px; margin-top:2px;">
+                            <a href="sales.html?opportunity_id=${encodeURIComponent(c.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0fdf4; border:1px solid #bbf7d0; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الفرصة البيعية' : 'View Opportunity'}">📊 ${c.opportunity_id}</a>
+                            <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ oppId: '${c.opportunity_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
+                        </div>
+                    `);
+                }
+
+                if (c.inquiry_type || c.business_cause) {
+                    const inq = c.inquiry_type ? `<span style="font-size:0.72em; font-weight:700; padding:1px 5px; border-radius:3px; background:#f1f5f9; color:#334155;">${c.inquiry_type}</span>` : '';
+                    const causeText = c.business_cause || '';
+                    businessHtml.push(`
+                        <div style="margin-top:2px; font-size:0.75em; color:#475569; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                            ${inq} <span style="line-height:1.2;">${causeText}</span>
+                        </div>
+                    `);
+                }
+
+                const businessDisplay = businessHtml.length > 0 
+                    ? `<div style="display:flex; flex-direction:column; gap:2px;">${businessHtml.join('')}</div>`
+                    : `<span style="color:#94a3b8; font-size:0.8em;">--</span>`;
+
                 return `
                     <tr>
                         <td><span class="channel-tag ${chanCls}">${c.channel}</span></td>
                         <td><span class="badge ${c.direction === 'OUTBOUND' || c.direction === 'OUT' ? 'badge-normal' : 'badge-high'}">${dirLabel}</span></td>
+                        <td class="comms-business-cell">${businessDisplay}</td>
                         <td class="comms-subj-cell"><strong>${subj}</strong></td>
                         <td class="comms-body-cell" style="color:var(--text-muted); font-size:0.85em;">${getLocalizedCommBody(c.body, c.template_id)}</td>
                         <td>${c.customer_name || 'N/A'}</td>
@@ -2319,6 +2377,20 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        function filterComms() {
+            const term = (document.getElementById('comm-search')?.value || '').toLowerCase();
+            const filtered = commsData.filter(c =>
+                (c.subject && c.subject.toLowerCase().includes(term)) ||
+                (c.body && c.body.toLowerCase().includes(term)) ||
+                (c.lead_id && c.lead_id.toLowerCase().includes(term)) ||
+                (c.opportunity_id && c.opportunity_id.toLowerCase().includes(term)) ||
+                (c.customer_name && c.customer_name.toLowerCase().includes(term)) ||
+                (c.business_cause && c.business_cause.toLowerCase().includes(term)) ||
+                (c.inquiry_type && c.inquiry_type.toLowerCase().includes(term))
+            );
+            renderComms(filtered);
         }
 
         // --- Modals ---
@@ -2771,11 +2843,22 @@
             }
         }
 
+        function onCommAgentChange() { syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: 'comm-lead', oppId: 'comm-opp', trigger: 'agent' }); }
+        function onCommCustomerChange() { syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: 'comm-lead', oppId: 'comm-opp', trigger: 'customer' }); }
+        function onCommLeadChange() { syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: 'comm-lead', oppId: 'comm-opp', trigger: 'lead' }); }
+        function onCommOppChange() { syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: 'comm-lead', oppId: 'comm-opp', trigger: 'opp' }); }
+
         async function openNewCommModal(prefill = {}) {
             try {
                 await ensureReferenceDataLoaded();
-                syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: null, oppId: null, trigger: null });
-                if (prefill.customerId) {
+                syncCascadingDropdowns({ agentId: 'comm-agent', custId: 'comm-cust', leadId: 'comm-lead', oppId: 'comm-opp', trigger: null });
+                if (prefill.leadId) {
+                    const lEl = document.getElementById('comm-lead');
+                    if (lEl) { lEl.value = prefill.leadId; onCommLeadChange(); }
+                } else if (prefill.oppId) {
+                    const oEl = document.getElementById('comm-opp');
+                    if (oEl) { oEl.value = prefill.oppId; onCommOppChange(); }
+                } else if (prefill.customerId) {
                     document.getElementById('comm-cust').value = prefill.customerId;
                     onCommCustomerChange();
                 } else if (prefill.agentId) {
@@ -2796,6 +2879,8 @@
                 subject: document.getElementById('comm-subject').value || null,
                 body: document.getElementById('comm-body').value,
                 customer_id: document.getElementById('comm-cust').value || null,
+                lead_id: document.getElementById('comm-lead')?.value || null,
+                opportunity_id: document.getElementById('comm-opp')?.value || null,
                 delivery_status: 'SENT'
             };
 
@@ -2809,7 +2894,7 @@
                 closeModal('modal-comm');
                 loadComms();
                 loadSummary();
-                alert("Communication message logged successfully!");
+                alert(currentLang === 'ar' ? 'تم تسجيل وتوثيق المراسلة بنجاح!' : 'Communication message logged successfully!');
             } catch (err) {
                 alert("Error: " + err.message);
             }

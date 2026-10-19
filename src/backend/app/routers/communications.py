@@ -587,6 +587,30 @@ async def complete_activity(activity_id: str, conn: asyncpg.Connection = Depends
 # ---------------------------------------------------------
 # Communications
 # ---------------------------------------------------------
+COMM_CAUSE_MAP = {
+    "COMM_AUTO_ACK_WHATSAPP": "إشعار استلام الطلب وتوجيهه للوسيط / Lead Acknowledgment",
+    "COMM_LEAD_ASSIGNED_WHATSAPP": "توجيه وإسناد الطلب للوسيط / Lead Assigned",
+    "COMM_OPPORTUNITY_RECOMMENDATIONS": "ترشيح ومطابقة العقارات للعميل / Property Recommendations",
+    "COMM_VIEWING_CONFIRMATION": "تأكيد موعد المعاينة الميدانية / Viewing Confirmation",
+    "COMM_VIEWING_REMINDER": "تذكير بموعد المعاينة الميدانية / Viewing Reminder",
+    "COMM_OFFER_PROPOSAL_SENT": "إرسال عرض السعر المالي المعتمد / Offer Proposal",
+    "COMM_OFFER_DECISION_COMMUNICATED": "تأكيد قبول العرض وبدء الحجز / Offer Decision",
+    "COMM_CONTRACT_REVIEW_REQUIRED": "مراجعة واعتماد مسودة العقد / Contract Review",
+    "COMM_CONTRACT_SIGNATURE_INSTRUCTIONS": "رابط وإرشادات توقيع العقد النهائي / Contract Signature",
+    "COMM_TENANCY_WELCOME": "ترحيب بالمستأجر وتأكيد استلام الوحدة / Tenancy Welcome",
+    "COMM_RENT_DUE_REMINDER": "تذكير بموعد استحقاق دفعة الإيجار / Rent Due Reminder",
+}
+
+def resolve_comm_business_cause(template_id: Optional[str], subject: Optional[str], inquiry_type: Optional[str]) -> Optional[str]:
+    if template_id and template_id in COMM_CAUSE_MAP:
+        return COMM_CAUSE_MAP[template_id]
+    if subject:
+        return subject
+    if inquiry_type:
+        return f"معاملة {inquiry_type}"
+    return None
+
+
 @router.get("/communications", response_model=CollectionEnvelope[CommunicationOut])
 async def list_communications(
     page: int = Query(1, ge=1),
@@ -595,6 +619,7 @@ async def list_communications(
     direction: Optional[str] = None,
     customer_id: Optional[str] = None,
     lead_id: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -623,9 +648,14 @@ async def list_communications(
         params.append(lead_id)
         p_idx += 1
 
+    if opportunity_id:
+        conditions.append(f"cm.lead_id IN (SELECT lead_id FROM opportunities WHERE opportunity_id = ${p_idx})")
+        params.append(opportunity_id)
+        p_idx += 1
+
     if search:
         s = f"%{search.strip()}%"
-        conditions.append(f"(cm.subject ILIKE ${p_idx} OR cm.body ILIKE ${p_idx})")
+        conditions.append(f"(cm.subject ILIKE ${p_idx} OR cm.body ILIKE ${p_idx} OR cm.lead_id ILIKE ${p_idx})")
         params.append(s)
         p_idx += 1
 
@@ -643,17 +673,28 @@ async def list_communications(
             cm.customer_id,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             cm.lead_id,
+            opp.opportunity_id,
+            l.inquiry_type,
+            cm.template_id,
             cm.sent_at,
             cm.delivery_status
         FROM communications cm
         LEFT JOIN customers c ON cm.customer_id = c.customer_id
+        LEFT JOIN leads l ON cm.lead_id = l.lead_id
+        LEFT JOIN LATERAL (
+            SELECT opportunity_id FROM opportunities WHERE lead_id = cm.lead_id ORDER BY created_at DESC LIMIT 1
+        ) opp ON true
         WHERE {where_clause}
         ORDER BY cm.sent_at DESC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
     rows = await conn.fetch(query, *params)
-    data = [CommunicationOut(**dict(r)) for r in rows]
+    data = []
+    for r in rows:
+        d = dict(r)
+        d["business_cause"] = resolve_comm_business_cause(d.get("template_id"), d.get("subject"), d.get("inquiry_type"))
+        data.append(CommunicationOut(**d))
 
     return CollectionEnvelope(
         data=data,
@@ -667,6 +708,13 @@ async def create_communication(payload: CommunicationCreateIn, conn: asyncpg.Con
     ch = payload.channel.upper()
     dir_clean = payload.direction.upper()
 
+    actual_lead_id = payload.lead_id
+    if not actual_lead_id and payload.opportunity_id:
+        actual_lead_id = await conn.fetchval(
+            "SELECT lead_id FROM opportunities WHERE opportunity_id = $1",
+            payload.opportunity_id
+        )
+
     cust_name = None
     if payload.customer_id:
         c = await conn.fetchrow("SELECT first_name, last_name, company_name FROM customers WHERE customer_id = $1", payload.customer_id)
@@ -677,12 +725,12 @@ async def create_communication(payload: CommunicationCreateIn, conn: asyncpg.Con
         """
         INSERT INTO communications (
             communication_id, customer_id, lead_id, channel, direction,
-            external_message_id, subject, body, sent_at, delivery_status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            external_message_id, subject, body, sent_at, delivery_status, template_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         """,
-        comm_id, payload.customer_id, payload.lead_id, ch, dir_clean,
+        comm_id, payload.customer_id, actual_lead_id, ch, dir_clean,
         f"MSG-{uuid4().hex[:12].upper()}", payload.subject, payload.body,
-        now, payload.delivery_status or "SENT"
+        now, payload.delivery_status or "SENT", payload.template_id
     )
 
     out = CommunicationOut(
@@ -694,7 +742,10 @@ async def create_communication(payload: CommunicationCreateIn, conn: asyncpg.Con
         body=payload.body,
         customer_id=payload.customer_id,
         customer_name=cust_name,
-        lead_id=payload.lead_id,
+        lead_id=actual_lead_id,
+        opportunity_id=payload.opportunity_id,
+        template_id=payload.template_id,
+        business_cause=resolve_comm_business_cause(payload.template_id, payload.subject, None),
         sent_at=now,
         delivery_status=payload.delivery_status or "SENT"
     )
