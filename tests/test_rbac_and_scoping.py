@@ -102,6 +102,27 @@ class TestRBACAndScoping(unittest.TestCase):
         self.assertEqual(lead_data["assigned_user_id"], "user-27")
         self.assertEqual(lead_data["customer_id"], "customer-21")
 
+    def test_accountant_user19_can_query_tasks_and_see_task_3796(self):
+        # user-19 (Demo Agent 26, Accountant) has earnest deposit followup task-3796
+        res = self.client.get("/api/v1/tasks?assigned_user_id=user-19&status=OPEN", headers={"X-User-ID": "user-19"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertGreaterEqual(data["meta"]["total"], 1)
+        task_ids = [t["task_id"] for t in data["data"]]
+        self.assertIn("task-3796", task_ids)
+
+    def test_tasks_status_open_includes_pending_tasks(self):
+        # Querying status=OPEN must include active PENDING operational tasks
+        res = self.client.get("/api/v1/tasks?status=OPEN", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertGreater(data["meta"]["total"], 0)
+
+        # Summary open_tasks must also count pending tasks
+        sum_res = self.client.get("/api/v1/tasks/summary", headers={"X-User-ID": "user-51"})
+        self.assertEqual(sum_res.status_code, 200)
+        self.assertGreater(sum_res.json()["data"]["open_tasks"], 0)
+
 if __name__ == "__main__":
     unittest.main()
 

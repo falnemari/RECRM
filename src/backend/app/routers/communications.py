@@ -32,8 +32,8 @@ async def get_tasks_summary(
         ag_cond = " AND assigned_user_id = $1"
         ag_params = [assigned_user_id]
 
-    open_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'OPEN'{ag_cond}", *ag_params) or 0
-    overdue_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'OPEN' AND due_at < NOW(){ag_cond}", *ag_params) or 0
+    open_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status IN ('OPEN', 'PENDING', 'IN_PROGRESS'){ag_cond}", *ag_params) or 0
+    overdue_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND due_at < NOW(){ag_cond}", *ag_params) or 0
     completed_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'COMPLETED'{ag_cond}", *ag_params) or 0
     
     act_user_cond = f" WHERE user_id = $1" if assigned_user_id else ""
@@ -88,9 +88,13 @@ async def list_tasks(
     p_idx = 1
 
     if status_filter:
-        conditions.append(f"t.status = ${p_idx}")
-        params.append(status_filter.upper())
-        p_idx += 1
+        s_upper = status_filter.upper()
+        if s_upper in ("OPEN", "ACTIVE"):
+            conditions.append("t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS')")
+        else:
+            conditions.append(f"t.status = ${p_idx}")
+            params.append(s_upper)
+            p_idx += 1
 
     if priority:
         conditions.append(f"t.priority = ${p_idx}")
@@ -248,7 +252,7 @@ async def get_task(
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             t.lead_id,
             t.opportunity_id,
-            CASE WHEN t.status = 'OPEN' AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
+            CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
         LEFT JOIN customers c ON t.customer_id = c.customer_id

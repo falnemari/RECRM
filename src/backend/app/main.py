@@ -80,6 +80,10 @@ async def add_correlation_id_and_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    if request.url.path.startswith("/ui"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 # Standardized Validation Error Handler matching API.md

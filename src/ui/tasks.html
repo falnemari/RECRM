@@ -518,6 +518,9 @@
         <!-- TAB 1: Tasks -->
         <!-- ============================================================== -->
         <div id="pane-tasks" class="tab-pane active">
+            <!-- Active User Personal Pending Tasks Banner -->
+            <div id="task-personal-reminder-banner" style="display:none;"></div>
+
             <div class="toolbar">
                 <div class="filters">
                     <input type="text" id="task-search" class="search-input" placeholder="Search task title, customer, agent..." onkeyup="filterTasks()">
@@ -534,8 +537,11 @@
                         <option value="LOW" data-i18n="opt_low">Low</option>
                     </select>
                     <select id="task-agent-filter" class="select-filter" onchange="onTaskAgentFilterChange()">
-                        <option value="" data-i18n="opt_all_agents">All Agents</option>
+                        <option value="" data-i18n="opt_all_agents">All Staff & Assignees</option>
                     </select>
+                    <button type="button" id="btn-my-tasks-toggle" class="btn btn-outline" onclick="toggleMyTasksFilter()" style="font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.88em; border: 1.5px solid #93c5fd; background: #ffffff; color: #1e3a8a;" title="عرض مهامي المسندة إلي فقط">
+                        <span>⭐</span> <span id="lbl-my-tasks">مهامي فقط</span>
+                    </button>
                     <div id="task-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
                         <span id="task-agent-scope-text">Showing user data only</span>
                         <button type="button" onclick="clearTaskAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
@@ -1059,7 +1065,7 @@
                 opt_all_status: "All Statuses", opt_open: "Open", opt_completed: "Completed",
                 opt_all_priority: "All Priorities", opt_urgent: "Urgent", opt_high: "High", opt_normal: "Normal", opt_low: "Low",
                 opt_all_types: "All Types", opt_all_channels: "All Channels", opt_all_dirs: "All Directions",
-                opt_all_agents: "All Agents",
+                opt_all_agents: "All Staff & Assignees",
                 opt_act_call: "Phone Call", opt_act_whatsapp: "WhatsApp", opt_act_email: "Email",
                 opt_act_meeting: "Meeting", opt_act_viewing: "Property Viewing", opt_act_followup: "Follow-up",
                 opt_act_note: "Internal Note", opt_dir_outbound: "Outbound", opt_dir_inbound: "Inbound",
@@ -1120,7 +1126,7 @@
                 opt_all_status: "جميع الحالات", opt_open: "جارية", opt_completed: "مكتملة",
                 opt_all_priority: "جميع الأولويات", opt_urgent: "عاجل", opt_high: "هام", opt_normal: "عادي", opt_low: "منخفض",
                 opt_all_types: "جميع الأنواع", opt_all_channels: "جميع القنوات", opt_all_dirs: "جميع الاتجاهات",
-                opt_all_agents: "جميع الوسطاء",
+                opt_all_agents: "جميع الموظفين والمسؤولين",
                 opt_act_call: "مكالمة هاتفية", opt_act_whatsapp: "واتساب", opt_act_email: "بريد إلكتروني",
                 opt_act_meeting: "اجتماع", opt_act_viewing: "معاينة عقار", opt_act_followup: "متابعة",
                 opt_act_note: "ملاحظة داخلية", opt_dir_outbound: "صادر", opt_dir_inbound: "وارد",
@@ -1440,6 +1446,7 @@
             } else {
                 if (badge) badge.style.display = 'none';
             }
+            updateMyTasksButtonState();
             loadTasks();
             loadActivities();
             loadSummary();
@@ -1453,6 +1460,100 @@
             }
         }
 
+        function filterToMyTasksOnly(uid) {
+            const agSelect = document.getElementById('task-agent-filter');
+            if (!agSelect) return;
+            const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+            const targetUid = uid || (userProfile ? userProfile.user_id : (localStorage.getItem('recrm_user_id') || ''));
+            if (!targetUid) return;
+            agSelect.value = targetUid;
+            onTaskAgentFilterChange();
+        }
+
+        function toggleMyTasksFilter() {
+            const agSelect = document.getElementById('task-agent-filter');
+            if (!agSelect) return;
+            const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+            const myUid = userProfile ? userProfile.user_id : (localStorage.getItem('recrm_user_id') || '');
+            if (!myUid) {
+                if (window.openUserProfileModal) window.openUserProfileModal();
+                return;
+            }
+            if (agSelect.value === myUid) {
+                agSelect.value = '';
+            } else {
+                agSelect.value = myUid;
+            }
+            onTaskAgentFilterChange();
+        }
+
+        function updateMyTasksButtonState() {
+            const btn = document.getElementById('btn-my-tasks-toggle');
+            const lbl = document.getElementById('lbl-my-tasks');
+            const agSelect = document.getElementById('task-agent-filter');
+            if (!btn || !agSelect) return;
+            const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+            const myUid = userProfile ? userProfile.user_id : (localStorage.getItem('recrm_user_id') || '');
+            const isAr = currentLang === 'ar';
+
+            if (myUid && agSelect.value === myUid) {
+                btn.style.background = '#2563eb';
+                btn.style.color = '#ffffff';
+                btn.style.borderColor = '#1d4ed8';
+                if (lbl) lbl.textContent = isAr ? 'عرض جميع الموظفين' : 'Show All Staff';
+            } else {
+                btn.style.background = '#ffffff';
+                btn.style.color = '#1e3a8a';
+                btn.style.borderColor = '#93c5fd';
+                if (lbl) lbl.textContent = isAr ? 'مهامي فقط' : 'My Tasks Only';
+            }
+        }
+
+        async function checkActiveUserPendingTasksBanner() {
+            const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+            const myUid = userProfile ? userProfile.user_id : (localStorage.getItem('recrm_user_id') || '');
+            if (!myUid) return;
+            const bannerContainer = document.getElementById('task-personal-reminder-banner');
+            if (!bannerContainer) return;
+
+            const isAr = currentLang === 'ar';
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/tasks?assigned_user_id=${encodeURIComponent(myUid)}&status=OPEN`);
+                if (!res.ok) return;
+                const json = await res.json();
+                const myOpenTasks = json.data || [];
+                if (myOpenTasks.length > 0) {
+                    bannerContainer.style.display = 'block';
+                    const activeName = userProfile ? userProfile.full_name : myUid;
+                    const roleName = (userProfile && userProfile.roles && userProfile.roles[0]) ? (userProfile.roles[0].name || userProfile.roles[0].role_code) : '';
+                    bannerContainer.innerHTML = `
+                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #93c5fd; border-radius: 8px; padding: 12px 18px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 4px rgba(37,99,235,0.06);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1.6em;">💼</span>
+                                <div>
+                                    <div style="font-weight: 700; color: #1e3a8a; font-size: 0.95em;">
+                                        ${isAr ? `مرحباً ${activeName} ${roleName ? '(' + roleName + ')' : ''}: لديك (${myOpenTasks.length}) مهمة تشغيلية معلقة بانتظار إنجازك` : `Welcome ${activeName} ${roleName ? '(' + roleName + ')' : ''}: You have (${myOpenTasks.length}) pending task(s) awaiting action`}
+                                    </div>
+                                    <div style="font-size: 0.82em; color: #1d4ed8; margin-top: 2px;">
+                                        ${isAr ? `المهمة الحالية: ${myOpenTasks[0].title} [${myOpenTasks[0].task_id}]` : `Current Task: ${myOpenTasks[0].title} [${myOpenTasks[0].task_id}]`}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button type="button" class="btn btn-sm" onclick="filterToMyTasksOnly('${myUid}')" style="background: #2563eb; color: white; border: none; font-weight: 700; padding: 7px 16px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                    <span>🔍</span> <span>${isAr ? 'عرض وتصفية مهامي الآن' : 'Filter My Tasks Now'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    bannerContainer.style.display = 'none';
+                }
+            } catch (e) {
+                console.warn('Failed to check personal pending tasks:', e);
+            }
+        }
+
         function populateTaskAgentFilter() {
             const agSelect = document.getElementById('task-agent-filter');
             if (!agSelect || taskModalUsers.length === 0) return;
@@ -1461,11 +1562,23 @@
             const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
             const curVal = agSelect.value || urlAgent || '';
             const isAr = currentLang === 'ar';
-            agSelect.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` +
-                taskModalUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+            const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+            const myUid = userProfile ? userProfile.user_id : (localStorage.getItem('recrm_user_id') || '');
+            const myName = userProfile ? userProfile.full_name : '';
+
+            let myTasksOption = '';
+            if (myUid && myName) {
+                myTasksOption = `<option value="${myUid}">⭐ ${isAr ? 'مهامي فقط' : 'My Tasks Only'} (${myName})</option>`;
+            }
+
+            agSelect.innerHTML = `<option value="">${isAr ? 'جميع الموظفين والمسؤولين' : 'All Staff & Assignees'}</option>` +
+                myTasksOption +
+                taskModalUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name} (${u.user_id})</option>`).join('');
             if (curVal) {
                 agSelect.value = curVal;
                 onTaskAgentFilterChange();
+            } else {
+                updateMyTasksButtonState();
             }
         }
 
@@ -3127,6 +3240,13 @@
             loadTasks();
             ensureReferenceDataLoaded().then(() => {
                 populateTaskAgentFilter();
+                checkActiveUserPendingTasksBanner();
+            });
+
+            window.addEventListener('recrm:user-ready', () => {
+                populateTaskAgentFilter();
+                updateMyTasksButtonState();
+                checkActiveUserPendingTasksBanner();
             });
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -3175,7 +3295,7 @@
         });
     </script>
     <script src="common.js"></script>
-    <script src="user_session.js"></script>
+    <script src="user_session.js?v=20261019_rbac_v2"></script>
 </body>
 </html>
 
