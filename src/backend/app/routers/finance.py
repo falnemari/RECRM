@@ -87,14 +87,14 @@ async def get_finance_summary(
     conn: asyncpg.Connection = Depends(get_db)
 ):
     await verify_finance_access(conn, x_user_id)
-    total_contracts = await conn.fetchval("SELECT count(*) FROM contracts")
-    total_contract_value = await conn.fetchval("SELECT COALESCE(SUM(contract_value), 0) FROM contracts")
+    total_contracts = await conn.fetchval("SELECT count(*) FROM contracts WHERE status NOT IN ('CANCELLED', 'TERMINATED')")
+    total_contract_value = await conn.fetchval("SELECT COALESCE(SUM(contract_value), 0) FROM contracts WHERE status NOT IN ('CANCELLED', 'TERMINATED')")
     
-    total_payments_due = await conn.fetchval("SELECT COALESCE(SUM(amount_due), 0) FROM payments")
-    total_payments_collected = await conn.fetchval("SELECT COALESCE(SUM(amount_paid), 0) FROM payments")
+    total_payments_due = await conn.fetchval("SELECT COALESCE(SUM(amount_due), 0) FROM payments WHERE status != 'CANCELLED'")
+    total_payments_collected = await conn.fetchval("SELECT COALESCE(SUM(amount_paid), 0) FROM payments WHERE status != 'CANCELLED'")
     outstanding_receivables = float(total_payments_due) - float(total_payments_collected)
 
-    total_commissions_amount = await conn.fetchval("SELECT COALESCE(SUM(amount), 0) FROM commissions")
+    total_commissions_amount = await conn.fetchval("SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status != 'CANCELLED'")
     paid_commissions_amount = await conn.fetchval("SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status = 'PAID'")
     pending_commissions_amount = float(total_commissions_amount) - float(paid_commissions_amount)
 
@@ -271,6 +271,7 @@ async def advance_contract(
                 conn=conn,
                 contract_id=contract_id,
                 action=payload.action,
+                payload={"notes": payload.notes} if payload.notes else None,
                 user_id=x_user_id
             )
     except ValueError as e:
@@ -442,28 +443,47 @@ async def list_payments(
     p_idx = 1
 
     if status_filter:
-        conditions.append(f"status = ${p_idx}")
+        conditions.append(f"p.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
 
     if contract_id:
-        conditions.append(f"contract_id = ${p_idx}")
+        conditions.append(f"p.contract_id = ${p_idx}")
         params.append(contract_id)
         p_idx += 1
 
     where_clause = " AND ".join(conditions)
-    total = await conn.fetchval(f"SELECT count(*) FROM payments WHERE {where_clause}", *params)
+    total = await conn.fetchval(
+        f"""
+        SELECT count(*) 
+        FROM payments p
+        LEFT JOIN contracts c ON p.contract_id = c.contract_id
+        LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units u ON r.unit_id = u.unit_id
+        WHERE {where_clause}
+        """,
+        *params
+    )
 
     query = f"""
         SELECT 
-            payment_id, contract_id, payment_reference, due_date,
-            CAST(amount_due AS FLOAT) AS amount_due,
-            CAST(amount_paid AS FLOAT) AS amount_paid,
-            CAST(amount_due - amount_paid AS FLOAT) AS remaining_balance,
-            paid_at, method, status
-        FROM payments
+            p.payment_id, p.contract_id, p.payment_reference, p.due_date,
+            CAST(p.amount_due AS FLOAT) AS amount_due,
+            CAST(p.amount_paid AS FLOAT) AS amount_paid,
+            CAST(p.amount_due - p.amount_paid AS FLOAT) AS remaining_balance,
+            p.paid_at, p.method, p.status,
+            c.contract_number,
+            c.status AS contract_status,
+            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
+            u.unit_number
+        FROM payments p
+        LEFT JOIN contracts c ON p.contract_id = c.contract_id
+        LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units u ON r.unit_id = u.unit_id
         WHERE {where_clause}
-        ORDER BY due_date ASC
+        ORDER BY p.due_date ASC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -504,13 +524,21 @@ async def record_payment(payment_id: str, payload: RecordPaymentIn, conn: asyncp
     updated = await conn.fetchrow(
         """
         SELECT 
-            payment_id, contract_id, payment_reference, due_date,
-            CAST(amount_due AS FLOAT) AS amount_due,
-            CAST(amount_paid AS FLOAT) AS amount_paid,
-            CAST(amount_due - amount_paid AS FLOAT) AS remaining_balance,
-            paid_at, method, status
-        FROM payments
-        WHERE payment_id = $1
+            p.payment_id, p.contract_id, p.payment_reference, p.due_date,
+            CAST(p.amount_due AS FLOAT) AS amount_due,
+            CAST(p.amount_paid AS FLOAT) AS amount_paid,
+            CAST(p.amount_due - p.amount_paid AS FLOAT) AS remaining_balance,
+            p.paid_at, p.method, p.status,
+            c.contract_number,
+            c.status AS contract_status,
+            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
+            u.unit_number
+        FROM payments p
+        LEFT JOIN contracts c ON p.contract_id = c.contract_id
+        LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units u ON r.unit_id = u.unit_id
+        WHERE p.payment_id = $1
         """,
         payment_id
     )
@@ -542,7 +570,18 @@ async def list_commissions(
         p_idx += 1
 
     where_clause = " AND ".join(conditions)
-    total = await conn.fetchval(f"SELECT count(*) FROM commissions c WHERE {where_clause}", *params)
+    total = await conn.fetchval(
+        f"""
+        SELECT count(*) 
+        FROM commissions c 
+        LEFT JOIN contracts con ON c.contract_id = con.contract_id
+        LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
+        WHERE {where_clause}
+        """,
+        *params
+    )
 
     query = f"""
         SELECT 
@@ -551,9 +590,17 @@ async def list_commissions(
             c.commission_type,
             CAST(c.rate AS FLOAT) AS rate,
             CAST(c.amount AS FLOAT) AS amount,
-            c.status, c.approved_at, c.paid_at
+            c.status, c.approved_at, c.paid_at,
+            con.contract_number,
+            con.status AS contract_status,
+            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
+            un.unit_number
         FROM commissions c
         LEFT JOIN users u ON c.user_id = u.user_id
+        LEFT JOIN contracts con ON c.contract_id = con.contract_id
+        LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
         WHERE {where_clause}
         ORDER BY c.amount DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -576,9 +623,17 @@ async def approve_commission(commission_id: str, conn: asyncpg.Connection = Depe
             c.commission_id, c.contract_id, c.user_id,
             u.full_name AS user_name, c.commission_type,
             CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
-            c.status, c.approved_at, c.paid_at
+            c.status, c.approved_at, c.paid_at,
+            con.contract_number,
+            con.status AS contract_status,
+            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
+            un.unit_number
         FROM commissions c
         LEFT JOIN users u ON c.user_id = u.user_id
+        LEFT JOIN contracts con ON c.contract_id = con.contract_id
+        LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
         WHERE c.commission_id = $1
         """,
         commission_id
@@ -596,9 +651,17 @@ async def payout_commission(commission_id: str, conn: asyncpg.Connection = Depen
             c.commission_id, c.contract_id, c.user_id,
             u.full_name AS user_name, c.commission_type,
             CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
-            c.status, c.approved_at, c.paid_at
+            c.status, c.approved_at, c.paid_at,
+            con.contract_number,
+            con.status AS contract_status,
+            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
+            un.unit_number
         FROM commissions c
         LEFT JOIN users u ON c.user_id = u.user_id
+        LEFT JOIN contracts con ON c.contract_id = con.contract_id
+        LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN customers cust ON r.customer_id = cust.customer_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
         WHERE c.commission_id = $1
         """,
         commission_id

@@ -319,6 +319,7 @@
                     <option value="PARTIAL" data-i18n="opt_pay_partial">PARTIAL</option>
                     <option value="PAID" data-i18n="opt_pay_paid">PAID</option>
                     <option value="OVERDUE" data-i18n="opt_pay_overdue">OVERDUE</option>
+                    <option value="CANCELLED" data-i18n="opt_pay_cancelled">CANCELLED</option>
                 </select>
             </div>
 
@@ -327,6 +328,7 @@
                     <thead>
                         <tr>
                             <th data-i18n="th_pay_ref">Reference #</th>
+                            <th data-i18n="th_pay_contract">Contract & Unit</th>
                             <th data-i18n="th_pay_due_date">Due Date</th>
                             <th data-i18n="th_pay_amount_due">Amount Due</th>
                             <th data-i18n="th_pay_amount_paid">Amount Paid</th>
@@ -337,7 +339,7 @@
                         </tr>
                     </thead>
                     <tbody id="payments-tbody">
-                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -351,6 +353,7 @@
                     <option value="PENDING" data-i18n="opt_comm_pending">PENDING</option>
                     <option value="APPROVED" data-i18n="opt_comm_approved">APPROVED</option>
                     <option value="PAID" data-i18n="opt_comm_paid">PAID</option>
+                    <option value="CANCELLED" data-i18n="opt_comm_cancelled">CANCELLED</option>
                 </select>
             </div>
 
@@ -359,6 +362,7 @@
                     <thead>
                         <tr>
                             <th data-i18n="th_comm_agent">Agent / Broker</th>
+                            <th data-i18n="th_comm_contract">Contract & Unit</th>
                             <th data-i18n="th_comm_type">Type</th>
                             <th data-i18n="th_comm_rate">Rate (%)</th>
                             <th data-i18n="th_comm_amount">Commission Amount</th>
@@ -367,7 +371,7 @@
                         </tr>
                     </thead>
                     <tbody id="commissions-tbody">
-                        <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -770,10 +774,15 @@
                 opt_pay_partial: "PARTIAL",
                 opt_pay_paid: "PAID",
                 opt_pay_overdue: "OVERDUE",
+                opt_pay_cancelled: "CANCELLED",
+                th_pay_contract: "Contract & Unit",
+                th_comm_contract: "Contract & Unit",
+                btn_cancel_contract: "Cancel Contract",
                 opt_all_comm_statuses: "All Commission Statuses",
                 opt_comm_pending: "PENDING",
                 opt_comm_approved: "APPROVED",
                 opt_comm_paid: "PAID",
+                opt_comm_cancelled: "CANCELLED",
                 opt_method_wire: "Bank Wire Transfer",
                 opt_method_cheque: "Certified Cheque",
                 opt_method_card: "POS / Card",
@@ -850,10 +859,15 @@
                 opt_pay_partial: "جزئي",
                 opt_pay_paid: "مسدد",
                 opt_pay_overdue: "متأخر",
+                opt_pay_cancelled: "ملغاة",
+                th_pay_contract: "العقد والوحدة",
+                th_comm_contract: "العقد والوحدة",
+                btn_cancel_contract: "إلغاء العقد",
                 opt_all_comm_statuses: "جميع حالات العمولات",
                 opt_comm_pending: "قيد الاعتماد",
                 opt_comm_approved: "معتمد",
                 opt_comm_paid: "مصروف",
+                opt_comm_cancelled: "ملغاة",
                 opt_method_wire: "تحويل بنكي",
                 opt_method_cheque: "شيك مصرفي معتمد",
                 opt_method_card: "بطاقة مصرفية / مدى",
@@ -988,6 +1002,8 @@
                         actionBtn = `<button class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'تسليم وإغلاق' : 'Handover & Close'}</button>`;
                     } else if (c.status === 'ACTIVE' || c.status === 'COMPLETED') {
                         stBadge = 'badge-signed';
+                    } else if (c.status === 'CANCELLED') {
+                        stBadge = 'badge-cancelled';
                     }
 
                     const ownerName = c.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
@@ -1034,15 +1050,20 @@
 
                 const tbody = document.getElementById('payments-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No payments found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No payments found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = items.map(p => {
-                    const stBadge = p.status === 'PAID' ? 'badge-paid' : (p.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
+                    const stBadge = p.status === 'PAID' ? 'badge-paid' : (p.status === 'PARTIAL' ? 'badge-partial' : (p.status === 'CANCELLED' ? 'badge-cancelled' : 'badge-due'));
+                    const conStatusBadge = p.contract_status === 'CANCELLED' ? `<span class="badge badge-cancelled" style="font-size:0.68em; margin-inline-start:4px;">${currentLang === 'ar' ? 'عقد ملغي' : 'CANCELLED'}</span>` : '';
                     return `
                         <tr>
                             <td><span class="id-badge">${p.payment_reference || p.payment_id || 'PAY-REF'}</span></td>
+                            <td>
+                                <strong>${p.contract_number || '--'}</strong>${conStatusBadge}
+                                <div style="font-size: 0.78em; color: var(--text-muted);">${p.unit_number ? '🏠 ' + p.unit_number : ''} ${p.customer_name ? '• ' + p.customer_name : ''}</div>
+                            </td>
                             <td>${p.due_date || '--'}</td>
                             <td><strong>${Number(p.amount_due || 0).toLocaleString()} SAR</strong></td>
                             <td style="color: #16a34a;">${Number(p.amount_paid || 0).toLocaleString()} SAR</td>
@@ -1050,13 +1071,13 @@
                             <td>${p.method || 'PENDING'}</td>
                             <td><span class="badge ${stBadge}">${p.status}</span></td>
                             <td>
-                                ${p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">Record Receipt</button>` : '<span style="color: green;">✓ Settled</span>'}
+                                ${p.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : (p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">${currentLang === 'ar' ? 'سند قبض' : 'Record Receipt'}</button>` : `<span style="color: green;">✓ ${currentLang === 'ar' ? 'مسددة' : 'Settled'}</span>`)}
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center;">Failed to load payments.</td></tr>';
+                document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load payments.</td></tr>';
             }
         }
 
@@ -1072,29 +1093,35 @@
 
                 const tbody = document.getElementById('commissions-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = items.map(c => {
-                    const stBadge = c.status === 'PAID' ? 'badge-paid' : (c.status === 'APPROVED' ? 'badge-approved' : 'badge-pending');
+                    const stBadge = c.status === 'PAID' ? 'badge-paid' : (c.status === 'APPROVED' ? 'badge-approved' : (c.status === 'CANCELLED' ? 'badge-cancelled' : 'badge-pending'));
+                    const conStatusBadge = c.contract_status === 'CANCELLED' ? `<span class="badge badge-cancelled" style="font-size:0.68em; margin-inline-start:4px;">${currentLang === 'ar' ? 'عقد ملغي' : 'CANCELLED'}</span>` : '';
                     return `
                         <tr>
                             <td><strong>${c.user_name || 'Agent'}</strong></td>
+                            <td>
+                                <strong>${c.contract_number || '--'}</strong>${conStatusBadge}
+                                <div style="font-size: 0.78em; color: var(--text-muted);">${c.unit_number ? '🏠 ' + c.unit_number : ''}</div>
+                            </td>
                             <td>${c.commission_type}</td>
                             <td>${c.rate ?? 2.5}%</td>
                             <td><strong style="color: var(--primary);">${Number(c.amount || 0).toLocaleString()} SAR</strong></td>
                             <td><span class="badge ${stBadge}">${c.status}</span></td>
                             <td>
-                                ${c.status === 'PENDING' ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">Approve</button>` : ''}
-                                ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">Pay Out</button>` : ''}
-                                ${c.status === 'PAID' ? '<span style="color: green; font-size: 0.85em;">✓ Paid Out</span>' : ''}
+                                ${c.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : ''}
+                                ${c.status === 'PENDING' ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
+                                ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
+                                ${c.status === 'PAID' ? `<span style="color: green; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مصروفة' : 'Paid Out'}</span>` : ''}
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('commissions-tbody').innerHTML = '<tr><td colspan="6" style="color: red; text-align: center;">Failed to load commissions.</td></tr>';
+                document.getElementById('commissions-tbody').innerHTML = '<tr><td colspan="7" style="color: red; text-align: center;">Failed to load commissions.</td></tr>';
             }
         }
 
@@ -1861,14 +1888,27 @@
                     </div>
                     <!-- Contract Lifecycle Workflow Progression -->
                     ${(() => {
-                        if (c.status === 'DRAFT') {
+                        const cancelBtn = (c.status !== 'CANCELLED' && c.status !== 'COMPLETED') ? 
+                            `<button class="btn btn-sm" style="background: #ef4444; color: #fff; font-weight: 700; padding: 7px 16px; margin-inline-start: 6px;" onclick="advanceContractLifecycle('${c.contract_id}', 'CANCEL')">🚫 ${currentLang === 'ar' ? 'إلغاء العقد وإسقاط الالتزامات' : 'Cancel Contract & Void'}</button>` : '';
+
+                        if (c.status === 'CANCELLED') {
+                            return `
+                                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; margin-top: 18px; color: #991b1b;">
+                                    <strong>🚫 ${currentLang === 'ar' ? 'هذا العقد ملغي رسميًا' : 'Contract is CANCELLED'}</strong>
+                                    <div style="font-size: 0.85em; margin-top: 4px; color: #7f1d1d;">${currentLang === 'ar' ? 'تم إلغاء العقد وإسقاط كافة الدفعات غير المسددة والعمولات المعلقة وتحرير الوحدة.' : 'The contract has been cancelled. All unpaid payment installments and pending commissions have been voided.'}</div>
+                                </div>
+                            `;
+                        } else if (c.status === 'DRAFT') {
                             return `
                                 <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                     <div>
                                         <strong style="color: #1d4ed8;">⚖️ ${currentLang === 'ar' ? 'مسودة العقد جاهزة للمراجعة القانونية' : 'Legal Draft Ready for Approval'}</strong>
                                         <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'اعتماد المسودة ينقل العقد إلى (PENDING_SIGNATURE) ويرسل إرشادات التوقيع للعميل' : 'Approval moves contract to PENDING_SIGNATURE and sends signature instructions to client'}</div>
                                     </div>
-                                    <button class="btn btn-sm" style="background: #2563eb; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة القانونية' : 'Approve Draft for Signature'}</button>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-sm" style="background: #2563eb; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة القانونية' : 'Approve Draft for Signature'}</button>
+                                        ${cancelBtn}
+                                    </div>
                                 </div>
                             `;
                         } else if (c.status === 'PENDING_SIGNATURE') {
@@ -1878,17 +1918,23 @@
                                         <strong style="color: #15803d;">✍️ ${currentLang === 'ar' ? 'العقد بانتظار توثيق التوقيع' : 'Contract Awaiting Signature Record'}</strong>
                                         <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'توثيق التوقيع ينقل العقد إلى (SIGNED)، يحول الحجز رسمياً، ويولد جدول الأقساط' : 'Recording signature marks contract SIGNED, converts reservation, and schedules installments'}</div>
                                     </div>
-                                    <button class="btn btn-sm" style="background: #16a34a; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق توقيع العقد' : 'Record Signed Contract'}</button>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-sm" style="background: #16a34a; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق توقيع العقد' : 'Record Signed Contract'}</button>
+                                        ${cancelBtn}
+                                    </div>
                                 </div>
                             `;
-                        } else if (c.status === 'SIGNED') {
+                        } else if (c.status === 'SIGNED' || c.status === 'ACTIVE') {
                             return `
                                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                     <div>
                                         <strong style="color: #b45309;">🔑 ${currentLang === 'ar' ? 'العقد موقّع وجاهز للتسليم وإغلاق الصفقة' : 'Signed Contract Ready for Handover'}</strong>
                                         <div style="font-size: 0.8em; color: var(--text-muted);">${currentLang === 'ar' ? 'إتمام التسليم يغير حالة الوحدة إلى (SOLD)، والصفقة إلى (CLOSED_WON) وتفعيل العقد' : 'Completing handover updates unit to SOLD, opportunity to CLOSED_WON, and contract to ACTIVE'}</div>
                                     </div>
-                                    <button class="btn btn-sm" style="background: #d97706; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'إتمام التسليم وإغلاق الصفقة' : 'Complete Handover & Close Deal'}</button>
+                                    <div style="display: flex; gap: 8px;">
+                                        ${c.status === 'SIGNED' ? `<button class="btn btn-sm" style="background: #d97706; color: #fff; font-weight: 700; padding: 7px 16px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'إتمام التسليم وإغلاق الصفقة' : 'Complete Handover & Close Deal'}</button>` : ''}
+                                        ${cancelBtn}
+                                    </div>
                                 </div>
                             `;
                         }
@@ -2004,6 +2050,8 @@
                 confirmMsg = isAr ? 'توثيق توقيع العقد رسمياً؟ سيتم تحويل الحجز وتوليد جدول الدفعات ومطابقة المالية واستحقاق العمولة.' : 'Record formal contract signature? Reservation will convert and payment schedules generated.';
             } else if (action === 'COMPLETE_HANDOVER') {
                 confirmMsg = isAr ? 'تأكيد اكتمال تسليم العقار وإغلاق الصفقة (مباع/مؤجر) بنجاح؟' : 'Confirm property handover and close deal as won?';
+            } else if (action === 'CANCEL') {
+                confirmMsg = isAr ? 'هل أنت متأكد من رغبتك في إلغاء هذا العقد؟ سيتم تلقائياً إلغاء كافة الدفعات غير المسددة والعمولات المعلقة وإلغاء المهام التشغيلية وإعادة تحرير الوحدة.' : 'Are you sure you want to cancel this contract? All unpaid payments, pending commissions, and operational tasks will be automatically cancelled, and the unit will be released.';
             }
 
             if (!confirm(confirmMsg)) return;
@@ -2020,6 +2068,8 @@
                 }
                 alert(isAr ? 'تم تحديث مسار العقد بنجاح!' : 'Contract lifecycle advanced successfully!');
                 fetchContracts();
+                fetchPayments();
+                fetchCommissions();
                 loadSummary();
                 closeContractDetailModal();
             } catch (err) {

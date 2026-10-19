@@ -648,6 +648,127 @@ class TestWorkflowStagesEFG(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_stage_g_contract_cancellation_cascade(self):
+        """
+        Stage G Test:
+          Contract Cancellation Cascade:
+          - Initiating CANCEL on a contract updates its status to CANCELLED.
+          - Unpaid payments (DUE) are automatically updated to CANCELLED.
+          - Settled payments (PAID) remain untouched.
+          - Unpaid commissions (PENDING) are automatically updated to CANCELLED.
+          - Operational contract tasks are cancelled.
+          - Unit is released back to AVAILABLE with status history.
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            cust_id = "test-cust-cancel-01"
+            opp_id = "test-opp-cancel-01"
+            unit_id = "test-unit-cancel-01"
+            res_id = "test-res-cancel-01"
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Hamad', 'Al-Harbi', '+966551122334', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, building_id, unit_number, property_type_id, asking_price, status, created_at, updated_at)
+                VALUES ($1, $2, 'U-CANCEL01', $3, 1000000.0, 'RESERVED', NOW(), NOW())
+                """,
+                unit_id, self.building_id, self.property_type_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, 'UNDER_OFFER', 1000000.0, NOW(), NOW())
+                """,
+                opp_id, cust_id, self.agent_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO reservations (
+                    reservation_id, reservation_number, opportunity_id, unit_id, customer_id,
+                    deposit_amount, status, expires_at, reserved_at
+                ) VALUES ($1, 'RES-CANCEL-001', $2, $3, $4, 50000.0, 'ACTIVE', NOW() + interval '48 hours', NOW())
+                """,
+                res_id, opp_id, unit_id, cust_id
+            )
+
+            # Step 1: Initiate draft contract
+            draft_res = await WorkflowEngine.initiate_contract_draft(
+                conn=self.conn,
+                reservation_id=res_id,
+                contract_type="SALE",
+                contract_value=1000000.0,
+                user_id=self.agent_id
+            )
+            contract_id = draft_res["contract_id"]
+
+            # Step 2: Record signature (generates deposit PAID, remaining DUE, commission PENDING, tasks)
+            await WorkflowEngine.advance_contract_lifecycle(
+                conn=self.conn,
+                contract_id=contract_id,
+                action="RECORD_SIGNATURE",
+                user_id=self.agent_id
+            )
+
+            # Verify payments exist
+            payments = await self.conn.fetch("SELECT payment_id, status, amount_due, amount_paid FROM payments WHERE contract_id = $1", contract_id)
+            self.assertEqual(len(payments), 2)
+            paid_payment = next(p for p in payments if p["amount_paid"] > 0)
+            due_payment = next(p for p in payments if p["amount_paid"] == 0)
+            self.assertEqual(paid_payment["status"], "PAID")
+            self.assertEqual(due_payment["status"], "DUE")
+
+            # Verify commission exists
+            comm = await self.conn.fetchrow("SELECT commission_id, status FROM commissions WHERE contract_id = $1", contract_id)
+            self.assertEqual(comm["status"], "PENDING")
+
+            # Step 3: Trigger CANCEL action on contract
+            cancel_res = await WorkflowEngine.advance_contract_lifecycle(
+                conn=self.conn,
+                contract_id=contract_id,
+                action="CANCEL",
+                payload={"notes": "Cancelled per client mutual agreement"},
+                user_id=self.agent_id
+            )
+            self.assertEqual(cancel_res["action"], "CANCEL")
+
+            # Verify contract status
+            c_status = await self.conn.fetchval("SELECT status FROM contracts WHERE contract_id = $1", contract_id)
+            self.assertEqual(c_status, "CANCELLED")
+
+            # Verify due payment is CANCELLED, while deposit remains PAID
+            paid_after = await self.conn.fetchval("SELECT status FROM payments WHERE payment_id = $1", paid_payment["payment_id"])
+            due_after = await self.conn.fetchval("SELECT status FROM payments WHERE payment_id = $1", due_payment["payment_id"])
+            self.assertEqual(paid_after, "PAID")
+            self.assertEqual(due_after, "CANCELLED")
+
+            # Verify commission is CANCELLED
+            comm_after = await self.conn.fetchval("SELECT status FROM commissions WHERE commission_id = $1", comm["commission_id"])
+            self.assertEqual(comm_after, "CANCELLED")
+
+            # Verify contract tasks are cancelled
+            cancelled_tasks = await self.conn.fetch(
+                """
+                SELECT status FROM tasks 
+                WHERE opportunity_id = $1 AND template_id IN ('TASK_CONTRACT_RECONCILIATION', 'TASK_CONTRACT_HANDOVER')
+                """,
+                opp_id
+            )
+            for t in cancelled_tasks:
+                self.assertEqual(t["status"], "CANCELLED")
+
+            # Verify unit status restored to AVAILABLE
+            u_status = await self.conn.fetchval("SELECT status FROM units WHERE unit_id = $1", unit_id)
+            self.assertEqual(u_status, "AVAILABLE")
+
+        finally:
+            await tr.rollback()
 
 
 if __name__ == "__main__":

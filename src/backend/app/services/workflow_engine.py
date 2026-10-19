@@ -2521,8 +2521,82 @@ class WorkflowEngine:
                 notes=f"تم إغلاق الصفقة بنجاح وتسليم الوحدة {c['unit_number']} للمشتري بموجب العقد {c['contract_number']}.",
                 completed_at=now_dt
             )
+        elif norm_action in ("CANCEL", "CANCEL_CONTRACT", "VOID"):
+            # 1. Update contract status to CANCELLED
+            await conn.execute(
+                "UPDATE contracts SET status = 'CANCELLED' WHERE contract_id = $1",
+                contract_id
+            )
+
+            # 2. Automatically void / cancel unpaid payments linked to this contract
+            await conn.execute(
+                "UPDATE payments SET status = 'CANCELLED' WHERE contract_id = $1 AND status != 'PAID'",
+                contract_id
+            )
+
+            # 3. Automatically void / cancel pending or approved commissions linked to this contract
+            await conn.execute(
+                "UPDATE commissions SET status = 'CANCELLED' WHERE contract_id = $1 AND status != 'PAID'",
+                contract_id
+            )
+
+            # 4. Cancel any open operational tasks associated with this contract / opportunity
+            if c["opportunity_id"]:
+                await conn.execute(
+                    """
+                    UPDATE tasks 
+                    SET status = 'CANCELLED', completed_at = $1 
+                    WHERE opportunity_id = $2 
+                      AND template_id IN ('TASK_CONTRACT_INTERNAL_REVIEW', 'TASK_CONTRACT_SIGNATURE', 'TASK_CONTRACT_RECONCILIATION', 'TASK_CONTRACT_HANDOVER')
+                      AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+                    """,
+                    now_dt, c["opportunity_id"]
+                )
+
+            # 5. Check if unit status should be released back to AVAILABLE or RESERVED
+            if c["unit_id"]:
+                active_res = await conn.fetchrow(
+                    """
+                    SELECT reservation_id FROM reservations 
+                    WHERE unit_id = $1 AND status = 'ACTIVE' AND reservation_id != COALESCE($2, '')
+                    LIMIT 1
+                    """,
+                    c["unit_id"], c["reservation_id"]
+                )
+                new_unit_status = "RESERVED" if active_res else "AVAILABLE"
+                curr_status = await conn.fetchval("SELECT status FROM units WHERE unit_id = $1", c["unit_id"])
+                if curr_status != new_unit_status:
+                    await conn.execute(
+                        "UPDATE units SET status = $1, updated_at = NOW() WHERE unit_id = $2",
+                        new_unit_status, c["unit_id"]
+                    )
+                    hist_id = await get_next_id(conn, "unit_status_history", "ush")
+                    await conn.execute(
+                        """
+                        INSERT INTO unit_status_history (
+                            unit_status_history_id, unit_id, old_status, new_status,
+                            changed_by_user_id, changed_at, reason
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                        """,
+                        hist_id, c["unit_id"], curr_status, new_unit_status, user_id, now_dt,
+                        f"إلغاء العقد رقم {c['contract_number']} وتحديث حالة الوحدة إلى {new_unit_status}"
+                    )
+
+            cancel_notes = payload.get("notes") or f"تم إلغاء العقد رقم {c['contract_number']} وإلغاء كافة الدفعات والعمولات والمهام التشغيلية المعلقة المرتبطة به."
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_CONTRACT_CLOSED",
+                user_id=agent_id,
+                customer_id=c["customer_id"],
+                lead_id=c["lead_id"],
+                opportunity_id=c["opportunity_id"],
+                task_id=parent_task_id,
+                outcome="CANCELLED",
+                notes=cancel_notes,
+                completed_at=now_dt
+            )
         else:
-            raise ValueError(f"Unknown contract action '{action}'. Expected APPROVE_DRAFT, RECORD_SIGNATURE, or COMPLETE_HANDOVER.")
+            raise ValueError(f"Unknown contract action '{action}'. Expected APPROVE_DRAFT, RECORD_SIGNATURE, COMPLETE_HANDOVER, or CANCEL.")
 
         if parent_task_id:
             await conn.execute(

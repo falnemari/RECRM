@@ -14,6 +14,10 @@ class PaymentOut(BaseModel):
     paid_at: Optional[datetime] = None
     method: Optional[str] = None
     status: str
+    contract_number: Optional[str] = None
+    contract_status: Optional[str] = None
+    customer_name: Optional[str] = None
+    unit_number: Optional[str] = None
 
 class PaymentCreate(BaseModel):
     due_date: Optional[date] = None
@@ -36,6 +40,10 @@ class CommissionOut(BaseModel):
     status: str
     approved_at: Optional[datetime] = None
     paid_at: Optional[datetime] = None
+    contract_number: Optional[str] = None
+    contract_status: Optional[str] = None
+    customer_name: Optional[str] = None
+    unit_number: Optional[str] = None
 
 class CommissionCreate(BaseModel):
     user_id: str
