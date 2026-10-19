@@ -1591,7 +1591,11 @@
                     contentEl.innerHTML = `<div style="color:#64748b;">${isAr ? 'لا توجد خطوات مخصصة مسجلة.' : 'No custom steps registered.'}</div>`;
                     return;
                 }
-                const steps = (isAr ? g.execution_steps_ar : g.execution_steps_en) || [];
+                let steps = isAr ? g.execution_steps_ar : g.execution_steps_en;
+                while (typeof steps === 'string') {
+                    try { steps = JSON.parse(steps); } catch (e) { break; }
+                }
+                if (!Array.isArray(steps)) steps = [];
                 currentSopSampleNotes = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
 
                 let stepsHtml = '';
@@ -1662,7 +1666,11 @@
             try {
                 const res = await apiRequest(`/api/v1/sop-guide/${encodeURIComponent(code)}`);
                 const g = res.data;
-                const steps = (isAr ? g.execution_steps_ar : g.execution_steps_en) || [];
+                let steps = isAr ? g.execution_steps_ar : g.execution_steps_en;
+                while (typeof steps === 'string') {
+                    try { steps = JSON.parse(steps); } catch (e) { break; }
+                }
+                if (!Array.isArray(steps)) steps = [];
                 const sample = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
 
                 let stepsHtml = '';

@@ -11,6 +11,7 @@ Also handles customer deduplication and first-contact SLA enforcement.
 """
 
 import re
+import json
 import hashlib
 import random
 import logging
@@ -5032,11 +5033,13 @@ class WorkflowEngine:
                 active_guidance["required_now_ar"] = f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة"
                 active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
             for f in ("execution_steps_ar", "execution_steps_en"):
-                if isinstance(active_guidance.get(f), str):
+                val = active_guidance.get(f)
+                while isinstance(val, str):
                     try:
-                        active_guidance[f] = json.loads(active_guidance[f])
+                        val = json.loads(val)
                     except Exception:
-                        pass
+                        break
+                active_guidance[f] = val if isinstance(val, list) else []
         else:
             active_guidance = {}
 
@@ -5056,11 +5059,13 @@ class WorkflowEngine:
             sp_dict["current_responsible_ar"] = sp_role_ar
             sp_dict["current_responsible_en"] = sp_role_en
             for f in ("execution_steps_ar", "execution_steps_en"):
-                if isinstance(sp_dict.get(f), str):
+                val = sp_dict.get(f)
+                while isinstance(val, str):
                     try:
-                        sp_dict[f] = json.loads(sp_dict[f])
+                        val = json.loads(val)
                     except Exception:
-                        pass
+                        break
+                sp_dict[f] = val if isinstance(val, list) else []
             stage_procedures.append(sp_dict)
 
         return {
