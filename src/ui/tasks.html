@@ -891,6 +891,19 @@
                     <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 4px;" id="comp-task-context">Lead / Customer Info</div>
                 </div>
 
+                <!-- Interactive SOP Step-by-Step Help Guide -->
+                <div id="comp-sop-help-container" style="margin-bottom: 16px;">
+                    <details id="comp-sop-help-details" style="background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 10px 14px; font-size: 0.86em;" open>
+                        <summary style="font-weight: 700; color: #0369a1; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                            <span>💡 <span id="comp-sop-guide-title">دليل خطوات تنفيذ المهمة خطوة بخطوة</span></span>
+                            <span style="font-size: 0.8em; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 10px; font-weight: 600;">SOP Help</span>
+                        </summary>
+                        <div id="comp-sop-steps-content" style="margin-top: 10px;">
+                            <!-- Injected by completeTask via /api/v1/sop-guide -->
+                        </div>
+                    </details>
+                </div>
+
                 <!-- Outcome Selector Section -->
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label data-i18n="lbl_comp_outcome" style="font-weight: 600; display: block; margin-bottom: 8px;">Task Outcome *</label>
@@ -994,6 +1007,24 @@
                     <button type="submit" class="btn btn-success" id="comp-submit-btn" data-i18n="btn_confirm_outcome">Confirm & Save Outcome</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Standalone SOP Execution Guide Modal -->
+    <div id="modal-sop-help" class="modal-overlay">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header" style="background: #0f172a; color: white;">
+                <h3 id="sop-help-modal-title" style="color: white; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                    <span>💡</span> <span>دليل إجراءات سير العمل وتنفيذ المهمة</span>
+                </h3>
+                <button class="close-btn" style="color: white;" onclick="closeModal('modal-sop-help')">&times;</button>
+            </div>
+            <div id="sop-help-modal-body" style="padding: 18px; max-height: 75vh; overflow-y: auto;">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="modal-footer" style="padding: 12px 18px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-primary" onclick="closeModal('modal-sop-help')">إغلاق الدليل</button>
+            </div>
         </div>
     </div>
 
@@ -1494,6 +1525,7 @@
                         </td>
                         <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : t.status))) : t.status}</span></td>
                         <td>
+                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                             ${isActionable ? `
                                 <button class="btn btn-success btn-sm" onclick="completeTask('${t.task_id}', '${t.template_id || ''}')" style="font-size: 0.82em; padding: 5px 10px;">
                                     ${isAr ? '✓ إنجاز وتسجيل النتيجة' : '✓ Complete Task'}
@@ -1506,6 +1538,10 @@
                                     </button>
                                 </div>
                             `}
+                                <button type="button" class="btn btn-outline btn-sm" onclick="openSopHelpModal('${t.template_id || t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="font-size: 0.82em; padding: 5px 8px;" title="${isAr ? 'دليل خطوات تنفيذ المهمة' : 'SOP Steps Guide'}">
+                                    💡 ${isAr ? 'مساعدة' : 'Help'}
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1542,6 +1578,158 @@
             }
         }
 
+        let currentSopSampleNotes = '';
+        async function loadTaskSopGuide(templateId, taskId) {
+            const contentEl = document.getElementById('comp-sop-steps-content');
+            if (!contentEl) return;
+            const isAr = currentLang === 'ar';
+            contentEl.innerHTML = `<div style="text-align:center; padding:10px; color:#64748b;">${isAr ? 'جاري تحميل خطوات التنفيذ المعتمدة...' : 'Loading SOP execution steps...'}</div>`;
+            try {
+                const res = await apiRequest(`/api/v1/sop-guide/${encodeURIComponent(templateId || taskId)}`);
+                const g = res.data;
+                if (!g) {
+                    contentEl.innerHTML = `<div style="color:#64748b;">${isAr ? 'لا توجد خطوات مخصصة مسجلة.' : 'No custom steps registered.'}</div>`;
+                    return;
+                }
+                const steps = (isAr ? g.execution_steps_ar : g.execution_steps_en) || [];
+                currentSopSampleNotes = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
+
+                let stepsHtml = '';
+                if (steps && steps.length > 0) {
+                    stepsHtml = `
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                            ${steps.map(s => `
+                                <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
+                                    <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">
+                                        ${s.step_no}
+                                    </span>
+                                    <div style="flex:1;">
+                                        <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${s.title}</div>
+                                        <div style="font-size:0.82em; color:#475569; margin-top:2px; line-height:1.4;">${s.description}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                contentEl.innerHTML = `
+                    <div style="line-height:1.5;">
+                        <div style="font-size:0.82em; color:#0369a1; margin-bottom:8px;">
+                            🎯 <strong>${isAr ? 'الهدف: ' : 'Goal: '}</strong> ${isAr ? g.step_goal_ar : g.step_goal_en}
+                        </div>
+                        ${stepsHtml}
+                        ${currentSopSampleNotes ? `
+                            <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:8px 10px; margin-bottom:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:4px;">
+                                    <span style="font-size:0.8em; font-weight:700; color:#854d0e;">📝 ${isAr ? 'نموذج الملاحظات المقترح:' : 'Suggested Notes Template:'}</span>
+                                    <button type="button" onclick="applySampleNotes()" style="background:#fef08a; color:#713f12; border:1px solid #fde047; border-radius:4px; padding:2px 8px; font-size:0.75em; font-weight:700; cursor:pointer;">
+                                        📋 ${isAr ? 'استخدام هذا النموذج' : 'Use Template'}
+                                    </button>
+                                </div>
+                                <div style="font-size:0.82em; color:#713f12; font-family:sans-serif;">${currentSopSampleNotes}</div>
+                            </div>
+                        ` : ''}
+                        <div style="font-size:0.78em; color:#64748b;">
+                            🚀 <strong>${isAr ? 'النتيجة بعد الحفظ: ' : 'Upon Save: '}</strong> ${isAr ? g.consequence_ar : g.consequence_en}
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                contentEl.innerHTML = `<div style="font-size:0.82em; color:#94a3b8;">${isAr ? 'تعذر جلب خطوات الدليل الإجرائي.' : 'Could not fetch guide.'}</div>`;
+            }
+        }
+
+        function applySampleNotes() {
+            if (currentSopSampleNotes) {
+                const notesInput = document.getElementById('comp-notes');
+                if (notesInput) {
+                    notesInput.value = currentSopSampleNotes;
+                    notesInput.focus();
+                }
+            }
+        }
+
+        async function openSopHelpModal(code, title) {
+            const isAr = currentLang === 'ar';
+            const modal = document.getElementById('modal-sop-help');
+            const titleEl = document.getElementById('sop-help-modal-title');
+            const bodyEl = document.getElementById('sop-help-modal-body');
+            if (!modal || !bodyEl) return;
+            titleEl.textContent = `💡 ${isAr ? 'دليل تنفيذ المهمة: ' : 'Task Execution Guide: '} ${title || code}`;
+            bodyEl.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;">${isAr ? 'جاري تحميل الدليل...' : 'Loading guide...'}</div>`;
+            openModal('modal-sop-help');
+            try {
+                const res = await apiRequest(`/api/v1/sop-guide/${encodeURIComponent(code)}`);
+                const g = res.data;
+                const steps = (isAr ? g.execution_steps_ar : g.execution_steps_en) || [];
+                const sample = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
+
+                let stepsHtml = '';
+                if (steps && steps.length > 0) {
+                    stepsHtml = `
+                        <div style="margin-top:14px;">
+                            <div style="font-weight:800; color:#0f172a; margin-bottom:10px; font-size:0.95em;">
+                                🔢 ${isAr ? 'الخطوات التنفيذية خطوة بخطوة:' : 'Step-by-Step Execution Roadmap:'}
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                ${steps.map(s => `
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:flex-start;">
+                                        <span style="background:#0284c7; color:white; border-radius:50%; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85em; flex-shrink:0;">
+                                            ${s.step_no}
+                                        </span>
+                                        <div style="flex:1;">
+                                            <div style="font-weight:700; color:#0f172a; font-size:0.95em;">${s.title}</div>
+                                            <div style="font-size:0.88em; color:#475569; margin-top:4px; line-height:1.5;">${s.description}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                bodyEl.innerHTML = `
+                    <div style="line-height:1.6;">
+                        <div style="background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px;">
+                            <div style="font-weight:800; color:#0369a1; font-size:1em;">
+                                ${isAr ? g.stage_name_ar : g.stage_name_en}
+                            </div>
+                            <div style="font-size:0.85em; color:#0284c7; margin-top:4px;">
+                                👤 <strong>${isAr ? 'المسؤول المعتمد: ' : 'Responsible Role: '}</strong> ${isAr ? (g.current_responsible_ar || '--') : (g.current_responsible_en || '--')}
+                            </div>
+                        </div>
+
+                        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#166534; font-size:0.88em; margin-bottom:4px;">🎯 ${isAr ? 'الهدف من الإجراء:' : 'Objective:'}</div>
+                            <div style="font-size:0.88em; color:#14532d;">${isAr ? g.step_goal_ar : g.step_goal_en}</div>
+                        </div>
+
+                        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#92400e; font-size:0.88em; margin-bottom:4px;">⚖️ ${isAr ? 'الشروط الإلزامية والقواعد النظامية:' : 'Mandatory Rules:'}</div>
+                            <div style="font-size:0.88em; color:#78350f;">${isAr ? g.mandatory_conditions_ar : g.mandatory_conditions_en}</div>
+                        </div>
+
+                        ${stepsHtml}
+
+                        ${sample ? `
+                            <div style="background:#fefce8; border:1.5px solid #fde047; border-radius:8px; padding:12px; margin-top:14px;">
+                                <div style="font-weight:800; color:#713f12; font-size:0.88em; margin-bottom:6px;">📝 ${isAr ? 'نموذج إدخال الملاحظات والتوثيق المقترح:' : 'Suggested Notes Sample:'}</div>
+                                <div style="background:white; border:1px solid #fef08a; border-radius:6px; padding:10px; font-size:0.88em; color:#451a03; font-family:monospace; line-height:1.5;">${sample}</div>
+                            </div>
+                        ` : ''}
+
+                        <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:12px; margin-top:14px;">
+                            <div style="font-weight:700; color:#334155; font-size:0.88em; margin-bottom:4px;">🚀 ${isAr ? 'ماذا سيحدث بعد التأكيد؟:' : 'System Consequences:'}</div>
+                            <div style="font-size:0.88em; color:#475569;">${isAr ? g.consequence_ar : g.consequence_en}</div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                bodyEl.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444;">${isAr ? 'فشل تحميل دليل الخطوات.' : 'Failed to load guide.'}</div>`;
+            }
+        }
+
         async function completeTask(taskId, templateId) {
             await ensureReferenceCatalogsLoaded();
             const t = tasksData.find(x => x.task_id === taskId);
@@ -1556,6 +1744,9 @@
             if (t && t.opportunity_id) contextParts.push(`${isAr ? 'فرصة رقم: ' : 'Opp #: '}${t.opportunity_id}`);
             if (t && t.assigned_user_name) contextParts.push(`${isAr ? 'المسؤول: ' : 'Assigned: '}${t.assigned_user_name}`);
             document.getElementById('comp-task-context').textContent = contextParts.join(' | ') || (isAr ? 'سجل المهمة التشغيلي' : 'Operational Task Context');
+
+            // Load SOP Step-by-Step execution guide dynamically
+            loadTaskSopGuide(templateId, taskId);
 
             document.getElementById('comp-notes').value = '';
             document.getElementById('comp-budget-min').value = '';

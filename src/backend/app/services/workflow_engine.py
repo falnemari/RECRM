@@ -5031,6 +5031,12 @@ class WorkflowEngine:
                 active_guidance["stage_name_en"] = f"Unit Reservation & Deposit (Ref: {res_no})"
                 active_guidance["required_now_ar"] = f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة"
                 active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
+            for f in ("execution_steps_ar", "execution_steps_en"):
+                if isinstance(active_guidance.get(f), str):
+                    try:
+                        active_guidance[f] = json.loads(active_guidance[f])
+                    except Exception:
+                        pass
         else:
             active_guidance = {}
 
@@ -5049,6 +5055,12 @@ class WorkflowEngine:
             sp_role_en = sp_dict.get("role_name_en") or ""
             sp_dict["current_responsible_ar"] = sp_role_ar
             sp_dict["current_responsible_en"] = sp_role_en
+            for f in ("execution_steps_ar", "execution_steps_en"):
+                if isinstance(sp_dict.get(f), str):
+                    try:
+                        sp_dict[f] = json.loads(sp_dict[f])
+                    except Exception:
+                        pass
             stage_procedures.append(sp_dict)
 
         return {

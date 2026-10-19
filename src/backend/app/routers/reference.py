@@ -144,6 +144,8 @@ async def list_sop_catalog(
             g.step_goal_ar, g.step_goal_en,
             g.mandatory_conditions_ar, g.mandatory_conditions_en,
             g.consequence_ar, g.consequence_en,
+            g.execution_steps_ar, g.execution_steps_en,
+            g.sample_notes_ar, g.sample_notes_en,
             g.display_order, g.is_active
         FROM workflow_sop_guidance g
         LEFT JOIN roles r ON g.responsible_role_code = r.role_code
@@ -151,11 +153,84 @@ async def list_sop_catalog(
         ORDER BY g.display_order ASC
     """
     rows = await conn.fetch(query, *params)
-    data = [dict(row) for row in rows]
+    import json
+    data = []
+    for row in rows:
+        item = dict(row)
+        for f in ("execution_steps_ar", "execution_steps_en"):
+            if isinstance(item.get(f), str):
+                try:
+                    item[f] = json.loads(item[f])
+                except Exception:
+                    pass
+        data.append(item)
+
     return CollectionEnvelope(
         data=data,
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
     )
+
+@router.get("/sop-guide/{code}", response_model=ResponseEnvelope[Dict[str, Any]])
+async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
+    """
+    Fetch exact step-by-step SOP execution guide and sample notes for a task template or procedure code.
+    """
+    import json
+    row = await conn.fetchrow("""
+        SELECT 
+            g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
+            g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
+            g.required_now_ar, g.required_now_en,
+            r.name_ar AS current_responsible_ar,
+            r.name_en AS current_responsible_en,
+            g.next_action_ar, g.next_action_en,
+            g.step_goal_ar, g.step_goal_en,
+            g.mandatory_conditions_ar, g.mandatory_conditions_en,
+            g.consequence_ar, g.consequence_en,
+            g.execution_steps_ar, g.execution_steps_en,
+            g.sample_notes_ar, g.sample_notes_en,
+            g.display_order, g.is_active
+        FROM workflow_sop_guidance g
+        LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        WHERE (g.template_id = $1 OR g.procedure_code = $1 OR g.guidance_id = $1)
+          AND g.is_active = TRUE
+        ORDER BY g.display_order ASC LIMIT 1
+    """, code)
+
+    if not row:
+        row = await conn.fetchrow("""
+            SELECT 
+                g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
+                g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
+                g.required_now_ar, g.required_now_en,
+                r.name_ar AS current_responsible_ar,
+                r.name_en AS current_responsible_en,
+                g.next_action_ar, g.next_action_en,
+                g.step_goal_ar, g.step_goal_en,
+                g.mandatory_conditions_ar, g.mandatory_conditions_en,
+                g.consequence_ar, g.consequence_en,
+                g.execution_steps_ar, g.execution_steps_en,
+                g.sample_notes_ar, g.sample_notes_en,
+                g.display_order, g.is_active
+            FROM workflow_sop_guidance g
+            LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+            WHERE g.stage_code = $1 AND g.is_active = TRUE
+            ORDER BY g.display_order ASC LIMIT 1
+        """, code.upper())
+
+    if not row:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"SOP Guide not found for '{code}'")
+
+    item = dict(row)
+    for f in ("execution_steps_ar", "execution_steps_en"):
+        if isinstance(item.get(f), str):
+            try:
+                item[f] = json.loads(item[f])
+            except Exception:
+                pass
+
+    return ResponseEnvelope(data=item, meta=BaseMeta())
 
 
 
