@@ -139,6 +139,26 @@ class TestRBACAndScoping(unittest.TestCase):
         self.assertEqual(data["accepted_offer_amount"], 1000000.0)
         self.assertEqual(data["deposit_amount"], 50000.0)
 
+    def test_contract_legal_review_sop_guide_and_task_id_resolution(self):
+        # 1. Fetch by template_id
+        res = self.client.get("/api/v1/sop-guide/TASK_CONTRACT_INTERNAL_REVIEW")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
+        self.assertEqual(data["procedure_code"], "TASK_CONTRACT_INTERNAL_REVIEW")
+        self.assertEqual(data["responsible_role_code"], "LEGAL")
+        self.assertGreaterEqual(len(data["execution_steps_ar"]), 4)
+        self.assertGreaterEqual(len(data["execution_steps_en"]), 4)
+
+        # 2. Fetch by live task_id (task-5481)
+        res_task = self.client.get("/api/v1/sop-guide/task-5481")
+        self.assertEqual(res_task.status_code, 200)
+        self.assertEqual(res_task.json()["data"]["procedure_code"], "TASK_CONTRACT_INTERNAL_REVIEW")
+
+        # 3. Verify other contract stage tasks also resolve
+        for code in ["TASK_CONTRACT_SIGNATURE", "TASK_CONTRACT_RECONCILIATION", "TASK_CONTRACT_HANDOVER"]:
+            c_res = self.client.get(f"/api/v1/sop-guide/{code}")
+            self.assertEqual(c_res.status_code, 200)
+
 if __name__ == "__main__":
     unittest.main()
 

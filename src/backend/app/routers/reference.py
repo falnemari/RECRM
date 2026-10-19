@@ -174,8 +174,37 @@ async def list_sop_catalog(
 async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
     """
     Fetch exact step-by-step SOP execution guide and sample notes for a task template or procedure code.
+    Supports template_id, procedure_code, guidance_id, task_id (task-XXX), activity_id (act-XXX), or task titles.
     """
     import json
+    search_code = code.strip()
+
+    # 1. Resolve task-ID or act-ID to underlying template_id
+    if search_code.startswith("task-"):
+        t_row = await conn.fetchrow("SELECT template_id, title FROM tasks WHERE task_id = $1", search_code)
+        if t_row:
+            if t_row.get("template_id"):
+                search_code = t_row["template_id"]
+            elif t_row.get("title"):
+                tmpl_from_title = await conn.fetchval(
+                    "SELECT template_id FROM workflow_templates WHERE standard_title_ar = $1 OR standard_title_en = $1",
+                    t_row["title"]
+                )
+                if tmpl_from_title:
+                    search_code = tmpl_from_title
+    elif search_code.startswith("act-"):
+        a_row = await conn.fetchrow("SELECT template_id, subject FROM activities WHERE activity_id = $1", search_code)
+        if a_row and a_row.get("template_id"):
+            search_code = a_row["template_id"]
+
+    # 2. If search_code matches standard title in workflow_templates
+    tmpl_match = await conn.fetchval(
+        "SELECT template_id FROM workflow_templates WHERE standard_title_ar = $1 OR standard_title_en = $1",
+        search_code
+    )
+    if tmpl_match:
+        search_code = tmpl_match
+
     row = await conn.fetchrow("""
         SELECT 
             g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
@@ -195,7 +224,7 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
         WHERE (g.template_id = $1 OR g.procedure_code = $1 OR g.guidance_id = $1)
           AND g.is_active = TRUE
         ORDER BY g.display_order ASC LIMIT 1
-    """, code)
+    """, search_code)
 
     if not row:
         row = await conn.fetchrow("""
