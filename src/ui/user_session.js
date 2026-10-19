@@ -13,50 +13,51 @@
         'customers.html': {
             nameAr: 'العملاء 360',
             nameEn: 'Customers 360',
-            permissions: ['CUSTOMER_READ', 'CUSTOMER_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'VIEWER', 'AUDITOR']
+            permissions: ['CUSTOMER_READ', 'CUSTOMER_WRITE', 'PAYMENT_READ', 'ADMIN'],
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'ACCOUNTANT', 'DOCUMENT_CONTROL', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
         'leads.html': {
             nameAr: 'الطلبات والعملاء المحتملون',
             nameEn: 'Leads & Inquiries',
             permissions: ['LEAD_READ', 'LEAD_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'MARKETING', 'VIEWER', 'AUDITOR']
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'MARKETING', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
         'properties.html': {
             nameAr: 'العقارات والمخزون',
             nameEn: 'Properties & Inventory',
             permissions: ['PROPERTY_READ', 'PROPERTY_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'VIEWER', 'AUDITOR']
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'DOCUMENT_CONTROL', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
         'sales.html': {
             nameAr: 'مسار المبيعات والصفقات',
             nameEn: 'Sales Pipeline',
             permissions: ['SALES_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT']
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'BRANCH_MANAGER', 'GENERAL_MANAGER']
         },
         'finance.html': {
             nameAr: 'المالية والعقود',
             nameEn: 'Finance & Contracts',
             permissions: ['PAYMENT_READ', 'PAYMENT_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'ACCOUNTANT', 'AUDITOR']
+            roles: ['SYS_ADMIN', 'ACCOUNTANT', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'AUDITOR']
         },
         'management.html': {
             nameAr: 'إدارة الأملاك والتأجير',
             nameEn: 'Property Management',
             permissions: ['PM_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER']
+            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER', 'BRANCH_MANAGER', 'GENERAL_MANAGER']
         },
         'tasks.html': {
             nameAr: 'المهام والمتابعات',
             nameEn: 'Tasks & Activities',
-            permissions: ['SALES_WRITE', 'LEAD_READ', 'CUSTOMER_READ', 'PM_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'MARKETING', 'AUDITOR', 'VIEWER']
+            publicAuth: true,
+            permissions: ['SALES_WRITE', 'LEAD_READ', 'CUSTOMER_READ', 'PM_WRITE', 'PAYMENT_READ', 'PAYMENT_WRITE', 'DOCUMENT_READ', 'DOCUMENT_WRITE', 'REPORT_READ', 'ADMIN'],
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'DOCUMENT_CONTROL', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'SALES_DIRECTOR', 'MARKETING', 'AUDITOR', 'VIEWER', 'INVESTMENT_ADVISOR']
         },
         'documents.html': {
             nameAr: 'المستندات والوثائق',
             nameEn: 'Documents & Files',
-            permissions: ['DOCUMENT_READ', 'DOCUMENT_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'DOCUMENT_CONTROL', 'PROPERTY_MANAGER', 'AUDITOR']
+            permissions: ['DOCUMENT_READ', 'DOCUMENT_WRITE', 'PAYMENT_READ', 'ADMIN'],
+            roles: ['SYS_ADMIN', 'DOCUMENT_CONTROL', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'AUDITOR']
         },
         'campaigns.html': {
             nameAr: 'الحملات والتسويق',
@@ -878,6 +879,9 @@
     window.getCurrentUserProfile = function() {
         return currentUserProfile;
     };
+
+    window.canUserAccessPage = canUserAccessPage;
+    window.PAGE_ACCESS_MAP = PAGE_ACCESS_MAP;
 
     // Auto-init on load
     if (document.readyState === 'loading') {
