@@ -1172,6 +1172,9 @@
             populateFilters();
             renderPulseFeed();
             if (dashboardState.managerialData) renderManagerialKPIs(dashboardState.managerialData);
+            if (typeof currentLeadHistoryId !== 'undefined' && currentLeadHistoryId) {
+                loadLeadHistory(currentLeadHistoryId);
+            }
         }
 
         function toggleLanguage() {
@@ -1202,6 +1205,48 @@
             const host = window.location.hostname || 'localhost';
             return `${window.location.protocol}//${host}:8000`;
         })();
+
+        async function apiRequest(endpoint, options = {}) {
+            if (window.RECRM && window.RECRM.api && typeof window.RECRM.api.request === 'function') {
+                return window.RECRM.api.request(endpoint, options);
+            }
+            const base = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+            const url = endpoint.startsWith('http') ? endpoint : `${base}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+            options.headers = options.headers || {};
+            if (!(options.headers instanceof Headers)) {
+                options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+                const activeUser = localStorage.getItem('recrm_user_id') || 'user-51';
+                options.headers['X-User-ID'] = options.headers['X-User-ID'] || activeUser;
+            }
+            try {
+                const response = await fetch(url, options);
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+                const data = isJson ? await response.json() : await response.text();
+
+                if (!response.ok) {
+                    let errorMessage = `Request failed with status ${response.status}`;
+                    if (isJson && data) {
+                        if (data.error && data.error.message) {
+                            errorMessage = data.error.message;
+                        } else if (data.detail) {
+                            errorMessage = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        }
+                    }
+                    const err = new Error(errorMessage);
+                    err.status = response.status;
+                    err.data = data;
+                    throw err;
+                }
+                return data;
+            } catch (err) {
+                console.error(`API Error [${options.method || 'GET'} ${url}]:`, err);
+                throw err;
+            }
+        }
+        window.apiRequest = apiRequest;
 
         // ================= MULTI-TIER FUNNEL & DRILLDOWN STATE =================
         const dashboardState = {
@@ -1964,13 +2009,17 @@
                 renderLeadHistoryAddress(d, isAr);
 
                 // 2. Update Tab Badges
-                document.getElementById('badge-lh-timeline').textContent = (d.timeline || []).length;
-                document.getElementById('badge-lh-tasks').textContent = (d.tasks || []).length;
-                document.getElementById('badge-lh-activities').textContent = (d.activities || []).length;
-                document.getElementById('badge-lh-comms').textContent = (d.communications || []).length;
-                document.getElementById('badge-lh-viewings').textContent = (d.viewings || []).length;
-                document.getElementById('badge-lh-offers').textContent = (d.offers || []).length;
-                document.getElementById('badge-lh-contracts').textContent = ((d.reservations || []).length + (d.contracts || []).length);
+                const setBadge = (id, count) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = count;
+                };
+                setBadge('badge-lh-timeline', (d.timeline || []).length);
+                setBadge('badge-lh-tasks', (d.tasks || []).length);
+                setBadge('badge-lh-activities', (d.activities || []).length);
+                setBadge('badge-lh-comms', (d.communications || []).length);
+                setBadge('badge-lh-viewings', (d.viewings || []).length);
+                setBadge('badge-lh-offers', (d.offers || []).length);
+                setBadge('badge-lh-contracts', ((d.reservations || []).length + (d.contracts || []).length));
 
                 // 3. Render Each Tab Panel Table
                 renderLHTimeline(d.timeline || [], isAr);
@@ -2530,8 +2579,10 @@
         }
 
         async function loadDashboardData() {
-            await fetchFunnelData();
-            await initLeadHistory();
+            await Promise.allSettled([
+                fetchFunnelData(),
+                initLeadHistory()
+            ]);
         }
 
         document.addEventListener('DOMContentLoaded', () => {

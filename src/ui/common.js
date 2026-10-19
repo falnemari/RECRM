@@ -264,6 +264,7 @@
     }
 
     const api = {
+        request: apiRequest,
         get: (endpoint, options = {}) => apiRequest(endpoint, { ...options, method: 'GET' }),
         post: (endpoint, body, options = {}) => apiRequest(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
         patch: (endpoint, body, options = {}) => apiRequest(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
@@ -469,7 +470,19 @@
     // -------------------------------------------------------------------------
     // 8. Situation & Operational Journey Modal
     // -------------------------------------------------------------------------
-    async function openSituationModal({ leadId, oppId }) {
+    async function openSituationModal(arg1, arg2) {
+        let leadId = null;
+        let oppId = null;
+        if (arg1 && typeof arg1 === 'object') {
+            leadId = arg1.leadId || arg1.lead_id || null;
+            oppId = arg1.oppId || arg1.opp_id || arg1.opportunity_id || null;
+        } else {
+            leadId = arg1 || null;
+            oppId = arg2 || null;
+        }
+        if (typeof leadId === 'string' && !leadId.trim()) leadId = null;
+        if (typeof oppId === 'string' && !oppId.trim()) oppId = null;
+
         if (!leadId && !oppId) {
             console.error('openSituationModal requires leadId or oppId');
             return;
@@ -1185,9 +1198,9 @@
                 });
                 body.querySelectorAll('.recrm-row-sit-btn').forEach(btn => {
                     btn.onclick = () => {
-                        const lid = btn.getAttribute('data-lead');
-                        const oid = btn.getAttribute('data-opp');
-                        openSituationModal(lid, oid);
+                        const lid = btn.getAttribute('data-lead') || null;
+                        const oid = btn.getAttribute('data-opp') || null;
+                        openSituationModal({ leadId: lid, oppId: oid });
                     };
                 });
 
@@ -1228,6 +1241,7 @@
     // -------------------------------------------------------------------------
     const RECRM = {
         api,
+        apiRequest,
         ui: {
             toast: showToast,
             confirm: confirmDialog,
@@ -1243,6 +1257,7 @@
     window.RECRM = RECRM;
 
     // Backward compatibility globals
+    window.apiRequest = apiRequest;
     window.showToast = showToast;
     window.copyId = utils.copyToClipboard;
     window.formatCurrency = format.currency;
