@@ -2853,7 +2853,40 @@ class WorkflowEngine:
             if not unit_id:
                 unit_id = await conn.fetchval("SELECT unit_id FROM units WHERE status = 'AVAILABLE' LIMIT 1") or "unit-2"
 
-            offer_amt = float(v_data.get("offer_amount") or 500000.0)
+            offer_amt = None
+            if v_data.get("offer_amount"):
+                try:
+                    offer_amt = float(v_data["offer_amount"])
+                except (ValueError, TypeError):
+                    offer_amt = None
+
+            if (not offer_amt or offer_amt <= 0) and task["opportunity_id"]:
+                opp_row = await conn.fetchrow(
+                    "SELECT expected_value, deal_value FROM opportunities WHERE opportunity_id = $1",
+                    task["opportunity_id"]
+                )
+                if opp_row:
+                    offer_amt = float(opp_row["expected_value"] or opp_row["deal_value"] or 0)
+
+            if (not offer_amt or offer_amt <= 0) and unit_id:
+                u_row = await conn.fetchrow(
+                    "SELECT asking_price, rent_price FROM units WHERE unit_id = $1",
+                    unit_id
+                )
+                if u_row:
+                    offer_amt = float(u_row["asking_price"] or u_row["rent_price"] or 0)
+
+            if (not offer_amt or offer_amt <= 0) and task["lead_id"]:
+                l_row = await conn.fetchrow(
+                    "SELECT budget_max, budget_min FROM leads WHERE lead_id = $1",
+                    task["lead_id"]
+                )
+                if l_row:
+                    offer_amt = float(l_row["budget_max"] or l_row["budget_min"] or 0)
+
+            if not offer_amt or offer_amt <= 0:
+                offer_amt = 500000.0
+
             res = await WorkflowEngine.submit_commercial_offer(
                 conn=conn,
                 opportunity_id=task["opportunity_id"],

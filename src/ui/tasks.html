@@ -1560,6 +1560,8 @@
             document.getElementById('comp-notes').value = '';
             document.getElementById('comp-budget-min').value = '';
             document.getElementById('comp-budget-max').value = '';
+            const offerPriceEl = document.getElementById('comp-offer-price');
+            if (offerPriceEl) offerPriceEl.value = '';
 
             const compNotes = document.getElementById('comp-notes');
             if (compNotes) compNotes.placeholder = isAr ? 'أدخل تفاصيل التجاوب وملاحظات العميل...' : 'Enter customer feedback and attempt details...';
@@ -1754,6 +1756,24 @@
                     </label>
                 `;
                 if (viewingReportFields) viewingReportFields.style.display = 'block';
+            } else if (templateId === 'TASK_OFFER_SUBMIT' || templateId === 'TASK_OFFER_PREPARE') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="OFFER_SUBMITTED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '💰 تقديم واعتماد العرض المالي للوحدة' : '💰 Submit Commercial Offer'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق مبلغ العرض المالي المقدم للوحدة وتحديث سجل التفاوض' : 'Document offer amount and advance to negotiation / manager review'}</div>
+                        </div>
+                    </label>
+                `;
+                if (viewingReportFields) {
+                    viewingReportFields.style.display = 'block';
+                    const offerInput = document.getElementById('comp-offer-price');
+                    if (offerInput) {
+                        const prefill = t.expected_value || t.deal_value || t.budget_max || t.budget_min || '';
+                        if (prefill) offerInput.value = prefill;
+                    }
+                }
             } else if (templateId === 'TASK_OFFER_MANAGER_APPROVAL') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
@@ -2050,7 +2070,7 @@
                 payload.location_notes = locVal || '';
             }
 
-            if (templateId === 'TASK_VIEWING_REPORT') {
+            if (templateId === 'TASK_VIEWING_REPORT' || templateId === 'TASK_OFFER_SUBMIT' || templateId === 'TASK_OFFER_PREPARE') {
                 const offerVal = document.getElementById('comp-offer-price')?.value;
                 if (offerVal) payload.offer_amount = parseFloat(offerVal);
             }
