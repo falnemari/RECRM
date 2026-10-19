@@ -159,6 +159,16 @@ class TestRBACAndScoping(unittest.TestCase):
             c_res = self.client.get(f"/api/v1/sop-guide/{code}")
             self.assertEqual(c_res.status_code, 200)
 
+    def test_prevent_duplicate_contract_initiation_on_same_reservation(self):
+        # res-180 already has contract CON-000003
+        res = self.client.post(
+            "/api/v1/reservations/res-180/initiate-contract",
+            json={"contract_type": "SALE", "contract_value": 1000000.0},
+            headers={"X-User-ID": "user-51"}
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("detail", res.json())
+
 if __name__ == "__main__":
     unittest.main()
 

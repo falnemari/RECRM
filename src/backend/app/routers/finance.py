@@ -300,6 +300,22 @@ async def convert_reservation_to_contract(
         if res["status"] == "CONVERTED":
             raise HTTPException(status_code=400, detail="Reservation has already been converted to a contract")
 
+        # Guard against duplicate contracts for the same reservation
+        existing_contract = await conn.fetchrow(
+            """
+            SELECT contract_id, contract_number, status 
+            FROM contracts 
+            WHERE reservation_id = $1 AND status NOT IN ('CANCELLED', 'TERMINATED')
+            ORDER BY contract_id DESC LIMIT 1
+            """,
+            reservation_id
+        )
+        if existing_contract:
+            raise HTTPException(
+                status_code=400,
+                detail=f"يوجد عقد مرتبط بهذا الحجز مسبقاً برقم {existing_contract['contract_number']} بحالة ({existing_contract['status']}). لا يمكن إنشاء عقد مكرر لنفس الحجز."
+            )
+
         # 2. Get accepted offer price, opportunity expected_value, or unit asking price
         if payload.contract_value:
             contract_val = payload.contract_value

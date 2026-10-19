@@ -1203,8 +1203,14 @@
                     let stBadge = '';
                     let resActions = `<button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>`;
                     const effPrice = r.agreed_price || r.accepted_offer_amount || r.contract_value || r.asking_price || r.rent_price || 0;
-
-                    if (r.status === 'ACTIVE') {
+                    if (r.contract_id || r.contract_number) {
+                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="viewContractDetail('${r.contract_id}')">📄 ${r.contract_number || (currentLang === 'ar' ? 'عرض العقد' : 'View Contract')}</button>`;
+                        if (r.status === 'CONVERTED') {
+                            stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight:700;">✓ CONVERTED</span>';
+                        } else {
+                            stBadge = `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">${r.status}</span>`;
+                        }
+                    } else if (r.status === 'ACTIVE') {
                         stBadge = '<span class="badge badge-due" style="background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;">ACTIVE</span>';
                         resActions += `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="openVerifyDepositModal('${r.reservation_id}', '${r.reservation_number}', ${r.deposit_amount || 0})">💰 ${currentLang === 'ar' ? 'التحقق من العربون' : 'Verify Deposit'}</button>`;
                         resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
@@ -1213,7 +1219,7 @@
                         resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
                         resActions += `<button class="btn btn-sm" style="background: #f1f5f9; color: #0f172a; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">➔ Convert</button>`;
                     } else if (r.status === 'CONVERTED') {
-                        stBadge = '<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">CONVERTED</span>';
+                        stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight:700;">✓ CONVERTED</span>';
                     } else {
                         stBadge = `<span class="badge badge-due">${r.status}</span>`;
                     }
@@ -1490,7 +1496,7 @@
             // 7. Convert Button visibility
             const convBtn = document.getElementById('btn-modal-convert');
             if (convBtn) {
-                convBtn.style.display = r.status === 'ACTIVE' ? 'inline-block' : 'none';
+                convBtn.style.display = (r.status === 'ACTIVE' && !r.contract_id && !r.contract_number) ? 'inline-block' : 'none';
             }
 
             document.getElementById('reservation-detail-modal').style.display = 'flex';
@@ -1619,15 +1625,16 @@
                 const res = await fetch(`${API_BASE}/api/v1/reservations?status=ACTIVE&page_size=50`);
                 const json = await res.json();
                 cachedReservations = json.data || [];
+                const availableReservations = cachedReservations.filter(r => !r.contract_id && !r.contract_number);
 
-                if (cachedReservations.length === 0) {
-                    sel.innerHTML = '<option value="">No active reservations available</option>';
+                if (availableReservations.length === 0) {
+                    sel.innerHTML = `<option value="">${currentLang === 'ar' ? 'لا توجد حجوزات نشطة غير مرتبطة بعقود' : 'No active reservations without contracts'}</option>`;
                     document.getElementById('conv-res-preview').style.display = 'none';
                     return;
                 }
 
                 sel.innerHTML = '<option value="">-- Choose active reservation --</option>' +
-                    cachedReservations.map(r => `<option value="${r.reservation_id}" ${preResId && r.reservation_id === preResId ? 'selected' : ''}>#${r.reservation_number} - Unit ${r.unit_number || 'N/A'} - ${r.customer_name || 'Client'} (${(r.deposit_amount || 0).toLocaleString()} SAR)</option>`).join('');
+                    availableReservations.map(r => `<option value="${r.reservation_id}" ${preResId && r.reservation_id === preResId ? 'selected' : ''}>#${r.reservation_number} - Unit ${r.unit_number || 'N/A'} - ${r.customer_name || 'Client'} (${(r.deposit_amount || 0).toLocaleString()} SAR)</option>`).join('');
 
                 if (preResId) {
                     sel.value = preResId;
@@ -1946,8 +1953,17 @@
             }
         }
 
+        let isInitiatingContract = false;
         async function initiateContractFromReservation(reservationId, defaultVal = null) {
+            if (isInitiatingContract) return;
             const isAr = currentLang === 'ar';
+            const item = cachedReservations.find(r => r.reservation_id === reservationId);
+            if (item && (item.contract_id || item.contract_number)) {
+                alert(isAr ? `يوجد عقد مرتبط بهذا الحجز مسبقاً برقم ${item.contract_number}` : `A contract already exists for this reservation: ${item.contract_number}`);
+                viewContractDetail(item.contract_id);
+                return;
+            }
+
             const valInput = prompt(isAr ? 'أدخل قيمة العقد الإجمالية (ريال):' : 'Enter total contract value (SAR):', defaultVal || '');
             if (!valInput) return;
             const val = parseFloat(valInput);
@@ -1956,6 +1972,7 @@
                 return;
             }
 
+            isInitiatingContract = true;
             try {
                 const res = await fetch(`${API_BASE}/api/v1/reservations/${reservationId}/initiate-contract`, {
                     method: 'POST',
@@ -1973,6 +1990,8 @@
                 switchTab('contracts');
             } catch (err) {
                 alert((isAr ? 'خطأ: ' : 'Error: ') + err.message);
+            } finally {
+                isInitiatingContract = false;
             }
         }
 

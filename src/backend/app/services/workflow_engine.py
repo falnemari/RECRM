@@ -2161,6 +2161,21 @@ class WorkflowEngine:
         if res["status"] == "CONVERTED":
             raise ValueError("تم تحويل هذا الحجز إلى عقد مسبقاً (Reservation already converted).")
 
+        # Guard against duplicate contract drafts for the same reservation
+        existing_contract = await conn.fetchrow(
+            """
+            SELECT contract_id, contract_number, status 
+            FROM contracts 
+            WHERE reservation_id = $1 AND status NOT IN ('CANCELLED', 'TERMINATED')
+            ORDER BY contract_id DESC LIMIT 1
+            """,
+            reservation_id
+        )
+        if existing_contract:
+            raise ValueError(
+                f"يوجد عقد مسبق مرتبط بهذا الحجز برقم {existing_contract['contract_number']} بحالة ({existing_contract['status']}). لا يمكن إنشاء عقد مكرر لنفس الحجز والصفقة."
+            )
+
         if not contract_value:
             offer_val = await conn.fetchval(
                 "SELECT offer_amount FROM offers WHERE opportunity_id = $1 AND status = 'ACCEPTED' ORDER BY submitted_at DESC LIMIT 1",
