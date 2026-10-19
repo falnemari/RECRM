@@ -4971,13 +4971,58 @@ class WorkflowEngine:
         else:
             target_stage_code = "NEW"
 
-        db_guidance = await conn.fetchrow(
-            "SELECT * FROM workflow_sop_guidance WHERE stage_code = $1 AND is_active = TRUE",
-            target_stage_code
-        )
-        if db_guidance:
-            active_guidance = dict(db_guidance)
+        # Determine active task template if available
+        active_pending_task = formatted_pending[0] if formatted_pending else None
+        active_template_id = active_pending_task.get("template_id") if active_pending_task else None
+
+        guidance_row = None
+        if active_template_id:
+            guidance_row = await conn.fetchrow("""
+                SELECT g.*, r.name_ar AS role_name_ar, r.name_en AS role_name_en
+                FROM workflow_sop_guidance g
+                LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+                WHERE (g.template_id = $1 OR g.procedure_code = $1) AND g.is_active = TRUE
+                ORDER BY g.display_order ASC LIMIT 1
+            """, active_template_id)
+
+        if not guidance_row:
+            guidance_row = await conn.fetchrow("""
+                SELECT g.*, r.name_ar AS role_name_ar, r.name_en AS role_name_en
+                FROM workflow_sop_guidance g
+                LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+                WHERE g.stage_code = $1 AND g.entity_type = 'STAGE' AND g.is_active = TRUE
+                ORDER BY g.display_order ASC LIMIT 1
+            """, target_stage_code)
+
+        if not guidance_row:
+            guidance_row = await conn.fetchrow("""
+                SELECT g.*, r.name_ar AS role_name_ar, r.name_en AS role_name_en
+                FROM workflow_sop_guidance g
+                LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+                WHERE g.stage_code = $1 AND g.is_active = TRUE
+                ORDER BY g.display_order ASC LIMIT 1
+            """, target_stage_code)
+
+        if guidance_row:
+            active_guidance = dict(guidance_row)
             active_guidance["stage_key"] = target_stage_code
+            
+            # Dynamically resolve current_responsible_ar / en from canonical roles and live assigned employee
+            role_ar = active_guidance.get("role_name_ar") or "المسؤول المختص"
+            role_en = active_guidance.get("role_name_en") or "Authorized Role"
+            assigned_person = None
+            if active_pending_task and active_pending_task.get("assigned_user_name"):
+                assigned_person = active_pending_task["assigned_user_name"]
+            elif agent_name:
+                assigned_person = agent_name
+
+            if assigned_person and assigned_person not in ("غير مسند", "Unassigned"):
+                active_guidance["current_responsible_ar"] = f"{assigned_person} ({role_ar})"
+                active_guidance["current_responsible_en"] = f"{assigned_person} ({role_en})"
+            else:
+                active_guidance["current_responsible_ar"] = role_ar
+                active_guidance["current_responsible_en"] = role_en
+
             if target_stage_code == "RESERVATION" and res_list:
                 active_res = res_list[0]
                 res_no = active_res.get("reservation_number") or "--"
@@ -4988,6 +5033,23 @@ class WorkflowEngine:
                 active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
         else:
             active_guidance = {}
+
+        # Fetch all procedures defined for this lifecycle stage
+        stage_procs_rows = await conn.fetch("""
+            SELECT g.*, r.name_ar AS role_name_ar, r.name_en AS role_name_en
+            FROM workflow_sop_guidance g
+            LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+            WHERE g.stage_code = $1 AND g.is_active = TRUE
+            ORDER BY g.display_order ASC
+        """, target_stage_code)
+        stage_procedures = []
+        for sp in stage_procs_rows:
+            sp_dict = dict(sp)
+            sp_role_ar = sp_dict.get("role_name_ar") or ""
+            sp_role_en = sp_dict.get("role_name_en") or ""
+            sp_dict["current_responsible_ar"] = sp_role_ar
+            sp_dict["current_responsible_en"] = sp_role_en
+            stage_procedures.append(sp_dict)
 
         return {
             "active_guidance": active_guidance,
@@ -5016,6 +5078,8 @@ class WorkflowEngine:
             "offers": formatted_offers,
             "reservations": formatted_reservations,
             "contracts": formatted_contracts,
+            "stage_procedures": stage_procedures,
+            "stage_procedures_count": len(stage_procedures),
             "pending_tasks": formatted_pending,
             "completed_tasks_count": len([t for t in formatted_tasks if t["is_done"]]),
             "activities_count": len(formatted_activities),

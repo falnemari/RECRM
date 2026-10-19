@@ -2184,6 +2184,35 @@
                                 <span style="color: #334155;">${isAr ? d.active_guidance.consequence_ar : d.active_guidance.consequence_en}</span>
                             </div>
                         </div>
+
+                        ${(d.stage_procedures && d.stage_procedures.length > 0) ? `
+                        <details style="margin-top: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px;">
+                            <summary style="font-weight: 700; color: #1e293b; cursor: pointer; font-size: 0.88em; display: flex; align-items: center; gap: 6px;">
+                                <span>📋</span>
+                                <span>${isAr ? 'عرض كافة إجراءات ومهام المرحلة المعتمدة (' + d.stage_procedures.length + ')' : 'View All Approved Stage SOP Procedures (' + d.stage_procedures.length + ')'}</span>
+                            </summary>
+                            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                                ${d.stage_procedures.map((sp, idx) => `
+                                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 0.84em;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;">
+                                            <span style="font-weight: 800; color: #0284c7;">
+                                                ${idx + 1}. [${sp.entity_type}] ${isAr ? sp.stage_name_ar : sp.stage_name_en}
+                                            </span>
+                                            <span style="background: #e2e8f0; color: #334155; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 700;">
+                                                👤 ${isAr ? (sp.current_responsible_ar || 'المسؤول') : (sp.current_responsible_en || 'Responsible')}
+                                            </span>
+                                        </div>
+                                        <div style="color: #475569; line-height: 1.4;">
+                                            🎯 <strong>${isAr ? 'الهدف: ' : 'Goal: '}</strong> ${isAr ? sp.step_goal_ar : sp.step_goal_en}
+                                        </div>
+                                        <div style="color: #b45309; line-height: 1.4; margin-top: 2px;">
+                                            ⚖️ <strong>${isAr ? 'الشرط: ' : 'Condition: '}</strong> ${isAr ? sp.mandatory_conditions_ar : sp.mandatory_conditions_en}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </details>
+                        ` : ''}
                     </div>
                     ` : ''}
                 </div>

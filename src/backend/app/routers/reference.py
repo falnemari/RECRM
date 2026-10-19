@@ -96,4 +96,66 @@ async def list_document_types(conn: asyncpg.Connection = Depends(get_db)):
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
     )
 
+@router.get("/roles", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_roles_reference(conn: asyncpg.Connection = Depends(get_db)):
+    """Canonical bilingual organizational roles catalog."""
+    rows = await conn.fetch("""
+        SELECT role_id, role_code, name, name_ar, name_en, description 
+        FROM roles 
+        ORDER BY role_code
+    """)
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+@router.get("/sop-catalog", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_sop_catalog(
+    stage_code: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Unified Bilingual SOP Guidance Matrix covering all tasks, activities,
+    communications, and lifecycle procedures joined dynamically with canonical roles.
+    """
+    conditions = ["g.is_active = TRUE"]
+    params = []
+    p_idx = 1
+    if stage_code:
+        conditions.append(f"g.stage_code = ${p_idx}")
+        params.append(stage_code.upper())
+        p_idx += 1
+    if entity_type:
+        conditions.append(f"g.entity_type = ${p_idx}")
+        params.append(entity_type.upper())
+        p_idx += 1
+
+    where_clause = " AND ".join(conditions)
+    query = f"""
+        SELECT 
+            g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
+            g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
+            g.required_now_ar, g.required_now_en,
+            r.name_ar AS current_responsible_ar,
+            r.name_en AS current_responsible_en,
+            g.next_action_ar, g.next_action_en,
+            g.step_goal_ar, g.step_goal_en,
+            g.mandatory_conditions_ar, g.mandatory_conditions_en,
+            g.consequence_ar, g.consequence_en,
+            g.display_order, g.is_active
+        FROM workflow_sop_guidance g
+        LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        WHERE {where_clause}
+        ORDER BY g.display_order ASC
+    """
+    rows = await conn.fetch(query, *params)
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+
 
