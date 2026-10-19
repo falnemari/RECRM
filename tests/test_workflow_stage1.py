@@ -377,6 +377,73 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_on_lead_assigned_prevents_duplicate_first_contact_tasks(self):
+        """
+        Regression test: When a lead is already contacted/qualified or its first contact task
+        is already completed, subsequent assignment or re-assignment calls must NOT spawn duplicate
+        TASK_LEAD_FIRST_CONTACT tasks.
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            cust_id, _, _ = await WorkflowEngine.find_or_create_customer(
+                conn=self.conn,
+                org_id=self.org_id,
+                first_name="TestDup",
+                last_name="Prevention",
+                mobile="+966559988776"
+            )
+
+            lead_id = "test-lead-dup-prevent-01"
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, inquiry_type, status, priority, created_at, updated_at)
+                VALUES ($1, $2, $3, 'BUY', 'NEW', 'HIGH', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id
+            )
+
+            # 1. First assignment: must spawn TASK_LEAD_FIRST_CONTACT
+            await WorkflowEngine.on_lead_assigned(
+                conn=self.conn,
+                lead_id=lead_id,
+                assigned_user_id=self.agent_id
+            )
+
+            # Initial first contact task was created
+            tasks_before = await self.conn.fetch(
+                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                lead_id
+            )
+            self.assertEqual(len(tasks_before), 1)
+
+            # Complete the initial first contact task
+            await self.conn.execute(
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = NOW() WHERE task_id = $1",
+                tasks_before[0]["task_id"]
+            )
+            await self.conn.execute(
+                "UPDATE leads SET status = 'QUALIFIED', first_contact_at = NOW() WHERE lead_id = $1",
+                lead_id
+            )
+
+            # Call on_lead_assigned again (simulating repeated lead updates or re-assignment)
+            await WorkflowEngine.on_lead_assigned(
+                conn=self.conn,
+                lead_id=lead_id,
+                assigned_user_id=self.agent_id
+            )
+
+            # Ensure NO second TASK_LEAD_FIRST_CONTACT was spawned
+            tasks_after = await self.conn.fetch(
+                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                lead_id
+            )
+            self.assertEqual(len(tasks_after), 1, "Must NOT spawn duplicate TASK_LEAD_FIRST_CONTACT")
+        finally:
+            await tr.rollback()
+
     async def test_unassigned_lead_fallback_to_main_branch(self):
         tr = self.conn.transaction()
         await tr.start()

@@ -442,6 +442,14 @@ async def update_lead(
     conn: asyncpg.Connection = Depends(get_db)
 ):
 
+    current_lead = await conn.fetchrow(
+        "SELECT assigned_user_id, status FROM leads WHERE lead_id = $1",
+        lead_id
+    )
+    if not current_lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    old_assigned_user_id = current_lead["assigned_user_id"]
+
     updates = []
     params = []
     p_idx = 1
@@ -548,8 +556,8 @@ async def update_lead(
         await conn.execute(update_query, *params)
 
 
-        # Trigger workflow lead assignment handler if assigned_user_id was updated
-        if payload.assigned_user_id:
+        # Trigger workflow lead assignment handler ONLY IF assigned_user_id actually changed
+        if payload.assigned_user_id and payload.assigned_user_id != old_assigned_user_id:
             await WorkflowEngine.on_lead_assigned(
                 conn=conn,
                 lead_id=lead_id,

@@ -346,6 +346,7 @@ class WorkflowEngine:
             """,
             lead_id
         )
+        task_dict = None
         if open_contact_task:
             # Reassign open contact task to new agent
             await conn.execute(
@@ -359,16 +360,27 @@ class WorkflowEngine:
             task_dict = dict(open_contact_task)
             task_dict["assigned_user_id"] = assigned_user_id
         else:
-            # Spawn fresh contact task for new agent
-            task_dict, _ = await WorkflowEngine.spawn_task_from_template(
-                conn=conn,
-                template_id=contact_tmpl,
-                lead_id=lead_id,
-                customer_id=customer_id,
-                assigned_user_id=assigned_user_id,
-                priority=priority,
-                custom_due_at=first_contact_due
+            # Check if first contact has already occurred or a first contact task was already completed
+            contact_already_done = await conn.fetchval(
+                """
+                SELECT 1 FROM leads WHERE lead_id = $1 AND (first_contact_at IS NOT NULL OR status IN ('CONTACTED', 'QUALIFIED', 'CONVERTED', 'LOST', 'DISQUALIFIED'))
+                UNION
+                SELECT 1 FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT') AND status = 'COMPLETED'
+                LIMIT 1
+                """,
+                lead_id
             )
+            if not contact_already_done:
+                # Spawn fresh contact task for new agent only if not already contacted
+                task_dict, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id=contact_tmpl,
+                    lead_id=lead_id,
+                    customer_id=customer_id,
+                    assigned_user_id=assigned_user_id,
+                    priority=priority,
+                    custom_due_at=first_contact_due
+                )
 
         # 4. Sync lead first_contact_due_at and optionally branch_id
         updates = ["first_contact_due_at = $1"]
