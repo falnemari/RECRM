@@ -2130,6 +2130,62 @@
                     </div>
 
                     ${statusBannerHtml}
+
+                    <!-- SOP Guidance & Next Best Action Card -->
+                    ${d.active_guidance ? `
+                    <div style="background: white; border: 1.5px solid #38bdf8; border-radius: 10px; padding: 18px; margin-top: 16px; box-shadow: 0 2px 6px rgba(14,165,233,0.08);">
+                        <!-- Stepper / Stage Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; border-bottom: 1px dashed #bae6fd; padding-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.3em;">🧭</span>
+                                <span style="font-weight: 800; color: #0369a1; font-size: 1.05em;">
+                                    ${isAr ? 'دليل المسار الإجرائي والمسؤولية الحالية (SOP & Next Best Action)' : 'SOP & Next Best Action Guidance'}
+                                </span>
+                            </div>
+                            <span style="background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.82em;">
+                                ${isAr ? d.active_guidance.stage_name_ar : d.active_guidance.stage_name_en}
+                            </span>
+                        </div>
+
+                        <!-- 3-Pillar Active Status Row -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 0.78em; font-weight: 700; color: #166534; margin-bottom: 4px;">📌 ${isAr ? 'المطلوب الآن:' : 'Required Action Now:'}</div>
+                                <div style="font-weight: 800; color: #14532d; font-size: 0.95em; line-height: 1.4;">
+                                    ${isAr ? d.active_guidance.required_now_ar : d.active_guidance.required_now_en}
+                                </div>
+                            </div>
+                            <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 0.78em; font-weight: 700; color: #1e40af; margin-bottom: 4px;">👤 ${isAr ? 'المسؤول الحالي:' : 'Current Responsible:'}</div>
+                                <div style="font-weight: 800; color: #1e3a8a; font-size: 0.95em; line-height: 1.4;">
+                                    ${isAr ? d.active_guidance.current_responsible_ar : d.active_guidance.current_responsible_en}
+                                </div>
+                            </div>
+                            <div style="background: #faf5ff; border: 1px solid #d8b4fe; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 0.78em; font-weight: 700; color: #6b21a8; margin-bottom: 4px;">⏭️ ${isAr ? 'الإجراء القادم:' : 'Next Step Ahead:'}</div>
+                                <div style="font-weight: 800; color: #581c87; font-size: 0.95em; line-height: 1.4;">
+                                    ${isAr ? d.active_guidance.next_action_ar : d.active_guidance.next_action_en}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- In-Context SOP Instructions & Rules Checklist -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 0.88em; line-height: 1.6;">
+                            <div style="margin-bottom: 6px;">
+                                <strong style="color: #0f172a;">🎯 ${isAr ? 'الهدف من الخطوة:' : 'Step Goal:'}</strong> 
+                                <span style="color: #334155;">${isAr ? d.active_guidance.step_goal_ar : d.active_guidance.step_goal_en}</span>
+                            </div>
+                            <div style="margin-bottom: 6px;">
+                                <strong style="color: #b45309;">⚖️ ${isAr ? 'الشروط الإلزامية:' : 'Mandatory Rules:'}</strong> 
+                                <span style="color: #475569;">${isAr ? d.active_guidance.mandatory_conditions_ar : d.active_guidance.mandatory_conditions_en}</span>
+                            </div>
+                            <div>
+                                <strong style="color: #0369a1;">🚀 ${isAr ? 'ماذا سيحدث بعد التأكيد؟:' : 'Consequences upon Confirmation:'}</strong> 
+                                <span style="color: #334155;">${isAr ? d.active_guidance.consequence_ar : d.active_guidance.consequence_en}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -2240,17 +2296,25 @@
             }
 
             const rowsHtml = tasks.map(t => {
-                const timeStr = t.date_time ? new Date(t.date_time).toLocaleString() : '--';
-                const dueStr = t.due_at ? new Date(t.due_at).toLocaleString() : '--';
+                const createdStr = t.created_at ? new Date(t.created_at).toLocaleString() : '--';
+                const dueStr = t.due_at ? new Date(t.due_at).toLocaleDateString() + ' ' + new Date(t.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--';
+                const completedStr = t.completed_at ? new Date(t.completed_at).toLocaleString() : null;
                 const situationBadge = t.is_done
                     ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'منجزة (Done)' : 'Completed (Done)'}</span>`
                     : (t.situation === 'OVERDUE'
                         ? `<span style="background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⚠️ ${isAr ? 'متأخرة (Overdue)' : 'Overdue'}</span>`
                         : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${isAr ? 'قيد التنفيذ (Pending)' : 'Pending'}</span>`);
 
+                let dateDisplay = `<div style="font-weight: 600; color: #334155;">⏰ ${createdStr}</div>`;
+                if (completedStr) {
+                    dateDisplay += `<div style="font-size: 0.76em; color: #166534; font-weight: 600; margin-top: 2px;">✔ ${isAr ? 'أُنجزت: ' : 'Done: '}${completedStr}</div>`;
+                } else if (t.due_at) {
+                    dateDisplay += `<div style="font-size: 0.76em; color: ${t.situation === 'OVERDUE' ? '#dc2626' : '#d97706'}; font-weight: 600; margin-top: 2px;">⏳ ${isAr ? 'الاستحقاق: ' : 'Due: '}${dueStr}</div>`;
+                }
+
                 return `
-                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">
-                        <td style="padding: 10px 12px; font-weight: 600; color: #334155;">⏰ ${timeStr}</td>
+                    <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em; ${!t.is_done ? 'background: #fffbeb;' : ''}">
+                        <td style="padding: 10px 12px;">${dateDisplay}</td>
                         <td style="padding: 10px 12px;">
                             <div style="font-weight: 700; color: #0f172a;">${t.title}</div>
                             <div style="font-size: 0.78em; color: #64748b; font-family: monospace;">#${t.task_id} • ${t.template_id || '--'}</div>
