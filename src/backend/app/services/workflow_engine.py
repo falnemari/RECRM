@@ -4790,6 +4790,7 @@ class WorkflowEngine:
             c_dt = a.get("completed_at") or a.get("created_at")
             formatted_activities.append({
                 "activity_id": a["activity_id"],
+                "lead_id": a.get("lead_id") or lead_id,
                 "activity_type": a.get("activity_type_code") or a.get("type") or "ACTIVITY",
                 "subject": a["subject"],
                 "description": a.get("description") or "",

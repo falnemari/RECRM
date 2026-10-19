@@ -242,42 +242,46 @@
             padding: 8px 12px;
         }
         .col-act-type {
-            width: 110px;
+            width: 105px;
+            white-space: nowrap;
+        }
+        .col-act-lead {
+            width: 105px;
             white-space: nowrap;
         }
         .col-act-subj {
-            width: 20%;
-            min-width: 140px;
+            width: 18%;
+            min-width: 130px;
             white-space: normal !important;
             word-break: break-word;
             line-height: 1.4;
         }
         .col-act-desc {
-            width: 32%;
-            min-width: 180px;
+            width: 28%;
+            min-width: 160px;
             white-space: normal !important;
             word-break: break-word;
             line-height: 1.45;
         }
         .col-act-agent {
-            width: 12%;
-            min-width: 100px;
+            width: 11%;
+            min-width: 90px;
             white-space: normal !important;
             word-break: break-word;
         }
         .col-act-cust {
-            width: 13%;
-            min-width: 100px;
+            width: 12%;
+            min-width: 90px;
             white-space: normal !important;
             word-break: break-word;
         }
         .col-act-date {
-            width: 130px;
+            width: 125px;
             white-space: nowrap;
             font-size: 0.78rem;
         }
         .col-act-status {
-            width: 90px;
+            width: 85px;
             white-space: nowrap;
             text-align: center;
         }
@@ -587,6 +591,7 @@
                     <thead>
                         <tr>
                             <th class="col-act-type" data-i18n="th_type">Type</th>
+                            <th class="col-act-lead" data-i18n="th_lead_id">Lead ID</th>
                             <th class="col-act-subj" data-i18n="th_subject">Subject</th>
                             <th class="col-act-desc" data-i18n="th_description">Details</th>
                             <th class="col-act-agent" data-i18n="th_agent">Agent</th>
@@ -596,7 +601,7 @@
                         </tr>
                     </thead>
                     <tbody id="acts-tbody">
-                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading activities...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading activities...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1010,7 +1015,7 @@
                 btn_new_task: "+ New Task", btn_new_act: "+ Log Activity", btn_new_comm: "+ Log Communication",
                 th_task_title: "Task Title", th_priority: "Priority", th_due_date: "Due Date",
                 th_assigned_to: "Assigned Agent", th_related_to: "Related Customer", th_status: "Status", th_actions: "Action",
-                th_type: "Type", th_subject: "Subject", th_description: "Details", th_agent: "Agent", th_customer: "Customer",
+                th_type: "Type", th_lead_id: "Lead ID", th_subject: "Subject", th_description: "Details", th_agent: "Agent", th_customer: "Customer",
                 th_date: "Date / Time", th_channel: "Channel", th_direction: "Direction", th_body: "Message Preview",
                 th_sent_at: "Sent At", th_delivery: "Status",
                 modal_task_title: "Create New Task", modal_act_title: "Log Agent Activity", modal_comm_title: "Log Message / Communication",
@@ -1071,7 +1076,7 @@
                 btn_new_task: "+ مهمة جديدة", btn_new_act: "+ تسجيل نشاط", btn_new_comm: "+ تسجيل مراسلة",
                 th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_due_date: "تاريخ الاستحقاق",
                 th_assigned_to: "الوكيل المكلف", th_related_to: "العميل المرتبط", th_status: "الحالة", th_actions: "الإجراء",
-                th_type: "النوع", th_subject: "الموضوع", th_description: "التفاصيل", th_agent: "الوكيل", th_customer: "العميل",
+                th_type: "النوع", th_lead_id: "رقم الطلب", th_subject: "الموضوع", th_description: "التفاصيل", th_agent: "الوكيل", th_customer: "العميل",
                 th_date: "التاريخ / الوقت", th_channel: "القناة", th_direction: "الاتجاه", th_body: "نص الرسالة",
                 th_sent_at: "تاريخ الإرسال", th_delivery: "الحالة",
                 modal_task_title: "تسجيل مهمة جديدة", modal_act_title: "تسجيل نشاط أو مكالمة", modal_comm_title: "تسجيل رسالة أو مراسلة",
@@ -2205,7 +2210,7 @@
                 renderActivities(activitiesData);
             } catch (err) {
                 console.error(err);
-                document.getElementById('acts-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load activities.</td></tr>';
+                document.getElementById('acts-tbody').innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Failed to load activities.</td></tr>';
             }
         }
 
@@ -2213,7 +2218,7 @@
             const tbody = document.getElementById('acts-tbody');
             const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد أنشطة مسجلة.' : 'No activities recorded.'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد أنشطة مسجلة.' : 'No activities recorded.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(a => {
@@ -2231,9 +2236,17 @@
                 const typeName = getLocalizedActTypeName(a.activity_type_name, a.activity_type_code);
                 const subj = getLocalizedActSubject(a.subject, a.template_id);
 
+                const leadDisplay = a.lead_id
+                    ? `<div style="display:inline-flex; align-items:center; gap:4px;">
+                        <a href="leads.html?search=${encodeURIComponent(a.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:2px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${a.lead_id}</a>
+                        <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${a.lead_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
+                      </div>`
+                    : `<span style="color:#94a3b8; font-size:0.8em;">--</span>`;
+
                 return `
                     <tr>
                         <td class="col-act-type"><span class="channel-tag ${tagCls}">${icon} ${typeName}</span></td>
+                        <td class="col-act-lead">${leadDisplay}</td>
                         <td class="col-act-subj"><strong>${subj}</strong></td>
                         <td class="col-act-desc" style="color:var(--text-muted); font-size:0.85em;">${getLocalizedActDesc(a.description, a.template_id)}</td>
                         <td class="col-act-agent">${a.user_name || (isAr ? 'الوسيط' : 'Agent')}</td>
@@ -2248,8 +2261,11 @@
         function filterActivities() {
             const term = document.getElementById('act-search').value.toLowerCase();
             const filtered = activitiesData.filter(a =>
-                a.subject.toLowerCase().includes(term) ||
-                (a.description && a.description.toLowerCase().includes(term))
+                (a.subject && a.subject.toLowerCase().includes(term)) ||
+                (a.description && a.description.toLowerCase().includes(term)) ||
+                (a.lead_id && a.lead_id.toLowerCase().includes(term)) ||
+                (a.customer_name && a.customer_name.toLowerCase().includes(term)) ||
+                (a.user_name && a.user_name.toLowerCase().includes(term))
             );
             renderActivities(filtered);
         }
