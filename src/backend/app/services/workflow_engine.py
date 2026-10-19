@@ -4787,7 +4787,7 @@ class WorkflowEngine:
                 "user_name": "Legal"
             })
 
-        timeline.sort(key=lambda x: str(x.get("timestamp") or ""))
+        timeline.sort(key=lambda x: (1 if x.get("is_done") is False else 0, str(x.get("timestamp") or "")))
 
         # 9. Format Customer & Agent info & Lead Subject
         cust_name = ""
@@ -4838,6 +4838,8 @@ class WorkflowEngine:
                 "completed_at": completed_dt.isoformat() if completed_dt else None,
                 "date_time": dt_sort.isoformat() if dt_sort else None
             })
+
+        formatted_tasks.sort(key=lambda t: (1 if not t["is_done"] else 0, str(t.get("created_at") or "")))
 
         formatted_activities = []
         for a in activity_list:
@@ -4952,137 +4954,40 @@ class WorkflowEngine:
         # Format pending tasks list (backward compatibility)
         formatted_pending = [t for t in formatted_tasks if not t["is_done"]]
 
-        # 11. Compile Universal Active Guidance & Responsibility SOP Card
-        active_guidance = {}
+        # 11. Compile Universal Active Guidance & Responsibility SOP Card from DB table
+        target_stage_code = "NEW"
         if opp_stage == "CLOSED_WON" or (contract_list and contract_list[0].get("status") in ("ACTIVE", "SIGNED", "COMPLETED")):
-            active_guidance = {
-                "stage_key": "CLOSED_WON",
-                "stage_name_ar": "الصفقة مكتملة ومغلقة بنجاح (Closed Won)",
-                "stage_name_en": "Deal Successfully Closed (Won)",
-                "required_now_ar": "متابعة خدمة ما بعد البيع والتسليم الفعلي للوحدة",
-                "required_now_en": "After-sales follow-up and physical handover",
-                "current_responsible_ar": "إدارة علاقات العملاء وخدمات ما بعد البيع",
-                "current_responsible_en": "Customer Relations & Handover Management",
-                "next_action_ar": "تسليم المفاتيح وتوثيق محضر الاستلام وأرشفة العقد",
-                "next_action_en": "Key handover, inspection sign-off, and contract archival",
-                "step_goal_ar": "إتمام استلام الدفعات وتوثيق تسليم الوحدة للمشتري/المستأجر رسمياً.",
-                "step_goal_en": "Finalize payment clearance and officially document unit handover.",
-                "mandatory_conditions_ar": "التأكد من اكتمال توقيع العقود وسداد كامل الدفعات المتفق عليها.",
-                "mandatory_conditions_en": "Verify all signed contracts and full cleared payments.",
-                "consequence_ar": "تتحول الوحدة إلى مسكونة/مباعة نهائياً وتُغلق الصفقة بنجاح 100%.",
-                "consequence_en": "Unit transitions to Occupied/Sold and the deal completes at 100%."
-            }
+            target_stage_code = "CLOSED_WON"
         elif opp_stage == "CONTRACT" or (res_list and res_list[0].get("deposit_status") == "VERIFIED"):
-            active_guidance = {
-                "stage_key": "CONTRACT",
-                "stage_name_ar": "مرحلة تحرير وتوثيق العقد الرسمي",
-                "stage_name_en": "Final Contract Drafting & Signing",
-                "required_now_ar": "إعداد ومراجعة بنود العقد وتوقيعه من الطرفين",
-                "required_now_en": "Review contract clauses and acquire bilateral signatures",
-                "current_responsible_ar": "الإدارة القانونية وضابط العقود (Legal & Contract Control)",
-                "current_responsible_en": "Legal Dept & Contract Controller",
-                "next_action_ar": "تحصيل الدفعة الأولى وتوثيق العقد عبر شبكة إيجار / السجل العقاري",
-                "next_action_en": "Collect initial payment and register contract officially",
-                "step_goal_ar": "صياغة العقد النهائي المعتمد بناءً على بيانات الحجز والعرض المقبول.",
-                "step_goal_en": "Draft the certified legal contract matching the agreed reservation parameters.",
-                "mandatory_conditions_ar": "سداد العربون وتدقيقه محاسبياً، وإرفاق الهوية الوطنية / السجل التجاري والوكالات إن وجدت.",
-                "mandatory_conditions_en": "Deposit payment verified by accounting, along with valid National ID / CR.",
-                "consequence_ar": "توقيع العقد ينقل المعاملة فوراً إلى صفقة ناجحة (Closed Won) وتحديث سجل الوحدة.",
-                "consequence_en": "Contract signing immediately converts deal to Closed Won and updates inventory."
-            }
+            target_stage_code = "CONTRACT"
         elif opp_stage == "RESERVATION" or (res_list and res_list[0].get("status") == "ACTIVE"):
-            active_res = res_list[0] if res_list else {}
-            res_no = active_res.get("reservation_number") or "--"
-            dep_val = float(active_res.get("deposit_amount") or 0)
-            active_guidance = {
-                "stage_key": "RESERVATION",
-                "stage_name_ar": f"الحجز المالي والعربون (رقم الحجز: {res_no})",
-                "stage_name_en": f"Unit Reservation & Deposit (Ref: {res_no})",
-                "required_now_ar": f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة",
-                "required_now_en": f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit",
-                "current_responsible_ar": "قسم المالية والمحاسبة (تدقيق السداد وإصدار سند القبض)",
-                "current_responsible_en": "Finance & Accounting Department",
-                "next_action_ar": "إصدار سند القبض والانتقال لتجهيز العقد الرسمي",
-                "next_action_en": "Issue receipt voucher and transition to contract preparation",
-                "step_goal_ar": "التحقق من خلو الوحدة وتحصيل مبلغ العربون لحساب الشركة وتأكيد الحجز المالي للوحدة.",
-                "step_goal_en": "Verify unit clearance, secure deposit funds, and confirm financial reservation.",
-                "mandatory_conditions_ar": "العربون لا يقل عن 5% من القيمة، ومهلة السداد القصوى 48 ساعة من تاريخ الحجز.",
-                "mandatory_conditions_en": "Deposit must be >= 5%, and payment deadline is strictly within 48 hours.",
-                "consequence_ar": "سيتم قفل الوحدة تلقائياً ونقل ملف المعاملة لقسم المحاسبة برقم حجز رسمي وإطلاق العقد.",
-                "consequence_en": "Unit is locked automatically, file is handed to accounting with formal reservation ID, unlocking contracts."
-            }
+            target_stage_code = "RESERVATION"
         elif opp_stage in ("OFFER", "NEGOTIATION") or offer_list:
-            active_guidance = {
-                "stage_key": "OFFER",
-                "stage_name_ar": "مرحلة التفاوض والعروض المالية",
-                "stage_name_en": "Offer & Price Negotiation",
-                "required_now_ar": "متابعة رد العميل واعتماد السعر النهائي",
-                "required_now_en": "Follow up customer response and certify final agreed price",
-                "current_responsible_ar": "الوسيط العقاري المكلف / مدير المبيعات",
-                "current_responsible_en": "Assigned Sales Agent / Sales Manager",
-                "next_action_ar": "قبول العرض المالي وحجز الوحدة في النظام",
-                "next_action_en": "Accept financial offer and trigger unit reservation",
-                "step_goal_ar": "التوصل لاتفاق مالي نهائي على قيمة الوحدة وطريقة وجدولة السداد.",
-                "step_goal_en": "Reach final binding agreement on property value and installment schedule.",
-                "mandatory_conditions_ar": "إذا كان الخصم يتجاوز 5% من السعر المطلوب يلزم اعتماد مدير الفرع في النظام.",
-                "mandatory_conditions_en": "If negotiated discount exceeds 5% of asking price, Branch Manager approval is mandatory.",
-                "consequence_ar": "قبول العرض يقفل السعر المالي المتفاوض عليه ويطلق إجراءات الحجز المباشر للوحدة.",
-                "consequence_en": "Acceptance locks the agreed price and immediately unlocks unit reservation modal."
-            }
+            target_stage_code = "OFFER"
         elif opp_stage == "VIEWING" or viewing_list:
-            active_guidance = {
-                "stage_key": "VIEWING",
-                "stage_name_ar": "مرحلة المعاينة الميدانية",
-                "stage_name_en": "Property Site Viewing",
-                "required_now_ar": "تنفيذ الزيارة الميدانية للوحدة ورفع تقرير التقييم",
-                "required_now_en": "Execute on-site property tour and log inspection evaluation",
-                "current_responsible_ar": "الوسيط العقاري المكلف (Field Agent)",
-                "current_responsible_en": "Assigned Field Sales Agent",
-                "next_action_ar": "إعداد وتقديم العرض المالي للوحدة",
-                "next_action_en": "Prepare and submit official purchase/lease offer",
-                "step_goal_ar": "معاينة العقار على الطبيعة مع العميل وتوثيق انطباعه وملاحظاته.",
-                "step_goal_en": "Inspect property live with customer and document their feedback and interest level.",
-                "mandatory_conditions_ar": "التنسيق المسبق وتأكيد الموعد مع العميل وحارس/إدارة العقار.",
-                "mandatory_conditions_en": "Pre-coordinate timing with customer and security/property management.",
-                "consequence_ar": "توثيق نجاح المعاينة ينقل الفرصة تلقائياً لمرحلة تقديم العرض المالي والتفاوض.",
-                "consequence_en": "Logging viewing completion automatically transitions deal to Offer Negotiation."
-            }
+            target_stage_code = "VIEWING"
         elif opp_stage in ("QUALIFIED", "MATCHING"):
-            active_guidance = {
-                "stage_key": "QUALIFIED",
-                "stage_name_ar": "مرحلة مطابقة وترشيح العقارات",
-                "stage_name_en": "Property Matching & Selection",
-                "required_now_ar": "ترشيح الوحدات العقارية المطابقة لميزانية ورغبة العميل",
-                "required_now_en": "Filter and shortlist properties matching budget and criteria",
-                "current_responsible_ar": "الوسيط العقاري المكلف",
-                "current_responsible_en": "Assigned Sales Agent",
-                "next_action_ar": "جدولة وتأكيد موعد معاينة ميدانية",
-                "next_action_en": "Schedule and confirm field viewing appointment",
-                "step_goal_ar": "حصر أفضل الخيارات المتاحة في المخزون ومشاركتها مع العميل.",
-                "step_goal_en": "Identify optimal inventory matches and present proposals to customer.",
-                "mandatory_conditions_ar": "التحقق من الميزانية والمدينة ونوع العقار المفضل.",
-                "mandatory_conditions_en": "Verify verified budget, target city, and property classification.",
-                "consequence_ar": "اختيار العميل لوحدة مرشحة يطلق مهمة حجز موعد المعاينة الميدانية فوراً.",
-                "consequence_en": "Selecting matching unit triggers site viewing scheduling task immediately."
-            }
+            target_stage_code = "QUALIFIED"
         else:
-            active_guidance = {
-                "stage_key": "NEW",
-                "stage_name_ar": "مرحلة استلام الطلب والتواصل الأولي",
-                "stage_name_en": "Lead Intake & Initial Contact",
-                "required_now_ar": "الاتصال الأولي بالعميل واستكمال معايير التأهيل",
-                "required_now_en": "Conduct first contact call and complete qualification",
-                "current_responsible_ar": "الوسيط العقاري المكلف (Sales Agent)",
-                "current_responsible_en": "Assigned Sales Agent",
-                "next_action_ar": "استيفاء معايير التأهيل وترقية الطلب لفرصة بيعية نشطة",
-                "next_action_en": "Fulfill qualification criteria and promote lead to active opportunity",
-                "step_goal_ar": "التواصل السريع خلال مهلة 30 دقيقة والتحقق من جدية واهتمام العميل.",
-                "step_goal_en": "Fast contact within 30-minute SLA and verify prospect sincerity & requirements.",
-                "mandatory_conditions_ar": "الالتزام بـ SLA الاتصال الأولي السريع (30 دقيقة من ورود الطلب).",
-                "mandatory_conditions_en": "Compliance with initial contact SLA (within 30 minutes of assignment).",
-                "consequence_ar": "تسجيل نتيجة الاتصال إيجابياً يؤهل الطلب ويحوله إلى فرصة بيعية نشطة.",
-                "consequence_en": "Recording successful contact qualifies the lead and initiates Opportunity Matching."
-            }
+            target_stage_code = "NEW"
+
+        db_guidance = await conn.fetchrow(
+            "SELECT * FROM workflow_sop_guidance WHERE stage_code = $1 AND is_active = TRUE",
+            target_stage_code
+        )
+        if db_guidance:
+            active_guidance = dict(db_guidance)
+            active_guidance["stage_key"] = target_stage_code
+            if target_stage_code == "RESERVATION" and res_list:
+                active_res = res_list[0]
+                res_no = active_res.get("reservation_number") or "--"
+                dep_val = float(active_res.get("deposit_amount") or 0)
+                active_guidance["stage_name_ar"] = f"الحجز المالي والعربون (رقم الحجز: {res_no})"
+                active_guidance["stage_name_en"] = f"Unit Reservation & Deposit (Ref: {res_no})"
+                active_guidance["required_now_ar"] = f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة"
+                active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
+        else:
+            active_guidance = {}
 
         return {
             "active_guidance": active_guidance,
