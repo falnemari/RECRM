@@ -105,7 +105,9 @@ class OfferOut(BaseModel):
     offer_id: str
     opportunity_id: str
     unit_id: str
+    customer_id: Optional[str] = None
     unit_number: Optional[str] = None
+    unit_status: Optional[str] = None
     customer_name: Optional[str] = None
     offer_amount: float
     submitted_at: datetime

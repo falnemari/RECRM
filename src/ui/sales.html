@@ -1430,7 +1430,7 @@
 
             opps.forEach(o => {
                 const st = (o.stage || '').toUpperCase();
-                if (st === 'OFFER' || st === 'NEGOTIATION') {
+                if (st === 'OFFER' || st === 'NEGOTIATION' || st === 'RESERVATION') {
                     groups['NEGOTIATION'].push(o);
                 } else if (st === 'WON' || st === 'CLOSED_WON') {
                     groups['WON'].push(o);
@@ -2218,7 +2218,8 @@
 
         function openReserveUnitModal(oppId, unitId, custId, custName, unitNumber, agreedAmount) {
             document.getElementById('res-opp-id').value = oppId || '';
-            document.getElementById('res-cust-id').value = custId || '';
+            const validCustId = (custId && custId !== 'undefined' && custId !== 'null') ? custId : '';
+            document.getElementById('res-cust-id').value = validCustId;
             document.getElementById('res-unit-id').value = unitId || '';
             document.getElementById('res-disp-cust').textContent = custName || 'Customer';
             document.getElementById('res-disp-unit').textContent = unitNumber ? `Unit ${unitNumber}` : 'Selected Unit';
@@ -2236,7 +2237,10 @@
         async function submitUnitReservation(e) {
             e.preventDefault();
             const oppId = document.getElementById('res-opp-id').value;
-            const custId = document.getElementById('res-cust-id').value;
+            let custId = document.getElementById('res-cust-id').value;
+            if (!custId || custId === 'undefined' || custId === 'null') {
+                custId = null;
+            }
             const unitId = document.getElementById('res-unit-id').value;
             const deposit = parseFloat(document.getElementById('res-deposit-input').value);
             const validityHrs = parseInt(document.getElementById('res-validity-select').value || '48', 10);
@@ -2244,9 +2248,13 @@
 
             const isAr = currentLang === 'ar';
             try {
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
                 const res = await fetch(`${API_BASE}/api/v1/reservations`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-ID': activeUserId
+                    },
                     body: JSON.stringify({
                         opportunity_id: oppId,
                         customer_id: custId,
@@ -2258,13 +2266,25 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Failed to create reservation');
+                    let msg = 'Failed to create reservation';
+                    try {
+                        const err = await res.json();
+                        if (typeof err.detail === 'string') {
+                            msg = err.detail;
+                        } else if (Array.isArray(err.detail) && err.detail[0]?.msg) {
+                            msg = err.detail[0].msg;
+                        } else if (err.error && err.error.message) {
+                            msg = err.error.message;
+                        } else if (err.message) {
+                            msg = err.message;
+                        }
+                    } catch (_) {}
+                    throw new Error(msg);
                 }
 
                 const json = await res.json();
                 closeReserveUnitModal();
-                showToast(isAr ? `تم حجز الوحدة بنجاح برقم (${json.data?.reservation_number || 'مؤكد'})!` : 'Unit reserved successfully!');
+                showToast(isAr ? `تم حجز الوحدة بنجاح برقم (${json.data?.reservation_number || 'مؤكد'})!` : 'Unit reserved successfully!', 'success');
                 fetchOffers();
                 fetchOpportunities();
             } catch (err) {
@@ -2336,13 +2356,22 @@
                         </div>
                     `;
                 } else if (o.status === 'ACCEPTED') {
-                    actionBtns = `
-                        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                            <span style="font-size: 0.8em; color: #16a34a; font-weight: 700;">✓ ${currentLang === 'ar' ? 'مقبول' : 'Accepted'}</span>
-                            <button class="btn-sm" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="openReserveUnitModal('${o.opportunity_id}', '${o.unit_id}', '${o.customer_id}', '${(o.customer_name || '').replace(/'/g, "\\'")}', '${o.unit_number || ''}', ${o.offer_amount})">🔒 ${currentLang === 'ar' ? 'حجز الوحدة' : 'Reserve'}</button>
-                            <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'الحجز والعقد ➔' : 'Reservations ➔'}</a>
-                        </div>
-                    `;
+                    if (o.unit_status === 'RESERVED') {
+                        actionBtns = `
+                            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                                <span class="badge" style="background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-size: 0.8em; font-weight: 700; padding: 3px 8px; border-radius: 4px;">🔒 ${currentLang === 'ar' ? 'الوحدة محجوزة' : 'Unit Reserved'}</span>
+                                <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'سجل الحجوزات ➔' : 'Reservations ➔'}</a>
+                            </div>
+                        `;
+                    } else {
+                        actionBtns = `
+                            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                                <span style="font-size: 0.8em; color: #16a34a; font-weight: 700;">✓ ${currentLang === 'ar' ? 'مقبول' : 'Accepted'}</span>
+                                <button class="btn-sm" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 2px 8px; font-size: 0.8em; font-weight: 700;" onclick="openReserveUnitModal('${o.opportunity_id}', '${o.unit_id}', '${o.customer_id}', '${(o.customer_name || '').replace(/'/g, "\\'")}', '${o.unit_number || ''}', ${o.offer_amount})">🔒 ${currentLang === 'ar' ? 'حجز الوحدة' : 'Reserve'}</button>
+                                <a href="finance.html#reservations" class="btn-sm" style="background: #f0fdf4; color: #166534; border: 1px solid #86efac; text-decoration: none; padding: 2px 7px; font-size: 0.78em; font-weight: 700;">📋 ${currentLang === 'ar' ? 'الحجز والعقد ➔' : 'Reservations ➔'}</a>
+                            </div>
+                        `;
+                    }
                 } else if (o.status === 'COUNTER' || o.status === 'COUNTERED') {
                     actionBtns = `
                         <div style="display: flex; gap: 4px; align-items: center;">

@@ -586,7 +586,9 @@ async def create_reservation(
     x_user_id: Optional[str] = Header(None, alias="X-User-Id")
 ):
     cust_id = payload.customer_id
-    if not cust_id:
+    if cust_id in ("undefined", "null", ""):
+        cust_id = None
+    if not cust_id and payload.opportunity_id:
         cust_id = await conn.fetchval("SELECT customer_id FROM opportunities WHERE opportunity_id = $1", payload.opportunity_id)
     if not cust_id:
         raise HTTPException(status_code=400, detail="Customer ID is required or must be linked to opportunity.")
@@ -607,6 +609,8 @@ async def create_reservation(
             row = await conn.fetchrow(f"{RESERVATION_SELECT_QUERY} WHERE r.reservation_id = $1", reservation_id)
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to create reservation: {str(e)}")
 
     return ResponseEnvelope(data=ReservationOut(**dict(row)), meta=BaseMeta())
 
@@ -690,7 +694,9 @@ async def list_offers(
             o.offer_id,
             o.opportunity_id,
             o.unit_id,
+            opp.customer_id,
             u.unit_number,
+            u.status AS unit_status,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
@@ -720,7 +726,9 @@ async def get_offer(offer_id: str, conn: asyncpg.Connection = Depends(get_db)):
             o.offer_id,
             o.opportunity_id,
             o.unit_id,
+            opp.customer_id,
             u.unit_number,
+            u.status AS unit_status,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
@@ -760,7 +768,9 @@ async def create_offer(
             o.offer_id,
             o.opportunity_id,
             o.unit_id,
+            opp.customer_id,
             u.unit_number,
+            u.status AS unit_status,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
@@ -821,7 +831,9 @@ async def update_offer(offer_id: str, payload: OfferUpdateIn, conn: asyncpg.Conn
             o.offer_id,
             o.opportunity_id,
             o.unit_id,
+            opp.customer_id,
             u.unit_number,
+            u.status AS unit_status,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
