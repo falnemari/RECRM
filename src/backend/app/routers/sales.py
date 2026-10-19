@@ -497,6 +497,9 @@ RESERVATION_SELECT_QUERY = """
         CAST(u.area_sqm AS FLOAT) AS area_sqm,
         u.floor_no,
         CAST(u.asking_price AS FLOAT) AS asking_price,
+        CAST(COALESCE(off.offer_amount, opp.expected_value, u.asking_price) AS FLOAT) AS agreed_price,
+        CAST(off.offer_amount AS FLOAT) AS accepted_offer_amount,
+        off.offer_id AS offer_id,
         u.status AS unit_status,
         opp.assigned_user_id AS assigned_agent_id,
         ag.full_name AS assigned_agent_name,
@@ -512,6 +515,15 @@ RESERVATION_SELECT_QUERY = """
     LEFT JOIN customers c ON r.customer_id = c.customer_id
     LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
     LEFT JOIN users ag ON opp.assigned_user_id = ag.user_id
+    LEFT JOIN (
+        SELECT DISTINCT ON (opportunity_id)
+            opportunity_id,
+            offer_id,
+            offer_amount
+        FROM offers
+        WHERE status = 'ACCEPTED'
+        ORDER BY opportunity_id, submitted_at DESC
+    ) off ON r.opportunity_id = off.opportunity_id
     LEFT JOIN (
         SELECT DISTINCT ON (reservation_id)
             contract_id,

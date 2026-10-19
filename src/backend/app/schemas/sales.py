@@ -100,6 +100,9 @@ class ReservationOut(BaseModel):
     area_sqm: Optional[float] = None
     floor_no: Optional[int] = None
     asking_price: Optional[float] = None
+    agreed_price: Optional[float] = None
+    accepted_offer_amount: Optional[float] = None
+    offer_id: Optional[str] = None
     unit_status: Optional[str] = None
     assigned_agent_id: Optional[str] = None
     assigned_agent_name: Optional[str] = None

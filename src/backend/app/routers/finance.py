@@ -289,7 +289,7 @@ async def convert_reservation_to_contract(
         # 1. Fetch reservation
         res = await conn.fetchrow(
             """
-            SELECT reservation_id, unit_id, customer_id, deposit_amount, status
+            SELECT reservation_id, opportunity_id, unit_id, customer_id, deposit_amount, status
             FROM reservations
             WHERE reservation_id = $1
             """,
@@ -300,9 +300,18 @@ async def convert_reservation_to_contract(
         if res["status"] == "CONVERTED":
             raise HTTPException(status_code=400, detail="Reservation has already been converted to a contract")
 
-        # 2. Get unit asking/sale price if contract_value is not specified
-        unit_price = await conn.fetchval("SELECT asking_price FROM units WHERE unit_id = $1", res["unit_id"])
-        contract_val = payload.contract_value or (float(unit_price) if unit_price else 500000.0)
+        # 2. Get accepted offer price, opportunity expected_value, or unit asking price
+        if payload.contract_value:
+            contract_val = payload.contract_value
+        else:
+            offer_val = await conn.fetchval(
+                "SELECT offer_amount FROM offers WHERE opportunity_id = $1 AND status = 'ACCEPTED' ORDER BY submitted_at DESC LIMIT 1",
+                res["opportunity_id"]
+            ) if res["opportunity_id"] else None
+            if not offer_val and res["opportunity_id"]:
+                offer_val = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", res["opportunity_id"])
+            unit_price = await conn.fetchval("SELECT asking_price FROM units WHERE unit_id = $1", res["unit_id"])
+            contract_val = float(offer_val) if offer_val else (float(unit_price) if unit_price else 500000.0)
 
         # 3. Generate contract number
         next_num = await conn.fetchval("SELECT count(*) + 1 FROM contracts")

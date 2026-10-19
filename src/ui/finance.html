@@ -1202,14 +1202,15 @@
 
                     let stBadge = '';
                     let resActions = `<button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>`;
+                    const effPrice = r.agreed_price || r.accepted_offer_amount || r.contract_value || r.asking_price || r.rent_price || 0;
 
                     if (r.status === 'ACTIVE') {
                         stBadge = '<span class="badge badge-due" style="background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;">ACTIVE</span>';
                         resActions += `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="openVerifyDepositModal('${r.reservation_id}', '${r.reservation_number}', ${r.deposit_amount || 0})">💰 ${currentLang === 'ar' ? 'التحقق من العربون' : 'Verify Deposit'}</button>`;
-                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${r.asking_price || r.rent_price || 0})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
+                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
                     } else if (r.status === 'CONFIRMED') {
                         stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight: 700;">✓ CONFIRMED</span>';
-                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${r.asking_price || r.rent_price || 0})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
+                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
                         resActions += `<button class="btn btn-sm" style="background: #f1f5f9; color: #0f172a; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">➔ Convert</button>`;
                     } else if (r.status === 'CONVERTED') {
                         stBadge = '<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">CONVERTED</span>';
@@ -1453,13 +1454,23 @@
 
             // 5. Financials
             const dep = Number(r.deposit_amount || 0);
-            const price = Number(r.asking_price || r.contract_value || (dep ? dep * 10 : 0));
-            const bal = Math.max(0, price - dep);
-            const pct = (price > 0 && dep > 0) ? ((dep / price) * 100).toFixed(1) : '--';
+            const askingPrice = Number(r.asking_price || 0);
+            const agreedPrice = Number(r.agreed_price || r.accepted_offer_amount || r.contract_value || askingPrice || (dep ? dep * 10 : 0));
+            const bal = Math.max(0, agreedPrice - dep);
+            const pct = (agreedPrice > 0 && dep > 0) ? ((dep / agreedPrice) * 100).toFixed(1) : '--';
 
             document.getElementById('det-res-deposit').textContent = `${dep.toLocaleString()} SAR`;
-            document.getElementById('det-res-unit-price').textContent = price > 0 ? `${price.toLocaleString()} SAR` : 'N/A';
-            document.getElementById('det-res-balance').textContent = price > 0 ? `${bal.toLocaleString()} SAR` : '-- SAR';
+            const priceEl = document.getElementById('det-res-unit-price');
+            if (agreedPrice > 0) {
+                if (askingPrice > 0 && agreedPrice < askingPrice) {
+                    priceEl.innerHTML = `<span>${agreedPrice.toLocaleString()} SAR</span> <span style="font-size: 0.72em; color: #16a34a; background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-inline-start: 4px;" title="Accepted Offer / Discounted from ${askingPrice.toLocaleString()} SAR">${currentLang === 'ar' ? 'عرض مقبول (خصم)' : 'Accepted Offer'}</span>`;
+                } else {
+                    priceEl.textContent = `${agreedPrice.toLocaleString()} SAR`;
+                }
+            } else {
+                priceEl.textContent = 'N/A';
+            }
+            document.getElementById('det-res-balance').textContent = agreedPrice > 0 ? `${bal.toLocaleString()} SAR` : '-- SAR';
             document.getElementById('det-res-deposit-pct').textContent = pct !== '--' ? `${pct}%` : '--%';
 
             // 6. Dates & Agent
@@ -1533,6 +1544,9 @@
             const printWin = window.open('', '_blank', 'width=800,height=700');
             const isAr = currentLang === 'ar';
             const dep = Number(r.deposit_amount || 0);
+            const askingPrice = Number(r.asking_price || 0);
+            const agreedPrice = Number(r.agreed_price || r.accepted_offer_amount || r.contract_value || askingPrice || 0);
+            const bal = Math.max(0, agreedPrice - dep);
 
             printWin.document.write(`
                 <!DOCTYPE html>
@@ -1569,6 +1583,7 @@
                         <tr><th>${isAr ? 'رقم الوحدة المحجوزة' : 'Reserved Unit #'}</th><td><strong>Unit ${r.unit_number || r.unit_id}</strong></td></tr>
                         <tr><th>${isAr ? 'المشروع / المبنى' : 'Project / Building'}</th><td>${r.project_name || ''} ${r.building_name ? ' / ' + r.building_name : ''}</td></tr>
                         <tr><th>${isAr ? 'مواصفات الوحدة' : 'Specifications'}</th><td>${r.area_sqm ? r.area_sqm + ' m² • ' : ''}${r.bedrooms != null ? r.bedrooms + ' Beds • ' : ''}${r.bathrooms != null ? r.bathrooms + ' Baths' : ''}</td></tr>
+                        ${agreedPrice > 0 ? `<tr><th>${isAr ? 'قيمة البيع المتفق عليها' : 'Agreed Sale Price'}</th><td><strong>${agreedPrice.toLocaleString()} SAR</strong>${(askingPrice > agreedPrice) ? ` <span style="color:#64748b; font-size:12px;">(${isAr ? 'السعر المعلن' : 'Catalog Price'}: ${askingPrice.toLocaleString()} SAR)</span>` : ''}</td></tr>` : ''}
                         <tr><th>${isAr ? 'تاريخ الحجز' : 'Booking Date'}</th><td>${r.reserved_at ? new Date(r.reserved_at).toLocaleDateString() : '--'}</td></tr>
                         <tr><th>${isAr ? 'صلاحية الحجز حتى' : 'Reservation Expiry'}</th><td>${r.expires_at ? new Date(r.expires_at).toLocaleDateString() : 'Open'}</td></tr>
                         <tr><th>${isAr ? 'الوسيط المسؤول' : 'Handling Agent'}</th><td>${r.assigned_agent_name || 'Office Desk'}</td></tr>
@@ -1577,6 +1592,7 @@
                     <div class="deposit-box">
                         <div style="font-size: 13px; color: #166534; font-weight: 600;">${isAr ? 'مبلغ العربون المسدد والمثبت' : 'Confirmed Earnest Deposit Amount'}</div>
                         <div class="deposit-val">${dep.toLocaleString()} SAR</div>
+                        ${agreedPrice > 0 ? `<div style="font-size: 13px; color: #ea580c; font-weight: 700; margin-top: 6px;">${isAr ? 'المتبقي لإبرام العقد:' : 'Remaining Balance to Contract:'} ${bal.toLocaleString()} SAR</div>` : ''}
                         <div style="font-size: 12px; color: #475569; margin-top: 4px;">${isAr ? 'يتم قيد هذا المبلغ تلقائياً كدفعة أولى عند إبرام عقد البيع الرسمي' : 'This amount is credited as initial down payment upon contract signing'}</div>
                     </div>
 
@@ -1634,7 +1650,7 @@
             const preview = document.getElementById('conv-res-preview');
             if (item) {
                 const dep = Number(item.deposit_amount || 0);
-                const price = Number(item.asking_price || (dep ? dep * 10 : 500000));
+                const price = Number(item.agreed_price || item.accepted_offer_amount || item.contract_value || item.asking_price || (dep ? dep * 10 : 500000));
                 document.getElementById('conv-value').value = price;
 
                 document.getElementById('conv-preview-cust').textContent = `${item.customer_name || 'Client'} ${item.customer_mobile ? `(${item.customer_mobile})` : ''}`;

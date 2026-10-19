@@ -104,12 +104,17 @@ class TestRBACAndScoping(unittest.TestCase):
 
     def test_accountant_user19_can_query_tasks_and_see_task_3796(self):
         # user-19 (Demo Agent 26, Accountant) has earnest deposit followup task-3796
-        res = self.client.get("/api/v1/tasks?assigned_user_id=user-19&status=OPEN", headers={"X-User-ID": "user-19"})
+        res = self.client.get("/api/v1/tasks?assigned_user_id=user-19", headers={"X-User-ID": "user-19"})
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertGreaterEqual(data["meta"]["total"], 1)
         task_ids = [t["task_id"] for t in data["data"]]
         self.assertIn("task-3796", task_ids)
+
+        # Also verify accountant can query active OPEN/PENDING tasks
+        res_open = self.client.get("/api/v1/tasks?assigned_user_id=user-19&status=OPEN", headers={"X-User-ID": "user-19"})
+        self.assertEqual(res_open.status_code, 200)
+        self.assertGreaterEqual(res_open.json()["meta"]["total"], 1)
 
     def test_tasks_status_open_includes_pending_tasks(self):
         # Querying status=OPEN must include active PENDING operational tasks
@@ -122,6 +127,17 @@ class TestRBACAndScoping(unittest.TestCase):
         sum_res = self.client.get("/api/v1/tasks/summary", headers={"X-User-ID": "user-51"})
         self.assertEqual(sum_res.status_code, 200)
         self.assertGreater(sum_res.json()["data"]["open_tasks"], 0)
+
+    def test_reservation_agreed_price_reflects_accepted_offer(self):
+        # RES-000004 / res-180 has unit asking_price 1,100,000 SAR but accepted offer 1,000,000 SAR
+        res = self.client.get("/api/v1/reservations/res-180", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
+        self.assertEqual(data["reservation_id"], "res-180")
+        self.assertEqual(data["asking_price"], 1100000.0)
+        self.assertEqual(data["agreed_price"], 1000000.0)
+        self.assertEqual(data["accepted_offer_amount"], 1000000.0)
+        self.assertEqual(data["deposit_amount"], 50000.0)
 
 if __name__ == "__main__":
     unittest.main()

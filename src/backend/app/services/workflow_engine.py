@@ -2147,7 +2147,7 @@ class WorkflowEngine:
         now_dt = datetime.now(timezone.utc)
         res = await conn.fetchrow(
             """
-            SELECT r.*, u.unit_number, u.asking_price, u.rent_price, o.lead_id, o.assigned_user_id
+            SELECT r.*, u.unit_number, u.asking_price, u.rent_price, o.lead_id, o.assigned_user_id, o.expected_value
             FROM reservations r
             JOIN units u ON r.unit_id = u.unit_id
             LEFT JOIN opportunities o ON r.opportunity_id = o.opportunity_id
@@ -2161,7 +2161,18 @@ class WorkflowEngine:
         if res["status"] == "CONVERTED":
             raise ValueError("تم تحويل هذا الحجز إلى عقد مسبقاً (Reservation already converted).")
 
-        val = contract_value or float(res["asking_price"] or res["rent_price"] or 500000.0)
+        if not contract_value:
+            offer_val = await conn.fetchval(
+                "SELECT offer_amount FROM offers WHERE opportunity_id = $1 AND status = 'ACCEPTED' ORDER BY submitted_at DESC LIMIT 1",
+                res["opportunity_id"]
+            )
+            if offer_val:
+                contract_value = float(offer_val)
+            elif res.get("expected_value"):
+                contract_value = float(res["expected_value"])
+            else:
+                contract_value = float(res["asking_price"] or res["rent_price"] or 500000.0)
+        val = contract_value
         c_count = await conn.fetchval("SELECT count(*) + 1 FROM contracts")
         c_number = f"CON-{c_count:06d}"
         contract_id = await get_next_id(conn, "contracts", "con")
