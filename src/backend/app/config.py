@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     DB_PORT: int = 5432
     DB_USER: str = "postgres"
     DB_PASSWORD: str = ""
-    DB_NAME: str = "redb"
+    DB_NAME: str = "re_db"
     
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
