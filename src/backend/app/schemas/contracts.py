@@ -52,6 +52,9 @@ class ContractOut(BaseModel):
     customer_mobile: Optional[str] = None
     unit_id: Optional[str] = None
     unit_number: Optional[str] = None
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
     contract_number: str
     contract_type: str
     start_date: Optional[date] = None

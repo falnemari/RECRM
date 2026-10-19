@@ -4517,9 +4517,13 @@ class WorkflowEngine:
         # 4. Fetch viewings
         viewings = await conn.fetch(
             """
-            SELECT v.*, u.unit_number, COALESCE(p.name_ar, p.name_en) as project_name, ag.full_name as agent_name
+            SELECT v.*, u.unit_number, u.owner_customer_id,
+                   COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                   owner_c.mobile AS unit_owner_mobile,
+                   COALESCE(p.name_ar, p.name_en) as project_name, ag.full_name as agent_name
             FROM viewings v
             LEFT JOIN units u ON v.unit_id = u.unit_id
+            LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
             LEFT JOIN buildings b ON u.building_id = b.building_id
             LEFT JOIN projects p ON b.project_id = p.project_id
             LEFT JOIN users ag ON v.agent_user_id = ag.user_id
@@ -4535,9 +4539,12 @@ class WorkflowEngine:
         # 5. Fetch offers
         offers = await conn.fetch(
             """
-            SELECT o.*, u.unit_number, u.asking_price
+            SELECT o.*, u.unit_number, u.asking_price, u.owner_customer_id,
+                   COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                   owner_c.mobile AS unit_owner_mobile
             FROM offers o
             LEFT JOIN units u ON o.unit_id = u.unit_id
+            LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
             WHERE $1::text IS NOT NULL AND o.opportunity_id = $1
             ORDER BY o.valid_until DESC
             """,
@@ -4549,9 +4556,12 @@ class WorkflowEngine:
         if opportunity_id:
             reservations = await conn.fetch(
                 """
-                SELECT r.*, u.unit_number
+                SELECT r.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
                 FROM reservations r
                 LEFT JOIN units u ON r.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
                 WHERE r.opportunity_id = $1
                 ORDER BY r.reserved_at DESC
                 """,
@@ -4559,9 +4569,13 @@ class WorkflowEngine:
             )
             contracts = await conn.fetch(
                 """
-                SELECT c.*
+                SELECT c.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
                 FROM contracts c
                 JOIN reservations r ON c.reservation_id = r.reservation_id
+                LEFT JOIN units u ON r.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
                 WHERE r.opportunity_id = $1
                 ORDER BY c.signed_at DESC NULLS LAST, c.contract_id DESC
                 """,
@@ -4570,9 +4584,12 @@ class WorkflowEngine:
         elif not lead_id and customer_id:
             reservations = await conn.fetch(
                 """
-                SELECT r.*, u.unit_number
+                SELECT r.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
                 FROM reservations r
                 LEFT JOIN units u ON r.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
                 WHERE r.customer_id = $1
                 ORDER BY r.reserved_at DESC
                 """,
@@ -4580,9 +4597,13 @@ class WorkflowEngine:
             )
             contracts = await conn.fetch(
                 """
-                SELECT c.*
+                SELECT c.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
                 FROM contracts c
                 JOIN reservations r ON c.reservation_id = r.reservation_id
+                LEFT JOIN units u ON r.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
                 WHERE r.customer_id = $1
                 ORDER BY c.signed_at DESC NULLS LAST, c.contract_id DESC
                 """,
@@ -4886,6 +4907,9 @@ class WorkflowEngine:
                 "viewing_id": v["viewing_id"],
                 "unit_id": v.get("unit_id"),
                 "unit_number": v.get("unit_number") or "--",
+                "unit_owner_name": v.get("unit_owner_name"),
+                "unit_owner_mobile": v.get("unit_owner_mobile"),
+                "owner_customer_id": v.get("owner_customer_id"),
                 "project_name": v.get("project_name") or "--",
                 "agent_name": v.get("agent_name") or "Agent",
                 "agent_user_id": v.get("agent_user_id"),
@@ -4907,6 +4931,9 @@ class WorkflowEngine:
                 "offer_id": o["offer_id"],
                 "unit_id": o.get("unit_id"),
                 "unit_number": o.get("unit_number") or "--",
+                "unit_owner_name": o.get("unit_owner_name"),
+                "unit_owner_mobile": o.get("unit_owner_mobile"),
+                "owner_customer_id": o.get("owner_customer_id"),
                 "offer_amount": float(o["offer_amount"]) if o.get("offer_amount") is not None else 0.0,
                 "asking_price": float(o["asking_price"]) if o.get("asking_price") is not None else None,
                 "status": o.get("status") or "SUBMITTED",
@@ -4925,6 +4952,9 @@ class WorkflowEngine:
                 "reservation_number": r.get("reservation_number") or "--",
                 "unit_id": r.get("unit_id"),
                 "unit_number": r.get("unit_number") or "--",
+                "unit_owner_name": r.get("unit_owner_name"),
+                "unit_owner_mobile": r.get("unit_owner_mobile"),
+                "owner_customer_id": r.get("owner_customer_id"),
                 "deposit_amount": float(r["deposit_amount"]) if r.get("deposit_amount") is not None else 0.0,
                 "status": r.get("status") or "ACTIVE",
                 "is_done": is_done,
@@ -4942,6 +4972,10 @@ class WorkflowEngine:
                 "contract_id": c["contract_id"],
                 "contract_number": c.get("contract_number") or "--",
                 "contract_type": c.get("contract_type") or "SALE",
+                "unit_number": c.get("unit_number") or "--",
+                "unit_owner_name": c.get("unit_owner_name"),
+                "unit_owner_mobile": c.get("unit_owner_mobile"),
+                "owner_customer_id": c.get("owner_customer_id"),
                 "contract_value": float(c["contract_value"]) if c.get("contract_value") is not None else 0.0,
                 "status": c.get("status") or "ACTIVE",
                 "is_done": is_done,

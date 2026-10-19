@@ -62,6 +62,9 @@ CONTRACT_SELECT_QUERY = """
         cust.mobile AS customer_mobile,
         r.unit_id,
         u.unit_number,
+        u.owner_customer_id,
+        COALESCE(NULLIF(TRIM(CONCAT(owner_cust.first_name, ' ', owner_cust.last_name)), ''), owner_cust.company_name) AS unit_owner_name,
+        owner_cust.mobile AS unit_owner_mobile,
         c.contract_number,
         c.contract_type,
         c.start_date,
@@ -75,6 +78,7 @@ CONTRACT_SELECT_QUERY = """
     LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
     LEFT JOIN customers cust ON r.customer_id = cust.customer_id
     LEFT JOIN units u ON r.unit_id = u.unit_id
+    LEFT JOIN customers owner_cust ON u.owner_customer_id = owner_cust.customer_id
 """
 
 @router.get("/finance/summary", response_model=ResponseEnvelope[FinanceSummary])

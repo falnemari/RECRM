@@ -335,6 +335,9 @@ async def list_viewings(
             v.lead_id,
             v.unit_id,
             u.unit_number,
+            u.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             COALESCE(p.name_ar, p.name_en) AS project_name,
             b.name AS building_name,
             v.customer_id,
@@ -349,6 +352,7 @@ async def list_viewings(
             COALESCE(v.outcome, v.notes) AS feedback
         FROM viewings v
         LEFT JOIN units u ON v.unit_id = u.unit_id
+        LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         LEFT JOIN buildings b ON u.building_id = b.building_id
         LEFT JOIN projects p ON b.project_id = p.project_id
         LEFT JOIN customers c ON v.customer_id = c.customer_id
@@ -472,6 +476,9 @@ RESERVATION_SELECT_QUERY = """
         r.opportunity_id,
         r.unit_id,
         u.unit_number,
+        u.owner_customer_id,
+        COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+        owner_c.mobile AS unit_owner_mobile,
         r.reservation_number,
         r.reserved_at,
         r.expires_at,
@@ -498,6 +505,7 @@ RESERVATION_SELECT_QUERY = """
         CAST(con.contract_value AS FLOAT) AS contract_value
     FROM reservations r
     LEFT JOIN units u ON r.unit_id = u.unit_id
+    LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
     LEFT JOIN buildings b ON u.building_id = b.building_id
     LEFT JOIN projects p ON b.project_id = p.project_id
     LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
@@ -697,6 +705,9 @@ async def list_offers(
             opp.customer_id,
             u.unit_number,
             u.status AS unit_status,
+            u.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
@@ -704,6 +715,7 @@ async def list_offers(
             o.status
         FROM offers o
         LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
         LEFT JOIN customers c ON opp.customer_id = c.customer_id
         WHERE {where_clause}
@@ -729,6 +741,9 @@ async def get_offer(offer_id: str, conn: asyncpg.Connection = Depends(get_db)):
             opp.customer_id,
             u.unit_number,
             u.status AS unit_status,
+            u.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             CAST(o.offer_amount AS FLOAT) AS offer_amount,
             o.submitted_at,
@@ -736,6 +751,7 @@ async def get_offer(offer_id: str, conn: asyncpg.Connection = Depends(get_db)):
             o.status
         FROM offers o
         LEFT JOIN units u ON o.unit_id = u.unit_id
+        LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         LEFT JOIN opportunities opp ON o.opportunity_id = opp.opportunity_id
         LEFT JOIN customers c ON opp.customer_id = c.customer_id
         WHERE o.offer_id = $1
@@ -861,10 +877,14 @@ async def list_opportunity_units(opp_id: str, conn: asyncpg.Connection = Depends
             ou.opportunity_id,
             ou.unit_id,
             u.unit_number,
+            u.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             ou.is_primary,
             CAST(ou.offered_price AS FLOAT) AS offered_price
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
+        LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         WHERE ou.opportunity_id = $1
         ORDER BY ou.is_primary DESC, u.unit_number ASC
     """, opp_id)
@@ -889,10 +909,14 @@ async def add_opportunity_unit(opp_id: str, payload: OpportunityUnitCreateIn, co
             ou.opportunity_id,
             ou.unit_id,
             u.unit_number,
+            u.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             ou.is_primary,
             CAST(ou.offered_price AS FLOAT) AS offered_price
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
+        LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         WHERE ou.opportunity_id = $1 AND ou.unit_id = $2
     """, opp_id, payload.unit_id)
     return ResponseEnvelope(data=OpportunityUnitOut(**dict(row)), meta=BaseMeta())

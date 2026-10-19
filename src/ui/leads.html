@@ -2067,6 +2067,7 @@
                                     <div>
                                         <span style="font-weight: 700; font-size: 0.9em; color: var(--navy);">🏢 Unit ${u.unit_number || u.unit_id}</span>
                                         <span style="font-size: 0.82em; color: var(--text-muted); margin-inline-start: 6px;">${u.building_name ? u.building_name + ' • ' : ''}${pName || ''}</span>
+                                        <span style="font-size: 0.8em; color: var(--navy); margin-inline-start: 6px; font-weight: 600;">👤 ${u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency')}</span>
                                     </div>
                                     <div style="font-size: 0.8em; color: #475569;">
                                         ${u.bedrooms !== null && u.bedrooms !== undefined ? `<span>🛏️ ${u.bedrooms} Beds • </span>` : ''}
@@ -2192,6 +2193,7 @@
                 unit_number: unit ? unit.unit_number : unitId,
                 building_name: unit ? (unit.building_name || unit.building_id || '') : '',
                 project_name: pName || '',
+                owner_name: unit ? (unit.owner_name || unit.unit_owner_name || '') : '',
                 unit_price: price,
                 bedrooms: unit ? unit.bedrooms : null,
                 is_primary: isFirst
@@ -2283,6 +2285,7 @@
                     unit_number: u.unit_number || u.unit_id,
                     building_name: u.building_name || '',
                     project_name: u.project_name || '',
+                    owner_name: u.unit_owner_name || u.owner_name || '',
                     unit_price: u.unit_price || 0,
                     bedrooms: u.bedrooms ?? null,
                     is_primary: !!u.is_primary
@@ -2294,6 +2297,7 @@
                     unit_number: invUnit ? invUnit.unit_number : (lead.unit_number || lead.unit_id),
                     building_name: invUnit ? (invUnit.building_name || invUnit.building_id || '') : (lead.building_name || ''),
                     project_name: invUnit ? (invUnit.project_name_en || invUnit.project_name_ar || '') : (lead.project_name || ''),
+                    owner_name: invUnit ? (invUnit.owner_name || invUnit.unit_owner_name || '') : (lead.owner_name || ''),
                     unit_price: invUnit ? (invUnit.asking_price || invUnit.rent_price || 0) : (lead.unit_price || 0),
                     bedrooms: invUnit ? invUnit.bedrooms : (lead.bedrooms_min ?? null),
                     is_primary: true

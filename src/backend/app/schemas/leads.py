@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field, model_validator
 class LeadUnitItem(BaseModel):
     unit_id: str
     unit_number: str
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
     building_name: Optional[str] = None
     project_name: Optional[str] = None
     unit_price: Optional[float] = None

@@ -20,6 +20,9 @@ async def fetch_lead_units(conn: asyncpg.Connection, lead_id: str) -> List[LeadU
         SELECT 
             lu.unit_id,
             un.unit_number,
+            un.owner_customer_id,
+            COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+            owner_c.mobile AS unit_owner_mobile,
             b.name AS building_name,
             p.name_en AS project_name,
             CAST(COALESCE(un.asking_price, un.rent_price) AS FLOAT) AS unit_price,
@@ -27,6 +30,7 @@ async def fetch_lead_units(conn: asyncpg.Connection, lead_id: str) -> List[LeadU
             lu.is_primary
         FROM lead_units lu
         JOIN units un ON lu.unit_id = un.unit_id
+        LEFT JOIN customers owner_c ON un.owner_customer_id = owner_c.customer_id
         LEFT JOIN buildings b ON un.building_id = b.building_id
         LEFT JOIN projects p ON b.project_id = p.project_id
         WHERE lu.lead_id = $1

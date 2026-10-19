@@ -257,6 +257,7 @@
                             <th data-i18n="th_con_type">Type</th>
                             <th data-i18n="th_con_customer">Customer</th>
                             <th data-i18n="th_con_unit">Unit #</th>
+                            <th data-i18n="th_unit_owner">Unit Owner</th>
                             <th data-i18n="th_con_value">Value (SAR)</th>
                             <th data-i18n="th_con_paid">Paid (SAR)</th>
                             <th data-i18n="th_con_bal">Balance (SAR)</th>
@@ -265,7 +266,7 @@
                         </tr>
                     </thead>
                     <tbody id="contracts-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -294,6 +295,7 @@
                             <th data-i18n="th_res_number">Reservation #</th>
                             <th data-i18n="th_customer_buyer">Customer / Buyer</th>
                             <th data-i18n="th_target_unit">Target Unit</th>
+                            <th data-i18n="th_unit_owner">Unit Owner</th>
                             <th data-i18n="th_earnest_deposit">Earnest Deposit</th>
                             <th data-i18n="th_reserved_date">Reserved Date</th>
                             <th data-i18n="th_expiry_date">Expiry / Validity</th>
@@ -302,7 +304,7 @@
                         </tr>
                     </thead>
                     <tbody id="reservations-tbody">
-                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -608,6 +610,13 @@
                                 <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="lbl_area_layout">Area / Layout:</span>
                                 <span id="det-res-unit-specs">--</span>
                             </div>
+                            <div style="grid-column: span 2; border-top: 1px dashed #e2e8f0; padding-top: 8px; margin-top: 4px;">
+                                <span style="display: block; color: var(--text-muted); font-size: 0.82em;" data-i18n="th_unit_owner">Unit Owner:</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <strong id="det-res-unit-owner" style="font-size: 1.05em; color: var(--navy);">--</strong>
+                                    <span id="det-res-unit-owner-phone" style="font-size: 0.85em; color: var(--text-muted);"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -751,6 +760,7 @@
                 th_res_number: "Reservation #",
                 th_customer_buyer: "Customer / Buyer",
                 th_target_unit: "Target Unit",
+                th_unit_owner: "Unit Owner",
                 th_earnest_deposit: "Earnest Deposit",
                 th_reserved_date: "Reserved Date",
                 th_expiry_date: "Expiry / Validity",
@@ -830,6 +840,7 @@
                 th_res_number: "رقم الحجز",
                 th_customer_buyer: "العميل / المشتري",
                 th_target_unit: "الوحدة",
+                th_unit_owner: "مالك الوحدة العقارية",
                 th_earnest_deposit: "العربون",
                 th_reserved_date: "تاريخ الحجز",
                 th_expiry_date: "صلاحية الحجز",
@@ -979,6 +990,9 @@
                         stBadge = 'badge-signed';
                     }
 
+                    const ownerName = c.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
+                    const ownerMobile = c.unit_owner_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${c.unit_owner_mobile}</div>` : '';
+
                     return `
                     <tr>
                         <td><span class="id-badge">${c.contract_number}</span></td>
@@ -988,6 +1002,10 @@
                             ${c.customer_mobile ? `<span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start: 4px;">• ${c.customer_mobile}</span>` : ''}
                         </td>
                         <td><strong>${c.unit_number || 'N/A'}</strong></td>
+                        <td>
+                            <strong>👤 ${ownerName}</strong>
+                            ${ownerMobile}
+                        </td>
                         <td><strong>${Number(c.contract_value || 0).toLocaleString()} SAR</strong></td>
                         <td style="color: #16a34a;">${Number(c.total_paid || 0).toLocaleString()} SAR</td>
                         <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
@@ -1000,7 +1018,7 @@
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
+                document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="10" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
             }
         }
 
@@ -1159,7 +1177,7 @@
                 const tbody = document.getElementById('reservations-tbody');
                 if (!tbody) return;
                 if (cachedReservations.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No reservations found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px; color: var(--text-muted);">No reservations found.</td></tr>';
                     return;
                 }
 
@@ -1199,6 +1217,9 @@
                         stBadge = `<span class="badge badge-due">${r.status}</span>`;
                     }
 
+                    const ownerName = r.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
+                    const ownerMobile = r.unit_owner_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${r.unit_owner_mobile}</div>` : '';
+
                     return `
                         <tr>
                             <td><span class="id-badge">${r.reservation_number}</span></td>
@@ -1209,6 +1230,10 @@
                             <td>
                                 <strong>Unit ${r.unit_number || r.unit_id}</strong>
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${r.project_name || r.building_name || 'Direct Property'}</div>
+                            </td>
+                            <td>
+                                <strong>👤 ${ownerName}</strong>
+                                ${ownerMobile}
                             </td>
                             <td style="font-weight: 700; color: #15803d;">${Number(r.deposit_amount || 0).toLocaleString()} SAR</td>
                             <td>${r.reserved_at ? r.reserved_at.split('T')[0] : '--'}</td>
@@ -1221,7 +1246,7 @@
             } catch (e) {
                 console.error(e);
                 const tbody = document.getElementById('reservations-tbody');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
             }
         }
 
@@ -1418,6 +1443,13 @@
             if (r.bedrooms != null) specs.push(`${r.bedrooms} Beds`);
             if (r.bathrooms != null) specs.push(`${r.bathrooms} Baths`);
             document.getElementById('det-res-unit-specs').textContent = specs.join(' • ') || 'Standard Specs';
+
+            // Unit Owner
+            const ownerName = r.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
+            const ownerEl = document.getElementById('det-res-unit-owner');
+            if (ownerEl) ownerEl.textContent = `👤 ${ownerName}`;
+            const ownPhoneEl = document.getElementById('det-res-unit-owner-phone');
+            if (ownPhoneEl) ownPhoneEl.textContent = r.unit_owner_mobile ? `📞 ${r.unit_owner_mobile}` : '';
 
             // 5. Financials
             const dep = Number(r.deposit_amount || 0);
@@ -1699,6 +1731,9 @@
 
                 document.getElementById('det-con-number').textContent = c.contract_number;
 
+                const ownerName = c.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
+                const ownerMobile = c.unit_owner_mobile ? `(${c.unit_owner_mobile})` : '';
+
                 let html = `
                     <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
                         <div>
@@ -1708,6 +1743,10 @@
                         <div>
                             <span style="display:block; color:var(--text-muted); font-size:0.82em;">Target Unit #:</span>
                             <strong style="color:var(--primary); font-size: 1.05em;">Unit ${c.unit_number || 'N/A'}</strong>
+                        </div>
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">${currentLang === 'ar' ? 'مالك الوحدة العقارية:' : 'Unit Owner:'}</span>
+                            <strong style="color:var(--navy);">👤 ${ownerName}</strong> ${ownerMobile ? `<span style="font-size:0.8em; color:var(--text-muted);">${ownerMobile}</span>` : ''}
                         </div>
                         <div>
                             <span style="display:block; color:var(--text-muted); font-size:0.82em;">Contract Type & Status:</span>

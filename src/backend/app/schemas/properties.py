@@ -50,6 +50,7 @@ class UnitOut(BaseModel):
     status: str
     owner_customer_id: Optional[str] = None
     owner_name: Optional[str] = None
+    owner_mobile: Optional[str] = None
     assigned_user_id: Optional[str] = None
     assigned_user_name: Optional[str] = None
     created_at: datetime

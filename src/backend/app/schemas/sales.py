@@ -58,6 +58,9 @@ class ViewingOut(BaseModel):
     outcome: Optional[str] = None
     notes: Optional[str] = None
     feedback: Optional[str] = None
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
 
 class ViewingCreateIn(BaseModel):
     unit_id: str
@@ -76,6 +79,9 @@ class ReservationOut(BaseModel):
     opportunity_id: str
     unit_id: str
     unit_number: Optional[str] = None
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
     reservation_number: str
     reserved_at: datetime
     expires_at: Optional[datetime] = None
@@ -108,6 +114,9 @@ class OfferOut(BaseModel):
     customer_id: Optional[str] = None
     unit_number: Optional[str] = None
     unit_status: Optional[str] = None
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
     customer_name: Optional[str] = None
     offer_amount: float
     submitted_at: datetime
@@ -149,6 +158,9 @@ class OpportunityUnitOut(BaseModel):
     opportunity_id: str
     unit_id: str
     unit_number: Optional[str] = None
+    owner_customer_id: Optional[str] = None
+    unit_owner_name: Optional[str] = None
+    unit_owner_mobile: Optional[str] = None
     is_primary: bool
     offered_price: Optional[float] = None
 
