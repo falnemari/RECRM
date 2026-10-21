@@ -17,14 +17,14 @@
             roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'ACCOUNTANT', 'DOCUMENT_CONTROL', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
         'leads.html': {
-            nameAr: 'الطلبات والعملاء المحتملون',
-            nameEn: 'Leads & Inquiries',
+            nameAr: 'الطلبات',
+            nameEn: 'Leads',
             permissions: ['LEAD_READ', 'LEAD_WRITE', 'ADMIN'],
             roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'MARKETING', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
         'properties.html': {
-            nameAr: 'العقارات والمخزون',
-            nameEn: 'Properties & Inventory',
+            nameAr: 'المخزون',
+            nameEn: 'Properties',
             permissions: ['PROPERTY_READ', 'PROPERTY_WRITE', 'ADMIN'],
             roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'DOCUMENT_CONTROL', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'VIEWER', 'AUDITOR']
         },
@@ -44,7 +44,7 @@
             nameAr: 'إدارة الأملاك والتأجير',
             nameEn: 'Property Management',
             permissions: ['PM_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER', 'BRANCH_MANAGER', 'GENERAL_MANAGER']
+            roles: ['SYS_ADMIN', 'PROPERTY_MANAGER', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'ACCOUNTANT', 'LEASING_AGENT', 'SALES_MANAGER', 'SALES_AGENT', 'SALES_DIRECTOR', 'VIEWER', 'AUDITOR']
         },
         'tasks.html': {
             nameAr: 'المهام والمتابعات',
@@ -57,19 +57,19 @@
             nameAr: 'المستندات والوثائق',
             nameEn: 'Documents & Files',
             permissions: ['DOCUMENT_READ', 'DOCUMENT_WRITE', 'PAYMENT_READ', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'DOCUMENT_CONTROL', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'AUDITOR']
+            roles: ['SYS_ADMIN', 'DOCUMENT_CONTROL', 'PROPERTY_MANAGER', 'ACCOUNTANT', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'SALES_AGENT', 'SALES_MANAGER', 'SALES_DIRECTOR', 'LEASING_AGENT', 'VIEWER', 'AUDITOR']
         },
         'campaigns.html': {
             nameAr: 'الحملات والتسويق',
             nameEn: 'Marketing & Campaigns',
             permissions: ['MARKETING_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'MARKETING']
+            roles: ['SYS_ADMIN', 'MARKETING', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'SALES_DIRECTOR', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'VIEWER', 'AUDITOR']
         },
         'listings.html': {
             nameAr: 'العروض العقارية',
             nameEn: 'Property Listings',
             permissions: ['PROPERTY_READ', 'PROPERTY_WRITE', 'ADMIN'],
-            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'VIEWER', 'AUDITOR']
+            roles: ['SYS_ADMIN', 'SALES_MANAGER', 'SALES_AGENT', 'LEASING_AGENT', 'PROPERTY_MANAGER', 'BRANCH_MANAGER', 'GENERAL_MANAGER', 'DOCUMENT_CONTROL', 'MARKETING', 'ACCOUNTANT', 'VIEWER', 'AUDITOR']
         },
         'admin.html': {
             nameAr: 'الإدارة والحوكمة',
@@ -510,37 +510,80 @@
 
         // 1. Sales Pipeline Page filter
         const oppAgFilter = document.getElementById('opp-agent-filter');
-        if (oppAgFilter && isOwn) {
-            oppAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'صفقاتي فقط' : 'My Deals Only'}</option>`;
-            oppAgFilter.disabled = true;
-            if (typeof filterOpportunities === 'function') filterOpportunities();
-            showScopeNotificationBanner(isAr 
-                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض الصفقات والفرص البيعية المسندة إليك فقط (${userName}).`
-                : `🔒 Personal Data Isolation Active: Showing deals and opportunities assigned to you only (${userName}).`);
+        if (oppAgFilter) {
+            if (isOwn) {
+                oppAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'صفقاتي فقط' : 'My Deals Only'}</option>`;
+                oppAgFilter.disabled = true;
+                if (typeof filterOpportunities === 'function') filterOpportunities();
+                showScopeNotificationBanner(isAr 
+                    ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض الصفقات والفرص البيعية المسندة إليك فقط (${userName}).`
+                    : `🔒 Personal Data Isolation Active: Showing deals and opportunities assigned to you only (${userName}).`);
+            } else if (isBranch) {
+                oppAgFilter.disabled = false;
+                showScopeNotificationBanner(isAr 
+                    ? `🏢 تم تفعيل نطاق الفرع (${branchName}): يتم عرض صفقات وفرص فرعك البيعية (${userName}).`
+                    : `🏢 Branch Scope Active (${branchName}): Showing deals for your branch (${userName}).`);
+                if (typeof filterOpportunities === 'function') filterOpportunities();
+            } else {
+                oppAgFilter.disabled = false;
+                const banner = document.getElementById('recrm-scope-banner');
+                if (banner) banner.remove();
+                if (typeof filterOpportunities === 'function') filterOpportunities();
+            }
         }
 
         // 2. Leads Page filter
         const leadAgFilter = document.getElementById('agent-filter');
-        if (leadAgFilter && isOwn) {
-            leadAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'طلباتي فقط' : 'My Leads Only'}</option>`;
-            leadAgFilter.disabled = true;
-            if (typeof fetchLeads === 'function') fetchLeads(1);
-            showScopeNotificationBanner(isAr 
-                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء والطلبات المسندة إليك فقط (${userName}).`
-                : `🔒 Personal Data Isolation Active: Showing inquiries and leads assigned to you only (${userName}).`);
+        if (leadAgFilter) {
+            if (isOwn) {
+                leadAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'طلباتي فقط' : 'My Leads Only'}</option>`;
+                leadAgFilter.disabled = true;
+                if (typeof fetchLeads === 'function') fetchLeads(1);
+                showScopeNotificationBanner(isAr 
+                    ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض العملاء والطلبات المسندة إليك فقط (${userName}).`
+                    : `🔒 Personal Data Isolation Active: Showing inquiries and leads assigned to you only (${userName}).`);
+            } else if (isBranch) {
+                leadAgFilter.disabled = false;
+                showScopeNotificationBanner(isAr 
+                    ? `🏢 تم تفعيل نطاق الفرع (${branchName}): يتم عرض طلبات فرعك وفريق مبيعاتك (${userName}).`
+                    : `🏢 Branch Scope Active (${branchName}): Showing leads for your branch and sales team (${userName}).`);
+                if (typeof fetchLeads === 'function') fetchLeads(1);
+            } else {
+                leadAgFilter.disabled = false;
+                const banner = document.getElementById('recrm-scope-banner');
+                if (banner) banner.remove();
+                if (typeof fetchLeads === 'function') fetchLeads(1);
+            }
         }
 
         // 3. Tasks Page filter
         const taskAgFilter = document.getElementById('task-agent-filter');
-        if (taskAgFilter && isOwn) {
-            taskAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'مهامي فقط' : 'My Tasks Only'}</option>`;
-            taskAgFilter.disabled = true;
-            if (typeof loadTasks === 'function') loadTasks();
-            if (typeof loadActivities === 'function') loadActivities();
-            if (typeof loadSummary === 'function') loadSummary();
-            showScopeNotificationBanner(isAr 
-                ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض المهام والمتابعات المسندة إليك فقط (${userName}).`
-                : `🔒 Personal Data Isolation Active: Showing tasks and follow-ups assigned to you only (${userName}).`);
+        if (taskAgFilter) {
+            if (isOwn) {
+                taskAgFilter.innerHTML = `<option value="${userId}" selected>🔒 ${userName} (${userId}) - ${isAr ? 'مهامي فقط' : 'My Tasks Only'}</option>`;
+                taskAgFilter.disabled = true;
+                if (typeof loadTasks === 'function') loadTasks();
+                if (typeof loadActivities === 'function') loadActivities();
+                if (typeof loadSummary === 'function') loadSummary();
+                showScopeNotificationBanner(isAr 
+                    ? `🔒 تم تطبيق عزل البيانات الشخصية: يتم عرض المهام والمتابعات المسندة إليك فقط (${userName}).`
+                    : `🔒 Personal Data Isolation Active: Showing tasks and follow-ups assigned to you only (${userName}).`);
+            } else if (isBranch) {
+                taskAgFilter.disabled = false;
+                showScopeNotificationBanner(isAr 
+                    ? `🏢 تم تفعيل نطاق الفرع (${branchName}): يتم عرض مهام ومتابعات فرعك (${userName}).`
+                    : `🏢 Branch Scope Active (${branchName}): Showing tasks for your branch (${userName}).`);
+                if (typeof loadTasks === 'function') loadTasks();
+                if (typeof loadActivities === 'function') loadActivities();
+                if (typeof loadSummary === 'function') loadSummary();
+            } else {
+                taskAgFilter.disabled = false;
+                const banner = document.getElementById('recrm-scope-banner');
+                if (banner) banner.remove();
+                if (typeof loadTasks === 'function') loadTasks();
+                if (typeof loadActivities === 'function') loadActivities();
+                if (typeof loadSummary === 'function') loadSummary();
+            }
         }
 
         // 4. Properties Page: Property Inventory is open to all sales agents to market & match for leads

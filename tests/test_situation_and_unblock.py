@@ -262,3 +262,26 @@ class TestSituationAndUnblock(unittest.IsolatedAsyncioTestCase):
 
         finally:
             await tr.rollback()
+
+    async def test_situation_financials_contracts_and_payments(self):
+        """
+        Verify that get_entity_situation includes contracts, tenancies, payments,
+        and commissions for both rental and sales opportunities.
+        """
+        # Test rental opportunity (opportunity-499)
+        sit_rent = await WorkflowEngine.get_entity_situation(self.conn, opportunity_id="opportunity-499")
+        self.assertIn("payments", sit_rent)
+        self.assertIn("commissions", sit_rent)
+        self.assertIn("total_contract_value", sit_rent)
+        self.assertGreaterEqual(sit_rent["contracts_count"], 1)
+        self.assertGreaterEqual(sit_rent["payments_count"], 1)
+        self.assertEqual(sit_rent["contracts"][0]["contract_type"], "RENT")
+
+        # Test sales opportunity (opportunity-6)
+        sit_sale = await WorkflowEngine.get_entity_situation(self.conn, opportunity_id="opportunity-6")
+        self.assertGreaterEqual(sit_sale["contracts_count"], 1)
+        self.assertGreaterEqual(sit_sale["payments_count"], 1)
+        self.assertGreaterEqual(sit_sale["commissions_count"], 1)
+        self.assertEqual(sit_sale["contracts"][0]["contract_type"], "SALE")
+        self.assertGreater(sit_sale["total_contract_value"], 0)
+        self.assertGreater(sit_sale["total_commission_amount"], 0)

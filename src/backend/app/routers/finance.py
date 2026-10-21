@@ -1,6 +1,7 @@
 import uuid
+import json
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
@@ -10,11 +11,52 @@ from app.schemas.contracts import (
     ContractOut, ContractCreate, ContractDetailOut, ConvertReservationIn, AdvanceContractIn,
     PaymentOut, PaymentCreate, RecordPaymentIn,
     CommissionOut, CommissionCreate,
-    FinanceSummary
+    FinanceSummary,
+    InvoiceOut, CollectInvoiceIn, GenerateFeeInvoicesIn
 )
 from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(tags=["Contracts, Payments & Commissions"])
+
+async def verify_finance_summary_access(conn: asyncpg.Connection, x_user_id: Optional[str]) -> None:
+    """Verifies that the requesting user has central executive financial summary access privileges."""
+    if not x_user_id:
+        return
+    roles = await conn.fetch(
+        """
+        SELECT r.role_code FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    role_codes = set(r["role_code"].upper() for r in roles if r.get("role_code"))
+    allowed_roles = {
+        "SYS_ADMIN", "ADMIN", "ACCOUNTANT", "AUDITOR",
+        "GENERAL_MANAGER", "BRANCH_MANAGER", "SALES_MANAGER",
+        "SALES_DIRECTOR", "DOCUMENT_CONTROL"
+    }
+    if role_codes.intersection(allowed_roles):
+        return
+
+    permissions = await conn.fetch(
+        """
+        SELECT p.code FROM user_roles ur
+        JOIN role_permissions rp ON ur.role_id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.permission_id
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    perm_codes = set(p["code"].upper() for p in permissions if p.get("code"))
+    allowed_perms = {"PAYMENT_READ", "PAYMENT_WRITE", "ADMIN"}
+    if perm_codes.intersection(allowed_perms):
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Forbidden: You do not have permission to access financial records."
+    )
 
 async def verify_finance_access(conn: asyncpg.Connection, x_user_id: Optional[str]) -> None:
     """Verifies that the requesting user has financial module access privileges."""
@@ -29,8 +71,13 @@ async def verify_finance_access(conn: asyncpg.Connection, x_user_id: Optional[st
         """,
         x_user_id
     )
-    role_codes = set(r["role_code"].upper() for r in roles)
-    if "SYS_ADMIN" in role_codes or "ACCOUNTANT" in role_codes or "AUDITOR" in role_codes:
+    role_codes = set(r["role_code"].upper() for r in roles if r.get("role_code"))
+    allowed_roles = {
+        "SYS_ADMIN", "ADMIN", "ACCOUNTANT", "AUDITOR",
+        "GENERAL_MANAGER", "BRANCH_MANAGER", "SALES_MANAGER",
+        "SALES_DIRECTOR", "DOCUMENT_CONTROL", "SALES_AGENT", "LEASING_AGENT"
+    }
+    if role_codes.intersection(allowed_roles):
         return
 
     # Check effective permissions
@@ -43,8 +90,9 @@ async def verify_finance_access(conn: asyncpg.Connection, x_user_id: Optional[st
         """,
         x_user_id
     )
-    perm_codes = set(p["code"].upper() for p in permissions)
-    if "PAYMENT_READ" in perm_codes or "PAYMENT_WRITE" in perm_codes or "ADMIN" in perm_codes:
+    perm_codes = set(p["code"].upper() for p in permissions if p.get("code"))
+    allowed_perms = {"PAYMENT_READ", "PAYMENT_WRITE", "ADMIN", "SALES_WRITE", "LEAD_READ"}
+    if perm_codes.intersection(allowed_perms):
         return
 
     raise HTTPException(
@@ -86,7 +134,7 @@ async def get_finance_summary(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    await verify_finance_access(conn, x_user_id)
+    await verify_finance_summary_access(conn, x_user_id)
     total_contracts = await conn.fetchval("SELECT count(*) FROM contracts WHERE status NOT IN ('CANCELLED', 'TERMINATED')")
     total_contract_value = await conn.fetchval("SELECT COALESCE(SUM(contract_value), 0) FROM contracts WHERE status NOT IN ('CANCELLED', 'TERMINATED')")
     
@@ -645,6 +693,32 @@ async def approve_commission(commission_id: str, conn: asyncpg.Connection = Depe
 @router.post("/commissions/{commission_id}/payout", response_model=ResponseEnvelope[CommissionOut])
 async def payout_commission(commission_id: str, conn: asyncpg.Connection = Depends(get_db)):
     await conn.execute("UPDATE commissions SET status = 'PAID', paid_at = now() WHERE commission_id = $1", commission_id)
+    con_ref = await conn.fetchval("SELECT contract_id FROM commissions WHERE commission_id = $1", commission_id)
+    if con_ref:
+        await conn.execute(
+            """
+            UPDATE tasks
+            SET status = 'COMPLETED', completed_at = now()
+            WHERE template_id = 'TASK_COMMISSION_SETTLEMENT'
+              AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+              AND (
+                  opportunity_id IN (
+                      SELECT opportunity_id FROM contracts WHERE contract_id = $1 OR contract_number = $1
+                      UNION
+                      SELECT r.opportunity_id FROM reservations r JOIN contracts c ON r.reservation_id = c.reservation_id WHERE c.contract_id = $1 OR c.contract_number = $1
+                  )
+                  OR lead_id IN (
+                      SELECT l.lead_id FROM leads l
+                      JOIN tenancies t ON l.customer_id = t.tenant_customer_id
+                      WHERE t.tenancy_id = $1 OR t.contract_number = $1
+                  )
+                  OR customer_id IN (
+                      SELECT tenant_customer_id FROM tenancies WHERE tenancy_id = $1 OR contract_number = $1
+                  )
+              )
+            """,
+            con_ref
+        )
     row = await conn.fetchrow(
         """
         SELECT 
@@ -669,4 +743,199 @@ async def payout_commission(commission_id: str, conn: asyncpg.Connection = Depen
     if not row:
         raise HTTPException(status_code=404, detail="Commission not found")
     return ResponseEnvelope(data=CommissionOut(**dict(row)), meta=BaseMeta())
+
+
+# =====================================================================
+# Statutory Saudi Fees & Invoices Engine (Tax Invoices for Customer & Owner)
+# =====================================================================
+
+INVOICE_SELECT_QUERY = """
+    SELECT 
+        inv.invoice_id,
+        inv.invoice_number,
+        inv.invoice_type,
+        inv.payer_type,
+        inv.payer_customer_id,
+        COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS payer_customer_name,
+        cust.mobile AS payer_customer_mobile,
+        inv.opportunity_id,
+        inv.lead_id,
+        inv.contract_id,
+        inv.unit_id,
+        u.unit_number,
+        inv.transaction_type,
+        CAST(COALESCE(inv.subtotal, 0) AS FLOAT) AS subtotal,
+        CAST(COALESCE(inv.vat_rate, 0) AS FLOAT) AS vat_rate,
+        CAST(COALESCE(inv.vat_amount, 0) AS FLOAT) AS vat_amount,
+        CAST(COALESCE(inv.total_amount, 0) AS FLOAT) AS total_amount,
+        CAST(COALESCE(inv.amount_paid, 0) AS FLOAT) AS amount_paid,
+        inv.status,
+        inv.line_items,
+        inv.due_date,
+        inv.paid_at,
+        inv.payment_method,
+        inv.payment_reference,
+        inv.notes,
+        inv.created_at
+    FROM invoices inv
+    LEFT JOIN customers cust ON inv.payer_customer_id = cust.customer_id
+    LEFT JOIN units u ON inv.unit_id = u.unit_id
+"""
+
+def parse_invoice_line_items(row_dict: dict) -> dict:
+    items = row_dict.get("line_items")
+    if isinstance(items, str):
+        try:
+            row_dict["line_items"] = json.loads(items)
+        except Exception:
+            row_dict["line_items"] = []
+    elif not isinstance(items, list):
+        row_dict["line_items"] = []
+    return row_dict
+
+@router.get("/invoices", response_model=CollectionEnvelope[InvoiceOut])
+async def list_invoices(
+    payer_type: Optional[str] = None,
+    status: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    unit_id: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
+    conditions = []
+    params = []
+    p_idx = 1
+
+    if payer_type:
+        conditions.append(f"inv.payer_type = ${p_idx}")
+        params.append(payer_type.upper())
+        p_idx += 1
+
+    if status:
+        conditions.append(f"inv.status = ${p_idx}")
+        params.append(status.upper())
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"inv.opportunity_id = ${p_idx}")
+        params.append(opportunity_id)
+        p_idx += 1
+
+    if lead_id:
+        conditions.append(f"inv.lead_id = ${p_idx}")
+        params.append(lead_id)
+        p_idx += 1
+
+    if unit_id:
+        conditions.append(f"inv.unit_id = ${p_idx}")
+        params.append(unit_id)
+        p_idx += 1
+
+    if search:
+        conditions.append(f"(inv.invoice_number ILIKE ${p_idx} OR cust.first_name ILIKE ${p_idx} OR cust.last_name ILIKE ${p_idx} OR cust.company_name ILIKE ${p_idx} OR cust.mobile ILIKE ${p_idx})")
+        params.append(f"%{search}%")
+        p_idx += 1
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    count_query = f"SELECT count(*) FROM invoices inv LEFT JOIN customers cust ON inv.payer_customer_id = cust.customer_id {where_clause}"
+    total = await conn.fetchval(count_query, *params)
+
+    query = f"{INVOICE_SELECT_QUERY} {where_clause} ORDER BY inv.created_at DESC LIMIT ${p_idx} OFFSET ${p_idx + 1}"
+    rows = await conn.fetch(query, *params, limit, offset)
+
+    items = [InvoiceOut(**parse_invoice_line_items(dict(r))) for r in rows]
+    return CollectionEnvelope(
+        data=items,
+        meta=CollectionMeta(total=total, limit=limit, offset=offset)
+    )
+
+@router.get("/invoices/{invoice_id}", response_model=ResponseEnvelope[InvoiceOut])
+async def get_invoice(
+    invoice_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
+    row = await conn.fetchrow(f"{INVOICE_SELECT_QUERY} WHERE inv.invoice_id = $1", invoice_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return ResponseEnvelope(data=InvoiceOut(**parse_invoice_line_items(dict(row))), meta=BaseMeta())
+
+@router.post("/invoices/{invoice_id}/collect", response_model=ResponseEnvelope[InvoiceOut])
+async def collect_invoice(
+    invoice_id: str,
+    payload: CollectInvoiceIn,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
+    try:
+        res = await WorkflowEngine.collect_fee_invoice(
+            conn=conn,
+            invoice_id=invoice_id,
+            payment_method=payload.payment_method,
+            payment_reference=payload.payment_reference,
+            amount=payload.amount,
+            user_id=x_user_id,
+            notes=payload.notes
+        )
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+    row = await conn.fetchrow(f"{INVOICE_SELECT_QUERY} WHERE inv.invoice_id = $1", invoice_id)
+    return ResponseEnvelope(data=InvoiceOut(**parse_invoice_line_items(dict(row))), meta=BaseMeta())
+
+@router.post("/opportunities/{opp_id}/generate-fee-invoices")
+async def generate_opportunity_fee_invoices(
+    opp_id: str,
+    payload: GenerateFeeInvoicesIn,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
+    try:
+        res = await WorkflowEngine.generate_saudi_fee_invoices(
+            conn=conn,
+            opportunity_id=opp_id,
+            rett_exempt=payload.rett_exempt,
+            rett_notes=payload.rett_notes,
+            security_deposit=payload.security_deposit or 0.0,
+            buyer_brokerage_percent=payload.buyer_brokerage_percent or 2.5,
+            seller_brokerage_percent=payload.seller_brokerage_percent or 0.0,
+            user_id=x_user_id,
+            notes=payload.notes
+        )
+        return ResponseEnvelope(data=res, meta=BaseMeta())
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+@router.post("/leads/{lead_id}/generate-fee-invoices")
+async def generate_lead_fee_invoices(
+    lead_id: str,
+    payload: GenerateFeeInvoicesIn,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_finance_access(conn, x_user_id)
+    try:
+        res = await WorkflowEngine.generate_saudi_fee_invoices(
+            conn=conn,
+            lead_id=lead_id,
+            rett_exempt=payload.rett_exempt,
+            rett_notes=payload.rett_notes,
+            security_deposit=payload.security_deposit or 0.0,
+            buyer_brokerage_percent=payload.buyer_brokerage_percent or 2.5,
+            seller_brokerage_percent=payload.seller_brokerage_percent or 0.0,
+            user_id=x_user_id,
+            notes=payload.notes
+        )
+        return ResponseEnvelope(data=res, meta=BaseMeta())
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
 

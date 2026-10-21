@@ -232,6 +232,25 @@
         th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
 
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: #fff;
+            border-top: 1px solid var(--border);
+            font-size: 0.82rem;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .page-size-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.82rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 4px 10px; font-size: 0.82rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-num-display { font-weight: 700; padding: 0 6px; color: var(--text-main); }
+
         /* Activities & Log Table Optimization - Responsive & No Horizontal Scroll */
         .activities-table {
             table-layout: auto;
@@ -523,13 +542,20 @@
 
             <div class="toolbar">
                 <div class="filters">
-                    <input type="text" id="task-search" class="search-input" placeholder="Search task title, customer, agent..." onkeyup="filterTasks()">
-                    <select id="task-status" class="select-filter" onchange="loadTasks()">
-                        <option value="" data-i18n="opt_all_status">All Statuses</option>
-                        <option value="OPEN" data-i18n="opt_open">Open</option>
-                        <option value="COMPLETED" data-i18n="opt_completed">Completed</option>
+                    <input type="text" id="task-search" class="search-input" placeholder="Search task ID, title, lead, opp, agent..." data-i18n-placeholder="ph_task_search" oninput="onTaskSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); currentTasksPage=1; loadTasks();}">
+                    <select id="task-sort-by" class="select-filter" onchange="currentTasksPage = 1; loadTasks()">
+                        <option value="created_desc" data-i18n="opt_sort_created_desc">⏱️ Newest Created First</option>
+                        <option value="due_asc" data-i18n="opt_sort_due_asc">📅 Due Date</option>
+                        <option value="priority" data-i18n="opt_sort_priority">⚡ Priority Order</option>
+                        <option value="created_asc" data-i18n="opt_sort_created_asc">⏳ Oldest Created First</option>
                     </select>
-                    <select id="task-priority" class="select-filter" onchange="loadTasks()">
+                    <select id="task-status" class="select-filter" onchange="currentTasksPage = 1; loadTasks()">
+                        <option value="" data-i18n="opt_all_status">All Statuses</option>
+                        <option value="OPEN" data-i18n="opt_open">Open & In Progress</option>
+                        <option value="COMPLETED" data-i18n="opt_completed">Completed</option>
+                        <option value="CANCELLED" data-i18n="opt_cancelled">Cancelled</option>
+                    </select>
+                    <select id="task-priority" class="select-filter" onchange="currentTasksPage = 1; loadTasks()">
                         <option value="" data-i18n="opt_all_priority">All Priorities</option>
                         <option value="URGENT" data-i18n="opt_urgent">Urgent</option>
                         <option value="HIGH" data-i18n="opt_high">High</option>
@@ -547,7 +573,7 @@
                         <button type="button" onclick="clearTaskAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
                     </div>
                     <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="task-overdue-only" onchange="loadTasks()">
+                        <input type="checkbox" id="task-overdue-only" onchange="currentTasksPage = 1; loadTasks()">
                         <span data-i18n="lbl_overdue_only">Show Overdue Only</span>
                     </label>
                 </div>
@@ -561,7 +587,8 @@
                             <th style="width: 100px;">Task ID</th>
                             <th data-i18n="th_task_title">Task Title</th>
                             <th data-i18n="th_priority">Priority</th>
-                            <th data-i18n="th_due_date">Due Date</th>
+                            <th data-i18n="th_created_at" style="width: 130px;">Created Date</th>
+                            <th data-i18n="th_due_date" style="width: 130px;">Due Date</th>
                             <th data-i18n="th_assigned_to">Assigned Agent</th>
                             <th data-i18n="th_related_to">Related Customer</th>
                             <th data-i18n="th_status">Status</th>
@@ -569,9 +596,25 @@
                         </tr>
                     </thead>
                     <tbody id="tasks-tbody">
-                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination-bar" id="tasks-pagination-bar">
+                    <div id="tasks-pagination-info">Showing 0 of 0 tasks</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="tasks-page-size" class="page-size-select" onchange="changeTasksPageSize(this.value)">
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200" selected>200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button type="button" class="btn-page" id="tasks-btn-prev" onclick="prevTasksPage()" disabled>◀</button>
+                        <span class="page-num-display" id="tasks-page-display">Page 1 of 1</span>
+                        <button type="button" class="btn-page" id="tasks-btn-next" onclick="nextTasksPage()" disabled>▶</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1062,7 +1105,9 @@
                 kpi_viewings: "Property Viewings", kpi_viewings_sub: "Scheduled & Completed tours",
                 kpi_activities: "Activities & Comms", kpi_activities_sub: "Calls, meetings & messages",
                 tab_tasks: "Tasks & To-Dos", tab_activities: "Activities & Log", tab_comms: "Communications Feed",
-                opt_all_status: "All Statuses", opt_open: "Open", opt_completed: "Completed",
+                opt_all_status: "All Statuses", opt_open: "Open & In Progress", opt_completed: "Completed", opt_cancelled: "Cancelled",
+                opt_sort_created_desc: "⏱️ Newest Created First", opt_sort_due_asc: "📅 Due Date", opt_sort_priority: "⚡ Priority Order", opt_sort_created_asc: "⏳ Oldest Created First",
+                lbl_rows_per_page: "Rows per page:", ph_task_search: "Search task ID, title, lead, opp, agent...",
                 opt_all_priority: "All Priorities", opt_urgent: "Urgent", opt_high: "High", opt_normal: "Normal", opt_low: "Low",
                 opt_all_types: "All Types", opt_all_channels: "All Channels", opt_all_dirs: "All Directions",
                 opt_all_agents: "All Staff & Assignees",
@@ -1073,7 +1118,7 @@
                 lbl_act_datetime: "Appointment / Execution Time",
                 lbl_overdue_only: "Show Overdue Only",
                 btn_new_task: "+ New Task", btn_new_act: "+ Log Activity", btn_new_comm: "+ Log Communication",
-                th_task_title: "Task Title", th_priority: "Priority", th_due_date: "Due Date",
+                th_task_title: "Task Title", th_priority: "Priority", th_created_at: "Created Date", th_due_date: "Due Date",
                 th_assigned_to: "Assigned Agent", th_related_to: "Related Customer", th_status: "Status", th_actions: "Action",
                 th_type: "Type", th_lead_id: "Lead ID", th_subject: "Subject", th_description: "Details", th_agent: "Agent", th_customer: "Customer",
                 th_date: "Date / Time", th_channel: "Channel", th_direction: "Direction", th_comm_business: "Business Context", th_body: "Message Preview",
@@ -1123,7 +1168,9 @@
                 kpi_viewings: "المعاينات العقارية", kpi_viewings_sub: "معاينات ميدانية مجدولة ومنفذة",
                 kpi_activities: "الأنشطة والاتصالات", kpi_activities_sub: "مكالمات واجتماعات ومراسلات",
                 tab_tasks: "المهام والمتابعات", tab_activities: "سجل الأنشطة والمكالمات", tab_comms: "سجل المراسلات والرسائل",
-                opt_all_status: "جميع الحالات", opt_open: "جارية", opt_completed: "مكتملة",
+                opt_all_status: "جميع الحالات", opt_open: "جارية وقيد الانتظار", opt_completed: "مكتملة", opt_cancelled: "ملغاة",
+                opt_sort_created_desc: "⏱️ الأحدث إنشاءً أولاً", opt_sort_due_asc: "📅 حسب موعد الاستحقاق", opt_sort_priority: "⚡ حسب الأولوية", opt_sort_created_asc: "⏳ الأقدم إنشاءً أولاً",
+                lbl_rows_per_page: "عدد السجلات في الصفحة:", ph_task_search: "بحث برقم المهمة، العنوان، الطلب، العميل...",
                 opt_all_priority: "جميع الأولويات", opt_urgent: "عاجل", opt_high: "هام", opt_normal: "عادي", opt_low: "منخفض",
                 opt_all_types: "جميع الأنواع", opt_all_channels: "جميع القنوات", opt_all_dirs: "جميع الاتجاهات",
                 opt_all_agents: "جميع الموظفين والمسؤولين",
@@ -1134,7 +1181,7 @@
                 lbl_act_datetime: "الموعد / تاريخ التنفيذ",
                 lbl_overdue_only: "عرض المتأخرات فقط",
                 btn_new_task: "+ مهمة جديدة", btn_new_act: "+ تسجيل نشاط", btn_new_comm: "+ تسجيل مراسلة",
-                th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_due_date: "تاريخ الاستحقاق",
+                th_task_title: "عنوان المهمة", th_priority: "الأولوية", th_created_at: "تاريخ الإنشاء", th_due_date: "تاريخ الاستحقاق",
                 th_assigned_to: "الوكيل المكلف", th_related_to: "العميل المرتبط", th_status: "الحالة", th_actions: "الإجراء",
                 th_type: "النوع", th_lead_id: "رقم الطلب", th_subject: "الموضوع", th_description: "التفاصيل", th_agent: "الوكيل", th_customer: "العميل",
                 th_date: "التاريخ / الوقت", th_channel: "القناة", th_direction: "الاتجاه", th_comm_business: "سياق المعاملة والطلب", th_body: "نص الرسالة",
@@ -1168,10 +1215,17 @@
             }
         };
 
-        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
         let tasksData = [];
         let activitiesData = [];
         let commsData = [];
+
+        let currentTasksPage = 1;
+        let currentTasksPageSize = 200;
+        let totalTasksRecords = 0;
+        let lastTasksMeta = null;
+        let taskSearchDebounceTimer = null;
+        let actSearchDebounceTimer = null;
 
         function setGlobalArabicFont(fontVal) {
             localStorage.setItem('recrm_ar_font', fontVal);
@@ -1194,15 +1248,37 @@
 
         const WORKFLOW_TASK_TITLES = {
             'TASK_LEAD_FIRST_CONTACT': { ar: 'الطلب — الاتصال الأولي', en: 'Lead — First Contact' },
+            'TASK_RENT_LEAD_FIRST_CONTACT': { ar: 'طلب الإيجار — الاتصال الأولي واستيفاء المتطلبات', en: 'Rental Lead — First Contact & Needs Analysis' },
+            'TASK_INVEST_LEAD_FIRST_CONTACT': { ar: 'طلب استثماري — الاتصال الأولي وتأكيد الرغبة', en: 'Investment Lead — First Contact & Goals' },
             'TASK_LEAD_ASSIGN': { ar: 'الطلب — توجيه وتعيين وسيط', en: 'Lead — Assign Sales Agent' },
             'TASK_LEAD_FOLLOWUP': { ar: 'الطلب — اتصال متابعة', en: 'Lead — Follow-up Contact' },
             'TASK_LEAD_QUALIFY': { ar: 'الطلب — استكمال معايير التأهيل', en: 'Lead — Complete Qualification' },
             'TASK_LEAD_COMPLETE_INFO': { ar: 'الطلب — استكمال البيانات الناقصة', en: 'Lead — Complete Missing Information' },
             'TASK_OPPORTUNITY_MATCH_PROPERTIES': { ar: 'الفرصة — مطابقة وترشيح العقارات', en: 'Opportunity — Match Properties' },
+            'TASK_RENT_MATCH_PROPERTIES': { ar: 'الإيجار — مطابقة وترشيح الوحدات الشاغرة', en: 'Rent — Match & Recommend Properties' },
             'TASK_VIEWING_SCHEDULE': { ar: 'المعاينة — جدولة الزيارة الميدانية', en: 'Viewing — Schedule Site Visit' },
             'TASK_VIEWING_RESCHEDULE': { ar: 'المعاينة — إعادة جدولة موعد الزيارة', en: 'Viewing — Reschedule Site Visit' },
             'TASK_VIEWING_REPORT': { ar: 'المعاينة — رفع تقرير وتقييم الزيارة', en: 'Viewing — Submit Inspection Report' },
-            'TASK_OFFER_SUBMIT': { ar: 'العرض — تقديم العرض المالي للوحدة', en: 'Offer — Submit Formal Offer' }
+            'TASK_RENT_VIEWING_FOLLOW_UP': { ar: 'المعاينة التأجيرية — متابعة المعاينة ورغبة المستأجر', en: 'Rental Viewing — Follow-up & Interest Check' },
+            'TASK_OFFER_SUBMIT': { ar: 'العرض — تقديم العرض المالي للوحدة', en: 'Offer — Submit Formal Offer' },
+            'TASK_OFFER_MANAGER_APPROVAL': { ar: 'العرض — مراجعة واعتماد مدير المبيعات', en: 'Offer — Manager Approval' },
+            'TASK_OFFER_FOLLOWUP': { ar: 'العرض — متابعة رد العميل والتفاوض', en: 'Offer — Follow-up & Negotiation' },
+            'TASK_RESERVATION_VERIFY_AVAILABILITY': { ar: 'الحجز — التحقق من توفر الوحدة وتثبيت القفل', en: 'Reservation — Verify Availability & Lock' },
+            'TASK_RESERVATION_DEPOSIT_FOLLOWUP': { ar: 'الحجز — متابعة تحصيل العربون وتأكيد السداد', en: 'Reservation — Deposit Collection Follow-up' },
+            'TASK_CONTRACT_DRAFT': { ar: 'العقد — إعداد وتجهيز مسودة العقد', en: 'Contract — Prepare Draft' },
+            'TASK_CONTRACT_INTERNAL_REVIEW': { ar: 'العقد — المراجعة والاعتماد القانوني', en: 'Contract — Legal Review' },
+            'TASK_CONTRACT_SIGNATURE': { ar: 'العقد — متابعة توقيع العقد من العميل والأطراف', en: 'Contract — Signature Follow-up' },
+            'TASK_CONTRACT_HANDOVER': { ar: 'العقد — الفحص الفني وتسليم الوحدة للعميل', en: 'Contract — Handover & Inspection' },
+            'TASK_CONTRACT_RECONCILIATION': { ar: 'العقد — المطابقة المالية وتسوية جدول الدفعات', en: 'Contract — Financial Reconciliation' },
+            'TASK_RENT_PREPARE_TENANCY': { ar: 'عقد الإيجار — صياغة وإعداد اتفاقية الإيجار', en: 'Tenancy — Draft Rental Agreement' },
+            'TASK_RENT_COLLECTION_MONITORING': { ar: 'الإيجار — متابعة وتحصيل الإيجارات', en: 'Tenancy — Rental Collection Monitoring' },
+            'TASK_INVEST_CONFIRM_OBJECTIVES': { ar: 'الاستثمار — تأكيد الأهداف والميزانية', en: 'Investment — Confirm Goals & Capital' },
+            'TASK_INVEST_COMPARE_RETURNS': { ar: 'الاستثمار — تحليل العوائد والمقارنة المالية', en: 'Investment — Yield & Cash-on-Cash Comparison' },
+            'TASK_INVEST_VALIDATE_FINANCIALS': { ar: 'الاستثمار — تدقيق الافتراضات المالية', en: 'Investment — Validate Financial Projections' },
+            'TASK_INVEST_PREPARE_ACQUISITION_OFFER': { ar: 'الاستثمار — إعداد عرض الاستحواذ', en: 'Investment — Prepare Acquisition Offer' },
+            'TASK_INVEST_BASELINE_PERFORMANCE': { ar: 'الاستثمار — توثيق خط الأساس المالي', en: 'Investment — Establish Performance Baseline' },
+            'TASK_INVEST_MONITOR_ACTUAL_RETURNS': { ar: 'الاستثمار — متابعة العوائد الفعلية ومقارنة الأداء', en: 'Investment — Monitor Actual Returns' },
+            'TASK_INVEST_PORTFOLIO_REVIEW': { ar: 'الاستثمار — مراجعة المحفظة الاستثمارية وتوصيات التطوير', en: 'Investment — Periodic Portfolio Review' }
         };
 
         const WORKFLOW_ACT_TITLES = {
@@ -1374,6 +1450,7 @@
 
             populateTaskAgentFilter();
             if (tasksData && tasksData.length > 0) renderTasks(tasksData);
+            if (lastTasksMeta) updateTasksPagination(lastTasksMeta);
             if (activitiesData && activitiesData.length > 0) renderActivities(activitiesData);
             if (commsData && commsData.length > 0) renderComms(commsData);
         }
@@ -1404,16 +1481,15 @@
                 const ag = document.getElementById('task-agent-filter')?.value || '';
                 let url = `${API_BASE}/api/v1/tasks/summary`;
                 if (ag) url += `?assigned_user_id=${encodeURIComponent(ag)}`;
-                const res = await fetch(url);
-                if (!res.ok) return;
-                const json = await res.json();
-                const d = json.data;
-                document.getElementById('kpi-open-tasks').textContent = d.open_tasks;
-                document.getElementById('kpi-overdue-tasks').textContent = d.overdue_tasks;
-                document.getElementById('kpi-completed-tasks').textContent = d.completed_tasks;
+                const res = await apiRequest(url);
+                const d = res ? res.data : null;
+                if (!d) return;
+                document.getElementById('kpi-open-tasks').textContent = d.open_tasks ?? 0;
+                document.getElementById('kpi-overdue-tasks').textContent = d.overdue_tasks ?? 0;
+                document.getElementById('kpi-completed-tasks').textContent = d.completed_tasks ?? 0;
                 const viewingsEl = document.getElementById('kpi-viewings');
                 if (viewingsEl) viewingsEl.textContent = d.total_viewings || 0;
-                document.getElementById('kpi-activities').textContent = `${d.total_activities + d.total_communications}`;
+                document.getElementById('kpi-activities').textContent = `${(d.total_activities || 0) + (d.total_communications || 0)}`;
             } catch (err) {
                 console.error("Summary load error:", err);
             }
@@ -1447,6 +1523,7 @@
                 if (badge) badge.style.display = 'none';
             }
             updateMyTasksButtonState();
+            currentTasksPage = 1;
             loadTasks();
             loadActivities();
             loadSummary();
@@ -1518,10 +1595,8 @@
 
             const isAr = currentLang === 'ar';
             try {
-                const res = await fetch(`${API_BASE}/api/v1/tasks?assigned_user_id=${encodeURIComponent(myUid)}&status=OPEN`);
-                if (!res.ok) return;
-                const json = await res.json();
-                const myOpenTasks = json.data || [];
+                const res = await apiRequest(`${API_BASE}/api/v1/tasks?assigned_user_id=${encodeURIComponent(myUid)}&status=OPEN`);
+                const myOpenTasks = res ? (res.data || []) : [];
                 if (myOpenTasks.length > 0) {
                     bannerContainer.style.display = 'block';
                     const activeName = userProfile ? userProfile.full_name : myUid;
@@ -1559,7 +1634,7 @@
             if (!agSelect || taskModalUsers.length === 0) return;
             if (agSelect.disabled) return;
             const urlParams = new URLSearchParams(window.location.search);
-            const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+            const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
             const curVal = agSelect.value || urlAgent || '';
             const isAr = currentLang === 'ar';
             const userProfile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
@@ -1583,38 +1658,119 @@
         }
 
         // --- Tab 1: Tasks ---
+        function onTaskSearchInput() {
+            clearTimeout(taskSearchDebounceTimer);
+            taskSearchDebounceTimer = setTimeout(() => {
+                currentTasksPage = 1;
+                loadTasks();
+            }, 300);
+        }
+
+        function changeTasksPageSize(val) {
+            currentTasksPageSize = parseInt(val, 10) || 50;
+            currentTasksPage = 1;
+            loadTasks();
+        }
+
+        function prevTasksPage() {
+            if (currentTasksPage > 1) {
+                currentTasksPage--;
+                loadTasks();
+            }
+        }
+
+        function nextTasksPage() {
+            const totalPages = Math.max(1, Math.ceil(totalTasksRecords / currentTasksPageSize));
+            if (currentTasksPage < totalPages) {
+                currentTasksPage++;
+                loadTasks();
+            }
+        }
+
+        function updateTasksPagination(meta) {
+            const isAr = currentLang === 'ar';
+            const total = meta && meta.total != null ? meta.total : totalTasksRecords;
+            const pageSize = meta && meta.page_size ? meta.page_size : currentTasksPageSize;
+            const page = meta && meta.page ? meta.page : currentTasksPage;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+            const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
+            const endIdx = Math.min(page * pageSize, total);
+
+            const infoEl = document.getElementById('tasks-pagination-info');
+            if (infoEl) {
+                infoEl.textContent = isAr 
+                    ? `عرض ${startIdx} - ${endIdx} من إجمالي ${total} مهمة`
+                    : `Showing ${startIdx} - ${endIdx} of ${total} tasks`;
+            }
+
+            const dispEl = document.getElementById('tasks-page-display');
+            if (dispEl) {
+                dispEl.textContent = isAr 
+                    ? `صفحة ${page} من ${totalPages}`
+                    : `Page ${page} of ${totalPages}`;
+            }
+
+            const prevBtn = document.getElementById('tasks-btn-prev');
+            if (prevBtn) prevBtn.disabled = page <= 1;
+
+            const nextBtn = document.getElementById('tasks-btn-next');
+            if (nextBtn) nextBtn.disabled = page >= totalPages;
+
+            const sizeSelect = document.getElementById('tasks-page-size');
+            if (sizeSelect && sizeSelect.value !== String(pageSize)) {
+                sizeSelect.value = String(pageSize);
+            }
+        }
+
         async function loadTasks() {
-            const status = document.getElementById('task-status').value;
-            const priority = document.getElementById('task-priority').value;
-            const overdue = document.getElementById('task-overdue-only').checked;
+            const status = document.getElementById('task-status')?.value || '';
+            const priority = document.getElementById('task-priority')?.value || '';
+            const overdue = document.getElementById('task-overdue-only')?.checked || false;
             const agent = document.getElementById('task-agent-filter')?.value || '';
-            let url = `${API_BASE}/api/v1/tasks?page_size=50`;
-            if (status) url += `&status=${status}`;
-            if (priority) url += `&priority=${priority}`;
+            const sortBy = document.getElementById('task-sort-by')?.value || 'created_desc';
+            const search = (document.getElementById('task-search')?.value || '').trim();
+
+            let url = `${API_BASE}/api/v1/tasks?page=${currentTasksPage}&page_size=${currentTasksPageSize}&sort_by=${encodeURIComponent(sortBy)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (priority) url += `&priority=${encodeURIComponent(priority)}`;
             if (overdue) url += `&is_overdue=true`;
             if (agent) url += `&assigned_user_id=${encodeURIComponent(agent)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            const tbody = document.getElementById('tasks-tbody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'جاري تحميل المهام...' : 'Loading tasks...'}</td></tr>`;
+            }
 
             try {
-                const res = await fetch(url);
-                const json = await res.json();
-                tasksData = json.data || [];
+                const res = await apiRequest(url);
+                tasksData = res.data || [];
+                const meta = res.meta || { page: currentTasksPage, page_size: currentTasksPageSize, total: tasksData.length };
+                totalTasksRecords = meta.total != null ? meta.total : tasksData.length;
+                lastTasksMeta = meta;
                 renderTasks(tasksData);
+                updateTasksPagination(meta);
             } catch (err) {
-                console.error(err);
-                document.getElementById('tasks-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load tasks.</td></tr>';
+                console.error("loadTasks error:", err);
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">${currentLang === 'ar' ? 'فشل تحميل المهام.' : 'Failed to load tasks.'}</td></tr>`;
+                }
             }
         }
 
         function renderTasks(items) {
             const tbody = document.getElementById('tasks-tbody');
+            if (!tbody) return;
+            const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${currentLang === 'ar' ? 'لا توجد مهام مطابقة.' : 'No tasks found.'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مهام مطابقة.' : 'No tasks found.'}</td></tr>`;
                 return;
             }
-            const isAr = currentLang === 'ar';
             tbody.innerHTML = items.map(t => {
                 const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
-                const sCls = t.status === 'COMPLETED' ? 'badge-completed' : (t.is_overdue ? 'badge-overdue' : 'badge-open');
+                const sCls = t.status === 'COMPLETED' ? 'badge-completed' : (t.status === 'CANCELLED' ? 'badge-low' : (t.is_overdue ? 'badge-overdue' : 'badge-open'));
+                const createdDate = t.created_at ? new Date(t.created_at).toLocaleDateString() + ' ' + new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isAr ? 'بدون تاريخ' : 'No date');
                 const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() + ' ' + new Date(t.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isAr ? 'بدون موعد' : 'No date');
                 const isActionable = (t.status === 'OPEN' || t.status === 'PENDING' || t.status === 'IN_PROGRESS');
                 const displayTitle = getLocalizedTaskTitle(t.title, t.template_id);
@@ -1629,6 +1785,7 @@
                             ${t.escalation_level > 1 ? (isAr ? '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 مصعد للمدير</span>' : '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 Escalated to Manager</span>') : ''}
                         </td>
                         <td><span class="badge ${pCls}">${isAr ? (t.priority === 'URGENT' ? 'عاجل' : (t.priority === 'HIGH' ? 'هام' : (t.priority === 'NORMAL' ? 'عادي' : (t.priority === 'LOW' ? 'منخفض' : t.priority)))) : t.priority}</span></td>
+                        <td><span style="font-size:0.78rem; color:#475569; font-weight:600; white-space:nowrap;">📅 ${createdDate}</span></td>
                         <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
                         <td>${assignedName}</td>
                         <td class="tasks-rel-cell">
@@ -1636,7 +1793,7 @@
                             ${t.lead_id ? `<div style="font-size:0.75em; color:#0284c7; margin-top:2px; display:flex; align-items:center; gap:4px;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${t.lead_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
                             ${t.opportunity_id ? `<div style="font-size:0.75em; color:#16a34a; margin-top:2px; display:flex; align-items:center; gap:4px;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ oppId: '${t.opportunity_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
                         </td>
-                        <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : t.status))) : t.status}</span></td>
+                        <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : (t.status === 'CANCELLED' ? 'ملغاة' : t.status)))) : t.status}</span></td>
                         <td>
                             <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                             ${isActionable ? `
@@ -1662,15 +1819,7 @@
         }
 
         function filterTasks() {
-            const term = document.getElementById('task-search').value.toLowerCase();
-            const filtered = tasksData.filter(t =>
-                t.title.toLowerCase().includes(term) ||
-                (t.assigned_user_name && t.assigned_user_name.toLowerCase().includes(term)) ||
-                (t.customer_name && t.customer_name.toLowerCase().includes(term)) ||
-                (t.lead_id && t.lead_id.toLowerCase().includes(term)) ||
-                (t.opportunity_id && t.opportunity_id.toLowerCase().includes(term))
-            );
-            renderTasks(filtered);
+            onTaskSearchInput();
         }
 
         let referenceCities = [];
@@ -1680,8 +1829,8 @@
             if (referenceCities.length === 0 || referencePropertyTypes.length === 0) {
                 try {
                     const [cRes, ptRes] = await Promise.all([
-                        fetch(`${API_BASE}/api/v1/cities`).then(r => r.ok ? r.json() : null),
-                        fetch(`${API_BASE}/api/v1/property-types`).then(r => r.ok ? r.json() : null)
+                        apiRequest(`${API_BASE}/api/v1/cities`),
+                        apiRequest(`${API_BASE}/api/v1/property-types`)
                     ]);
                     if (cRes && cRes.data) referenceCities = cRes.data;
                     if (ptRes && ptRes.data) referencePropertyTypes = ptRes.data;
@@ -1692,17 +1841,17 @@
         }
 
         let currentSopSampleNotes = '';
-        async function loadTaskSopGuide(templateId, taskId) {
+        async function loadTaskSopGuide(templateId, taskId, taskTitle) {
             const contentEl = document.getElementById('comp-sop-steps-content');
             if (!contentEl) return;
             const isAr = currentLang === 'ar';
             contentEl.innerHTML = `<div style="text-align:center; padding:10px; color:#64748b;">${isAr ? 'جاري تحميل خطوات التنفيذ المعتمدة...' : 'Loading SOP execution steps...'}</div>`;
+            const codeToQuery = templateId || taskId || taskTitle;
             try {
-                const res = await apiRequest(`/api/v1/sop-guide/${encodeURIComponent(templateId || taskId)}`);
+                const res = await apiRequest(`/api/v1/sop-guide/${encodeURIComponent(codeToQuery)}`);
                 const g = res.data;
                 if (!g) {
-                    contentEl.innerHTML = `<div style="color:#64748b;">${isAr ? 'لا توجد خطوات مخصصة مسجلة.' : 'No custom steps registered.'}</div>`;
-                    return;
+                    throw new Error("No guide data returned");
                 }
                 let steps = isAr ? g.execution_steps_ar : g.execution_steps_en;
                 while (typeof steps === 'string') {
@@ -1753,7 +1902,57 @@
                     </div>
                 `;
             } catch (err) {
-                contentEl.innerHTML = `<div style="font-size:0.82em; color:#94a3b8;">${isAr ? 'تعذر جلب خطوات الدليل الإجرائي.' : 'Could not fetch guide.'}</div>`;
+                console.warn('loadTaskSopGuide fallback used:', err);
+                currentSopSampleNotes = isAr ? 'تم استكمال الإجراء بنجاح ومطابقة كافة الشروط والمتطلبات مع العميل.' : 'Procedure completed successfully and all requirements confirmed with client.';
+                contentEl.innerHTML = `
+                    <div style="line-height:1.5;">
+                        <div style="font-size:0.82em; color:#0369a1; margin-bottom:8px;">
+                            🎯 <strong>${isAr ? 'الهدف: ' : 'Goal: '}</strong> ${isAr ? 'استكمال الإجراء التشغيلي وتوثيق المعطيات المطلوبة بدقة.' : 'Complete operational procedure and document required outcomes.'}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                            <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
+                                <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">1</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${isAr ? 'مراجعة بيانات الطلب والمهمة' : 'Review Task and Context'}</div>
+                                    <div style="font-size:0.82em; color:#475569; margin-top:2px;">${isAr ? 'الاطلاع على تفاصيل الطلب والعميل وسجل الملاحظات السابقة.' : 'Inspect customer request details and previous operational notes.'}</div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
+                                <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">2</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${isAr ? 'تنفيذ الإجراء المطلوب واستيفاء المعطيات' : 'Execute Procedure'}</div>
+                                    <div style="font-size:0.82em; color:#475569; margin-top:2px;">${isAr ? 'التواصل المباشر مع العميل واستيفاء الحقول والملاحظات الإلزامية.' : 'Execute action with customer and gather necessary data or inputs.'}</div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
+                                <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">3</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${isAr ? 'تدقيق الشروط والامتثال' : 'Verify Compliance'}</div>
+                                    <div style="font-size:0.82em; color:#475569; margin-top:2px;">${isAr ? 'التأكد من اكتمال المعايير وصحة الأرقام المدخلة.' : 'Verify conditions and accuracy of entered business values.'}</div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
+                                <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">4</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${isAr ? 'حفظ النتيجة واعتماد إنجاز المهمة' : 'Save & Complete Task'}</div>
+                                    <div style="font-size:0.82em; color:#475569; margin-top:2px;">${isAr ? 'اختيار نتيجة الإنجاز وتدوين الملاحظات والضغط على زر الحفظ.' : 'Select outcome, commit detailed notes, and save.'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:8px 10px; margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:4px;">
+                                <span style="font-size:0.8em; font-weight:700; color:#854d0e;">📝 ${isAr ? 'نموذج الملاحظات المقترح:' : 'Suggested Notes Template:'}</span>
+                                <button type="button" onclick="applySampleNotes()" style="background:#fef08a; color:#713f12; border:1px solid #fde047; border-radius:4px; padding:2px 8px; font-size:0.75em; font-weight:700; cursor:pointer;">
+                                    📋 ${isAr ? 'استخدام هذا النموذج' : 'Use Template'}
+                                </button>
+                            </div>
+                            <div style="font-size:0.82em; color:#713f12; font-family:sans-serif;">${currentSopSampleNotes}</div>
+                        </div>
+                        <div style="font-size:0.78em; color:#64748b;">
+                            🚀 <strong>${isAr ? 'النتيجة بعد الحفظ: ' : 'Upon Save: '}</strong> ${isAr ? 'إغلاق المهمة بنجاح وتحديث مسار تاريخ الطلب.' : 'Completes task and updates CRM history audit log.'}
+                        </div>
+                    </div>
+                `;
             }
         }
 
@@ -1847,7 +2046,25 @@
                     </div>
                 `;
             } catch (err) {
-                bodyEl.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444;">${isAr ? 'فشل تحميل دليل الخطوات.' : 'Failed to load guide.'}</div>`;
+                console.warn('openSopHelpModal error:', err);
+                bodyEl.innerHTML = `
+                    <div style="line-height:1.6;">
+                        <div style="background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px;">
+                            <div style="font-weight:800; color:#0369a1; font-size:1em;">
+                                💡 ${isAr ? 'الدليل الإرشادي المعتمد للمهمة' : 'Standard Operating Guidance'}
+                            </div>
+                        </div>
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#0f172a; margin-bottom:8px;">🔢 ${isAr ? 'الخطوات التنفيذية المعتمدة:' : 'Standard Steps:'}</div>
+                            <ol style="margin:0; padding-right:20px; padding-left:20px; font-size:0.88em; color:#334155; line-height:1.7;">
+                                <li>${isAr ? 'مراجعة متطلبات وتفاصيل الطلب والمهمة والأنشطة السابقة.' : 'Review task context and previous activities.'}</li>
+                                <li>${isAr ? 'التواصل المباشر مع العميل واستيفاء البيانات والشروط الإلزامية.' : 'Engage customer and gather necessary details.'}</li>
+                                <li>${isAr ? 'تدقيق الامتثال والتحقق من صحة المعطيات المدخلة.' : 'Verify compliance and data accuracy.'}</li>
+                                <li>${isAr ? 'حفظ النتيجة والملاحظات في النظام لإغلاق المهمة رسمياً.' : 'Commit outcome and notes to complete task.'}</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
             }
         }
 
@@ -1867,7 +2084,7 @@
             document.getElementById('comp-task-context').textContent = contextParts.join(' | ') || (isAr ? 'سجل المهمة التشغيلي' : 'Operational Task Context');
 
             // Load SOP Step-by-Step execution guide dynamically
-            loadTaskSopGuide(templateId, taskId);
+            loadTaskSopGuide(templateId || (t ? t.template_id : null), taskId, t ? t.title : null);
 
             document.getElementById('comp-notes').value = '';
             document.getElementById('comp-budget-min').value = '';
@@ -1888,6 +2105,47 @@
             const ptEl = document.getElementById('comp-property-type');
             ptEl.innerHTML = `<option value="">${isAr ? 'اختر نوع العقار المفضل' : 'Select Preferred Property Type'}</option>` + 
                 referencePropertyTypes.map(p => `<option value="${p.property_type_id}">${isAr ? (p.name_ar || p.name_en) : p.name_en}</option>`).join('');
+
+            // Pre-fill existing business data from Lead or Opportunity (so previous data is visible and editable):
+            let taskLead = null;
+            if (t && t.lead_id) {
+                try {
+                    const lRes = await apiRequest(`${API_BASE}/api/v1/leads/${encodeURIComponent(t.lead_id)}`);
+                    if (lRes && lRes.data) taskLead = lRes.data;
+                } catch (_) {}
+            }
+
+            let taskOpp = null;
+            if (t && t.opportunity_id) {
+                try {
+                    const oRes = await apiRequest(`${API_BASE}/api/v1/opportunities/${encodeURIComponent(t.opportunity_id)}`);
+                    if (oRes && oRes.data) taskOpp = oRes.data;
+                } catch (_) {}
+            }
+
+            // 1. Pre-fill Budget Range
+            const prefillBMin = (taskLead && taskLead.budget_min != null) ? taskLead.budget_min : (taskOpp && taskOpp.budget_min != null ? taskOpp.budget_min : '');
+            const prefillBMax = (taskLead && taskLead.budget_max != null) ? taskLead.budget_max : (taskOpp && taskOpp.budget_max != null ? taskOpp.budget_max : '');
+            if (prefillBMin !== '') document.getElementById('comp-budget-min').value = prefillBMin;
+            if (prefillBMax !== '') document.getElementById('comp-budget-max').value = prefillBMax;
+
+            // 2. Pre-fill Preferred City
+            const prefillCity = (taskLead && taskLead.preferred_city_id) ? taskLead.preferred_city_id : (taskOpp && taskOpp.preferred_city_id ? taskOpp.preferred_city_id : '');
+            if (prefillCity) cityEl.value = prefillCity;
+
+            // 3. Pre-fill Preferred Property Type
+            const prefillPType = (taskLead && taskLead.preferred_property_type_id) ? taskLead.preferred_property_type_id : (taskOpp && taskOpp.preferred_property_type_id ? taskOpp.preferred_property_type_id : '');
+            if (prefillPType) ptEl.value = prefillPType;
+
+            // 4. Pre-fill Offer Price if applicable
+            const prefillOfferPrice = (taskOpp && taskOpp.expected_value != null) ? taskOpp.expected_value : (taskLead && taskLead.unit_price ? taskLead.unit_price : '');
+            if (offerPriceEl && prefillOfferPrice) offerPriceEl.value = prefillOfferPrice;
+
+            // 5. Pre-fill Location / Key Arrangements if known
+            const existingLoc = (taskLead && (taskLead.building_name || taskLead.project_name))
+                ? `${taskLead.building_name || ''} ${taskLead.project_name ? '— ' + taskLead.project_name : ''}`.trim()
+                : ((taskOpp && (taskOpp.building_name || taskOpp.project_name)) ? `${taskOpp.building_name || ''} ${taskOpp.project_name ? '— ' + taskOpp.project_name : ''}`.trim() : '');
+            if (viewingLoc && existingLoc) viewingLoc.value = existingLoc;
 
             const container = document.getElementById('comp-outcome-options');
             const qualFields = document.getElementById('comp-qual-fields');
@@ -1911,7 +2169,7 @@
                 cbInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
             }
 
-            if (templateId === 'TASK_LEAD_FIRST_CONTACT' || templateId === 'TASK_LEAD_FOLLOWUP') {
+            if (templateId === 'TASK_LEAD_FIRST_CONTACT' || templateId === 'TASK_RENT_LEAD_FIRST_CONTACT' || templateId === 'TASK_INVEST_LEAD_FIRST_CONTACT' || templateId === 'TASK_LEAD_FOLLOWUP') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="CONNECTED" checked onchange="toggleCallbackFields(false); toggleQualFields(false)">
@@ -1996,12 +2254,12 @@
                         </div>
                     </label>
                 `;
-            } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+            } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES' || templateId === 'TASK_RENT_MATCH_PROPERTIES') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="PRESENTED" checked>
                         <div>
-                            <strong style="color:#166534;">${isAr ? '🏢 تم ترشيح العقارات وإرسالها للعميل عبر الواتساب' : '🏢 Properties Presented via WhatsApp'}</strong>
+                            <strong style="color:#166534;">${isAr ? '🏢 تم ترشيح الوحدات المطابقة وإرسالها للعميل' : '🏢 Properties Matched & Presented'}</strong>
                             <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق إرسال مقترحات العقارات وتوليد مهمة جدولة المعاينة الميدانية' : 'Record sent property recommendations and spawn site visit scheduling task'}</div>
                         </div>
                     </label>
@@ -2036,7 +2294,7 @@
                 if (viewingFields) viewingFields.style.display = 'block';
                 populateViewingModalUnits(t);
 
-            } else if (templateId === 'TASK_VIEWING_REPORT') {
+            } else if (templateId === 'TASK_VIEWING_REPORT' || templateId === 'TASK_RENT_VIEWING_FOLLOW_UP') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="INTERESTED" checked onchange="toggleViewingReportOffer(true)">
@@ -2204,6 +2462,87 @@
                         </div>
                     </label>
                 `;
+            } else if (templateId === 'TASK_RENT_PREPARE_TENANCY') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="EXECUTED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📝 تم توقيع واعتماد عقد الإيجار وتوليد جدول الأقساط' : '📝 Rental Agreement Executed & Schedule Generated'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تفعيل عقد الإيجار، وتوليد مهمة مراقبة وتحصيل الدفعات الدورية' : 'Activate tenancy and spawn periodic rent collection monitoring task'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="TERMS_REJECTED">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '✕ رفض الشروط والبحث عن بديل' : '✕ Terms Rejected — Rematch'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إعادة فتح مسار مطابقة وترشيح وحدات شاغرة أخرى' : 'Reopen matching for alternative vacant units'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_INVEST_CONFIRM_OBJECTIVES') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="OBJECTIVES_CONFIRMED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '🎯 تم اعتماد الأهداف الاستثمارية والميزانية' : '🎯 Investment Goals & Budget Confirmed'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق رأس المال المستهدف ومعدل العائد المطلوب، وتوليد مهمة تحليل ومقارنة العوائد' : 'Document target capital, yield & timeline, spawn returns comparison task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="RETURNS_COMPARED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📈 تم احتساب ومقارنة العوائد الاستثمارية للوحدات' : '📈 Returns & Yields Calculated'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'احتساب العائد الصافي ومعدل CoC، وتوليد مهمة تدقيق الافتراضات المالية' : 'Calculate NOI & Cash-on-Cash, spawn financials validation task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_INVEST_VALIDATE_FINANCIALS') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="VALIDATED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ اعتماد وتدقيق الفرضيات المالية والاستثمارية' : '✓ Financial Projections Validated'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد تكاليف الشغور والتشغيل وتوليد مهمة إعداد عرض الاستحواذ' : 'Validate vacancy & OPEX, spawn acquisition offer preparation task'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_INVEST_PORTFOLIO_REVIEW') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+                        <input type="radio" name="comp_outcome" value="HOLD" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📈 الاحتفاظ بالأصل (HOLD) — إتمام مسار الاستثمار بنجاح' : '📈 Retain Asset (HOLD) — Complete Investment Lifecycle'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'الأداء الاستثماري ممتاز ومطابق للتوقعات، التوصية بالاحتفاظ بالأصل واستمرار تحصيل العوائد التأجيرية الدورية (إتمام الدورة بنجاح ودون تكرار مهام).' : 'Returns are solid; recommend retaining asset and collecting recurring yields (successfully concludes transaction cycle without task loops).'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+                        <input type="radio" name="comp_outcome" value="DIVEST">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '💼 التخارج / بيع الأصل (DIVEST)' : '💼 Divest / Liquidate Asset'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'التوصية ببيع العقار لتحقيق الأرباح الرأسمالية وإعادة توجيه السيولة.' : 'Recommend selling asset to capture capital gains and reallocate capital.'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bfdbfe; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="EXPAND">
+                        <div>
+                            <strong style="color:#1d4ed8;">${isAr ? '🏢 توسيع المحفظة وشراء أصول جديدة (EXPAND)' : '🏢 Expand Portfolio & Acquire New Assets'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'رغبة المستثمر في ضخ سيولة إضافية والبحث عن صفقات استثمارية جديدة.' : 'Investor seeks to deploy additional capital into new investment acquisitions.'}</div>
+                        </div>
+                    </label>
+                `;
+            } else if (templateId === 'TASK_INVEST_MONITOR_ACTUAL_RETURNS') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="MONITORED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ تدقيق العوائد الفعلية والانتقال للمراجعة السنوية' : '✓ Returns Monitored — Advance to Portfolio Review'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'مقارنة الدخل الفعلي والمصروفات بخط الأساس وتوليد مهمة مراجعة أداء المحفظة الاستثمارية الختامية' : 'Compare actual vs baseline returns, spawn concluding portfolio review task'}</div>
+                        </div>
+                    </label>
+                `;
             } else {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
@@ -2245,19 +2584,67 @@
             const isAr = currentLang === 'ar';
             listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'جاري البحث في المخزون المتاح...' : 'Loading available units...'}</span>`;
             try {
-                const res = await fetch(`${API_BASE}/api/v1/units?page_size=20`);
+                let shortlistedIds = [];
+                if (task.opportunity_id) {
+                    try {
+                        const oppRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${task.opportunity_id}/units`);
+                        if (oppRes.ok) {
+                            const oppData = (await oppRes.json()).data || [];
+                            shortlistedIds = oppData.map(u => u.unit_id);
+                        }
+                    } catch (_) {}
+                }
+                if (shortlistedIds.length === 0 && task.lead_id) {
+                    try {
+                        const lRes = await fetch(`${API_BASE}/api/v1/leads/${task.lead_id}`);
+                        if (lRes.ok) {
+                            const ld = (await lRes.json()).data;
+                            if (ld && ld.units) shortlistedIds = ld.units.map(u => u.unit_id);
+                            else if (ld && ld.unit_id) shortlistedIds = [ld.unit_id];
+                        }
+                    } catch (_) {}
+                }
+
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=30`);
                 const json = await res.json();
                 const units = json.data || [];
                 if (units.length === 0) {
                     listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات متاحة' : 'No available units'}</span>`;
                     return;
                 }
-                listEl.innerHTML = units.slice(0, 6).map((u, idx) => `
+                const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
+                // Sort so that previously shortlisted units appear at the top and are pre-checked
+                units.sort((a, b) => {
+                    const aShort = shortlistedIds.includes(a.unit_id) ? 1 : 0;
+                    const bShort = shortlistedIds.includes(b.unit_id) ? 1 : 0;
+                    return bShort - aShort;
+                });
+                listEl.innerHTML = units.slice(0, 8).map((u, idx) => {
+                    const isChecked = shortlistedIds.length > 0 ? shortlistedIds.includes(u.unit_id) : (idx < 3);
+                    const ownerName = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                    let priceTag = '';
+                    if (inq === 'RENT') {
+                        const r = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '--';
+                        priceTag = `🔑 ${isAr ? 'إيجار:' : 'Rent:'} ${r}`;
+                    } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                        const s = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
+                        let roi = '';
+                        if (u.asking_price && u.rent_price && u.asking_price > 0) {
+                            roi = ` (ROI: ${((u.rent_price / u.asking_price) * 100).toFixed(1)}%)`;
+                        }
+                        priceTag = `💼 ${isAr ? 'سعر البيع:' : 'Sell:'} ${s}${roi}`;
+                    } else {
+                        const b = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
+                        priceTag = `🏠 ${isAr ? 'سعر الشراء:' : 'Buy:'} ${b}`;
+                    }
+                    return `
                     <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;">
-                        <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${idx < 3 ? 'checked' : ''}>
-                        <span><strong>#${u.unit_number}</strong> (${u.building_name || (isAr ? 'المبنى' : 'Building')}) — ${u.property_type_name || (isAr ? 'عقار' : 'Property')} | ${Number(u.asking_price || u.rent_price || 0).toLocaleString()} SAR</span>
+                        <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${isChecked ? 'checked' : ''}>
+                        <span class="id-badge">${u.unit_id}</span>
+                        <span><strong>#${u.unit_number}</strong> (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) — ${u.property_type_name || (isAr ? 'عقار' : 'Property')} | ${priceTag}</span>
                     </label>
-                `).join('');
+                    `;
+                }).join('');
             } catch (err) {
                 listEl.innerHTML = `<span style="color:#ef4444;">${isAr ? 'خطأ في تحميل الوحدات' : 'Error loading units'}</span>`;
             }
@@ -2267,6 +2654,7 @@
             const unitSel = document.getElementById('comp-viewing-unit');
             const dtInput = document.getElementById('comp-viewing-datetime');
             const isAr = currentLang === 'ar';
+            const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
 
             // Set default date/time to tomorrow at 16:00 (4:00 PM)
             const tomorrow = new Date();
@@ -2294,25 +2682,52 @@
                         }
                     } catch (_) {}
                 }
+                if (shortlisted.length === 0 && task.lead_id) {
+                    try {
+                        const leadRes = await fetch(`${API_BASE}/api/v1/leads/${task.lead_id}`);
+                        if (leadRes.ok) {
+                            const ld = (await leadRes.json()).data;
+                            if (ld && ld.units && ld.units.length > 0) {
+                                shortlisted = ld.units;
+                            } else if (ld && ld.unit_id) {
+                                const found = invUnits.find(u => u.unit_id === ld.unit_id);
+                                if (found) shortlisted = [found];
+                            }
+                        }
+                    } catch (_) {}
+                }
+
+                function formatViewingUnitOpt(u, isDealUnit) {
+                    const ownerName = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة' : 'Agency');
+                    let priceTag = '';
+                    if (inq === 'RENT') {
+                        const r = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '--';
+                        priceTag = `🔑 ${isAr ? 'إيجار:' : 'Rent:'} ${r}`;
+                    } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                        const s = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
+                        let roi = '';
+                        if (u.asking_price && u.rent_price && u.asking_price > 0) {
+                            roi = ` (ROI: ${((u.rent_price / u.asking_price) * 100).toFixed(1)}%)`;
+                        }
+                        priceTag = `💼 ${isAr ? 'بيع:' : 'Sell:'} ${s}${roi}`;
+                    } else {
+                        const b = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
+                        priceTag = `🏠 ${isAr ? 'شراء:' : 'Buy:'} ${b}`;
+                    }
+                    const prefix = isDealUnit ? '★ ' : '';
+                    return `<option value="${u.unit_id}">${prefix}[${u.unit_id}] #${u.unit_number || u.unit_id} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${priceTag}</option>`;
+                }
 
                 let optionsHtml = '';
                 if (shortlisted.length > 0) {
                     optionsHtml += `<optgroup label="${isAr ? '⭐ الوحدات المرشحة للطلب / الصفقة' : '⭐ Shortlisted Deal Units'}">` +
-                        shortlisted.map(u => {
-                            const pName = isAr ? (u.project_name_ar || u.project_name_en) : (u.project_name_en || u.project_name_ar);
-                            const price = u.asking_price || u.rent_price || 0;
-                            return `<option value="${u.unit_id}">★ Unit #${u.unit_number || u.unit_id} - ${pName || ''} | ${Number(price).toLocaleString()} SAR</option>`;
-                        }).join('') + `</optgroup>`;
+                        shortlisted.map(u => formatViewingUnitOpt(u, true)).join('') + `</optgroup>`;
                 }
 
                 const remaining = invUnits.filter(u => !shortlisted.some(su => su.unit_id === u.unit_id));
                 if (remaining.length > 0) {
                     optionsHtml += `<optgroup label="${isAr ? '🏢 مخزون الوحدات المتاحة بالشركة' : '🏢 Company Available Units'}">` +
-                        remaining.map(u => {
-                            const pName = isAr ? (u.project_name_ar || u.project_name_en) : (u.project_name_en || u.project_name_ar);
-                            const price = u.asking_price || u.rent_price || 0;
-                            return `<option value="${u.unit_id}">Unit #${u.unit_number} - ${pName || ''} | ${u.bedrooms || 0} Beds | ${Number(price).toLocaleString()} SAR</option>`;
-                        }).join('') + `</optgroup>`;
+                        remaining.map(u => formatViewingUnitOpt(u, false)).join('') + `</optgroup>`;
                 }
 
                 unitSel.innerHTML = optionsHtml || `<option value="">-- ${isAr ? 'لا توجد وحدات متاحة' : 'No available units'} --</option>`;
@@ -2525,7 +2940,7 @@
         async function executeReopenTask(taskId, reason) {
             const isAr = currentLang === 'ar';
             try {
-                const uId = (window.currentUser && window.currentUser.user_id) || 'user-51';
+                const uId = (window.getCurrentUserProfile ? window.getCurrentUserProfile()?.user_id : null) || localStorage.getItem('recrm_user_id') || 'user-51';
                 const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/reopen`, {
                     method: 'POST',
                     headers: {
@@ -2552,21 +2967,29 @@
 
         // --- Tab 2: Activities ---
         async function loadActivities() {
-            const type = document.getElementById('act-type').value;
+            const type = document.getElementById('act-type')?.value || '';
             const agent = document.getElementById('task-agent-filter')?.value || '';
-            let url = `${API_BASE}/api/v1/activities?page_size=50`;
-            if (type) url += `&activity_type=${type}`;
+            const search = (document.getElementById('act-search')?.value || '').trim();
+            let url = `${API_BASE}/api/v1/activities?page_size=200`;
+            if (type) url += `&activity_type=${encodeURIComponent(type)}`;
             if (agent) url += `&user_id=${encodeURIComponent(agent)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
 
             try {
-                const res = await fetch(url);
-                const json = await res.json();
-                activitiesData = json.data || [];
+                const res = await apiRequest(url);
+                activitiesData = res.data || [];
                 renderActivities(activitiesData);
             } catch (err) {
                 console.error(err);
                 document.getElementById('acts-tbody').innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Failed to load activities.</td></tr>';
             }
+        }
+
+        function filterActivities() {
+            clearTimeout(actSearchDebounceTimer);
+            actSearchDebounceTimer = setTimeout(() => {
+                loadActivities();
+            }, 300);
         }
 
         function renderActivities(items) {
@@ -2613,18 +3036,6 @@
             }).join('');
         }
 
-        function filterActivities() {
-            const term = document.getElementById('act-search').value.toLowerCase();
-            const filtered = activitiesData.filter(a =>
-                (a.subject && a.subject.toLowerCase().includes(term)) ||
-                (a.description && a.description.toLowerCase().includes(term)) ||
-                (a.lead_id && a.lead_id.toLowerCase().includes(term)) ||
-                (a.customer_name && a.customer_name.toLowerCase().includes(term)) ||
-                (a.user_name && a.user_name.toLowerCase().includes(term))
-            );
-            renderActivities(filtered);
-        }
-
         // --- Tab 3: Communications ---
         async function loadComms() {
             const chan = document.getElementById('comm-channel').value;
@@ -2634,9 +3045,8 @@
             if (dir) url += `&direction=${dir}`;
 
             try {
-                const res = await fetch(url);
-                const json = await res.json();
-                commsData = json.data || [];
+                const res = await apiRequest(url);
+                commsData = res ? (res.data || []) : [];
                 renderComms(commsData);
             } catch (err) {
                 console.error(err);
@@ -2739,10 +3149,10 @@
             if (taskModalUsers.length === 0 || taskModalCustomers.length === 0 || 
                 taskModalLeads.length === 0 || taskModalOpportunities.length === 0) {
                 const [uRes, cRes, lRes, oRes] = await Promise.allSettled([
-                    fetch(`${API_BASE}/api/v1/users?page_size=100`).then(r => r.ok ? r.json() : null),
-                    fetch(`${API_BASE}/api/v1/customers?page_size=100`).then(r => r.ok ? r.json() : null),
-                    fetch(`${API_BASE}/api/v1/leads?page_size=100`).then(r => r.ok ? r.json() : null),
-                    fetch(`${API_BASE}/api/v1/opportunities?page_size=100`).then(r => r.ok ? r.json() : null)
+                    apiRequest(`${API_BASE}/api/v1/users?page_size=100`),
+                    apiRequest(`${API_BASE}/api/v1/customers?page_size=100`),
+                    apiRequest(`${API_BASE}/api/v1/leads?page_size=100`),
+                    apiRequest(`${API_BASE}/api/v1/opportunities?page_size=100`)
                 ]);
                 if (uRes.status === 'fulfilled' && uRes.value) taskModalUsers = uRes.value.data || [];
                 if (cRes.status === 'fulfilled' && cRes.value) taskModalCustomers = cRes.value.data || [];
@@ -3236,10 +3646,47 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTypography();
             setLanguage(currentLang);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const preTaskId = urlParams.get('task_id');
+            const preLead = urlParams.get('lead_id');
+            const preOpp = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+            const preCust = urlParams.get('customer_id');
+            const preAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
+            const preAction = urlParams.get('action');
+            const preTab = urlParams.get('tab');
+            const preSearch = urlParams.get('search');
+            const preStatus = urlParams.get('status');
+
+            if (preTab) {
+                switchTab(preTab);
+            }
+
+            if (preStatus && document.getElementById('task-status')) {
+                document.getElementById('task-status').value = preStatus.toUpperCase();
+            }
+
+            const searchInput = document.getElementById('task-search');
+            if (searchInput) {
+                if (preSearch) {
+                    searchInput.value = preSearch;
+                } else if (preTaskId) {
+                    searchInput.value = preTaskId;
+                } else if (preLead && preAction !== 'new_task' && preAction !== 'new_activity' && preAction !== 'new_viewing') {
+                    searchInput.value = preLead;
+                } else if (preOpp && preAction !== 'new_task' && preAction !== 'new_activity' && preAction !== 'new_viewing') {
+                    searchInput.value = preOpp;
+                }
+            }
+
             loadSummary();
             loadTasks();
             ensureReferenceDataLoaded().then(() => {
                 populateTaskAgentFilter();
+                if (preAgent && document.getElementById('task-agent-filter')) {
+                    document.getElementById('task-agent-filter').value = preAgent;
+                    onTaskAgentFilterChange();
+                }
                 checkActiveUserPendingTasksBanner();
             });
 
@@ -3248,18 +3695,6 @@
                 updateMyTasksButtonState();
                 checkActiveUserPendingTasksBanner();
             });
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const preLead = urlParams.get('lead_id');
-            const preOpp = urlParams.get('opportunity_id') || urlParams.get('opp_id');
-            const preCust = urlParams.get('customer_id');
-            const preAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
-            const preAction = urlParams.get('action');
-            const preTab = urlParams.get('tab');
-
-            if (preTab) {
-                switchTab(preTab);
-            }
 
             if (preAction === 'new_activity' || preAction === 'activity' || preAction === 'new_viewing' || preAction === 'viewing') {
                 switchTab('activities');
@@ -3282,7 +3717,7 @@
                         agentId: preAgent
                     });
                 }, 350);
-            } else if (preAction === 'new_task' || preLead || preOpp || preCust) {
+            } else if (preAction === 'new_task') {
                 setTimeout(() => {
                     openNewTaskModal({
                         leadId: preLead,

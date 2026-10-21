@@ -581,10 +581,8 @@
                     }
                 }
             });
-            const savedLang = localStorage.getItem('recrm_lang');
-            if (savedLang && savedLang !== currentLang) {
-                applyLanguage(savedLang);
-            }
+            const savedLang = localStorage.getItem('recrm_lang') || 'ar';
+            applyLanguage(savedLang);
         }
 
         function showToast(msg) {

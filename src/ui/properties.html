@@ -241,7 +241,7 @@
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
-            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_inventory">Inventory</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;" data-i18n="badge_inventory">Properties</span>
         </div>
         <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
             <div id="user-session-widget" style="display: inline-flex; align-items: center;">
@@ -290,7 +290,7 @@
     <div class="content">
         <div class="page-header">
             <div>
-                <h1 style="margin: 0;" data-i18n="page_title">Property Inventory & Units</h1>
+                <h1 style="margin: 0;" data-i18n="page_title">Properties</h1>
                 <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label" data-i18n="loading_inventory">Loading inventory...</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -782,7 +782,7 @@
 
         const i18nData = {
             en: {
-                badge_inventory: "Inventory",
+                badge_inventory: "Properties",
                 nav_brand: "Muath Khidr Al-Nemari Real Estate Services Office",
                 font_label: "🔤 Font:",
                 nav_dashboard: "Dashboard", nav_customers: "Customers 360", nav_leads: "Leads",
@@ -791,8 +791,8 @@
                 nav_marketing: "Marketing & Campaigns", nav_listings: "Property Listings", nav_admin: "Admin & Governance", nav_api: "API Docs",
                 banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
                 banner_subtitle: "Integrated Real Estate Marketing & Management",
-                page_title: "Property Inventory & Units",
-                loading_inventory: "Loading live property inventory from database...",
+                page_title: "Properties",
+                loading_inventory: "Loading properties from database...",
                 search_placeholder: "Search by unit number, unit_id or project...",
                 opt_all_projects: "All Projects",
                 opt_all_buildings: "All Buildings & Projects",
@@ -892,7 +892,7 @@
                 lang_label: "عربي"
             },
             ar: {
-                badge_inventory: "المخزون العقاري",
+                badge_inventory: "المخزون",
                 font_cairo: "كايرو", font_tajawal: "تجوال", font_almarai: "المراعي", font_sakkal: "صقال مجلة",
                 nav_dashboard: "لوحة التحكم", nav_customers: "ملف العميل 360", nav_leads: "الطلبات",
                 nav_properties: "المخزون", nav_sales: "مسار المبيعات", nav_finance: "المالية والعقود",
@@ -900,8 +900,8 @@
                 nav_marketing: "التسويق والحملات", nav_listings: "العروض والإعلانات", nav_admin: "الإدارة والأمان", nav_api: "توثيق API",
                 banner_title: "مكتب معاذ خضر النمري للخدمات العقارية",
                 banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
-                page_title: "المخزون والوحدات العقارية",
-                loading_inventory: "جاري تحميل المخزون العقاري من قاعدة البيانات...",
+                page_title: "المخزون",
+                loading_inventory: "جاري تحميل المخزون من قاعدة البيانات...",
                 search_placeholder: "البحث برقم الوحدة أو معرف الوحدة أو المشروع...",
                 opt_all_projects: "جميع المشاريع",
                 opt_all_buildings: "جميع المباني والمشاريع",
@@ -1093,7 +1093,7 @@
                 }
             });
 
-            const savedLang = localStorage.getItem('recrm_lang') || 'en';
+            const savedLang = localStorage.getItem('recrm_lang') || 'ar';
             applyLanguage(savedLang);
         }
 
@@ -1394,7 +1394,7 @@
             const unitAgFilter = document.getElementById('unit-agent-filter');
             if (unitAgFilter && cachedUsers && cachedUsers.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
-                const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id') || urlParams.get('user_id');
+                const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
                 const curAg = unitAgFilter.value || urlAgent || '';
                 unitAgFilter.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` + 
                     cachedUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');

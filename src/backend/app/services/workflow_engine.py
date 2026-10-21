@@ -409,7 +409,8 @@ class WorkflowEngine:
         assigned_user_id: Optional[str] = None,
         priority: str = "NORMAL",
         custom_due_at: Optional[datetime] = None,
-        parent_task_id: Optional[str] = None
+        parent_task_id: Optional[str] = None,
+        custom_title: Optional[str] = None
     ) -> Tuple[Dict[str, Any], bool]:
         """
         Spawns a standardized task from the template catalog.
@@ -446,11 +447,18 @@ class WorkflowEngine:
                     "UPDATE tasks SET parent_task_id = $1 WHERE task_id = $2",
                     parent_task_id, existing_task["task_id"]
                 )
+            if custom_title and existing_task["title"] != custom_title:
+                await conn.execute(
+                    "UPDATE tasks SET title = $1 WHERE task_id = $2",
+                    custom_title, existing_task["task_id"]
+                )
             t_dict = dict(existing_task)
             if assigned_user_id:
                 t_dict["assigned_user_id"] = assigned_user_id
             if parent_task_id:
                 t_dict["parent_task_id"] = parent_task_id
+            if custom_title:
+                t_dict["title"] = custom_title
             logger.info(f"Task anti-duplication: Open task {existing_task['task_id']} already exists for template {template_id}. Reusing.")
             return t_dict, False
 
@@ -464,7 +472,7 @@ class WorkflowEngine:
             template_id
         )
 
-        standard_title = tmpl["standard_title_ar"] if tmpl else f"Task ({template_id})"
+        standard_title = custom_title or (tmpl["standard_title_ar"] if tmpl else f"Task ({template_id})")
         sla_mins = tmpl["default_sla_minutes"] if tmpl and tmpl["default_sla_minutes"] else 30
 
         if custom_due_at:
@@ -526,7 +534,7 @@ class WorkflowEngine:
             act_type_code = "SYSTEM"
         elif template_id in ("ACT_OFFER_SUBMITTED",):
             act_type_code = "MEETING"
-        elif template_id in ("ACT_TASK_REOPENED",):
+        elif template_id in ("ACT_TASK_REOPENED", "ACT_INVOICE_GENERATED", "ACT_FEE_COLLECTED"):
             act_type_code = "SYSTEM"
 
         act_type_id = await conn.fetchval(
@@ -1699,6 +1707,14 @@ class WorkflowEngine:
         if unit["status"] in ("RENTED", "SOLD"):
             raise ValueError(f"الوحدة {unit['unit_number']} غير متاحة للإيجار حالياً (الحالة الحالية: {unit['status']}).")
 
+        # Gating: verify that all statutory Saudi fees are collected before activating tenancy!
+        if opportunity_id or lead_id:
+            await WorkflowEngine.verify_saudi_fees_collected(
+                conn=conn,
+                opportunity_id=opportunity_id,
+                lead_id=lead_id
+            )
+
         # 2. Verify Customer
         cust = await conn.fetchrow(
             "SELECT customer_id, first_name, last_name, company_name, mobile FROM customers WHERE customer_id = $1",
@@ -1817,6 +1833,65 @@ class WorkflowEngine:
             notes=act_notes,
             completed_at=now_dt
         )
+
+        # 8.b Record internal Broker Commission for the leasing agent
+        accountant_user_id = await conn.fetchval(
+            """
+            SELECT u.user_id FROM users u
+            JOIN user_roles ur ON u.user_id = ur.user_id
+            JOIN roles r ON ur.role_id = r.role_id
+            WHERE r.role_code = 'ACCOUNTANT'
+            ORDER BY u.created_at ASC
+            LIMIT 1
+            """
+        ) or "user-19"
+
+        comm_agent_id = effective_user_id or (await conn.fetchval("SELECT assigned_user_id FROM units WHERE unit_id = $1", unit_id))
+        comm_amount = round(final_rent * 0.025, 2)
+        existing_comm = await conn.fetchrow(
+            "SELECT commission_id FROM commissions WHERE contract_id = $1 OR contract_id = $2",
+            tenancy_id, contract_number
+        )
+        if not existing_comm and comm_agent_id:
+            linked_contract_id = await conn.fetchval(
+                "SELECT contract_id FROM contracts WHERE contract_number = $1 LIMIT 1",
+                contract_number
+            )
+            if not linked_contract_id:
+                linked_contract_id = await get_next_id(conn, "contracts", "con")
+                await conn.execute(
+                    """
+                    INSERT INTO contracts (
+                        contract_id, reservation_id, contract_number, contract_type,
+                        start_date, end_date, contract_value, signed_at, status
+                    ) VALUES ($1, NULL, $2, 'RENT', $3, $4, $5, $6, 'ACTIVE')
+                    """,
+                    linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt
+                )
+
+            comm_id = await get_next_id(conn, "commissions", "comm")
+            await conn.execute(
+                """
+                INSERT INTO commissions (commission_id, contract_id, user_id, commission_type, rate, amount, status)
+                VALUES ($1, $2, $3, 'RENT', 2.5, $4, 'PENDING')
+                """,
+                comm_id, linked_contract_id, comm_agent_id, comm_amount
+            )
+
+            # Spawn TASK_COMMISSION_SETTLEMENT for Finance/Accountant
+            agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
+            comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({agent_name} — عقد {contract_number} — {comm_amount:,.2f} ر.س)"
+            await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_COMMISSION_SETTLEMENT",
+                lead_id=lead_id,
+                opportunity_id=opportunity_id,
+                customer_id=tenant_customer_id,
+                assigned_user_id=accountant_user_id,
+                priority="NORMAL",
+                custom_title=comm_task_title,
+                parent_task_id=parent_task_id
+            )
 
         # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING
         monitoring_task, _ = await WorkflowEngine.spawn_task_from_template(
@@ -2457,6 +2532,21 @@ class WorkflowEngine:
                 parent_task_id=parent_task_id
             )
 
+            comm_agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
+            comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({comm_agent_name} — عقد {c['contract_number']} — {comm_amt:,.2f} ر.س)"
+            await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_COMMISSION_SETTLEMENT",
+                lead_id=c["lead_id"],
+                opportunity_id=c["opportunity_id"],
+                customer_id=c["customer_id"],
+                assigned_user_id=finance_user_id,
+                priority="NORMAL",
+                custom_due_at=now_dt + timedelta(hours=72),
+                custom_title=comm_task_title,
+                parent_task_id=parent_task_id
+            )
+
             pm_user_id = await conn.fetchval(
                 """
                 SELECT u.user_id 
@@ -2481,6 +2571,13 @@ class WorkflowEngine:
             )
 
         elif norm_action in ("COMPLETE_HANDOVER", "CLOSE_CONTRACT"):
+            # Gating: verify that all statutory Saudi fees (brokerage + VAT, RETT / Ejar fees) are paid!
+            await WorkflowEngine.verify_saudi_fees_collected(
+                conn=conn,
+                opportunity_id=c["opportunity_id"],
+                lead_id=c["lead_id"],
+                contract_id=contract_id
+            )
             await conn.execute(
                 "UPDATE contracts SET status = 'ACTIVE' WHERE contract_id = $1",
                 contract_id
@@ -2610,6 +2707,606 @@ class WorkflowEngine:
             "activity": activity,
             "next_task": next_task
         }
+
+    @staticmethod
+    async def generate_saudi_fee_invoices(
+        conn: asyncpg.Connection,
+        opportunity_id: Optional[str] = None,
+        lead_id: Optional[str] = None,
+        unit_id: Optional[str] = None,
+        contract_id: Optional[str] = None,
+        transaction_type: Optional[str] = None,
+        deal_value: Optional[float] = None,
+        rett_exempt: bool = False,
+        rett_notes: Optional[str] = None,
+        security_deposit: float = 0.0,
+        buyer_brokerage_percent: float = 2.5,
+        seller_brokerage_percent: float = 0.0,
+        user_id: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Saudi Statutory Real Estate Invoicing Engine
+        ===========================================
+        Generates compliant, separated tax invoices for both Customer (Buyer/Tenant) and Owner (Seller/Lessor):
+        1. Customer (المشتري / المستأجر):
+           - Brokerage Commission (السعي): 2.5% (or specified %)
+           - VAT on Brokerage: 15%
+           - Optional Refundable Security Deposit (if rental)
+        2. Owner (البائع / المؤجر):
+           - Sale: Real Estate Transaction Tax (ضريبة التصرفات العقارية - RETT 5% ZATCA)
+           - Rent: Ejar National Platform Network Documentation Fee (125 SAR residential / 200 SAR commercial)
+        3. Auditing & Tasking:
+           - Records separate ACT_INVOICE_GENERATED events in activities.
+           - Spawns TASK_COLLECT_SAUDI_FEES assigned to ACCOUNTANT.
+        """
+        now_dt = datetime.now(timezone.utc)
+        opp_row = None
+        lead_row = None
+        customer_id = None
+        agent_id = user_id
+
+        if opportunity_id:
+            opp_row = await conn.fetchrow(
+                """
+                SELECT o.*, c.first_name, c.last_name, c.company_name, c.mobile,
+                       l.inquiry_type, l.unit_id as lead_unit_id
+                FROM opportunities o
+                LEFT JOIN customers c ON o.customer_id = c.customer_id
+                LEFT JOIN leads l ON o.lead_id = l.lead_id
+                WHERE o.opportunity_id = $1
+                """,
+                opportunity_id
+            )
+            if opp_row:
+                customer_id = opp_row["customer_id"]
+                if not lead_id and opp_row["lead_id"]:
+                    lead_id = opp_row["lead_id"]
+                agent_id = agent_id or opp_row["assigned_user_id"]
+
+        if lead_id and not customer_id:
+            lead_row = await conn.fetchrow(
+                """
+                SELECT l.*, c.first_name, c.last_name, c.company_name, c.mobile
+                FROM leads l
+                LEFT JOIN customers c ON l.customer_id = c.customer_id
+                WHERE l.lead_id = $1
+                """,
+                lead_id
+            )
+            if lead_row:
+                customer_id = lead_row["customer_id"]
+                agent_id = agent_id or lead_row["assigned_user_id"]
+
+        if not customer_id:
+            raise ValueError("Customer ID could not be identified from opportunity or lead.")
+
+        # Resolve Unit ID if not provided
+        if not unit_id:
+            if opportunity_id:
+                unit_id = await conn.fetchval(
+                    """
+                    SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1
+                    UNION
+                    SELECT unit_id FROM reservations WHERE opportunity_id = $1 AND status != 'CANCELLED'
+                    UNION
+                    SELECT r.unit_id FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id WHERE r.opportunity_id = $1
+                    LIMIT 1
+                    """,
+                    opportunity_id
+                )
+            if not unit_id and lead_id:
+                unit_id = await conn.fetchval(
+                    """
+                    SELECT unit_id FROM leads WHERE lead_id = $1 AND unit_id IS NOT NULL
+                    UNION
+                    SELECT unit_id FROM lead_units WHERE lead_id = $1
+                    LIMIT 1
+                    """,
+                    lead_id
+                )
+
+        unit_row = None
+        owner_customer_id = None
+        unit_number = "--"
+        is_commercial = False
+        if unit_id:
+            unit_row = await conn.fetchrow(
+                """
+                SELECT u.unit_id, u.unit_number, u.asking_price, u.rent_price, u.owner_customer_id,
+                       pt.category as property_category,
+                       c.first_name, c.last_name, c.company_name, c.mobile
+                FROM units u
+                LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+                LEFT JOIN customers c ON u.owner_customer_id = c.customer_id
+                WHERE u.unit_id = $1
+                """,
+                unit_id
+            )
+            if unit_row:
+                unit_number = unit_row["unit_number"]
+                owner_customer_id = unit_row["owner_customer_id"]
+                is_commercial = (unit_row["property_category"] or "").upper() == "COMMERCIAL"
+
+        if not owner_customer_id:
+            owner_customer_id = await conn.fetchval(
+                "SELECT customer_id FROM customers WHERE customer_type IN ('OWNER', 'LESSOR') LIMIT 1"
+            ) or customer_id
+
+        # Determine transaction type
+        if not transaction_type:
+            if contract_id:
+                c_type = await conn.fetchval("SELECT contract_type FROM contracts WHERE contract_id = $1", contract_id)
+                if c_type:
+                    transaction_type = c_type.upper()
+            if not transaction_type and opp_row:
+                inq = (opp_row["inquiry_type"] or "").upper()
+                transaction_type = "RENT" if inq == "RENT" else "SALE"
+            elif not transaction_type and lead_row:
+                inq = (lead_row["inquiry_type"] or "").upper()
+                transaction_type = "RENT" if inq == "RENT" else "SALE"
+            else:
+                transaction_type = transaction_type or "SALE"
+        transaction_type = transaction_type.upper()
+
+        # Determine deal value
+        if not deal_value or float(deal_value) <= 0:
+            if contract_id:
+                c_val = await conn.fetchval("SELECT contract_value FROM contracts WHERE contract_id = $1", contract_id)
+                if c_val and float(c_val) > 0:
+                    deal_value = float(c_val)
+            if (not deal_value or float(deal_value) <= 0) and opp_row and opp_row.get("expected_value"):
+                deal_value = float(opp_row["expected_value"])
+            if (not deal_value or float(deal_value) <= 0) and unit_row:
+                val = unit_row["rent_price"] if transaction_type == "RENT" else unit_row["asking_price"]
+                if val and float(val) > 0:
+                    deal_value = float(val)
+        deal_value = float(deal_value or 100000.0)
+
+        # Idempotency check: if invoices already exist for this opportunity/lead, return them
+        existing_invoices = await conn.fetch(
+            """
+            SELECT inv.*,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) as payer_customer_name,
+                   c.mobile as payer_customer_mobile,
+                   u.unit_number
+            FROM invoices inv
+            LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+            LEFT JOIN units u ON inv.unit_id = u.unit_id
+            WHERE (
+                ($1::text IS NOT NULL AND inv.opportunity_id = $1) OR
+                ($2::text IS NOT NULL AND inv.lead_id = $2)
+            ) AND inv.status != 'CANCELLED'
+            ORDER BY inv.created_at ASC
+            """,
+            opportunity_id, lead_id
+        )
+        if existing_invoices and len(existing_invoices) >= 2:
+            inv_list = []
+            for row in existing_invoices:
+                r_dict = dict(row)
+                r_dict["subtotal"] = float(r_dict.get("subtotal") or 0)
+                r_dict["vat_rate"] = float(r_dict.get("vat_rate") or 0)
+                r_dict["vat_amount"] = float(r_dict.get("vat_amount") or 0)
+                r_dict["total_amount"] = float(r_dict.get("total_amount") or 0)
+                r_dict["amount_paid"] = float(r_dict.get("amount_paid") or 0)
+                r_dict["line_items"] = r_dict["line_items"] if isinstance(r_dict["line_items"], list) else json.loads(r_dict["line_items"] or "[]")
+                inv_list.append(r_dict)
+            return {
+                "message": "Fee invoices already exist for this deal.",
+                "already_existed": True,
+                "invoices": inv_list
+            }
+
+        # Helper for unique invoice number
+        async def gen_inv_number(suffix: str) -> str:
+            for _ in range(50):
+                rnd = random.randint(1000, 9999)
+                candidate = f"INV-{now_dt.strftime('%Y%m')}-{rnd:04d}-{suffix}"
+                exists = await conn.fetchval("SELECT 1 FROM invoices WHERE invoice_number = $1", candidate)
+                if not exists:
+                    return candidate
+            return f"INV-{now_dt.strftime('%Y%m%d%H%M%S')}-{suffix}"
+
+        created_invoices = []
+
+        # 1. Generate Customer Invoice (Brokerage 2.5% + 15% VAT)
+        cust_inv_id = await get_next_id(conn, "invoices", "inv")
+        cust_inv_num = await gen_inv_number("CUST")
+        brokerage_pct = float(buyer_brokerage_percent or 2.5)
+        brokerage_amount = round(deal_value * (brokerage_pct / 100.0), 2)
+        cust_vat = round(brokerage_amount * 0.15, 2)
+        deposit_val = float(security_deposit or 0.0)
+
+        cust_line_items = [
+            {
+                "item_ar": f"عمولة وساطة عقارية نظامية ({brokerage_pct}%)",
+                "item_en": f"Statutory Brokerage Commission ({brokerage_pct}%)",
+                "amount": brokerage_amount,
+                "vat_rate": 15.0,
+                "vat_amount": cust_vat,
+                "total": round(brokerage_amount + cust_vat, 2)
+            }
+        ]
+        if deposit_val > 0 and transaction_type == "RENT":
+            cust_line_items.append({
+                "item_ar": "مبلغ التأمين المسترد للوحدة الإيجارية",
+                "item_en": "Refundable Security Deposit",
+                "amount": deposit_val,
+                "vat_rate": 0.0,
+                "vat_amount": 0.0,
+                "total": deposit_val
+            })
+
+        cust_subtotal = round(brokerage_amount + (deposit_val if transaction_type == "RENT" else 0.0), 2)
+        cust_total = round(cust_subtotal + cust_vat, 2)
+
+        await conn.execute(
+            """
+            INSERT INTO invoices (
+                invoice_id, invoice_number, invoice_type, payer_type, payer_customer_id,
+                opportunity_id, lead_id, contract_id, unit_id, transaction_type,
+                subtotal, vat_rate, vat_amount, total_amount, amount_paid, status,
+                line_items, due_date, notes, created_at, updated_at
+            ) VALUES (
+                $1, $2, 'TAX_INVOICE', 'CUSTOMER', $3,
+                $4, $5, $6, $7, $8,
+                $9, 15.00, $10, $11, 0.0, 'PENDING',
+                $12::jsonb, CURRENT_DATE + 7, $13, $14, $14
+            )
+            """,
+            cust_inv_id, cust_inv_num, customer_id,
+            opportunity_id, lead_id, contract_id, unit_id, transaction_type,
+            cust_subtotal, cust_vat, cust_total,
+            json.dumps(cust_line_items),
+            notes or f"فاتورة عمولة الوساطة العقارية للعميل — وحدة {unit_number}",
+            now_dt
+        )
+
+        cust_activity = await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_INVOICE_GENERATED",
+            user_id=agent_id,
+            customer_id=customer_id,
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            outcome="INVOICE_ISSUED",
+            notes=f"تم إصدار الفاتورة الضريبية رقم {cust_inv_num} للعميل بمبلغ {cust_total:,.2f} ريال (السعي والضريبة).",
+            completed_at=now_dt
+        )
+
+        created_invoices.append({
+            "invoice_id": cust_inv_id,
+            "invoice_number": cust_inv_num,
+            "payer_type": "CUSTOMER",
+            "payer_customer_id": customer_id,
+            "total_amount": cust_total,
+            "subtotal": cust_subtotal,
+            "vat_amount": cust_vat,
+            "status": "PENDING"
+        })
+
+        # 2. Generate Owner Invoice (RETT 5% on Sale or Ejar platform fee on Rent)
+        owner_inv_id = await get_next_id(conn, "invoices", "inv")
+        owner_inv_num = await gen_inv_number("OWNR")
+        owner_line_items = []
+        owner_subtotal = 0.0
+        owner_vat = 0.0
+        owner_fee_desc = ""
+
+        if transaction_type == "RENT":
+            ejar_fee = 200.0 if is_commercial else 125.0
+            owner_fee_desc = f"رسوم شبكة إيجار الوطنية ({'تجاري 200 ريال' if is_commercial else 'سكني 125 ريال'})"
+            owner_line_items.append({
+                "item_ar": f"رسوم توثيق العقد عبر شبكة إيجار الوطنية ({'تجاري' if is_commercial else 'سكني'})",
+                "item_en": f"Ejar Platform Contract Documentation Fee ({'Commercial' if is_commercial else 'Residential'})",
+                "amount": ejar_fee,
+                "vat_rate": 0.0,
+                "vat_amount": 0.0,
+                "total": ejar_fee
+            })
+            owner_subtotal = ejar_fee
+            owner_vat = 0.0
+        else: # SALE
+            rett_pct = 5.0
+            rett_amount = 0.0 if rett_exempt else round(deal_value * (rett_pct / 100.0), 2)
+            owner_fee_desc = f"ضريبة التصرفات العقارية (5% هيئة الزكاة والضريبة والجمارك): {rett_amount:,.2f} ريال"
+            if rett_exempt:
+                owner_fee_desc = f"إعفاء ضريبة التصرفات العقارية — {rett_notes or 'إعفاء مسكن أول أو مستثنى'}"
+            owner_line_items.append({
+                "item_ar": "ضريبة التصرفات العقارية (5% — هيئة الزكاة والضريبة والجمارك)" if not rett_exempt else "ضريبة التصرفات العقارية (معفى نظامياً)",
+                "item_en": "Real Estate Transaction Tax (RETT 5% — ZATCA)" if not rett_exempt else "RETT (Statutorily Exempt)",
+                "amount": rett_amount,
+                "vat_rate": 0.0,
+                "vat_amount": 0.0,
+                "total": rett_amount
+            })
+            owner_subtotal = rett_amount
+            owner_vat = 0.0
+
+            if seller_brokerage_percent and float(seller_brokerage_percent) > 0:
+                s_rate = float(seller_brokerage_percent)
+                s_brokerage = round(deal_value * (s_rate / 100.0), 2)
+                s_vat = round(s_brokerage * 0.15, 2)
+                owner_line_items.append({
+                    "item_ar": f"سعي ووساطة عقارية مستحقة على المالك ({s_rate}%)",
+                    "item_en": f"Seller Brokerage Commission ({s_rate}%)",
+                    "amount": s_brokerage,
+                    "vat_rate": 15.0,
+                    "vat_amount": s_vat,
+                    "total": round(s_brokerage + s_vat, 2)
+                })
+                owner_subtotal = round(owner_subtotal + s_brokerage, 2)
+                owner_vat = round(owner_vat + s_vat, 2)
+
+        owner_total = round(owner_subtotal + owner_vat, 2)
+
+        await conn.execute(
+            """
+            INSERT INTO invoices (
+                invoice_id, invoice_number, invoice_type, payer_type, payer_customer_id,
+                opportunity_id, lead_id, contract_id, unit_id, transaction_type,
+                subtotal, vat_rate, vat_amount, total_amount, amount_paid, status,
+                line_items, due_date, notes, created_at, updated_at
+            ) VALUES (
+                $1, $2, 'TAX_INVOICE', 'OWNER', $3,
+                $4, $5, $6, $7, $8,
+                $9, $10, $11, $12, 0.0, 'PENDING',
+                $13::jsonb, CURRENT_DATE + 7, $14, $15, $15
+            )
+            """,
+            owner_inv_id, owner_inv_num, owner_customer_id,
+            opportunity_id, lead_id, contract_id, unit_id, transaction_type,
+            owner_subtotal, (15.0 if owner_vat > 0 else 0.0), owner_vat, owner_total,
+            json.dumps(owner_line_items),
+            notes or f"فاتورة الرسوم النظامية للمالك — وحدة {unit_number} ({owner_fee_desc})",
+            now_dt
+        )
+
+        owner_activity = await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_INVOICE_GENERATED",
+            user_id=agent_id,
+            customer_id=owner_customer_id,
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            outcome="INVOICE_ISSUED",
+            notes=f"تم إصدار فاتورة الرسوم النظامية رقم {owner_inv_num} للمالك بمبلغ {owner_total:,.2f} ريال ({owner_fee_desc}).",
+            completed_at=now_dt
+        )
+
+        created_invoices.append({
+            "invoice_id": owner_inv_id,
+            "invoice_number": owner_inv_num,
+            "payer_type": "OWNER",
+            "payer_customer_id": owner_customer_id,
+            "total_amount": owner_total,
+            "subtotal": owner_subtotal,
+            "vat_amount": owner_vat,
+            "status": "PENDING"
+        })
+
+        # 3. Spawn TASK_COLLECT_SAUDI_FEES assigned to Accountant
+        accountant_user_id = await conn.fetchval(
+            """
+            SELECT u.user_id FROM users u
+            JOIN user_roles ur ON u.user_id = ur.user_id
+            JOIN roles r ON ur.role_id = r.role_id
+            WHERE r.role_code = 'ACCOUNTANT'
+            ORDER BY u.created_at ASC
+            LIMIT 1
+            """
+        ) or "user-19"
+
+        # Resolve contract number if exists
+        contract_num = None
+        if contract_id:
+            contract_num = await conn.fetchval("SELECT contract_number FROM contracts WHERE contract_id = $1", contract_id)
+        if not contract_num and opportunity_id:
+            contract_num = await conn.fetchval(
+                """
+                SELECT c.contract_number FROM contracts c
+                JOIN reservations r ON c.reservation_id = r.reservation_id
+                WHERE r.opportunity_id = $1
+                UNION
+                SELECT contract_number FROM tenancies WHERE tenant_customer_id = (SELECT customer_id FROM opportunities WHERE opportunity_id = $1)
+                LIMIT 1
+                """,
+                opportunity_id
+            )
+        if not contract_num and lead_id:
+            contract_num = await conn.fetchval(
+                """
+                SELECT contract_number FROM tenancies WHERE tenant_customer_id = (SELECT customer_id FROM leads WHERE lead_id = $1)
+                LIMIT 1
+                """,
+                lead_id
+            )
+
+        ref_label = f"لعقد {contract_num}" if contract_num else (f"للوحدة #{unit_number}" if unit_number and unit_number != "--" else "للصفقة")
+        fee_task_title = f"المالية — تحصيل سعي الوساطة ({cust_subtotal:,.2f} ر.س + ضريبة) والرسوم {ref_label}"
+
+        task, _ = await WorkflowEngine.spawn_task_from_template(
+            conn=conn,
+            template_id="TASK_COLLECT_SAUDI_FEES",
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            customer_id=customer_id,
+            assigned_user_id=accountant_user_id,
+            priority="HIGH",
+            custom_due_at=now_dt + timedelta(hours=48),
+            custom_title=fee_task_title
+        )
+
+        return {
+            "message": "Statutory Saudi fee invoices generated successfully.",
+            "already_existed": False,
+            "invoices": created_invoices,
+            "task": task
+        }
+
+    @staticmethod
+    async def collect_fee_invoice(
+        conn: asyncpg.Connection,
+        invoice_id: str,
+        payment_method: str = "BANK_TRANSFER",
+        payment_reference: Optional[str] = None,
+        amount: Optional[float] = None,
+        user_id: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Registers payment collection for a statutory Saudi fee invoice.
+        Audits transaction in activities and automatically completes TASK_COLLECT_SAUDI_FEES
+        when all fee invoices for the deal are settled.
+        """
+        now_dt = datetime.now(timezone.utc)
+        inv = await conn.fetchrow(
+            """
+            SELECT inv.*,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) as payer_name
+            FROM invoices inv
+            LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+            WHERE inv.invoice_id = $1
+            """,
+            invoice_id
+        )
+        if not inv:
+            raise ValueError(f"Invoice '{invoice_id}' not found.")
+
+        if inv["status"] == "PAID":
+            return {"invoice_id": invoice_id, "status": "PAID", "message": "Invoice already paid."}
+
+        paid_val = float(amount) if amount and float(amount) > 0 else float(inv["total_amount"])
+        p_ref = payment_reference or f"TRX-{now_dt.strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+
+        await conn.execute(
+            """
+            UPDATE invoices
+            SET status = 'PAID',
+                amount_paid = $1,
+                paid_at = $2,
+                payment_method = $3,
+                payment_reference = $4,
+                notes = COALESCE($5, notes),
+                updated_at = $2
+            WHERE invoice_id = $6
+            """,
+            paid_val, now_dt, payment_method, p_ref, notes, invoice_id
+        )
+
+        payer_type_ar = "العميل" if inv["payer_type"] == "CUSTOMER" else "المالك"
+        payer_name = inv.get("payer_name") or payer_type_ar
+
+        # Record ACT_FEE_COLLECTED Activity
+        act = await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_FEE_COLLECTED",
+            user_id=user_id or inv["payer_customer_id"],
+            customer_id=inv["payer_customer_id"],
+            lead_id=inv["lead_id"],
+            opportunity_id=inv["opportunity_id"],
+            outcome="COLLECTED",
+            notes=f"تم تأكيد تحصيل وتوريد فاتورة {payer_type_ar} ({payer_name}) رقم {inv['invoice_number']} بمبلغ {paid_val:,.2f} ريال عبر {payment_method} (مرجع التحويل: {p_ref}).",
+            completed_at=now_dt
+        )
+
+        # Check if all fee invoices for this deal are now PAID
+        opp_id = inv["opportunity_id"]
+        lead_id = inv["lead_id"]
+        unpaid_count = await conn.fetchval(
+            """
+            SELECT count(*) FROM invoices
+            WHERE (
+                ($1::text IS NOT NULL AND opportunity_id = $1) OR
+                ($2::text IS NOT NULL AND lead_id = $2)
+            ) AND status != 'PAID' AND status != 'CANCELLED'
+            """,
+            opp_id, lead_id
+        )
+
+        all_collected = (unpaid_count == 0)
+        if all_collected:
+            await conn.execute(
+                """
+                UPDATE tasks
+                SET status = 'COMPLETED', completed_at = $1
+                WHERE template_id = 'TASK_COLLECT_SAUDI_FEES'
+                  AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+                  AND (
+                      ($2::text IS NOT NULL AND opportunity_id = $2) OR
+                      ($3::text IS NOT NULL AND lead_id = $3)
+                  )
+                """,
+                now_dt, opp_id, lead_id
+            )
+
+        updated_row = await conn.fetchrow(
+            """
+            SELECT inv.*,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) as payer_customer_name,
+                   c.mobile as payer_customer_mobile,
+                   u.unit_number
+            FROM invoices inv
+            LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+            LEFT JOIN units u ON inv.unit_id = u.unit_id
+            WHERE inv.invoice_id = $1
+            """,
+            invoice_id
+        )
+        res = dict(updated_row)
+        res["all_fees_collected"] = all_collected
+        res["subtotal"] = float(res.get("subtotal") or 0)
+        res["vat_rate"] = float(res.get("vat_rate") or 0)
+        res["vat_amount"] = float(res.get("vat_amount") or 0)
+        res["total_amount"] = float(res.get("total_amount") or 0)
+        res["amount_paid"] = float(res.get("amount_paid") or 0)
+        res["line_items"] = res["line_items"] if isinstance(res["line_items"], list) else json.loads(res["line_items"] or "[]")
+        return res
+
+    @staticmethod
+    async def verify_saudi_fees_collected(
+        conn: asyncpg.Connection,
+        opportunity_id: Optional[str] = None,
+        lead_id: Optional[str] = None,
+        contract_id: Optional[str] = None,
+        strict_require_invoices: bool = False
+    ) -> bool:
+        """
+        Enforces statutory fee collection gating.
+        Blocks contract handover, tenancy activation, or deal closure (WON)
+        until all statutory Saudi fee invoices are in status 'PAID'.
+        """
+        invoices = await conn.fetch(
+            """
+            SELECT invoice_id, invoice_number, payer_type, total_amount, amount_paid, status
+            FROM invoices
+            WHERE (
+                ($1::text IS NOT NULL AND opportunity_id = $1) OR
+                ($2::text IS NOT NULL AND lead_id = $2) OR
+                ($3::text IS NOT NULL AND contract_id = $3)
+            ) AND status != 'CANCELLED'
+            """,
+            opportunity_id, lead_id, contract_id
+        )
+
+        if not invoices:
+            if strict_require_invoices:
+                raise ValueError("يتطلب النظام إصدار وتحصيل فواتير الرسوم والضرائب النظامية (العميل والمالك) قبل إتمام هذه العملية.")
+            return True
+
+        unpaid = [inv for inv in invoices if inv["status"] != "PAID"]
+        if unpaid:
+            unpaid_details = []
+            for inv in unpaid:
+                payer = "العميل" if inv["payer_type"] == "CUSTOMER" else "المالك"
+                amt = float(inv["total_amount"] or 0)
+                unpaid_details.append(f"{inv['invoice_number']} ({payer}: {amt:,.2f} ريال)")
+            raise ValueError(
+                f"لا يمكن الانتقال للمرحلة التالية أو إغلاق الصفقة قبل تحصيل كافة الرسوم والضرائب النظامية المستحقة (السعي، ضريبة التصرفات العقارية، رسوم إيجار). الفواتير غير المسددة: {', '.join(unpaid_details)}"
+            )
+
+        return True
 
     @staticmethod
     async def process_expired_reservations(conn: asyncpg.Connection) -> Dict[str, Any]:
@@ -4716,6 +5413,222 @@ class WorkflowEngine:
         res_list = [dict(r) for r in reservations]
         contract_list = [dict(c) for c in contracts]
 
+        # 6.b Fetch tenancies (rental contracts) scoped to opportunity, lead, or customer
+        tenancies = []
+        if lead_id:
+            tenancies = await conn.fetch(
+                """
+                SELECT t.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
+                FROM tenancies t
+                JOIN units u ON t.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
+                WHERE t.tenant_customer_id = (SELECT customer_id FROM leads WHERE lead_id = $1)
+                   OR t.unit_id = (SELECT unit_id FROM leads WHERE lead_id = $1)
+                ORDER BY t.start_date DESC
+                """,
+                lead_id
+            )
+        elif opportunity_id:
+            tenancies = await conn.fetch(
+                """
+                SELECT t.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
+                FROM tenancies t
+                JOIN units u ON t.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
+                WHERE t.tenant_customer_id = (SELECT customer_id FROM opportunities WHERE opportunity_id = $1)
+                   OR t.unit_id IN (SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1)
+                ORDER BY t.start_date DESC
+                """,
+                opportunity_id
+            )
+        elif customer_id:
+            tenancies = await conn.fetch(
+                """
+                SELECT t.*, u.unit_number, u.owner_customer_id,
+                       COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
+                       owner_c.mobile AS unit_owner_mobile
+                FROM tenancies t
+                JOIN units u ON t.unit_id = u.unit_id
+                LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
+                WHERE t.tenant_customer_id = $1
+                ORDER BY t.start_date DESC
+                """,
+                customer_id
+            )
+
+        for t in tenancies:
+            contract_list.append({
+                "contract_id": t["tenancy_id"],
+                "contract_number": t["contract_number"],
+                "contract_type": "RENT",
+                "unit_number": t["unit_number"],
+                "unit_owner_name": t["unit_owner_name"],
+                "unit_owner_mobile": t["unit_owner_mobile"],
+                "owner_customer_id": t["owner_customer_id"],
+                "contract_value": float(t["rent_amount"] or 0),
+                "status": t["status"],
+                "signed_at": t.get("created_at"),
+                "start_date": t["start_date"],
+                "end_date": t["end_date"]
+            })
+
+        all_contract_ids = [c["contract_id"] for c in contract_list]
+        payment_list = []
+        if all_contract_ids:
+            p_rows = await conn.fetch(
+                """
+                SELECT p.*, c.contract_number
+                FROM payments p
+                JOIN contracts c ON p.contract_id = c.contract_id
+                WHERE p.contract_id = ANY($1)
+                ORDER BY p.due_date ASC
+                """,
+                all_contract_ids
+            )
+            for p in p_rows:
+                payment_list.append({
+                    "payment_id": p["payment_id"],
+                    "reference": p["payment_reference"],
+                    "contract_id": p["contract_id"],
+                    "contract_number": p["contract_number"],
+                    "type": "SALE_PAYMENT",
+                    "due_date": p["due_date"].isoformat() if p.get("due_date") else None,
+                    "paid_at": p["paid_at"].isoformat() if p.get("paid_at") else None,
+                    "amount_due": float(p["amount_due"] or 0),
+                    "amount_paid": float(p["amount_paid"] or 0),
+                    "method": p.get("method") or "BANK_TRANSFER",
+                    "status": p["status"],
+                    "is_paid": (p["status"] == "PAID" or float(p["amount_paid"] or 0) >= float(p["amount_due"] or 0))
+                })
+
+        tenancy_ids = [t["tenancy_id"] for t in tenancies]
+        if tenancy_ids:
+            rc_rows = await conn.fetch(
+                """
+                SELECT rc.*, t.contract_number
+                FROM rent_collections rc
+                JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+                WHERE rc.tenancy_id = ANY($1)
+                ORDER BY rc.due_date ASC
+                """,
+                tenancy_ids
+            )
+            for rc in rc_rows:
+                payment_list.append({
+                    "payment_id": rc["rent_collection_id"],
+                    "reference": rc["rent_collection_id"],
+                    "contract_id": rc["tenancy_id"],
+                    "contract_number": rc["contract_number"],
+                    "type": "RENT_INSTALLMENT",
+                    "due_date": rc["due_date"].isoformat() if rc.get("due_date") else None,
+                    "paid_at": rc["paid_at"].isoformat() if rc.get("paid_at") else None,
+                    "amount_due": float(rc["amount_due"] or 0),
+                    "amount_paid": float(rc["amount_paid"] or 0),
+                    "method": "RENT_COLLECTION",
+                    "status": rc["status"],
+                    "is_paid": (rc["status"] == "PAID" or float(rc["amount_paid"] or 0) >= float(rc["amount_due"] or 0))
+                })
+
+        # 6.d Fetch Commissions for linked sales & rental contracts
+        commission_list = []
+        con_nums = [c.get("contract_number") for c in contract_list if c.get("contract_number")]
+        if all_contract_ids or con_nums:
+            cm_rows = await conn.fetch(
+                """
+                SELECT cm.*, u.full_name as agent_name,
+                       COALESCE(c.contract_number, cm.contract_id) as contract_number
+                FROM commissions cm
+                LEFT JOIN users u ON cm.user_id = u.user_id
+                LEFT JOIN contracts c ON cm.contract_id = c.contract_id
+                WHERE cm.contract_id = ANY($1::text[])
+                   OR cm.contract_id IN (SELECT contract_id FROM contracts WHERE contract_number = ANY($2::text[]))
+                   OR cm.contract_id IN (SELECT tenancy_id FROM tenancies WHERE contract_number = ANY($2::text[]))
+                ORDER BY cm.commission_id ASC
+                """,
+                all_contract_ids, con_nums
+            )
+            for cm in cm_rows:
+                commission_list.append({
+                    "commission_id": cm["commission_id"],
+                    "contract_id": cm["contract_id"],
+                    "contract_number": cm.get("contract_number") or "--",
+                    "agent_user_id": cm["user_id"],
+                    "agent_name": cm.get("agent_name") or "Agent",
+                    "commission_type": cm.get("commission_type") or "SALES",
+                    "rate": float(cm["rate"] or 0),
+                    "amount": float(cm["amount"] or 0),
+                    "status": cm["status"],
+                    "approved_at": cm["approved_at"].isoformat() if cm.get("approved_at") else None,
+                    "paid_at": cm["paid_at"].isoformat() if cm.get("paid_at") else None,
+                    "is_paid": (cm["status"] == "PAID")
+                })
+
+        # 6.e Fetch Statutory Saudi Fee Invoices (Customer vs. Owner)
+        invoice_rows = await conn.fetch(
+            """
+            SELECT inv.*,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) as payer_customer_name,
+                   c.mobile as payer_customer_mobile,
+                   u.unit_number
+            FROM invoices inv
+            LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+            LEFT JOIN units u ON inv.unit_id = u.unit_id
+            WHERE (
+                ($1::text IS NOT NULL AND inv.opportunity_id = $1) OR
+                ($2::text IS NOT NULL AND inv.lead_id = $2) OR
+                (inv.contract_id = ANY($3::text[]))
+            )
+            ORDER BY inv.created_at ASC
+            """,
+            opportunity_id, lead_id, all_contract_ids
+        )
+        invoice_list = []
+        for inv in invoice_rows:
+            line_items = inv["line_items"]
+            if isinstance(line_items, str):
+                try:
+                    line_items = json.loads(line_items)
+                except Exception:
+                    line_items = []
+            invoice_list.append({
+                "invoice_id": inv["invoice_id"],
+                "invoice_number": inv["invoice_number"],
+                "invoice_type": inv.get("invoice_type") or "TAX_INVOICE",
+                "payer_type": inv["payer_type"],
+                "payer_customer_id": inv["payer_customer_id"],
+                "payer_name": inv.get("payer_customer_name") or ("العميل" if inv["payer_type"] == "CUSTOMER" else "المالك"),
+                "payer_mobile": inv.get("payer_customer_mobile") or "",
+                "opportunity_id": inv.get("opportunity_id"),
+                "lead_id": inv.get("lead_id"),
+                "contract_id": inv.get("contract_id"),
+                "unit_id": inv.get("unit_id"),
+                "unit_number": inv.get("unit_number") or "--",
+                "transaction_type": inv.get("transaction_type") or "SALE",
+                "subtotal": float(inv["subtotal"] or 0),
+                "vat_rate": float(inv["vat_rate"] or 0),
+                "vat_amount": float(inv["vat_amount"] or 0),
+                "total_amount": float(inv["total_amount"] or 0),
+                "amount_paid": float(inv["amount_paid"] or 0),
+                "status": inv["status"],
+                "is_paid": (inv["status"] == "PAID"),
+                "situation": inv["status"],
+                "line_items": line_items if isinstance(line_items, list) else [],
+                "due_date": inv["due_date"].isoformat() if inv.get("due_date") else None,
+                "paid_at": inv["paid_at"].isoformat() if inv.get("paid_at") else None,
+                "payment_method": inv.get("payment_method"),
+                "payment_reference": inv.get("payment_reference"),
+                "notes": inv.get("notes"),
+                "created_at": inv["created_at"].isoformat() if inv.get("created_at") else None
+            })
+
+        unpaid_invoices_count = len([inv for inv in invoice_list if not inv["is_paid"] and inv["status"] != "CANCELLED"])
+        total_inv_amount = sum(inv["total_amount"] for inv in invoice_list if inv["status"] != "CANCELLED")
+        total_inv_paid = sum(inv["amount_paid"] for inv in invoice_list if inv["status"] != "CANCELLED")
+
         # 7. Analyze Stalling & Bottleneck
         pending_tasks = [t for t in task_list if t["status"] in ("PENDING", "OPEN", "IN_PROGRESS")]
         
@@ -4778,6 +5691,7 @@ class WorkflowEngine:
                 stalled_reason_en = "Unit is reserved but has no active deposit collection task."
                 recommended_actions = [
                     {"action": "SPAWN_DEPOSIT_FOLLOWUP", "label_ar": "💰 متابعة سداد وتدقيق العربون", "label_en": "💰 Follow-up Earnest Deposit"},
+                    {"action": "GENERATE_FEE_INVOICES", "label_ar": "🧾 إصدار فواتير الرسوم النظامية (العميل والمالك)", "label_en": "🧾 Generate Statutory Fee Invoices"},
                     {"action": "SPAWN_CONTRACT_DRAFT", "label_ar": "📝 البدء بصياغة مسودة العقد", "label_en": "📝 Initiate Contract Draft"}
                 ]
             elif opp_stage in ("QUALIFIED", "MATCHING"):
@@ -5202,6 +6116,49 @@ class WorkflowEngine:
                 sp_dict[f] = val if isinstance(val, list) else []
             stage_procedures.append(sp_dict)
 
+        # 12. Format Detailed Structured Payments Breakdown
+        formatted_payments = []
+        for p in payment_list:
+            formatted_payments.append({
+                "payment_id": p["payment_id"],
+                "reference": p["reference"],
+                "contract_id": p["contract_id"],
+                "contract_number": p.get("contract_number") or "--",
+                "payment_type": p.get("type") or "PAYMENT",
+                "due_date": p.get("due_date"),
+                "paid_at": p.get("paid_at"),
+                "amount_due": p["amount_due"],
+                "amount_paid": p["amount_paid"],
+                "method": p.get("method") or "--",
+                "status": p["status"],
+                "is_paid": p.get("is_paid", False),
+                "situation": p["status"]
+            })
+
+        # 13. Format Detailed Structured Commissions Breakdown
+        formatted_commissions = []
+        for cm in commission_list:
+            formatted_commissions.append({
+                "commission_id": cm["commission_id"],
+                "contract_id": cm["contract_id"],
+                "contract_number": cm.get("contract_number") or "--",
+                "agent_name": cm.get("agent_name") or "Agent",
+                "agent_user_id": cm.get("agent_user_id"),
+                "commission_type": cm.get("commission_type") or "SALES",
+                "rate": cm.get("rate") or 0.0,
+                "amount": cm["amount"],
+                "status": cm["status"],
+                "is_paid": cm.get("is_paid", False),
+                "approved_at": cm.get("approved_at"),
+                "paid_at": cm.get("paid_at"),
+                "situation": cm["status"]
+            })
+
+        total_contract_val = sum(float(c.get("contract_value") or 0) for c in formatted_contracts)
+        total_paid_val = sum(float(p.get("amount_paid") or 0) for p in formatted_payments)
+        total_due_val = sum(float(p.get("amount_due") or 0) for p in formatted_payments)
+        total_comm_val = sum(float(cm.get("amount") or 0) for cm in formatted_commissions)
+
         return {
             "active_guidance": active_guidance,
             "lead_id": lead_id,
@@ -5229,6 +6186,20 @@ class WorkflowEngine:
             "offers": formatted_offers,
             "reservations": formatted_reservations,
             "contracts": formatted_contracts,
+            "payments": formatted_payments,
+            "commissions": formatted_commissions,
+            "invoices": invoice_list,
+            "invoices_count": len(invoice_list),
+            "unpaid_invoices_count": unpaid_invoices_count,
+            "total_invoices_amount": total_inv_amount,
+            "total_invoices_paid": total_inv_paid,
+            "has_unpaid_statutory_fees": (unpaid_invoices_count > 0),
+            "payments_count": len(formatted_payments),
+            "commissions_count": len(formatted_commissions),
+            "total_contract_value": total_contract_val,
+            "total_amount_paid": total_paid_val,
+            "total_amount_due": total_due_val,
+            "total_commission_amount": total_comm_val,
             "stage_procedures": stage_procedures,
             "stage_procedures_count": len(stage_procedures),
             "pending_tasks": formatted_pending,
@@ -5387,6 +6358,14 @@ class WorkflowEngine:
                 assigned_user_id=agent_id,
                 priority="HIGH"
             )
+        elif norm_act == "GENERATE_FEE_INVOICES":
+            res = await WorkflowEngine.generate_saudi_fee_invoices(
+                conn=conn,
+                opportunity_id=opportunity_id,
+                lead_id=lead_id,
+                user_id=user_id or agent_id
+            )
+            spawned_task = res.get("task")
         else:
             spawned_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,

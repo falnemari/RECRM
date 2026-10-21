@@ -10,7 +10,7 @@ from app.schemas.leads import (
     LeadOut, LeadCreate, LeadUpdate, LeadNoteOut, LeadNoteCreate, LeadUnitItem,
     LeadQualifyIn, LeadContactIn
 )
-from app.routers.auth import check_user_scope_override, resolve_user_data_scope
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope, resolve_data_scope_filter
 from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
@@ -95,7 +95,7 @@ async def list_leads(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, assigned_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -124,9 +124,20 @@ async def list_leads(
             params.append(inq)
             p_idx += 1
 
-    if assigned_user_id:
+    if scope_info["scope_type"] == "OWN":
         conditions.append(f"l.assigned_user_id = ${p_idx}")
-        params.append(assigned_user_id)
+        params.append(scope_info["user_id"])
+        p_idx += 1
+    elif scope_info["scope_type"] == "BRANCH":
+        conditions.append(
+            f"(l.branch_id = ${p_idx} OR l.assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx}) OR l.assigned_user_id = ${p_idx + 1})"
+        )
+        params.append(scope_info["branch_id"])
+        params.append(scope_info.get("user_id") or "")
+        p_idx += 2
+    elif scope_info["scope_type"] == "GLOBAL" and scope_info.get("organization_id"):
+        conditions.append(f"l.organization_id = ${p_idx}")
+        params.append(scope_info["organization_id"])
         p_idx += 1
 
     if customer_id and customer_id.strip():
@@ -226,6 +237,12 @@ async def get_lead(
         scope = resolve_user_data_scope([r["role_code"] for r in roles])
         if scope == "OWN" and row["assigned_user_id"] != x_user_id:
             raise HTTPException(status_code=403, detail="Access denied: Lead belongs to another agent")
+        if scope == "BRANCH":
+            u_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if u_branch:
+                ag_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", row["assigned_user_id"])
+                if row["branch_id"] != u_branch and ag_branch != u_branch:
+                    raise HTTPException(status_code=403, detail="Access denied: Lead belongs to another branch")
     units = await fetch_lead_units(conn, lead_id)
     return ResponseEnvelope(data=LeadOut(**dict(row), units=units), meta=BaseMeta())
 
@@ -614,7 +631,7 @@ async def mark_lead_contacted(
         open_task = await conn.fetchrow(
             """
             SELECT task_id FROM tasks 
-            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             LIMIT 1
             """,

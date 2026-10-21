@@ -34,6 +34,7 @@ UNIT_SELECT_QUERY = """
         u.status,
         u.owner_customer_id,
         COALESCE(oc.first_name || ' ' || oc.last_name, oc.company_name) AS owner_name,
+        oc.mobile AS owner_mobile,
         u.assigned_user_id,
         usr.full_name AS assigned_user_name,
         u.created_at,

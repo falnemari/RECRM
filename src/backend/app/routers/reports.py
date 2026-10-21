@@ -187,7 +187,7 @@ async def get_funnel_dashboard(
 
         total_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE {lead_condition}", *lead_params)
         new_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE l.status = 'NEW' AND {lead_condition}", *lead_params)
-        qualified_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE l.status = 'QUALIFIED' AND {lead_condition}", *lead_params)
+        qualified_leads = await conn.fetchval(f"SELECT count(*) FROM leads l WHERE l.status IN ('QUALIFIED', 'CONVERTED', 'WON') AND {lead_condition}", *lead_params)
 
 
         # Opportunities
@@ -197,17 +197,19 @@ async def get_funnel_dashboard(
               AND assigned_user_id = ANY($1)
         """, target_user_ids)
 
-        # Viewings (from viewings table and activities table)
+        # Viewings (from viewings table)
         v_tbl_cnt = await conn.fetchval("""
             SELECT count(*) FROM viewings 
             WHERE agent_user_id = ANY($1)
         """, target_user_ids) or 0
-        v_act_cnt = await conn.fetchval("""
-            SELECT count(*) FROM activities a
-            JOIN activity_types at ON a.activity_type_id = at.activity_type_id
-            WHERE at.code = 'VIEWING' AND a.user_id = ANY($1)
-        """, target_user_ids) or 0
-        viewings_cnt = v_tbl_cnt + v_act_cnt
+        if v_tbl_cnt > 0:
+            viewings_cnt = v_tbl_cnt
+        else:
+            viewings_cnt = await conn.fetchval("""
+                SELECT count(*) FROM activities a
+                JOIN activity_types at ON a.activity_type_id = at.activity_type_id
+                WHERE at.code = 'VIEWING' AND a.user_id = ANY($1)
+            """, target_user_ids) or 0
 
         # Offers
         offers_cnt = await conn.fetchval("""
@@ -216,11 +218,11 @@ async def get_funnel_dashboard(
             WHERE o.assigned_user_id = ANY($1)
         """, target_user_ids)
 
-        # Reservations
+        # Reservations (ACTIVE, CONFIRMED, CONVERTED)
         reservations_cnt = await conn.fetchval("""
             SELECT count(*) FROM reservations r
             JOIN opportunities o ON r.opportunity_id = o.opportunity_id
-            WHERE r.status IN ('ACTIVE', 'CONFIRMED')
+            WHERE r.status IN ('ACTIVE', 'CONFIRMED', 'CONVERTED')
               AND o.assigned_user_id = ANY($1)
         """, target_user_ids)
 
@@ -254,17 +256,19 @@ async def get_funnel_dashboard(
         # Full Global Scope (no user filter)
         total_leads = await conn.fetchval("SELECT count(*) FROM leads")
         new_leads = await conn.fetchval("SELECT count(*) FROM leads WHERE status = 'NEW'")
-        qualified_leads = await conn.fetchval("SELECT count(*) FROM leads WHERE status = 'QUALIFIED'")
+        qualified_leads = await conn.fetchval("SELECT count(*) FROM leads WHERE status IN ('QUALIFIED', 'CONVERTED', 'WON')")
         open_opps = await conn.fetchval("SELECT count(*) FROM opportunities WHERE stage NOT IN ('CLOSED_WON', 'CLOSED_LOST')")
         v_tbl_cnt = await conn.fetchval("SELECT count(*) FROM viewings") or 0
-        v_act_cnt = await conn.fetchval("""
-            SELECT count(*) FROM activities a
-            JOIN activity_types at ON a.activity_type_id = at.activity_type_id
-            WHERE at.code = 'VIEWING'
-        """) or 0
-        viewings_cnt = v_tbl_cnt + v_act_cnt
+        if v_tbl_cnt > 0:
+            viewings_cnt = v_tbl_cnt
+        else:
+            viewings_cnt = await conn.fetchval("""
+                SELECT count(*) FROM activities a
+                JOIN activity_types at ON a.activity_type_id = at.activity_type_id
+                WHERE at.code = 'VIEWING'
+            """) or 0
         offers_cnt = await conn.fetchval("SELECT count(*) FROM offers")
-        reservations_cnt = await conn.fetchval("SELECT count(*) FROM reservations WHERE status IN ('ACTIVE', 'CONFIRMED')")
+        reservations_cnt = await conn.fetchval("SELECT count(*) FROM reservations WHERE status IN ('ACTIVE', 'CONFIRMED', 'CONVERTED')")
         contracts_cnt = await conn.fetchval("SELECT count(*) FROM contracts WHERE status IN ('ACTIVE', 'SIGNED')")
         sales_val = await conn.fetchval("SELECT COALESCE(SUM(contract_value), 0) FROM contracts WHERE status IN ('ACTIVE', 'SIGNED')")
         pending_pay = await conn.fetchval("SELECT COALESCE(SUM(amount_due - amount_paid), 0) FROM payments WHERE status != 'PAID'")
@@ -291,8 +295,8 @@ async def get_funnel_dashboard(
                 (SELECT count(*) FROM users u WHERE u.branch_id = b.branch_id) AS agents_count,
                 (SELECT count(*) FROM leads l WHERE l.branch_id = b.branch_id) AS leads_count,
                 (SELECT count(*) FROM opportunities o JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND o.stage NOT IN ('CLOSED_WON', 'CLOSED_LOST')) AS open_opps,
-                (
-                    (SELECT count(*) FROM viewings v JOIN users u ON v.agent_user_id = u.user_id WHERE u.branch_id = b.branch_id) +
+                COALESCE(
+                    NULLIF((SELECT count(*) FROM viewings v JOIN users u ON v.agent_user_id = u.user_id WHERE u.branch_id = b.branch_id), 0),
                     (SELECT count(*) FROM activities a JOIN activity_types at ON a.activity_type_id = at.activity_type_id JOIN users u ON a.user_id = u.user_id WHERE u.branch_id = b.branch_id AND at.code = 'VIEWING')
                 ) AS viewings_count,
                 (SELECT count(*) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id JOIN users u ON o.assigned_user_id = u.user_id WHERE u.branch_id = b.branch_id AND c.status IN ('ACTIVE', 'SIGNED')) AS contracts_count,
@@ -330,8 +334,8 @@ async def get_funnel_dashboard(
             u.user_id, u.full_name, u.employee_no, u.branch_id, b.name AS branch_name,
             (SELECT count(*) FROM leads l WHERE l.assigned_user_id = u.user_id) AS leads_count,
             (SELECT count(*) FROM opportunities o WHERE o.assigned_user_id = u.user_id AND o.stage NOT IN ('CLOSED_WON', 'CLOSED_LOST')) AS open_opps,
-            (
-                (SELECT count(*) FROM viewings v WHERE v.agent_user_id = u.user_id) +
+            COALESCE(
+                NULLIF((SELECT count(*) FROM viewings v WHERE v.agent_user_id = u.user_id), 0),
                 (SELECT count(*) FROM activities a JOIN activity_types at ON a.activity_type_id = at.activity_type_id WHERE at.code = 'VIEWING' AND a.user_id = u.user_id)
             ) AS viewings_count,
             (SELECT count(*) FROM contracts c JOIN reservations r ON c.reservation_id = r.reservation_id JOIN opportunities o ON r.opportunity_id = o.opportunity_id WHERE o.assigned_user_id = u.user_id AND c.status IN ('ACTIVE', 'SIGNED')) AS contracts_count,
@@ -580,7 +584,7 @@ async def get_managerial_kpis_report(
     Plus Role-Specific Perspective breakdowns.
     """
     current_user_id = x_user_id or "user-51"
-    user_row = await conn.fetchrow(
+    caller_row = await conn.fetchrow(
         """
         SELECT u.user_id, u.branch_id, array_remove(array_agg(r.role_code), NULL) as roles
         FROM users u
@@ -591,15 +595,50 @@ async def get_managerial_kpis_report(
         """,
         current_user_id
     )
-    user_roles = [str(r) for r in (user_row["roles"] if user_row and user_row["roles"] else []) if r]
-    scope = resolve_user_data_scope(user_roles) if user_roles else "GLOBAL"
-    user_branch_id = user_row["branch_id"] if user_row else None
+    caller_roles = [str(r) for r in (caller_row["roles"] if caller_row and caller_row["roles"] else []) if r]
+    caller_scope = resolve_user_data_scope(caller_roles) if caller_roles else "GLOBAL"
+    caller_branch_id = caller_row["branch_id"] if caller_row else None
 
-    effective_branch_id = branch_id or (user_branch_id if scope in ("BRANCH", "TEAM") else None)
-    effective_user_id = user_id or (current_user_id if scope == "OWN" else None)
+    # Resolve effective scope and target IDs
+    if caller_scope == "OWN":
+        effective_scope = "OWN"
+        effective_user_id = current_user_id
+        effective_branch_id = None
+    elif caller_scope == "BRANCH":
+        if user_id:
+            effective_scope = "OWN"
+            effective_user_id = user_id
+            effective_branch_id = caller_branch_id
+        else:
+            effective_scope = "BRANCH"
+            effective_user_id = None
+            effective_branch_id = caller_branch_id
+    else:  # GLOBAL / TEAM
+        if user_id:
+            effective_scope = "OWN"
+            effective_user_id = user_id
+            effective_branch_id = branch_id
+        elif branch_id:
+            effective_scope = "BRANCH"
+            effective_user_id = None
+            effective_branch_id = branch_id
+        else:
+            effective_scope = caller_scope
+            effective_user_id = None
+            effective_branch_id = None
+
+    # Lead scoping condition
+    lead_where = "1=1"
+    lead_params = []
+    if effective_user_id:
+        lead_where = "assigned_user_id = $1"
+        lead_params = [effective_user_id]
+    elif effective_branch_id:
+        lead_where = "(branch_id = $1 OR assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1))"
+        lead_params = [effective_branch_id]
 
     # 1. Lead Contact SLA Compliance (Eq 7.1)
-    sla_query = """
+    sla_query = f"""
         SELECT
             count(*) as total_eligible_leads,
             count(*) FILTER (WHERE first_contact_at IS NOT NULL AND first_contact_due_at IS NOT NULL AND first_contact_at <= first_contact_due_at) as contacted_within_sla,
@@ -607,19 +646,9 @@ async def get_managerial_kpis_report(
         FROM leads
         WHERE first_contact_due_at IS NOT NULL
           AND status NOT IN ('DISQUALIFIED')
+          AND {lead_where}
     """
-    sla_params = []
-    p_i = 1
-    if effective_branch_id:
-        sla_query += f" AND branch_id = ${p_i}"
-        sla_params.append(effective_branch_id)
-        p_i += 1
-    if effective_user_id:
-        sla_query += f" AND assigned_user_id = ${p_i}"
-        sla_params.append(effective_user_id)
-        p_i += 1
-
-    sla_row = await conn.fetchrow(sla_query, *sla_params)
+    sla_row = await conn.fetchrow(sla_query, *lead_params)
     total_eligible_leads = sla_row["total_eligible_leads"] or 0
     contacted_within_sla = sla_row["contacted_within_sla"] or 0
     sla_compliance = CalculationService.calculate_sla_compliance_rate(
@@ -628,25 +657,18 @@ async def get_managerial_kpis_report(
     )
 
     # 2. Lead-to-Transaction Conversion Rate (Eq 7.2)
-    conv_query = """
+    conv_query = f"""
         SELECT
             count(*) as total_qualified_leads,
-            count(*) FILTER (WHERE status = 'WON') as won_leads
+            count(*) FILTER (
+                WHERE status IN ('CONVERTED', 'WON')
+                   OR EXISTS (SELECT 1 FROM opportunities o WHERE o.lead_id = leads.lead_id AND o.stage IN ('CLOSED_WON', 'WON'))
+            ) as won_leads
         FROM leads
-        WHERE status IN ('QUALIFIED', 'WON', 'LOST')
+        WHERE status IN ('QUALIFIED', 'CONVERTED', 'WON', 'LOST', 'DISQUALIFIED')
+          AND {lead_where}
     """
-    conv_params = []
-    p_i = 1
-    if effective_branch_id:
-        conv_query += f" AND branch_id = ${p_i}"
-        conv_params.append(effective_branch_id)
-        p_i += 1
-    if effective_user_id:
-        conv_query += f" AND assigned_user_id = ${p_i}"
-        conv_params.append(effective_user_id)
-        p_i += 1
-
-    conv_row = await conn.fetchrow(conv_query, *conv_params)
+    conv_row = await conn.fetchrow(conv_query, *lead_params)
     total_qual = conv_row["total_qualified_leads"] or 0
     won_leads = conv_row["won_leads"] or 0
     conversion_kpi = CalculationService.calculate_cohort_conversion_rate(
@@ -655,21 +677,23 @@ async def get_managerial_kpis_report(
     )
 
     # 3. Task Completion Rate & Overdue Tasks (Eq 7.3)
-    task_query = """
+    task_where = "1=1"
+    task_params = []
+    if effective_user_id:
+        task_where = "assigned_user_id = $1"
+        task_params = [effective_user_id]
+    elif effective_branch_id:
+        task_where = "assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1)"
+        task_params = [effective_branch_id]
+
+    task_query = f"""
         SELECT
             count(*) FILTER (WHERE due_at IS NOT NULL AND (due_at <= NOW() OR (status = 'COMPLETED' AND completed_at <= due_at))) as tasks_due,
             count(*) FILTER (WHERE status = 'COMPLETED' AND due_at IS NOT NULL AND completed_at IS NOT NULL AND completed_at <= due_at) as completed_on_time,
             count(*) FILTER (WHERE status IN ('PENDING', 'OPEN', 'IN_PROGRESS') AND due_at < NOW()) as overdue_tasks
         FROM tasks
-        WHERE 1=1
+        WHERE {task_where}
     """
-    task_params = []
-    p_i = 1
-    if effective_user_id:
-        task_query += f" AND assigned_user_id = ${p_i}"
-        task_params.append(effective_user_id)
-        p_i += 1
-
     task_row = await conn.fetchrow(task_query, *task_params)
     tasks_due = task_row["tasks_due"] or 0
     completed_on_time = task_row["completed_on_time"] or 0
@@ -681,7 +705,16 @@ async def get_managerial_kpis_report(
     )
 
     # 4. Viewing-to-Offer Conversion Rate (Eq 7.4)
-    view_query = """
+    view_where = "1=1"
+    view_params = []
+    if effective_user_id:
+        view_where = "v.agent_user_id = $1"
+        view_params = [effective_user_id]
+    elif effective_branch_id:
+        view_where = "v.agent_user_id IN (SELECT user_id FROM users WHERE branch_id = $1)"
+        view_params = [effective_branch_id]
+
+    view_query = f"""
         SELECT
             count(*) as completed_viewings,
             count(*) FILTER (
@@ -690,12 +723,8 @@ async def get_managerial_kpis_report(
             ) as viewings_followed_by_offer
         FROM viewings v
         WHERE v.status = 'COMPLETED'
+          AND {view_where}
     """
-    view_params = []
-    if effective_user_id:
-        view_query += " AND v.agent_user_id = $1"
-        view_params.append(effective_user_id)
-
     view_row = await conn.fetchrow(view_query, *view_params)
     completed_viewings = view_row["completed_viewings"] or 0
     viewings_with_offer = view_row["viewings_followed_by_offer"] or 0
@@ -705,13 +734,28 @@ async def get_managerial_kpis_report(
     )
 
     # 5. Forecast versus Actual Rental Income Variance (Eq 7.5)
-    rent_query = """
+    rent_where = "1=1"
+    rent_params = []
+    rent_join = ""
+    if effective_branch_id:
+        rent_join = """
+            LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+            LEFT JOIN units u ON t.unit_id = u.unit_id
+            LEFT JOIN buildings b ON u.building_id = b.building_id
+            LEFT JOIN projects p ON b.project_id = p.project_id
+        """
+        rent_where = "p.city_id IN (SELECT city_id FROM branches WHERE branch_id = $1)"
+        rent_params = [effective_branch_id]
+
+    rent_query = f"""
         SELECT
-            COALESCE(SUM(amount_paid), 0) as actual_income,
-            COALESCE(SUM(amount_due), 0) as forecast_income
-        FROM rent_collections
+            COALESCE(SUM(rc.amount_paid), 0) as actual_income,
+            COALESCE(SUM(rc.amount_due), 0) as forecast_income
+        FROM rent_collections rc
+        {rent_join}
+        WHERE {rent_where}
     """
-    rent_row = await conn.fetchrow(rent_query)
+    rent_row = await conn.fetchrow(rent_query, *rent_params)
     actual_rent = float(rent_row["actual_income"] or 0.0)
     forecast_rent = float(rent_row["forecast_income"] or 0.0)
     rental_variance_kpi = CalculationService.calculate_forecast_rental_variance(
@@ -719,32 +763,60 @@ async def get_managerial_kpis_report(
         forecast_income=forecast_rent
     )
 
-    # 6. Pipeline Breakdown by Purpose (RENT vs BUY vs INVEST)
+    # 6. Pipeline Breakdown by Purpose (Eq 7.6 RENT vs BUY vs INVEST)
     purpose_rows = await conn.fetch(
-        """
+        f"""
         SELECT 
-            COALESCE(inquiry_type, 'BUY') as inquiry_type,
+            COALESCE(l.inquiry_type, 'BUY') as inquiry_type,
             count(*) as lead_count,
-            count(*) FILTER (WHERE status = 'WON') as won_count,
-            COALESCE(SUM(budget_max), 0) as total_budget
-        FROM leads
-        GROUP BY inquiry_type
+            count(*) FILTER (
+                WHERE l.status IN ('CONVERTED', 'WON')
+                   OR EXISTS (SELECT 1 FROM opportunities o WHERE o.lead_id = l.lead_id AND o.stage IN ('CLOSED_WON', 'WON'))
+            ) as won_count,
+            COALESCE(SUM(COALESCE(l.budget_max, l.budget_min, 0)), 0) as total_budget
+        FROM leads l
+        WHERE {lead_where}
+        GROUP BY l.inquiry_type
         ORDER BY lead_count DESC
-        """
+        """,
+        *lead_params
     )
-    pipeline_by_purpose = [
-        {
-            "inquiry_type": r["inquiry_type"],
-            "lead_count": r["lead_count"],
-            "won_count": r["won_count"],
-            "total_budget": float(r["total_budget"]),
-            "conversion_percent": round((r["won_count"] / r["lead_count"] * 100.0), 2) if r["lead_count"] > 0 else 0.0
-        }
-        for r in purpose_rows
-    ]
 
-    # 7. Role-Specific Perspective
-    primary_role = role_view or (user_roles[0] if user_roles else "GENERAL_MANAGER")
+    purpose_dict = {
+        "BUY": {"inquiry_type": "BUY", "lead_count": 0, "won_count": 0, "total_budget": 0.0, "conversion_percent": 0.0},
+        "RENT": {"inquiry_type": "RENT", "lead_count": 0, "won_count": 0, "total_budget": 0.0, "conversion_percent": 0.0},
+        "INVESTMENT": {"inquiry_type": "INVESTMENT", "lead_count": 0, "won_count": 0, "total_budget": 0.0, "conversion_percent": 0.0},
+    }
+    for r in purpose_rows:
+        itype = str(r["inquiry_type"]).upper()
+        l_cnt = int(r["lead_count"] or 0)
+        w_cnt = int(r["won_count"] or 0)
+        b_val = float(r["total_budget"] or 0.0)
+        c_pct = round((w_cnt / l_cnt * 100.0), 2) if l_cnt > 0 else 0.0
+        purpose_dict[itype] = {
+            "inquiry_type": itype,
+            "lead_count": l_cnt,
+            "won_count": w_cnt,
+            "total_budget": b_val,
+            "conversion_percent": c_pct
+        }
+    pipeline_by_purpose = list(purpose_dict.values())
+
+    # 7. Role-Specific Perspective (Eq 7.7)
+    target_user_id = effective_user_id or current_user_id
+    target_row = await conn.fetchrow(
+        """
+        SELECT array_remove(array_agg(r.role_code), NULL) as roles
+        FROM users u
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
+        WHERE u.user_id = $1
+        GROUP BY u.user_id
+        """,
+        target_user_id
+    )
+    target_roles = [str(r) for r in (target_row["roles"] if target_row and target_row["roles"] else []) if r]
+    primary_role = role_view or (target_roles[0] if target_roles else "GENERAL_MANAGER")
 
     role_perspective = {
         "active_role_view": primary_role,
@@ -762,7 +834,7 @@ async def get_managerial_kpis_report(
             "pipeline_by_purpose": pipeline_by_purpose,
             "role_perspective": role_perspective,
             "scope_info": {
-                "scope": scope,
+                "scope": effective_scope,
                 "branch_id": effective_branch_id,
                 "user_id": effective_user_id
             }

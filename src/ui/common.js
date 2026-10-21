@@ -719,6 +719,16 @@
                     <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #334155;">
                         🤝 ${isAr ? 'العقود: ' : 'Contracts: '} <strong>${d.contracts_count || 0}</strong>
                     </span>
+                    <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #334155;">
+                        💳 ${isAr ? 'المدفوعات: ' : 'Payments: '} <strong>${d.payments_count || 0}</strong>
+                    </span>
+                    <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #334155;">
+                        💰 ${isAr ? 'العمولات: ' : 'Commissions: '} <strong>${d.commissions_count || 0}</strong>
+                    </span>
+                    <span style="background: ${d.has_unpaid_statutory_fees ? '#fef2f2' : '#f1f5f9'}; padding: 4px 10px; border-radius: 6px; border: 1px solid ${d.has_unpaid_statutory_fees ? '#fca5a5' : '#e2e8f0'}; color: ${d.has_unpaid_statutory_fees ? '#991b1b' : '#334155'}; font-weight: ${d.has_unpaid_statutory_fees ? '700' : 'normal'};">
+                        🧾 ${isAr ? 'الفواتير والرسوم: ' : 'Fee Invoices: '} <strong>${d.invoices_count || 0}</strong>
+                        ${(d.unpaid_invoices_count > 0) ? `<span style="background: #ef4444; color: white; border-radius: 10px; padding: 1px 6px; font-size: 0.75em; margin-inline-start: 4px;">${d.unpaid_invoices_count} ${isAr ? 'معلقة' : 'unpaid'}</span>` : ''}
+                    </span>
                 </div>
             `;
 
@@ -759,6 +769,345 @@
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             ${listItems}
                         </div>
+                    </div>
+                `;
+            }
+
+            // Financials, Contracts, Payments & Commissions Box
+            let financialsHtml = '';
+            const contractsList = d.contracts || [];
+            const paymentsList = d.payments || [];
+            const commsList = d.commissions || [];
+            const invoiceList = d.invoices || [];
+            const hasFin = contractsList.length > 0 || paymentsList.length > 0 || commsList.length > 0 || invoiceList.length > 0 || d.has_unpaid_statutory_fees || (d.lead_id || d.opportunity_id);
+
+            if (hasFin) {
+                const totalContractVal = (d.total_contract_value || 0).toLocaleString();
+                const totalPaidVal = (d.total_amount_paid || 0).toLocaleString();
+                const totalDueVal = (d.total_amount_due || 0).toLocaleString();
+                const totalCommVal = (d.total_commission_amount || 0).toLocaleString();
+                const totalInvVal = (d.total_invoices_amount || 0).toLocaleString();
+                const totalInvPaid = (d.total_invoices_paid || 0).toLocaleString();
+
+                let statutoryAlertHtml = '';
+                if (d.has_unpaid_statutory_fees) {
+                    statutoryAlertHtml = `
+                        <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 1.4em; line-height: 1;">🛑</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 800; color: #991b1b; font-size: 0.95em;">
+                                    ${isAr ? 'تنبيه مالي نظامي: توجد رسوم نظامية مستحقة غير محصلة' : 'Statutory Fee Gating Alert: Pending Uncollected Fees'}
+                                </div>
+                                <div style="font-size: 0.84em; color: #b91c1c; margin-top: 3px; line-height: 1.4;">
+                                    ${isAr 
+                                        ? 'وفقاً للأنظمة واللوائح العقارية السعودية، تم حظر تصعيد المعاملة لمرحلة الفوز النهائي (WON) أو تسليم العقار حتى يتم تحصيل كامل فواتير الرسوم والضرائب (سعي الوساطة + ضريبة التصرفات العقارية أو رسوم توثيق شبكة إيجار).' 
+                                        : 'Under Saudi statutory real estate regulations, advancing this deal to WON or Handover is strictly locked until all statutory fee invoices (brokerage, RETT, and Ejar fees) are marked as PAID.'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let generateInvoicesHtml = '';
+                if (invoiceList.length === 0 && (d.opportunity_id || d.lead_id)) {
+                    generateInvoicesHtml = `
+                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.88em; color: #1e293b;">
+                                    🧾 ${isAr ? 'فواتير الرسوم والضرائب النظامية السعودية' : 'Statutory Saudi Fee & Tax Invoices'}
+                                </div>
+                                <div style="font-size: 0.78em; color: #64748b; margin-top: 2px;">
+                                    ${isAr ? 'لم يتم توليد فواتير الرسوم لهذه المعاملة بعد (فصل فاتورة العميل عن فاتورة المالك).' : 'No statutory fee invoices generated for this transaction yet.'}
+                                </div>
+                            </div>
+                            <button type="button" class="btn-sm" onclick="window.generateDealFeeInvoices('${d.lead_id || ''}', '${d.opportunity_id || ''}')" style="background: #0284c7; color: white; border: none; padding: 5px 12px; border-radius: 5px; font-weight: 700; font-size: 0.82em; cursor: pointer;">
+                                ⚡ ${isAr ? 'إصدار فواتير الرسوم والضرائب آلياً' : 'Generate Saudi Fee Invoices'}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const invoicesRows = invoiceList.map(inv => {
+                    const isPaid = inv.is_paid || (inv.status === 'PAID');
+                    const statusColor = isPaid ? 'color: #166534; background: #dcfce7;' : 'color: #991b1b; background: #fee2e2;';
+                    const isCustomer = (inv.payer_type === 'CUSTOMER');
+                    const payerBadge = isCustomer 
+                        ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.82em;">👤 ${isAr ? 'المشتري / المستأجر (العميل)' : 'Customer (Tenant/Buyer)'}</span>`
+                        : `<span style="background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.82em;">🏢 ${isAr ? 'البائع / المؤجر (المالك)' : 'Owner (Seller/Lessor)'}</span>`;
+                    
+                    const lineItemsDesc = (inv.line_items && inv.line_items.length > 0)
+                        ? inv.line_items.map(item => `<div>• ${item.description || ''}: <strong>${Number(item.total_amount || item.amount || 0).toLocaleString()} SAR</strong></div>`).join('')
+                        : (inv.notes ? `<div>${inv.notes}</div>` : '--');
+
+                    const collectBtn = (!isPaid && inv.status !== 'CANCELLED') ? `
+                        <button type="button" class="btn-sm" onclick="window.collectSituationInvoice('${inv.invoice_id}', ${inv.total_amount}, '${d.lead_id || ''}', '${d.opportunity_id || ''}')" style="font-size: 0.76em; padding: 3px 8px; background: #059669; color: white; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            💵 ${isAr ? 'تحصيل الفاتورة' : 'Collect Fee'}
+                        </button>
+                    ` : (isPaid ? `<span style="color: #166534; font-weight: 700; font-size: 0.8em;">✓ ${isAr ? 'تم التحصيل' : 'Settled'}</span>` : `<span style="color: #64748b; font-size: 0.8em;">--</span>`);
+
+                    return `
+                        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.85em;">
+                            <td style="padding: 8px 10px; font-weight: 700; font-family: monospace;">
+                                <div>${inv.invoice_number}</div>
+                                <div style="font-size: 0.75em; color: #64748b; font-family: sans-serif;">${inv.transaction_type || 'SALE'}</div>
+                            </td>
+                            <td style="padding: 8px 10px;">
+                                ${payerBadge}
+                                <div style="font-weight: 600; color: #0f172a; margin-top: 3px;">${inv.payer_name || '--'}</div>
+                                ${inv.payer_mobile ? `<div style="font-size: 0.75em; color: #64748b;">📞 ${inv.payer_mobile}</div>` : ''}
+                            </td>
+                            <td style="padding: 8px 10px; font-size: 0.82em; color: #334155; line-height: 1.4;">
+                                ${lineItemsDesc}
+                            </td>
+                            <td style="padding: 8px 10px; color: #64748b;">
+                                <div>${(inv.subtotal || 0).toLocaleString()} SAR</div>
+                                ${inv.vat_amount ? `<div style="font-size: 0.78em; color: #92400e;">+ ${isAr ? 'ضريبة: ' : 'VAT: '} ${(inv.vat_amount || 0).toLocaleString()} SAR</div>` : ''}
+                            </td>
+                            <td style="padding: 8px 10px; font-weight: 800; color: #0f172a;">
+                                ${(inv.total_amount || 0).toLocaleString()} SAR
+                            </td>
+                            <td style="padding: 8px 10px;">
+                                <span style="font-size: 0.78em; font-weight: 700; padding: 2px 7px; border-radius: 4px; ${statusColor}">
+                                    ${inv.status}
+                                </span>
+                                ${inv.paid_at ? `<div style="font-size: 0.72em; color: #166534; margin-top: 2px;">${inv.paid_at.slice(0, 10)}</div>` : ''}
+                            </td>
+                            <td style="padding: 8px 10px; text-align: center;">
+                                ${collectBtn}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const contractsRows = contractsList.map(c => {
+                    const isRent = (c.contract_type === 'RENT');
+                    const typeLabel = isRent ? (isAr ? '🔑 عقد إيجار' : '🔑 Tenancy / Lease') : (isAr ? '🏠 عقد بيع' : '🏠 Sale Agreement');
+                    const linkUrl = isRent ? `management.html?search=${encodeURIComponent(c.contract_number)}` : `finance.html?search=${encodeURIComponent(c.contract_number)}`;
+                    const datesStr = (c.start_date || c.signed_at) ? `${(c.start_date || c.signed_at).slice(0, 10)}${c.end_date ? ' ➔ ' + c.end_date.slice(0, 10) : ''}` : '--';
+                    const statusColor = (c.status === 'ACTIVE' || c.status === 'COMPLETED' || c.status === 'SIGNED') ? 'color: #166534; background: #dcfce7;' : 'color: #854d0e; background: #fef9c3;';
+
+                    return `
+                        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.85em;">
+                            <td style="padding: 8px 10px; font-weight: 700; font-family: monospace;">${c.contract_number}</td>
+                            <td style="padding: 8px 10px;">${typeLabel}</td>
+                            <td style="padding: 8px 10px;">${c.unit_number || '--'}</td>
+                            <td style="padding: 8px 10px; font-weight: 700; color: #0f172a;">${(c.contract_value || 0).toLocaleString()} SAR</td>
+                            <td style="padding: 8px 10px; color: #64748b;">${datesStr}</td>
+                            <td style="padding: 8px 10px;">
+                                <span style="font-size: 0.78em; font-weight: 700; padding: 2px 7px; border-radius: 4px; ${statusColor}">
+                                    ${c.status}
+                                </span>
+                            </td>
+                            <td style="padding: 8px 10px; text-align: center;">
+                                <a href="${linkUrl}" class="btn-sm" target="_blank" style="font-size: 0.75em; padding: 2px 8px; background: #0f172a; color: white; border-radius: 4px; text-decoration: none;">
+                                    ${isAr ? 'عرض' : 'View'} ↗
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const paymentsRows = paymentsList.map(p => {
+                    const isPaid = p.is_paid || (p.status === 'PAID');
+                    const statusColor = isPaid ? 'color: #166534; background: #dcfce7;' : (p.status === 'OVERDUE' ? 'color: #991b1b; background: #fee2e2;' : 'color: #854d0e; background: #fef9c3;');
+                    const typeLabel = p.payment_type === 'RENT_INSTALLMENT' ? (isAr ? 'قسط إيجار' : 'Rent Installment') : (isAr ? 'دفعة بيع' : 'Sale Payment');
+                    const dueDateStr = p.due_date ? p.due_date.slice(0, 10) : '--';
+                    const paidDateStr = p.paid_at ? p.paid_at.slice(0, 10) : (isPaid ? (isAr ? 'تم السداد' : 'Paid') : '--');
+
+                    return `
+                        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.85em;">
+                            <td style="padding: 8px 10px; font-family: monospace;">${p.reference}</td>
+                            <td style="padding: 8px 10px;">${typeLabel}</td>
+                            <td style="padding: 8px 10px;">${dueDateStr}</td>
+                            <td style="padding: 8px 10px; font-weight: 700;">${(p.amount_due || 0).toLocaleString()} SAR</td>
+                            <td style="padding: 8px 10px; color: ${isPaid ? '#166534' : '#64748b'}; font-weight: ${isPaid ? '700' : 'normal'};">${(p.amount_paid || 0).toLocaleString()} SAR</td>
+                            <td style="padding: 8px 10px; color: #64748b;">${paidDateStr}</td>
+                            <td style="padding: 8px 10px;">
+                                <span style="font-size: 0.78em; font-weight: 700; padding: 2px 7px; border-radius: 4px; ${statusColor}">
+                                    ${p.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const commsRows = commsList.map(cm => {
+                    const isPaid = cm.is_paid || (cm.status === 'PAID');
+                    const statusColor = isPaid ? 'color: #166534; background: #dcfce7;' : (cm.status === 'APPROVED' ? 'color: #0369a1; background: #e0f2fe;' : 'color: #854d0e; background: #fef9c3;');
+
+                    const actionHtml = (cm.status === 'PENDING') ? `
+                        <button type="button" class="btn-sm" onclick="window.approveSituationCommission('${cm.commission_id}', '${d.lead_id || ''}', '${d.opportunity_id || ''}')" style="font-size: 0.74em; padding: 3px 8px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700;">
+                            ${isAr ? 'اعتماد' : 'Approve'}
+                        </button>
+                    ` : (cm.status === 'APPROVED' ? `
+                        <button type="button" class="btn-sm" onclick="window.payoutSituationCommission('${cm.commission_id}', '${d.lead_id || ''}', '${d.opportunity_id || ''}')" style="font-size: 0.74em; padding: 3px 8px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700;">
+                            ${isAr ? 'صرف' : 'Pay Out'}
+                        </button>
+                    ` : `<span style="color: #166534; font-size: 0.78em; font-weight: 700;">✓ ${isAr ? 'مصروفة' : 'Paid Out'}</span>`);
+
+                    return `
+                        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.85em;">
+                            <td style="padding: 8px 10px; font-family: monospace;">
+                                <div>${cm.commission_id}</div>
+                                <div style="font-size: 0.76em; color: #64748b; font-family: sans-serif;">${cm.contract_number || '--'}</div>
+                            </td>
+                            <td style="padding: 8px 10px; font-weight: 600;">👤 ${cm.agent_name}</td>
+                            <td style="padding: 8px 10px;">${cm.rate}%</td>
+                            <td style="padding: 8px 10px; font-weight: 700; color: #047857;">${(cm.amount || 0).toLocaleString()} SAR</td>
+                            <td style="padding: 8px 10px;">
+                                <span style="font-size: 0.78em; font-weight: 700; padding: 2px 7px; border-radius: 4px; ${statusColor}">
+                                    ${cm.status}
+                                </span>
+                            </td>
+                            <td style="padding: 8px 10px; text-align: center;">
+                                ${actionHtml}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                financialsHtml = `
+                    <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <div style="font-weight: 700; font-size: 0.98em; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <span>💳</span>
+                                <span>${isAr ? 'البيانات المالية والعقود المرتبطة' : 'Financials, Contracts & Commissions'}</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="finance.html" class="btn-sm" target="_blank" style="font-size: 0.75em; padding: 3px 8px; background: #0284c7; color: white; border-radius: 4px; text-decoration: none;">
+                                    ${isAr ? 'صفحة المالية والمحاسبة' : 'Finance Dashboard'} ↗
+                                </a>
+                                <a href="management.html" class="btn-sm" target="_blank" style="font-size: 0.75em; padding: 3px 8px; background: #0f766e; color: white; border-radius: 4px; text-decoration: none;">
+                                    ${isAr ? 'إدارة الأملاك' : 'Property Management'} ↗
+                                </a>
+                            </div>
+                        </div>
+
+                        ${statutoryAlertHtml}
+
+                        <!-- KPI Summary Badges -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px;">
+                                <div style="font-size: 0.72em; color: #64748b;">${isAr ? 'إجمالي قيمة العقود' : 'Total Contract Value'}</div>
+                                <div style="font-size: 0.95em; font-weight: 700; color: #0f172a; margin-top: 2px;">${totalContractVal} SAR</div>
+                            </div>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 10px;">
+                                <div style="font-size: 0.72em; color: #166534;">${isAr ? 'المبالغ المحصلة' : 'Total Collected'}</div>
+                                <div style="font-size: 0.95em; font-weight: 700; color: #15803d; margin-top: 2px;">${totalPaidVal} SAR</div>
+                            </div>
+                            <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 6px; padding: 8px 10px;">
+                                <div style="font-size: 0.72em; color: #854d0e;">${isAr ? 'المستحق / المتبقي' : 'Pending Due'}</div>
+                                <div style="font-size: 0.95em; font-weight: 700; color: #a16207; margin-top: 2px;">${totalDueVal} SAR</div>
+                            </div>
+                            <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 6px; padding: 8px 10px;">
+                                <div style="font-size: 0.72em; color: #0f766e;">${isAr ? 'عمولات الوسطاء' : 'Broker Commissions'}</div>
+                                <div style="font-size: 0.95em; font-weight: 700; color: #0f766e; margin-top: 2px;">${totalCommVal} SAR</div>
+                            </div>
+                            <div style="background: ${d.has_unpaid_statutory_fees ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${d.has_unpaid_statutory_fees ? '#fca5a5' : '#bbf7d0'}; border-radius: 6px; padding: 8px 10px;">
+                                <div style="font-size: 0.72em; color: ${d.has_unpaid_statutory_fees ? '#991b1b' : '#166534'};">${isAr ? 'الرسوم النظامية (فواتير)' : 'Statutory Invoices'}</div>
+                                <div style="font-size: 0.95em; font-weight: 700; color: ${d.has_unpaid_statutory_fees ? '#991b1b' : '#15803d'}; margin-top: 2px;">
+                                    ${totalInvPaid} / ${totalInvVal} SAR
+                                </div>
+                            </div>
+                        </div>
+
+                        ${invoicesRows ? `
+                            <div style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <div style="background: #f8fafc; padding: 8px 12px; font-size: 0.84em; font-weight: 700; color: #1e293b; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+                                    <span>🧾 ${isAr ? 'فواتير الرسوم النظامية والضرائب (فصل العميل عن المالك)' : 'Statutory Fee & Tax Invoices (Customer vs. Owner)'} (${invoiceList.length})</span>
+                                    <span style="font-size: 0.8em; color: #64748b; font-weight: normal;">
+                                        ${isAr ? `إجمالي الفواتير: ${totalInvVal} SAR` : `Total: ${totalInvVal} SAR`}
+                                    </span>
+                                </div>
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                                        <thead>
+                                            <tr style="background: #f1f5f9; font-size: 0.78em; color: #475569;">
+                                                <th style="padding: 6px 10px;">${isAr ? 'رقم الفاتورة' : 'Invoice #'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الطرف الملزم (الدافع)' : 'Obligated Payer'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'بنود الرسوم المقررة' : 'Fee Items'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الصافي والضريبة' : 'Net & VAT'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الإجمالي المطلوب' : 'Total Due'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الحالة' : 'Status'}</th>
+                                                <th style="padding: 6px 10px; text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${invoicesRows}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : generateInvoicesHtml}
+
+                        ${contractsRows ? `
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 0.82em; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                    🤝 ${isAr ? 'العقود والاتفاقيات' : 'Contracts & Agreements'} (${contractsList.length})
+                                </div>
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                                        <thead>
+                                            <tr style="background: #f1f5f9; font-size: 0.78em; color: #475569;">
+                                                <th style="padding: 6px 10px;">${isAr ? 'رقم العقد' : 'Contract #'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'النوع' : 'Type'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الوحدة' : 'Unit'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'القيمة' : 'Value'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'التاريخ' : 'Dates'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الحالة' : 'Status'}</th>
+                                                <th style="padding: 6px 10px; text-align: center;">${isAr ? 'إجراء' : 'Action'}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${contractsRows}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${paymentsRows ? `
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 0.82em; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                    💳 ${isAr ? 'جدول الدفعات والأقساط' : 'Payments & Installments Schedule'} (${paymentsList.length})
+                                </div>
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                                        <thead>
+                                            <tr style="background: #f1f5f9; font-size: 0.78em; color: #475569;">
+                                                <th style="padding: 6px 10px;">${isAr ? 'السند / المرجع' : 'Reference'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'النوع' : 'Type'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'المطلوب' : 'Due'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'المسدد' : 'Paid'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'تاريخ السداد' : 'Paid Date'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الحالة' : 'Status'}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${paymentsRows}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${commsRows ? `
+                            <div>
+                                <div style="font-size: 0.82em; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                    💰 ${isAr ? 'عمولات الوسطاء واستحقاقات الإغلاق' : 'Broker Commissions & Payouts'} (${commsList.length})
+                                </div>
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: ${isAr ? 'right' : 'left'};">
+                                        <thead>
+                                            <tr style="background: #f1f5f9; font-size: 0.78em; color: #475569;">
+                                                <th style="padding: 6px 10px;">${isAr ? 'رقم العمولة والعقد' : 'Comm & Contract'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الوسيط المكلف' : 'Broker / Agent'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'النسبة' : 'Rate'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'المبلغ' : 'Amount'}</th>
+                                                <th style="padding: 6px 10px;">${isAr ? 'الحالة' : 'Status'}</th>
+                                                <th style="padding: 6px 10px; text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${commsRows}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -817,6 +1166,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <strong style="font-size: 0.9em; color: #0f172a;">${item.subject || item.type}</strong>
+                                    ${item.id ? `<span style="font-family: monospace; font-size: 0.75em; background: #f1f5f9; color: #334155; padding: 1px 5px; border-radius: 4px; font-weight: 700; border: 1px solid #cbd5e1;">#${item.id}</span>` : ''}
                                     ${outcomeBadge}
                                 </div>
                                 <div style="font-size: 0.76em; color: #64748b;">
@@ -854,6 +1204,7 @@
                 ${infoCardsHtml}
                 ${metricsHtml}
                 ${pendingTasksHtml}
+                ${financialsHtml}
                 ${timelineHtml}
             `;
 
@@ -1237,6 +1588,177 @@
     }
 
     // -------------------------------------------------------------------------
+    // 9.b Saudi Fees & Tax Invoices Situation Modals & Actions
+    // -------------------------------------------------------------------------
+    async function collectSituationInvoice(invoiceId, totalAmount, leadId, oppId) {
+        if (!invoiceId) return;
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+
+        let modalOverlay = document.getElementById('recrm-collect-inv-modal');
+        if (modalOverlay && modalOverlay.parentNode) {
+            modalOverlay.parentNode.removeChild(modalOverlay);
+        }
+
+        modalOverlay = document.createElement('div');
+        modalOverlay.id = 'recrm-collect-inv-modal';
+        modalOverlay.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100010; direction: ${isAr ? 'rtl' : 'ltr'}; font-family: inherit;
+        `;
+
+        modalOverlay.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 480px; width: 92%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+                <div style="background: #0f172a; color: white; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                        <span>🧾</span>
+                        <span>${isAr ? 'تحصيل الفاتورة وتأكيد السداد في حساب الشركة' : 'Collect Invoice Payment'}</span>
+                    </div>
+                    <button type="button" class="recrm-col-close" style="background: none; border: none; color: #94a3b8; font-size: 1.4em; cursor: pointer;">&times;</button>
+                </div>
+                <form id="recrm-collect-inv-form" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <label style="font-size: 0.82em; font-weight: 700; color: #475569;">${isAr ? 'معرف الفاتورة' : 'Invoice ID'}</label>
+                        <input type="text" value="${invoiceId}" readonly style="width: 100%; box-sizing: border-box; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-weight: 700; margin-top: 4px; font-family: monospace;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82em; font-weight: 700; color: #475569;">${isAr ? 'المبلغ المستحق للتحصيل (ريال)' : 'Total Amount Due (SAR)'}</label>
+                        <input type="number" id="col-inv-amount" value="${totalAmount}" step="0.01" min="1" required style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-weight: 700; color: #047857; margin-top: 4px; font-size: 1.1em;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82em; font-weight: 700; color: #475569;">${isAr ? 'طريقة التحصيل / السداد *' : 'Payment Method *'}</label>
+                        <select id="col-inv-method" style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-top: 4px;">
+                            <option value="BANK_TRANSFER" selected>${isAr ? 'تحويل بنكي مباشر (حساب الشركة)' : 'Bank Transfer'}</option>
+                            <option value="POS">${isAr ? 'بطاقة بنكية / جهاز نقاط بيع (POS)' : 'POS / Card'}</option>
+                            <option value="CHEQUE">${isAr ? 'شيك مصرفي مصدق' : 'Certified Cheque'}</option>
+                            <option value="SADAD">${isAr ? 'سداد (فاتورة سداد)' : 'SADAD'}</option>
+                            <option value="CASH">${isAr ? 'إيداع نقدي' : 'Cash Deposit'}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82em; font-weight: 700; color: #475569;">${isAr ? 'المرجع البنكي / رقم العملية' : 'Bank Reference / Txn #'}</label>
+                        <input type="text" id="col-inv-ref" placeholder="${isAr ? 'مثال: TR-998822 / بنك الإنماء' : 'e.g. TR-998822 / Bank Transfer'}" style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82em; font-weight: 700; color: #475569;">${isAr ? 'ملاحظات المحاسبة والتدقيق' : 'Accountant Audit Notes'}</label>
+                        <textarea id="col-inv-notes" rows="2" placeholder="${isAr ? 'تم التحقق من مطابقة الحساب البنكي...' : 'Verified against company bank account...'}" style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-top: 4px; font-family: inherit; font-size: 0.88em;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                        <button type="button" class="recrm-col-cancel" style="background: #e2e8f0; color: #334155; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">${isAr ? 'إلغاء' : 'Cancel'}</button>
+                        <button type="submit" style="background: #059669; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;">✓ ${isAr ? 'تأكيد التحصيل' : 'Confirm Collection'}</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modalOverlay);
+
+        const closeModal = () => {
+            if (modalOverlay.parentNode) modalOverlay.parentNode.removeChild(modalOverlay);
+        };
+
+        modalOverlay.querySelector('.recrm-col-close').onclick = closeModal;
+        modalOverlay.querySelector('.recrm-col-cancel').onclick = closeModal;
+        modalOverlay.onclick = (e) => { if (e.target === modalOverlay) closeModal(); };
+
+        const form = modalOverlay.querySelector('#recrm-collect-inv-form');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('col-inv-amount').value);
+            const method = document.getElementById('col-inv-method').value;
+            const ref = document.getElementById('col-inv-ref').value;
+            const notes = document.getElementById('col-inv-notes').value;
+
+            try {
+                await apiRequest(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/collect`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        amount: amount,
+                        payment_method: method,
+                        payment_reference: ref,
+                        notes: notes
+                    })
+                });
+
+                closeModal();
+                showToast(
+                    isAr ? 'تم تحصيل الفاتورة بنجاح وتسجيل العملية في سجل الأنشطة والتدقيق!' : 'Invoice collected successfully and logged in audit activities!',
+                    'success'
+                );
+
+                // Refresh situation modal
+                openSituationModal({ leadId, oppId });
+            } catch (err) {
+                showToast(
+                    (isAr ? 'فشل تحصيل الفاتورة: ' : 'Failed to collect invoice: ') + (err.message || err),
+                    'error'
+                );
+            }
+        };
+    }
+
+    async function generateDealFeeInvoices(leadId, oppId) {
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+
+        try {
+            const endpoint = oppId 
+                ? `/api/v1/opportunities/${encodeURIComponent(oppId)}/generate-fee-invoices`
+                : `/api/v1/leads/${encodeURIComponent(leadId)}/generate-fee-invoices`;
+
+            await apiRequest(endpoint, {
+                method: 'POST',
+                body: JSON.stringify({})
+            });
+
+            showToast(
+                isAr ? 'تم إصدار فواتير الرسوم والضرائب النظامية بنجاح وتوليد مهمة التحصيل للمحاسب!' : 'Statutory fee invoices generated and accountant collection task spawned successfully!',
+                'success'
+            );
+
+            // Refresh situation modal
+            openSituationModal({ leadId, oppId });
+        } catch (err) {
+            showToast(
+                (isAr ? 'فشل إصدار الفواتير: ' : 'Failed to generate fee invoices: ') + (err.message || err),
+                'error'
+            );
+        }
+    }
+
+    async function approveSituationCommission(commId, leadId, oppId) {
+        if (!commId) return;
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+        try {
+            await apiRequest(`/api/v1/commissions/${encodeURIComponent(commId)}/approve`, { method: 'POST' });
+            showToast(isAr ? 'تم اعتماد العمولة بنجاح وجاهزة لأمر الصرف!' : 'Commission approved successfully and ready for payout!', 'success');
+            openSituationModal({ leadId, oppId });
+        } catch (err) {
+            showToast((isAr ? 'فشل اعتماد العمولة: ' : 'Failed to approve: ') + (err.message || err), 'error');
+        }
+    }
+
+    async function payoutSituationCommission(commId, leadId, oppId) {
+        if (!commId) return;
+        const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar') || 
+                     (typeof window.currentLang !== 'undefined' && window.currentLang === 'ar') || 
+                     (localStorage.getItem('recrm_lang') !== 'en');
+        try {
+            await apiRequest(`/api/v1/commissions/${encodeURIComponent(commId)}/payout`, { method: 'POST' });
+            showToast(isAr ? 'تم صرف العمولة للوسيط وإغلاق المهمة المحاسبية بنجاح!' : 'Commission paid out and accounting task closed successfully!', 'success');
+            openSituationModal({ leadId, oppId });
+        } catch (err) {
+            showToast((isAr ? 'فشل صرف العمولة: ' : 'Failed to pay out: ') + (err.message || err), 'error');
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // 10. Global Namespace Export
     // -------------------------------------------------------------------------
     const RECRM = {
@@ -1248,7 +1770,11 @@
             renderPagination,
             openSituationModal,
             showEditViewingModal,
-            showViewingsManagerModal
+            showViewingsManagerModal,
+            collectSituationInvoice,
+            generateDealFeeInvoices,
+            approveSituationCommission,
+            payoutSituationCommission
         },
         format,
         utils
@@ -1268,5 +1794,9 @@
     window.showViewingsManagerModal = showViewingsManagerModal;
     window.openEditViewingModal = showEditViewingModal;
     window.openViewingsManagerModal = showViewingsManagerModal;
+    window.collectSituationInvoice = collectSituationInvoice;
+    window.generateDealFeeInvoices = generateDealFeeInvoices;
+    window.approveSituationCommission = approveSituationCommission;
+    window.payoutSituationCommission = payoutSituationCommission;
 
 })(window);

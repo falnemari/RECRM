@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
@@ -107,4 +107,54 @@ class FinanceSummary(BaseModel):
     total_commissions_amount: float
     paid_commissions_amount: float
     pending_commissions_amount: float
+
+class InvoiceLineItem(BaseModel):
+    item_ar: str
+    item_en: str
+    amount: float
+    vat_rate: float = 0.0
+    vat_amount: float = 0.0
+    total: float
+
+class InvoiceOut(BaseModel):
+    invoice_id: str
+    invoice_number: str
+    invoice_type: str = "TAX_INVOICE"
+    payer_type: str # CUSTOMER or OWNER
+    payer_customer_id: str
+    payer_customer_name: Optional[str] = None
+    payer_customer_mobile: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    contract_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    unit_number: Optional[str] = None
+    transaction_type: str # SALE or RENT
+    subtotal: float
+    vat_rate: float = 15.0
+    vat_amount: float = 0.0
+    total_amount: float
+    amount_paid: float = 0.0
+    status: str # PENDING, PAID, CANCELLED, WAIVED
+    line_items: List[Any] = []
+    due_date: Optional[date] = None
+    paid_at: Optional[datetime] = None
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class CollectInvoiceIn(BaseModel):
+    payment_method: str = "BANK_TRANSFER"
+    payment_reference: Optional[str] = None
+    notes: Optional[str] = None
+    amount: Optional[float] = None
+
+class GenerateFeeInvoicesIn(BaseModel):
+    rett_exempt: bool = False
+    rett_notes: Optional[str] = None
+    security_deposit: Optional[float] = 0.0
+    buyer_brokerage_percent: Optional[float] = 2.5
+    seller_brokerage_percent: Optional[float] = 0.0
+    notes: Optional[str] = None
 

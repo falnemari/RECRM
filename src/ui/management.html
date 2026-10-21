@@ -776,7 +776,7 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_payment_amount">Payment Received (SAR) *</label>
-                    <input type="number" id="rp-amount" step="50" min="1" required>
+                    <input type="number" id="rp-amount" step="any" min="0.01" required>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-rent-pay')" data-i18n="btn_cancel">Cancel</button>
@@ -1054,7 +1054,7 @@
             }
         };
 
-        let currentLang = localStorage.getItem('recrm_lang') || 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
         let tenanciesData = [];
         let ticketsData = [];
         let rentData = [];
@@ -1156,7 +1156,12 @@
                 const res = await fetch(url);
                 const json = await res.json();
                 tenanciesData = json.data || [];
-                renderTenancies(tenanciesData);
+                const searchVal = document.getElementById('tenancy-search')?.value;
+                if (searchVal) {
+                    filterTenancies();
+                } else {
+                    renderTenancies(tenanciesData);
+                }
             } catch (err) {
                 console.error(err);
                 document.getElementById('tenancy-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load tenancies.</td></tr>';
@@ -1667,6 +1672,7 @@
             document.getElementById('rp-remaining').textContent = remaining.toLocaleString() + ' SAR';
             document.getElementById('rp-amount').value = remaining;
             document.getElementById('rp-amount').max = remaining;
+            document.getElementById('rp-amount').step = 'any';
             openModal('modal-rent-pay');
         }
 
@@ -1845,6 +1851,12 @@
             initTypography();
             setLanguage(currentLang);
             loadSummary();
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search');
+            if (searchParam) {
+                const sInput = document.getElementById('tenancy-search');
+                if (sInput) sInput.value = searchParam;
+            }
             loadTenancies();
         });
     </script>

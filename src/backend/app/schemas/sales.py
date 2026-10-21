@@ -21,8 +21,10 @@ class OpportunityOut(BaseModel):
     area_min_sqm: Optional[float] = None
     preferred_property_type_id: Optional[str] = None
     preferred_property_type_name: Optional[str] = None
+    preferred_property_type_name_ar: Optional[str] = None
     preferred_city_id: Optional[str] = None
     preferred_city_name: Optional[str] = None
+    preferred_city_name_ar: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -166,6 +168,13 @@ class OpportunityUnitOut(BaseModel):
     unit_owner_mobile: Optional[str] = None
     is_primary: bool
     offered_price: Optional[float] = None
+    asking_price: Optional[float] = None
+    rent_price: Optional[float] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
+    area_sqm: Optional[float] = None
+    property_type_name_ar: Optional[str] = None
+    property_type_name_en: Optional[str] = None
 
 class OpportunityUnitCreateIn(BaseModel):
     unit_id: str

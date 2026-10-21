@@ -16,6 +16,8 @@ class TaskOut(BaseModel):
     template_id: Optional[str] = None
     title: str
     due_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     priority: str
     status: str
     escalation_level: Optional[int] = 0
@@ -25,6 +27,7 @@ class TaskOut(BaseModel):
     customer_name: Optional[str] = None
     lead_id: Optional[str] = None
     opportunity_id: Optional[str] = None
+    inquiry_type: Optional[str] = None
     is_overdue: bool = False
 
 class TaskCompleteIn(BaseModel):

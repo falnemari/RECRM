@@ -234,6 +234,7 @@
             <button class="tab-btn" id="tab-btn-reservations" onclick="switchTab('reservations')" data-i18n="tab_reservations">Unit Reservations & Earnest Deposits</button>
             <button class="tab-btn" id="tab-btn-payments" onclick="switchTab('payments')" data-i18n="tab_payments">Payment Schedules & Receivables</button>
             <button class="tab-btn" id="tab-btn-commissions" onclick="switchTab('commissions')" data-i18n="tab_commissions">Broker Commission Payouts</button>
+            <button class="tab-btn" id="tab-btn-invoices" onclick="switchTab('invoices')" data-i18n="tab_invoices">Saudi Fees & Tax Invoices</button>
         </div>
 
         <!-- TAB 1: CONTRACTS -->
@@ -376,6 +377,63 @@
                 </table>
             </div>
         </div>
+
+        <!-- TAB 5: SAUDI STATUTORY FEE INVOICES -->
+        <div id="tab-invoices" style="display: none;">
+            <div class="controls-bar" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;">
+                <input type="text" id="invoice-search" placeholder="Search by invoice #, customer/owner, unit..." style="flex-grow: 1; min-width: 250px;" oninput="fetchInvoices()">
+                <select id="invoice-payer-filter" onchange="fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <option value="" data-i18n="opt_all_payers">All Payers (كافة الأطراف - عميل ومالك)</option>
+                    <option value="CUSTOMER" data-i18n="opt_payer_cust">👤 Customer / Tenant / Buyer (العميل - مشتري/مستأجر)</option>
+                    <option value="OWNER" data-i18n="opt_payer_owner">🏢 Owner / Seller / Lessor (المالك - بائع/مؤجر)</option>
+                </select>
+                <select id="invoice-status-filter" onchange="fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses (كافة الحالات)</option>
+                    <option value="PENDING">⏳ PENDING (بانتظار التحصيل)</option>
+                    <option value="PAID">✅ PAID (تم التحصيل)</option>
+                </select>
+                <button class="btn btn-secondary" onclick="fetchInvoices()">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
+            </div>
+
+            <!-- Gating Notice Banner -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4em;">⚖️</span>
+                    <div>
+                        <div style="font-weight: 700; color: #0f172a; font-size: 0.92em;" data-i18n="statutory_rule_title">
+                            قواعد الرسوم العقارية والضريبية النظامية في المملكة العربية السعودية
+                        </div>
+                        <div style="font-size: 0.82em; color: #64748b; margin-top: 2px;" data-i18n="statutory_rule_desc">
+                            يتم فصل سعي الوساطة 2.5% + الضريبة 15% (على المشتري/المستأجر) عن ضريبة التصرفات العقارية 5% / رسوم شبكة إيجار (على البائع/المؤجر)، مع حظر إتمام الصفقة دون التحصيل.
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <span class="badge badge-signed" id="inv-count-badge">-- Invoices</span>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_inv_num">Invoice #</th>
+                            <th data-i18n="th_inv_type">Deal & Type</th>
+                            <th data-i18n="th_inv_payer">Obligated Payer</th>
+                            <th data-i18n="th_inv_breakdown">Statutory Fee Breakdown</th>
+                            <th data-i18n="th_inv_net">Net (SAR)</th>
+                            <th data-i18n="th_inv_vat">VAT (SAR)</th>
+                            <th data-i18n="th_inv_total">Total Due (SAR)</th>
+                            <th data-i18n="th_inv_status">Status</th>
+                            <th data-i18n="th_actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoices-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: RECORD PAYMENT -->
@@ -413,6 +471,54 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closePayModal()">Cancel</button>
                     <button type="submit" class="btn btn-success" data-i18n="btn_confirm_pay">Confirm & Record Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: COLLECT SAUDI FEE INVOICE -->
+    <div class="modal-overlay" id="invoice-pay-modal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header" style="background: #0f172a; color: white;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🧾</span>
+                    <span data-i18n="modal_collect_fee_title">تحصيل الفاتورة وتأكيد السداد</span>
+                </h3>
+                <button class="close-btn" onclick="closeInvoicePayModal()" style="color: white;">&times;</button>
+            </div>
+            <form id="record-inv-pay-form" onsubmit="submitInvoicePayment(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="inv-pay-id">
+                    <div class="form-group">
+                        <label data-i18n="lbl_inv_num">رقم الفاتورة</label>
+                        <input type="text" id="inv-pay-num" readonly style="background: #f1f5f9; font-weight: 700; font-family: monospace;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_inv_amount">المبلغ المطلوب تحصيله (SAR) *</label>
+                        <input type="number" id="inv-pay-amount" step="0.01" min="1" required style="font-weight: 700; color: #166534; font-size: 1.1em;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_method">طريقة السداد / التحصيل *</label>
+                        <select id="inv-pay-method">
+                            <option value="BANK_TRANSFER" selected>تحويل بنكي مباشر (حساب الشركة)</option>
+                            <option value="POS">جهاز نقاط بيع / بطاقة مدى/فيزا (POS)</option>
+                            <option value="CHEQUE">شيك مصرفي مصدق</option>
+                            <option value="SADAD">سداد (فاتورة سداد)</option>
+                            <option value="CASH">إيداع نقدي</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_ref">رقم الحوالة البنكية / المرجع</label>
+                        <input type="text" id="inv-pay-ref" placeholder="مثال: TX-889922 / بنك الإنماء">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_pay_notes">ملاحظات المحاسب والتدقيق</label>
+                        <input type="text" id="inv-pay-notes" placeholder="تم التأكد من دخول المبلغ في حساب الشركة...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeInvoicePayModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-success" style="background: #059669; font-weight: 700;">✓ تأكيد التحصيل وتحديث الأنشطة</button>
                 </div>
             </form>
         </div>
@@ -728,6 +834,13 @@
                 kpi_receivables_sub: "Due on payment schedules", kpi_commissions: "Broker Commissions",
                 tab_contracts: "Contracts & Sales Agreements", tab_reservations: "Unit Reservations & Earnest Deposits",
                 tab_payments: "Payment Schedules & Receivables", tab_commissions: "Broker Commission Payouts",
+                tab_invoices: "Saudi Fees & Tax Invoices",
+                opt_all_payers: "All Payers (Customers & Owners)", opt_payer_cust: "👤 Customer / Tenant / Buyer", opt_payer_owner: "🏢 Owner / Seller / Lessor",
+                opt_all_statuses: "All Statuses", statutory_rule_title: "Saudi Statutory Real Estate & Tax Regulations",
+                statutory_rule_desc: "Strictly separating Brokerage Commission (2.5% + 15% VAT on Buyer/Tenant) from RETT (5% ZATCA) / Ejar Fee (on Seller/Lessor). Advancing deal is blocked until all fees are settled.",
+                th_inv_num: "Invoice #", th_inv_type: "Deal & Type", th_inv_payer: "Obligated Payer",
+                th_inv_breakdown: "Statutory Fee Breakdown", th_inv_net: "Net (SAR)", th_inv_vat: "VAT (SAR)", th_inv_total: "Total Due (SAR)", th_inv_status: "Status",
+                modal_collect_fee_title: "Collect Invoice & Confirm Bank Receipt", lbl_inv_num: "Invoice #", lbl_inv_amount: "Amount to Collect (SAR) *",
                 btn_convert_res: "+ Convert Reservation to Contract",
                 btn_process_expired: "⏱ Process Expired Reservations",
                 th_con_num: "Contract #", th_con_type: "Type", th_con_customer: "Customer", th_con_unit: "Unit #",
@@ -813,6 +926,13 @@
                 kpi_receivables_sub: "أقساط مجدولة للتحصيل", kpi_commissions: "عمولات الوسطاء",
                 tab_contracts: "العقود والاتفاقيات", tab_reservations: "حجوزات الوحدات وعربون الشراء",
                 tab_payments: "جدول الدفعات والمستحقات", tab_commissions: "عمولات المبيعات والوسطاء",
+                tab_invoices: "الفواتير والرسوم النظامية (السعي والضريبة)",
+                opt_all_payers: "كافة الأطراف (العميل والمالك)", opt_payer_cust: "👤 العميل (المشتري / المستأجر)", opt_payer_owner: "🏢 المالك (البائع / المؤجر)",
+                opt_all_statuses: "كافة الحالات", statutory_rule_title: "قواعد الرسوم العقارية والضريبية النظامية في المملكة العربية السعودية",
+                statutory_rule_desc: "يتم فصل سعي الوساطة 2.5% + الضريبة 15% (على المشتري/المستأجر) عن ضريبة التصرفات العقارية 5% / رسوم شبكة إيجار (على البائع/المؤجر)، مع حظر إتمام الصفقة دون التحصيل.",
+                th_inv_num: "رقم الفاتورة", th_inv_type: "النوع والصفقة", th_inv_payer: "الطرف الملزم بالسداد",
+                th_inv_breakdown: "تفاصيل الرسوم والضرائب المقررة", th_inv_net: "المبلغ الصافي", th_inv_vat: "الضريبة 15%", th_inv_total: "الإجمالي المستحق", th_inv_status: "الحالة",
+                modal_collect_fee_title: "تحصيل الفاتورة وتأكيد السداد", lbl_inv_num: "رقم الفاتورة", lbl_inv_amount: "المبلغ المطلوب تحصيله (SAR) *",
                 btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
                 btn_process_expired: "⏱ فحص وإلغاء الحجوزات المنتهية",
                 th_con_num: "رقم العقد", th_con_type: "النوع", th_con_customer: "العميل", th_con_unit: "رقم الوحدة",
@@ -932,14 +1052,12 @@
                     }
                 }
             });
-            const savedLang = localStorage.getItem('recrm_lang');
-            if (savedLang && savedLang !== currentLang) {
-                applyLanguage(savedLang);
-            }
+            const savedLang = localStorage.getItem('recrm_lang') || 'ar';
+            applyLanguage(savedLang);
         }
 
         function switchTab(tab) {
-            ['contracts', 'reservations', 'payments', 'commissions'].forEach(t => {
+            ['contracts', 'reservations', 'payments', 'commissions', 'invoices'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 if (el) el.style.display = t === tab ? 'block' : 'none';
                 const btn = document.getElementById(`tab-btn-${t}`);
@@ -949,6 +1067,7 @@
             if (tab === 'reservations') fetchReservations();
             if (tab === 'payments') fetchPayments();
             if (tab === 'commissions') fetchCommissions();
+            if (tab === 'invoices') fetchInvoices();
         }
 
         async function loadSummary() {
@@ -1183,6 +1302,139 @@
                     loadSummary();
                 }
             } catch (e) {}
+        }
+
+        // ==========================================
+        // SAUDI STATUTORY FEES & INVOICES MANAGEMENT
+        // ==========================================
+        function openInvoicePayModal(invId, invNum, totalAmt) {
+            document.getElementById('inv-pay-id').value = invId;
+            document.getElementById('inv-pay-num').value = invNum;
+            document.getElementById('inv-pay-amount').value = totalAmt;
+            document.getElementById('inv-pay-ref').value = '';
+            document.getElementById('inv-pay-notes').value = '';
+            document.getElementById('invoice-pay-modal').style.display = 'flex';
+        }
+
+        function closeInvoicePayModal() {
+            document.getElementById('invoice-pay-modal').style.display = 'none';
+        }
+
+        async function submitInvoicePayment(e) {
+            e.preventDefault();
+            const invId = document.getElementById('inv-pay-id').value;
+            const amount = parseFloat(document.getElementById('inv-pay-amount').value);
+            const method = document.getElementById('inv-pay-method').value;
+            const ref = document.getElementById('inv-pay-ref').value;
+            const notes = document.getElementById('inv-pay-notes').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/invoices/${encodeURIComponent(invId)}/collect`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-ID': localStorage.getItem('recrm_user_id') || 'user-19'
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        payment_method: method,
+                        payment_reference: ref,
+                        notes: notes
+                    })
+                });
+
+                if (res.ok) {
+                    alert(currentLang === 'ar' ? 'تم تحصيل الفاتورة بنجاح وتسجيلها في سجل الأنشطة والتدقيق!' : 'Invoice collected successfully and recorded in audit log!');
+                    closeInvoicePayModal();
+                    fetchInvoices();
+                    loadSummary();
+                } else {
+                    const err = await res.json();
+                    alert((currentLang === 'ar' ? 'فشل تحصيل الفاتورة: ' : 'Failed to collect invoice: ') + (err.detail || JSON.stringify(err)));
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        async function fetchInvoices() {
+            const payer = document.getElementById('invoice-payer-filter')?.value || '';
+            const status = document.getElementById('invoice-status-filter')?.value || '';
+            const search = document.getElementById('invoice-search')?.value || '';
+            let url = `${API_BASE}/api/v1/invoices?page_size=50`;
+            if (payer) url += `&payer_type=${encodeURIComponent(payer)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            try {
+                const res = await fetch(url, {
+                    headers: { 'X-User-ID': localStorage.getItem('recrm_user_id') || 'user-19' }
+                });
+                const json = await res.json();
+                const items = json.data || [];
+
+                const badgeEl = document.getElementById('inv-count-badge');
+                if (badgeEl) {
+                    badgeEl.textContent = `${items.length} ${currentLang === 'ar' ? 'فواتير نظامية' : 'Invoices'}`;
+                }
+
+                const tbody = document.getElementById('invoices-tbody');
+                if (!tbody) return;
+                if (items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'لا توجد فواتير مطابقة للبحث' : 'No invoices found.'}</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = items.map(inv => {
+                    const isPaid = (inv.status === 'PAID');
+                    const stBadge = isPaid ? 'badge-paid' : 'badge-due';
+                    const isCustomer = (inv.payer_type === 'CUSTOMER');
+                    const payerBadge = isCustomer
+                        ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">👤 ${currentLang === 'ar' ? 'المشتري / المستأجر' : 'Customer (Tenant/Buyer)'}</span>`
+                        : `<span style="background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">🏢 ${currentLang === 'ar' ? 'البائع / المؤجر' : 'Owner (Seller/Lessor)'}</span>`;
+
+                    const lineItemsDesc = (inv.line_items && inv.line_items.length > 0)
+                        ? inv.line_items.map(item => `<div>• ${item.description || ''}: <strong>${Number(item.total_amount || item.amount || 0).toLocaleString()} SAR</strong></div>`).join('')
+                        : (inv.notes ? `<div>${inv.notes}</div>` : '--');
+
+                    const collectBtn = (!isPaid && inv.status !== 'CANCELLED') ? `
+                        <button class="btn btn-sm btn-success" onclick="openInvoicePayModal('${inv.invoice_id}', '${inv.invoice_number}', ${Number(inv.total_amount || 0)})" style="font-weight: 700;">
+                            💵 ${currentLang === 'ar' ? 'تحصيل الفاتورة' : 'Collect Fee'}
+                        </button>
+                    ` : (isPaid ? `<span style="color: #166534; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'تم التحصيل' : 'Settled'}</span>` : `<span style="color: #64748b;">--</span>`);
+
+                    return `
+                        <tr>
+                            <td>
+                                <strong style="font-family: monospace;">${inv.invoice_number}</strong>
+                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${inv.invoice_id}</div>
+                            </td>
+                            <td>
+                                <strong>${inv.transaction_type || 'SALE'}</strong>
+                                <div style="font-size: 0.78em; color: var(--text-muted);">${inv.unit_number ? '🏠 ' + inv.unit_number : ''} ${inv.opportunity_id ? '• ' + inv.opportunity_id : (inv.lead_id ? '• ' + inv.lead_id : '')}</div>
+                            </td>
+                            <td>
+                                ${payerBadge}
+                                <div style="font-weight: 600; margin-top: 2px;">${inv.payer_name || '--'}</div>
+                                ${inv.payer_mobile ? `<div style="font-size: 0.76em; color: var(--text-muted);">📞 ${inv.payer_mobile}</div>` : ''}
+                            </td>
+                            <td style="font-size: 0.84em; line-height: 1.4;">
+                                ${lineItemsDesc}
+                            </td>
+                            <td>${Number(inv.subtotal || 0).toLocaleString()} SAR</td>
+                            <td style="color: #92400e;">${Number(inv.vat_amount || 0).toLocaleString()} SAR</td>
+                            <td><strong style="color: #0f172a; font-size: 1.05em;">${Number(inv.total_amount || 0).toLocaleString()} SAR</strong></td>
+                            <td>
+                                <span class="badge ${stBadge}">${inv.status}</span>
+                                ${inv.paid_at ? `<div style="font-size: 0.72em; color: #166534; margin-top: 2px;">${inv.paid_at.slice(0, 10)}</div>` : ''}
+                            </td>
+                            <td>${collectBtn}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('invoices-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load invoices.</td></tr>';
+            }
         }
 
         let cachedReservations = [];
@@ -2102,12 +2354,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
             loadSummary();
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search');
+            const tabParam = urlParams.get('tab');
             const hash = window.location.hash;
-            if (hash === '#reservations') {
+
+            if (searchParam) {
+                const searchInput = document.getElementById('contract-search');
+                if (searchInput) searchInput.value = searchParam;
+            }
+
+            if (tabParam === 'reservations' || hash === '#reservations') {
                 switchTab('reservations');
-            } else if (hash === '#payments') {
+            } else if (tabParam === 'payments' || hash === '#payments') {
                 switchTab('payments');
-            } else if (hash === '#commissions') {
+            } else if (tabParam === 'commissions' || hash === '#commissions') {
                 switchTab('commissions');
             } else {
                 fetchContracts();

@@ -28,6 +28,119 @@ def resolve_user_data_scope(role_codes: List[str]) -> str:
         return "OWN"
     return "GLOBAL"
 
+async def resolve_data_scope_filter(
+    conn: asyncpg.Connection,
+    x_user_id: Optional[str],
+    requested_user_id: Optional[str]
+) -> Dict[str, Any]:
+    """
+    Resolves data scoping considering both the active authenticated user (x_user_id)
+    and any requested target user filter (requested_user_id).
+    
+    Returns a dict with:
+      - scope_type: 'GLOBAL' | 'BRANCH' | 'OWN' | 'ALL'
+      - branch_id: Optional[str]
+      - user_id: Optional[str]
+      - organization_id: Optional[str]
+    """
+    active_row = None
+    if x_user_id:
+        active_row = await conn.fetchrow(
+            """
+            SELECT u.user_id, u.branch_id, u.organization_id, array_agg(r.role_code) as roles
+            FROM users u
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.role_id
+            WHERE u.user_id = $1
+            GROUP BY u.user_id, u.branch_id, u.organization_id
+            """,
+            x_user_id
+        )
+
+    target_row = None
+    if requested_user_id and requested_user_id.strip():
+        target_row = await conn.fetchrow(
+            """
+            SELECT u.user_id, u.branch_id, u.organization_id, array_agg(r.role_code) as roles
+            FROM users u
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.role_id
+            WHERE u.user_id = $1
+            GROUP BY u.user_id, u.branch_id, u.organization_id
+            """,
+            requested_user_id.strip()
+        )
+
+    # 1. If active user has 'OWN' scope (e.g. SALES_AGENT), they are strictly isolated to their own records
+    if active_row:
+        active_roles = [r for r in (active_row["roles"] or []) if r]
+        active_scope = resolve_user_data_scope(active_roles)
+        if active_scope == "OWN":
+            return {
+                "scope_type": "OWN",
+                "user_id": x_user_id,
+                "branch_id": active_row["branch_id"],
+                "organization_id": active_row["organization_id"]
+            }
+
+    # 2. If a specific target user filter was requested:
+    if target_row:
+        target_roles = [r for r in (target_row["roles"] or []) if r]
+
+        # General Manager / SysAdmin: encompasses the whole organization
+        if any(r in ("SYS_ADMIN", "GENERAL_MANAGER", "ADMIN") for r in target_roles):
+            return {
+                "scope_type": "GLOBAL",
+                "user_id": target_row["user_id"],
+                "branch_id": target_row["branch_id"],
+                "organization_id": target_row["organization_id"]
+            }
+
+        # Branch Manager: encompasses their entire branch
+        if any(r in ("SALES_MANAGER", "BRANCH_MANAGER") for r in target_roles):
+            return {
+                "scope_type": "BRANCH",
+                "user_id": target_row["user_id"],
+                "branch_id": target_row["branch_id"],
+                "organization_id": target_row["organization_id"]
+            }
+
+        # All other individual staff (agents, accountants, document control, etc.): isolated to that user
+        return {
+            "scope_type": "OWN",
+            "user_id": target_row["user_id"],
+            "branch_id": target_row["branch_id"],
+            "organization_id": target_row["organization_id"]
+        }
+
+    # 3. If no target user filter was requested, respect the active user's scope:
+    if active_row:
+        active_roles = [r for r in (active_row["roles"] or []) if r]
+        active_scope = resolve_user_data_scope(active_roles)
+
+        if active_scope == "BRANCH":
+            return {
+                "scope_type": "BRANCH",
+                "user_id": active_row["user_id"],
+                "branch_id": active_row["branch_id"],
+                "organization_id": active_row["organization_id"]
+            }
+
+        return {
+            "scope_type": "GLOBAL",
+            "user_id": active_row["user_id"],
+            "branch_id": active_row["branch_id"],
+            "organization_id": active_row["organization_id"]
+        }
+
+    # Default fallback: Unrestricted Global
+    return {
+        "scope_type": "ALL",
+        "user_id": None,
+        "branch_id": None,
+        "organization_id": None
+    }
+
 async def check_user_scope_override(
     conn: asyncpg.Connection,
     x_user_id: Optional[str],
@@ -40,16 +153,9 @@ async def check_user_scope_override(
     - If user has 'GLOBAL' or manager scope, respect requested_assigned_user_id (allows filtering
       to a specific agent or viewing all records).
     """
-    if not x_user_id:
-        return requested_assigned_user_id
-    roles = await conn.fetch(
-        "SELECT r.role_code FROM user_roles ur JOIN roles r ON ur.role_id = r.role_id WHERE ur.user_id = $1",
-        x_user_id
-    )
-    role_codes = [r["role_code"] for r in roles]
-    scope = resolve_user_data_scope(role_codes)
-    if scope == "OWN":
-        return x_user_id
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, requested_assigned_user_id)
+    if scope_info["scope_type"] == "OWN":
+        return scope_info["user_id"]
     return requested_assigned_user_id
 
 async def _fetch_user_profile(conn: asyncpg.Connection, target_user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:

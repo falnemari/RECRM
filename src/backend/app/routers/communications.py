@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope
-from app.routers.auth import check_user_scope_override, resolve_user_data_scope
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope, resolve_data_scope_filter
 from app.schemas.communications import (
     TasksSummaryOut,
     TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn,
@@ -25,32 +25,64 @@ async def get_tasks_summary(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, assigned_user_id)
     ag_cond = ""
     ag_params = []
-    if assigned_user_id:
+    if scope_info["scope_type"] == "OWN":
         ag_cond = " AND assigned_user_id = $1"
-        ag_params = [assigned_user_id]
+        ag_params = [scope_info["user_id"]]
+    elif scope_info["scope_type"] == "BRANCH":
+        ag_cond = " AND (assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1) OR assigned_user_id = $2)"
+        ag_params = [scope_info["branch_id"], scope_info.get("user_id") or ""]
 
     open_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status IN ('OPEN', 'PENDING', 'IN_PROGRESS'){ag_cond}", *ag_params) or 0
     overdue_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND due_at < NOW(){ag_cond}", *ag_params) or 0
     completed_tasks = await conn.fetchval(f"SELECT count(*) FROM tasks WHERE status = 'COMPLETED'{ag_cond}", *ag_params) or 0
     
-    act_user_cond = f" WHERE user_id = $1" if assigned_user_id else ""
-    total_acts = await conn.fetchval(f"SELECT count(*) FROM activities{act_user_cond}", *ag_params) or 0
+    act_cond = ""
+    act_params = []
+    if scope_info["scope_type"] == "OWN":
+        act_cond = " WHERE (user_id = $1 OR lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = $1))"
+        act_params = [scope_info["user_id"]]
+    elif scope_info["scope_type"] == "BRANCH":
+        act_cond = " WHERE (user_id IN (SELECT user_id FROM users WHERE branch_id = $1) OR user_id = $2 OR lead_id IN (SELECT lead_id FROM leads WHERE branch_id = $1 OR assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1)))"
+        act_params = [scope_info["branch_id"], scope_info.get("user_id") or ""]
+    total_acts = await conn.fetchval(f"SELECT count(*) FROM activities{act_cond}", *act_params) or 0
     
-    viewing_act_cond = f" AND a.user_id = $1" if assigned_user_id else ""
+    v_act_cond = " WHERE at.code = 'VIEWING'"
+    v_act_params = []
+    if scope_info["scope_type"] == "OWN":
+        v_act_cond += " AND (a.user_id = $1 OR a.lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = $1))"
+        v_act_params = [scope_info["user_id"]]
+    elif scope_info["scope_type"] == "BRANCH":
+        v_act_cond += " AND (a.user_id IN (SELECT user_id FROM users WHERE branch_id = $1) OR a.user_id = $2 OR a.lead_id IN (SELECT lead_id FROM leads WHERE branch_id = $1 OR assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1)))"
+        v_act_params = [scope_info["branch_id"], scope_info.get("user_id") or ""]
     v_acts = await conn.fetchval(f"""
         SELECT count(*) FROM activities a
         JOIN activity_types at ON a.activity_type_id = at.activity_type_id
-        WHERE at.code = 'VIEWING'{viewing_act_cond}
-    """, *ag_params) or 0
+        {v_act_cond}
+    """, *v_act_params) or 0
     
-    viewing_tbl_cond = f" WHERE agent_user_id = $1" if assigned_user_id else ""
-    v_tbl = await conn.fetchval(f"SELECT count(*) FROM viewings{viewing_tbl_cond}", *ag_params) or 0
+    v_tbl_cond = ""
+    v_tbl_params = []
+    if scope_info["scope_type"] == "OWN":
+        v_tbl_cond = " WHERE agent_user_id = $1"
+        v_tbl_params = [scope_info["user_id"]]
+    elif scope_info["scope_type"] == "BRANCH":
+        v_tbl_cond = " WHERE (agent_user_id IN (SELECT user_id FROM users WHERE branch_id = $1) OR agent_user_id = $2)"
+        v_tbl_params = [scope_info["branch_id"], scope_info.get("user_id") or ""]
+    v_tbl = await conn.fetchval(f"SELECT count(*) FROM viewings{v_tbl_cond}", *v_tbl_params) or 0
     total_viewings = v_acts + v_tbl
 
-    total_comms = await conn.fetchval("SELECT count(*) FROM communications") or 0
+    comm_cond = ""
+    comm_params = []
+    if scope_info["scope_type"] == "OWN":
+        comm_cond = " WHERE lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = $1)"
+        comm_params = [scope_info["user_id"]]
+    elif scope_info["scope_type"] == "BRANCH":
+        comm_cond = " WHERE lead_id IN (SELECT lead_id FROM leads WHERE branch_id = $1 OR assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = $1))"
+        comm_params = [scope_info["branch_id"]]
+    total_comms = await conn.fetchval(f"SELECT count(*) FROM communications{comm_cond}", *comm_params) or 0
 
     return ResponseEnvelope(data=TasksSummaryOut(
         open_tasks=open_tasks,
@@ -68,7 +100,7 @@ async def get_tasks_summary(
 @router.get("/tasks", response_model=CollectionEnvelope[TaskOut])
 async def list_tasks(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
+    page_size: int = Query(50, ge=1, le=500),
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = None,
     assigned_user_id: Optional[str] = None,
@@ -78,10 +110,11 @@ async def list_tasks(
     template_id: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     search: Optional[str] = None,
+    sort_by: Optional[str] = Query("created_desc"),
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, assigned_user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -101,10 +134,17 @@ async def list_tasks(
         params.append(priority.upper())
         p_idx += 1
 
-    if assigned_user_id:
+    if scope_info["scope_type"] == "OWN":
         conditions.append(f"t.assigned_user_id = ${p_idx}")
-        params.append(assigned_user_id)
+        params.append(scope_info["user_id"])
         p_idx += 1
+    elif scope_info["scope_type"] == "BRANCH":
+        conditions.append(
+            f"(t.assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx}) OR t.assigned_user_id = ${p_idx + 1})"
+        )
+        params.append(scope_info["branch_id"])
+        params.append(scope_info.get("user_id") or "")
+        p_idx += 2
 
     if customer_id:
         conditions.append(f"t.customer_id = ${p_idx}")
@@ -131,7 +171,9 @@ async def list_tasks(
 
     if search:
         s = f"%{search.strip()}%"
-        conditions.append(f"(t.title ILIKE ${p_idx} OR c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR u.full_name ILIKE ${p_idx})")
+        conditions.append(
+            f"(t.title ILIKE ${p_idx} OR t.task_id ILIKE ${p_idx} OR t.lead_id ILIKE ${p_idx} OR t.opportunity_id ILIKE ${p_idx} OR t.template_id ILIKE ${p_idx} OR c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx} OR u.full_name ILIKE ${p_idx})"
+        )
         params.append(s)
         p_idx += 1
 
@@ -147,12 +189,26 @@ async def list_tasks(
         *params
     )
 
+    order_clause = "t.created_at DESC NULLS LAST, t.task_id DESC"
+    if sort_by == "due_asc":
+        order_clause = "t.due_at ASC NULLS LAST, t.created_at DESC"
+    elif sort_by == "priority":
+        order_clause = """
+            CASE t.status WHEN 'OPEN' THEN 1 WHEN 'PENDING' THEN 1 WHEN 'IN_PROGRESS' THEN 1 ELSE 2 END,
+            CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
+            t.due_at ASC NULLS LAST
+        """
+    elif sort_by == "created_asc":
+        order_clause = "t.created_at ASC NULLS LAST, t.task_id ASC"
+
     query = f"""
         SELECT 
             t.task_id,
             t.template_id,
             t.title,
             t.due_at,
+            t.created_at,
+            t.completed_at,
             t.priority,
             t.status,
             COALESCE(t.escalation_level, 0) AS escalation_level,
@@ -162,15 +218,16 @@ async def list_tasks(
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             t.lead_id,
             t.opportunity_id,
+            COALESCE(l.inquiry_type, lo.inquiry_type) AS inquiry_type,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
         LEFT JOIN customers c ON t.customer_id = c.customer_id
+        LEFT JOIN leads l ON t.lead_id = l.lead_id
+        LEFT JOIN opportunities o ON t.opportunity_id = o.opportunity_id
+        LEFT JOIN leads lo ON o.lead_id = lo.lead_id
         WHERE {where_clause}
-        ORDER BY 
-            CASE t.status WHEN 'OPEN' THEN 1 WHEN 'PENDING' THEN 1 WHEN 'IN_PROGRESS' THEN 1 ELSE 2 END,
-            CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
-            t.due_at ASC NULLS LAST
+        ORDER BY {order_clause}
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -242,20 +299,28 @@ async def get_task(
         """
         SELECT 
             t.task_id,
+            t.template_id,
             t.title,
             t.due_at,
+            t.created_at,
+            t.completed_at,
             t.priority,
             t.status,
+            COALESCE(t.escalation_level, 0) AS escalation_level,
             t.assigned_user_id,
             u.full_name AS assigned_user_name,
             t.customer_id,
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             t.lead_id,
             t.opportunity_id,
+            COALESCE(l.inquiry_type, lo.inquiry_type) AS inquiry_type,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
         LEFT JOIN customers c ON t.customer_id = c.customer_id
+        LEFT JOIN leads l ON t.lead_id = l.lead_id
+        LEFT JOIN opportunities o ON t.opportunity_id = o.opportunity_id
+        LEFT JOIN leads lo ON o.lead_id = lo.lead_id
         WHERE t.task_id = $1
         """,
         task_id
@@ -424,7 +489,7 @@ async def reopen_task_endpoint(
 @router.get("/activities", response_model=CollectionEnvelope[ActivityOut])
 async def list_activities(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
+    page_size: int = Query(50, ge=1, le=500),
     activity_type: Optional[str] = None,
     user_id: Optional[str] = None,
     customer_id: Optional[str] = None,
@@ -434,7 +499,7 @@ async def list_activities(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    user_id = await check_user_scope_override(conn, x_user_id, user_id)
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, user_id)
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -445,10 +510,18 @@ async def list_activities(
         params.append(activity_type.upper())
         p_idx += 1
 
-    if user_id:
+    if scope_info["scope_type"] == "OWN":
         conditions.append(f"(a.user_id = ${p_idx} OR a.lead_id IN (SELECT lead_id FROM leads WHERE assigned_user_id = ${p_idx}))")
-        params.append(user_id)
+        params.append(scope_info["user_id"])
         p_idx += 1
+    elif scope_info["scope_type"] == "BRANCH":
+        conditions.append(
+            f"(a.user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx}) OR a.user_id = ${p_idx + 1} "
+            f"OR a.lead_id IN (SELECT lead_id FROM leads WHERE branch_id = ${p_idx} OR assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx})))"
+        )
+        params.append(scope_info["branch_id"])
+        params.append(scope_info.get("user_id") or "")
+        p_idx += 2
 
     if customer_id:
         conditions.append(f"a.customer_id = ${p_idx}")
@@ -467,7 +540,7 @@ async def list_activities(
 
     if search:
         s = f"%{search.strip()}%"
-        conditions.append(f"(a.subject ILIKE ${p_idx} OR a.description ILIKE ${p_idx})")
+        conditions.append(f"(a.subject ILIKE ${p_idx} OR a.description ILIKE ${p_idx} OR a.lead_id ILIKE ${p_idx} OR a.opportunity_id ILIKE ${p_idx} OR a.template_id ILIKE ${p_idx} OR a.activity_id ILIKE ${p_idx})")
         params.append(s)
         p_idx += 1
 
@@ -504,7 +577,7 @@ async def list_activities(
         LEFT JOIN users u ON a.user_id = u.user_id
         LEFT JOIN customers c ON a.customer_id = c.customer_id
         WHERE {where_clause}
-        ORDER BY COALESCE(a.completed_at, a.scheduled_at) DESC NULLS LAST
+        ORDER BY COALESCE(a.completed_at, a.scheduled_at, a.created_at) DESC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])

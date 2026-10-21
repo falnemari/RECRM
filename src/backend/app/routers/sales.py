@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
-from app.routers.auth import check_user_scope_override, resolve_user_data_scope
+from app.routers.auth import check_user_scope_override, resolve_user_data_scope, resolve_data_scope_filter
 from app.schemas.sales import (
     OpportunityOut, OpportunityUpdate, OpportunityCreateIn, ViewingOut, ViewingCreateIn, ReservationOut,
     OfferOut, OfferCreateIn, OfferUpdateIn, OfferDecisionIn, ReservationCreateIn, ReservationDepositVerifyIn,
@@ -34,8 +34,10 @@ OPP_SELECT_QUERY = """
         CAST(l.area_min_sqm AS FLOAT) AS area_min_sqm,
         l.preferred_property_type_id,
         pt.name_en AS preferred_property_type_name,
+        pt.name_ar AS preferred_property_type_name_ar,
         l.preferred_city_id,
         ct.name_en AS preferred_city_name,
+        ct.name_ar AS preferred_city_name_ar,
         o.created_at,
         o.updated_at
     FROM opportunities o
@@ -55,7 +57,7 @@ async def list_opportunities(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    assigned_user_id = await check_user_scope_override(conn, x_user_id, assigned_user_id)
+    scope_info = await resolve_data_scope_filter(conn, x_user_id, assigned_user_id)
     # Auto-sync any qualified leads that don't yet have an opportunity in the pipeline
     unsynced = await conn.fetch("""
         SELECT l.lead_id, l.customer_id, l.assigned_user_id, l.budget_max, l.budget_min
@@ -75,6 +77,17 @@ async def list_opportunities(
             ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
         """, opp_id, l["lead_id"], l["customer_id"], l["assigned_user_id"], val)
 
+    # Auto-synchronize assigned_user_id for open opportunities where lead was reassigned
+    await conn.execute("""
+        UPDATE opportunities o
+        SET assigned_user_id = l.assigned_user_id, updated_at = now()
+        FROM leads l
+        WHERE o.lead_id = l.lead_id
+          AND l.assigned_user_id IS NOT NULL
+          AND o.assigned_user_id IS DISTINCT FROM l.assigned_user_id
+          AND o.stage NOT IN ('WON', 'LOST')
+    """)
+
     offset = (page - 1) * page_size
     conditions = ["1=1"]
     params = []
@@ -85,13 +98,20 @@ async def list_opportunities(
         params.append(stage.upper())
         p_idx += 1
 
-    if assigned_user_id:
+    if scope_info["scope_type"] == "OWN":
         conditions.append(f"o.assigned_user_id = ${p_idx}")
-        params.append(assigned_user_id)
+        params.append(scope_info["user_id"])
         p_idx += 1
+    elif scope_info["scope_type"] == "BRANCH":
+        conditions.append(
+            f"(o.assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx}) OR o.assigned_user_id = ${p_idx + 1} OR l.branch_id = ${p_idx})"
+        )
+        params.append(scope_info["branch_id"])
+        params.append(scope_info.get("user_id") or "")
+        p_idx += 2
 
     where_clause = " AND ".join(conditions)
-    total = await conn.fetchval(f"SELECT count(*) FROM opportunities o WHERE {where_clause}", *params)
+    total = await conn.fetchval(f"SELECT count(*) FROM opportunities o LEFT JOIN leads l ON o.lead_id = l.lead_id WHERE {where_clause}", *params)
 
     query = f"""
         {OPP_SELECT_QUERY}
@@ -126,6 +146,13 @@ async def get_opportunity(
         scope = resolve_user_data_scope([r["role_code"] for r in roles])
         if scope == "OWN" and row["assigned_user_id"] != x_user_id:
             raise HTTPException(status_code=403, detail="Access denied: Opportunity belongs to another agent")
+        if scope == "BRANCH":
+            u_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if u_branch:
+                ag_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", row["assigned_user_id"])
+                l_branch = await conn.fetchval("SELECT branch_id FROM leads WHERE lead_id = $1", row["lead_id"])
+                if ag_branch != u_branch and l_branch != u_branch:
+                    raise HTTPException(status_code=403, detail="Access denied: Opportunity belongs to another branch")
     return ResponseEnvelope(data=OpportunityOut(**dict(row)), meta=BaseMeta())
 
 class OpportunityUnblockIn(BaseModel):
@@ -190,8 +217,14 @@ async def update_opportunity(opp_id: str, payload: OpportunityUpdate, conn: asyn
     p_idx = 1
 
     if payload.stage is not None:
+        new_stage = payload.stage.upper()
+        if new_stage in ("WON", "CLOSED_WON"):
+            try:
+                await WorkflowEngine.verify_saudi_fees_collected(conn, opportunity_id=opp_id)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
         updates.append(f"stage = ${p_idx}")
-        params.append(payload.stage.upper())
+        params.append(new_stage)
         p_idx += 1
 
     if payload.expected_value is not None:
@@ -280,6 +313,17 @@ async def sync_qualified_leads(conn: asyncpg.Connection = Depends(get_db)):
             ) VALUES ($1, $2, $3, $4, 'QUALIFIED', $5, now(), now())
         """, opp_id, l["lead_id"], l["customer_id"], l["assigned_user_id"], val)
         synced_count += 1
+
+    # Auto-synchronize assigned_user_id for open opportunities where lead was reassigned
+    await conn.execute("""
+        UPDATE opportunities o
+        SET assigned_user_id = l.assigned_user_id, updated_at = now()
+        FROM leads l
+        WHERE o.lead_id = l.lead_id
+          AND l.assigned_user_id IS NOT NULL
+          AND o.assigned_user_id IS DISTINCT FROM l.assigned_user_id
+          AND o.stage NOT IN ('WON', 'LOST')
+    """)
     return ResponseEnvelope(data={"synced_count": synced_count, "message": f"Successfully synced {synced_count} qualified leads into active opportunities."})
 
 @router.get("/viewings", response_model=CollectionEnvelope[ViewingOut])
@@ -893,10 +937,18 @@ async def list_opportunity_units(opp_id: str, conn: asyncpg.Connection = Depends
             COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
             owner_c.mobile AS unit_owner_mobile,
             ou.is_primary,
-            CAST(ou.offered_price AS FLOAT) AS offered_price
+            CAST(ou.offered_price AS FLOAT) AS offered_price,
+            CAST(u.asking_price AS FLOAT) AS asking_price,
+            CAST(u.rent_price AS FLOAT) AS rent_price,
+            u.bedrooms,
+            u.bathrooms,
+            CAST(u.area_sqm AS FLOAT) AS area_sqm,
+            pt.name_ar AS property_type_name_ar,
+            pt.name_en AS property_type_name_en
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
         LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
+        LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
         WHERE ou.opportunity_id = $1
         ORDER BY ou.is_primary DESC, u.unit_number ASC
     """, opp_id)
@@ -925,10 +977,18 @@ async def add_opportunity_unit(opp_id: str, payload: OpportunityUnitCreateIn, co
             COALESCE(NULLIF(TRIM(CONCAT(owner_c.first_name, ' ', owner_c.last_name)), ''), owner_c.company_name) AS unit_owner_name,
             owner_c.mobile AS unit_owner_mobile,
             ou.is_primary,
-            CAST(ou.offered_price AS FLOAT) AS offered_price
+            CAST(ou.offered_price AS FLOAT) AS offered_price,
+            CAST(u.asking_price AS FLOAT) AS asking_price,
+            CAST(u.rent_price AS FLOAT) AS rent_price,
+            u.bedrooms,
+            u.bathrooms,
+            CAST(u.area_sqm AS FLOAT) AS area_sqm,
+            pt.name_ar AS property_type_name_ar,
+            pt.name_en AS property_type_name_en
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
         LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
+        LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
         WHERE ou.opportunity_id = $1 AND ou.unit_id = $2
     """, opp_id, payload.unit_id)
     return ResponseEnvelope(data=OpportunityUnitOut(**dict(row)), meta=BaseMeta())

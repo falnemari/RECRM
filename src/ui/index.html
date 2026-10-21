@@ -781,7 +781,7 @@
             <div class="module-card">
                 <div>
                     <div class="module-icon">🎯</div>
-                    <h3 class="module-title" data-i18n="m_leads_title">Leads Management</h3>
+                    <h3 class="module-title" data-i18n="m_leads_title">Leads</h3>
                     <p class="module-desc" data-i18n="m_leads_desc">Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.</p>
                 </div>
                 <a href="leads.html" class="btn" data-i18n="m_leads_btn">Open Leads Queue →</a>
@@ -892,7 +892,7 @@
                 m_cust_title: "Customers 360",
                 m_cust_desc: "Directory of buyers, tenants, owners and investors with complete 360-degree relationship history.",
                 m_cust_btn: "Manage Customers 360 →",
-                m_leads_title: "Leads Management",
+                m_leads_title: "Leads",
                 m_leads_desc: "Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.",
                 m_leads_btn: "Open Leads Queue →",
                 m_props_title: "Property Inventory",
@@ -1010,8 +1010,8 @@
             ar: {
                 nav_dashboard: "لوحة التحكم",
                 nav_customers: "ملف العميل 360",
-                nav_leads: "إدارة العملاء المحتملين",
-                nav_properties: "المخزون العقاري",
+                nav_leads: "الطلبات",
+                nav_properties: "المخزون",
                 nav_sales: "مسار المبيعات",
                 nav_finance: "المالية والعقود",
                 nav_management: "إدارة الأملاك",
@@ -1031,12 +1031,12 @@
                 m_cust_title: "ملف العميل 360",
                 m_cust_desc: "دليل المشترين والمستأجرين والملاك والمطورين مع استعراض كامل لسجل التعاملات.",
                 m_cust_btn: "إدارة ملفات العملاء ←",
-                m_leads_title: "إدارة العملاء المحتملين",
+                m_leads_title: "الطلبات",
                 m_leads_desc: "استقبال، تأهيل، وتعيين الطلبات ومتابعة اتفاقية مستوى الخدمة SLA.",
                 m_leads_btn: "فتح قائمة الطلبات ←",
-                m_props_title: "المخزون العقاري",
+                m_props_title: "المخزون",
                 m_props_desc: "إدارة المشاريع والمباني والوحدات، وتتبع الحالات وتطابق المعايير.",
-                m_props_btn: "استعراض الوحدات ←",
+                m_props_btn: "استعراض المخزون ←",
                 m_sales_title: "مسار المبيعات",
                 m_sales_desc: "متابعة الفرص، جدولة المعاينات، تسجيل العروض، وحجز الوحدات.",
                 m_sales_btn: "عرض مسار المبيعات ←",
@@ -1169,6 +1169,9 @@
                 lbl.textContent = i18nData[currentLang].lang_label;
             }
             localStorage.setItem('recrm_lang', currentLang);
+            document.title = currentLang === 'ar'
+                ? 'لوحة العمليات العقارية - RE CRM'
+                : 'Real Estate Operations Dashboard - RE CRM';
             populateFilters();
             renderPulseFeed();
             if (dashboardState.managerialData) renderManagerialKPIs(dashboardState.managerialData);
@@ -1193,10 +1196,8 @@
                     }
                 }
             }
-            const savedLang = localStorage.getItem('recrm_lang');
-            if (savedLang && savedLang !== currentLang) {
-                applyLanguage(savedLang);
-            }
+            const savedLang = localStorage.getItem('recrm_lang') || 'ar';
+            applyLanguage(savedLang);
         }
 
         const API_BASE = (() => {
@@ -1503,6 +1504,11 @@
         function onBranchFilterChange() {
             const bId = document.getElementById('dash-branch-select').value;
             dashboardState.branchId = bId || null;
+            dashboardState.userId = null;
+            dashboardState.selectedAgent = null;
+            const aSel = document.getElementById('dash-agent-select');
+            if (aSel) aSel.value = '';
+
             if (bId) {
                 const b = dashboardState.branchesList.find(item => item.branch_id === bId);
                 dashboardState.selectedBranch = b || null;
@@ -1513,6 +1519,11 @@
                 if (btn) btn.classList.add('active');
             } else {
                 dashboardState.selectedBranch = null;
+                dashboardState.scope = 'GLOBAL';
+                dashboardState.drillLevel = 'BRANCHES';
+                document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+                const btn = document.getElementById('btn-scope-GLOBAL');
+                if (btn) btn.classList.add('active');
             }
             fetchFunnelData();
         }
@@ -1530,6 +1541,19 @@
                 if (btn) btn.classList.add('active');
             } else {
                 dashboardState.selectedAgent = null;
+                if (dashboardState.branchId) {
+                    dashboardState.scope = 'BRANCH';
+                    dashboardState.drillLevel = 'AGENTS';
+                    document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+                    const btn = document.getElementById('btn-scope-BRANCH');
+                    if (btn) btn.classList.add('active');
+                } else {
+                    dashboardState.scope = 'GLOBAL';
+                    dashboardState.drillLevel = 'BRANCHES';
+                    document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
+                    const btn = document.getElementById('btn-scope-GLOBAL');
+                    if (btn) btn.classList.add('active');
+                }
             }
             fetchFunnelData();
         }
@@ -2343,6 +2367,7 @@
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-weight: 700; font-size: 0.8em; color: ${typeColor}; background: #f8fafc; border: 1px solid ${typeColor}33; padding: 2px 7px; border-radius: 4px;">${typeLabel}</span>
                                     <span style="font-weight: 700; font-size: 0.92em; color: #0f172a;">${item.subject || ''}</span>
+                                    ${item.id ? `<span style="font-family: monospace; font-size: 0.8em; background: #f1f5f9; color: #334155; padding: 1px 6px; border-radius: 4px; font-weight: 700; border: 1px solid #cbd5e1;">#${item.id}</span>` : ''}
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     ${situationBadge}
@@ -2395,8 +2420,11 @@
                     <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em; ${!t.is_done ? 'background: #fffbeb;' : ''}">
                         <td style="padding: 10px 12px;">${dateDisplay}</td>
                         <td style="padding: 10px 12px;">
-                            <div style="font-weight: 700; color: #0f172a;">${t.title}</div>
-                            <div style="font-size: 0.78em; color: #64748b; font-family: monospace;">#${t.task_id} • ${t.template_id || '--'}</div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div style="font-weight: 700; color: #0f172a;">${t.title}</div>
+                                <span style="font-size: 0.78em; color: #1e40af; font-family: monospace; font-weight: 700; background: #eff6ff; border: 1px solid #bfdbfe; padding: 1px 6px; border-radius: 4px;">#${t.task_id}</span>
+                            </div>
+                            <div style="font-size: 0.78em; color: #64748b; font-family: monospace; margin-top: 2px;">${t.template_id || '--'}</div>
                         </td>
                         <td style="padding: 10px 12px; color: #475569;">👤 ${t.assigned_user_name || '--'}</td>
                         <td style="padding: 10px 12px;"><span style="font-size:0.75em; font-weight:700; padding:2px 6px; border-radius:4px; background:#e0e7ff; color:#3730a3;">${t.priority || 'NORMAL'}</span></td>
@@ -2454,8 +2482,11 @@
                         <td style="padding: 10px 12px;"><span style="font-size:0.75em; font-weight:700; padding:2px 6px; border-radius:4px; background:#e0f2fe; color:#0369a1;">🎯 ${a.lead_id || '--'}</span></td>
                         <td style="padding: 10px 12px;"><span style="font-size:0.75em; font-weight:700; padding:2px 6px; border-radius:4px; background:#f1f5f9; color:#0f172a;">${a.activity_type}</span></td>
                         <td style="padding: 10px 12px;">
-                            <div style="font-weight: 700; color: #0f172a;">${a.subject}</div>
-                            <div style="font-size: 0.8em; color: #64748b;">${a.description || ''}</div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div style="font-weight: 700; color: #0f172a;">${a.subject}</div>
+                                <span style="font-size: 0.78em; color: #065f46; font-family: monospace; font-weight: 700; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1px 6px; border-radius: 4px;">#${a.activity_id || a.id || '--'}</span>
+                            </div>
+                            <div style="font-size: 0.8em; color: #64748b; margin-top: 2px;">${a.description || ''}</div>
                         </td>
                         <td style="padding: 10px 12px; color: #475569;">👤 ${a.user_name || '--'}</td>
                         <td style="padding: 10px 12px; font-weight: 600; color: #0284c7;">${a.outcome || '--'}</td>
@@ -2857,7 +2888,25 @@
                     </div>
                 `;
             } catch (err) {
-                bodyEl.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444;">${isAr ? 'فشل تحميل دليل الخطوات.' : 'Failed to load guide.'}</div>`;
+                console.warn('openLeadTaskHelpModal fallback:', err);
+                bodyEl.innerHTML = `
+                    <div style="line-height:1.6;">
+                        <div style="background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px;">
+                            <div style="font-weight:800; color:#0369a1; font-size:1em;">
+                                💡 ${isAr ? 'الدليل الإرشادي المعتمد للمهمة' : 'Standard Operating Guidance'}
+                            </div>
+                        </div>
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#0f172a; margin-bottom:8px;">🔢 ${isAr ? 'الخطوات التنفيذية المعتمدة:' : 'Standard Steps:'}</div>
+                            <ol style="margin:0; padding-right:20px; padding-left:20px; font-size:0.88em; color:#334155; line-height:1.7;">
+                                <li>${isAr ? 'مراجعة متطلبات وتفاصيل الطلب والمهمة والأنشطة السابقة.' : 'Review task context and previous activities.'}</li>
+                                <li>${isAr ? 'التواصل المباشر مع العميل واستيفاء البيانات والشروط الإلزامية.' : 'Engage customer and gather necessary details.'}</li>
+                                <li>${isAr ? 'تدقيق الامتثال والتحقق من صحة المعطيات المدخلة.' : 'Verify compliance and data accuracy.'}</li>
+                                <li>${isAr ? 'حفظ النتيجة والملاحظات في النظام لإغلاق المهمة رسمياً.' : 'Commit outcome and notes to complete task.'}</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
             }
         }
     </script>
