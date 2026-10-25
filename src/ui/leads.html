@@ -2189,6 +2189,11 @@
             const maxPrice = parseFloat(document.getElementById('lead-unit-filter-maxprice')?.value) || 0;
 
             let filtered = cachedInventoryUnits.filter(u => {
+                const st = (u.status || 'AVAILABLE').toUpperCase();
+                if (st === 'SOLD' || st === 'RENTED') return false;
+                const isAlreadySelected = selectedUnitsForLead.some(su => su.unit_id === u.unit_id);
+                if (st === 'RESERVED' && !isAlreadySelected) return false;
+
                 if (typeId && u.property_type_id !== typeId) return false;
                 if (minBeds !== '' && minBeds !== undefined && u.bedrooms < parseInt(minBeds)) return false;
                 if (maxPrice > 0) {

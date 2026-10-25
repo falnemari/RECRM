@@ -364,15 +364,16 @@
                         <tr>
                             <th data-i18n="th_comm_agent">Agent / Broker</th>
                             <th data-i18n="th_comm_contract">Contract & Unit</th>
-                            <th data-i18n="th_comm_type">Type</th>
-                            <th data-i18n="th_comm_rate">Rate (%)</th>
+                            <th>النمط المالي / Compensation</th>
+                            <th>صافي السعي / Net Base</th>
+                            <th>الرسوم المستبعدة / Gov Fees Excluded</th>
                             <th data-i18n="th_comm_amount">Commission Amount</th>
                             <th data-i18n="th_comm_status">Status</th>
                             <th data-i18n="th_actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="commissions-tbody">
-                        <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1212,27 +1213,60 @@
 
                 const tbody = document.getElementById('commissions-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = items.map(c => {
-                    const stBadge = c.status === 'PAID' ? 'badge-paid' : (c.status === 'APPROVED' ? 'badge-approved' : (c.status === 'CANCELLED' ? 'badge-cancelled' : 'badge-pending'));
+                    const stBadge = c.status === 'PAID' ? 'badge-paid' : (c.status === 'APPROVED' ? 'badge-approved' : (c.status === 'CANCELLED' ? 'badge-cancelled' : (c.status === 'EXEMPT_SALARY' ? 'badge-exempt' : 'badge-pending')));
                     const conStatusBadge = c.contract_status === 'CANCELLED' ? `<span class="badge badge-cancelled" style="font-size:0.68em; margin-inline-start:4px;">${currentLang === 'ar' ? 'عقد ملغي' : 'CANCELLED'}</span>` : '';
+                    
+                    let compBadge = '';
+                    const cType = (c.compensation_type || 'COMMISSION').toUpperCase();
+                    if (cType === 'SALARY') {
+                        compBadge = `<span class="badge" style="background:#e0e7ff; color:#3730a3; font-size:0.8em;">👔 ${currentLang === 'ar' ? 'موظف براتب' : 'Salaried'}</span>`;
+                    } else if (cType === 'FIXED_CUT') {
+                        compBadge = `<span class="badge" style="background:#fef3c7; color:#92400e; font-size:0.8em;">✂️ ${currentLang === 'ar' ? 'مقطوع' : 'Fixed Cut'}</span>`;
+                    } else if (cType === 'SALARY_PLUS_COMMISSION') {
+                        compBadge = `<span class="badge" style="background:#f3e8ff; color:#6b21a8; font-size:0.8em;">⚡ ${currentLang === 'ar' ? 'هجين' : 'Hybrid'}</span>`;
+                    } else {
+                        compBadge = `<span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.8em;">📊 ${currentLang === 'ar' ? 'نسبة سعي' : 'Commission Split'}</span>`;
+                    }
+
+                    const isExempt = c.status === 'EXEMPT_SALARY' || (cType === 'SALARY' && Number(c.amount || 0) === 0);
+                    const amountDisplay = isExempt
+                        ? `<span style="color: var(--text-muted); font-size: 0.85em;">0.00 SAR (${currentLang === 'ar' ? 'معفى - راتب' : 'Exempt - Salary'})</span>`
+                        : `<strong style="color: var(--primary); font-size: 1.05em;">${Number(c.amount || 0).toLocaleString()} SAR</strong>`;
+
+                    const notesTooltip = c.calculation_notes ? `title="${c.calculation_notes.replace(/"/g, '&quot;')}"` : '';
+
                     return `
-                        <tr>
-                            <td><strong>${c.user_name || 'Agent'}</strong></td>
+                        <tr ${notesTooltip}>
+                            <td>
+                                <strong>${c.user_name || 'Agent'}</strong>
+                                <div style="font-size: 0.76em; color: var(--text-muted);">${c.user_id || ''}</div>
+                            </td>
                             <td>
                                 <strong>${c.contract_number || '--'}</strong>${conStatusBadge}
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${c.unit_number ? '🏠 ' + c.unit_number : ''}</div>
                             </td>
-                            <td>${c.commission_type}</td>
-                            <td>${c.rate ?? 2.5}%</td>
-                            <td><strong style="color: var(--primary);">${Number(c.amount || 0).toLocaleString()} SAR</strong></td>
+                            <td>
+                                ${compBadge}
+                                <div style="font-size: 0.74em; color: var(--text-muted); margin-top: 2px;">${c.rate ? c.rate + '%' : (cType === 'FIXED_CUT' ? 'Flat Fee' : '--')}</div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600;">${Number(c.net_commission_base || c.gross_brokerage_amount || 0).toLocaleString()} SAR</span>
+                            </td>
+                            <td>
+                                <span style="color: #b91c1c; font-size: 0.85em; font-weight: 600;">- ${Number(c.gov_fees_deducted || 0).toLocaleString()} SAR</span>
+                                <div style="font-size: 0.72em; color: var(--text-muted);">${currentLang === 'ar' ? '15% ضريبة/رسوم' : '15% VAT/Fees'}</div>
+                            </td>
+                            <td>${amountDisplay}</td>
                             <td><span class="badge ${stBadge}">${c.status}</span></td>
                             <td>
                                 ${c.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : ''}
-                                ${c.status === 'PENDING' ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
+                                ${isExempt ? `<span style="color: #475569; font-size: 0.82em;">✓ ${currentLang === 'ar' ? 'مسجل بالراتب' : 'Salaried'}</span>` : ''}
+                                ${c.status === 'PENDING' && !isExempt ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
                                 ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
                                 ${c.status === 'PAID' ? `<span style="color: green; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مصروفة' : 'Paid Out'}</span>` : ''}
                             </td>
@@ -1240,7 +1274,7 @@
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('commissions-tbody').innerHTML = '<tr><td colspan="7" style="color: red; text-align: center;">Failed to load commissions.</td></tr>';
+                document.getElementById('commissions-tbody').innerHTML = '<tr><td colspan="8" style="color: red; text-align: center;">Failed to load commissions.</td></tr>';
             }
         }
 

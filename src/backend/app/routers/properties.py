@@ -160,9 +160,15 @@ async def list_units(
         p_idx += 1
 
     if status_filter:
-        conditions.append(f"u.status = ${p_idx}")
-        params.append(status_filter.upper())
-        p_idx += 1
+        statuses = [s.strip().upper() for s in status_filter.split(",") if s.strip()]
+        if len(statuses) == 1:
+            conditions.append(f"u.status = ${p_idx}")
+            params.append(statuses[0])
+            p_idx += 1
+        elif len(statuses) > 1:
+            conditions.append(f"u.status = ANY(${p_idx}::varchar[])")
+            params.append(statuses)
+            p_idx += 1
 
     if project_id:
         conditions.append(f"b.project_id = ${p_idx}")

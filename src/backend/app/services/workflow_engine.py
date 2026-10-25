@@ -407,7 +407,7 @@ class WorkflowEngine:
         opportunity_id: Optional[str] = None,
         customer_id: Optional[str] = None,
         assigned_user_id: Optional[str] = None,
-        priority: str = "NORMAL",
+        priority: Optional[str] = None,
         custom_due_at: Optional[datetime] = None,
         parent_task_id: Optional[str] = None,
         custom_title: Optional[str] = None
@@ -419,6 +419,19 @@ class WorkflowEngine:
         Returns:
           (task_dict, is_new: bool)
         """
+        # Guarantee priority is adopted from the associated lead unless explicitly overridden
+        eff_lead_id = lead_id
+        if not eff_lead_id and opportunity_id:
+            eff_lead_id = await conn.fetchval(
+                "SELECT lead_id FROM opportunities WHERE opportunity_id = $1", opportunity_id
+            )
+        if eff_lead_id and (not priority or priority == "NORMAL"):
+            lead_pri = await conn.fetchval("SELECT priority FROM leads WHERE lead_id = $1", eff_lead_id)
+            if lead_pri:
+                priority = lead_pri.upper()
+        if not priority:
+            priority = "NORMAL"
+
         # 1. Anti-Duplication Check
         existing_task = await conn.fetchrow(
             """
@@ -452,6 +465,11 @@ class WorkflowEngine:
                     "UPDATE tasks SET title = $1 WHERE task_id = $2",
                     custom_title, existing_task["task_id"]
                 )
+            if priority and existing_task.get("priority") != priority:
+                await conn.execute(
+                    "UPDATE tasks SET priority = $1 WHERE task_id = $2",
+                    priority, existing_task["task_id"]
+                )
             t_dict = dict(existing_task)
             if assigned_user_id:
                 t_dict["assigned_user_id"] = assigned_user_id
@@ -459,6 +477,8 @@ class WorkflowEngine:
                 t_dict["parent_task_id"] = parent_task_id
             if custom_title:
                 t_dict["title"] = custom_title
+            if priority:
+                t_dict["priority"] = priority
             logger.info(f"Task anti-duplication: Open task {existing_task['task_id']} already exists for template {template_id}. Reusing.")
             return t_dict, False
 
@@ -727,7 +747,7 @@ class WorkflowEngine:
             next_task_template = "TASK_INVEST_CONFIRM_OBJECTIVES"
         elif is_rent:
             if has_primary_unit and has_primary_unit > 0:
-                next_task_template = "TASK_RENT_VIEWING_FOLLOW_UP"
+                next_task_template = "TASK_VIEWING_SCHEDULE"
             else:
                 next_task_template = "TASK_RENT_MATCH_PROPERTIES"
         else:
@@ -864,8 +884,10 @@ class WorkflowEngine:
             comm_body
         )
 
-        # 5. Auto-spawn Viewing Task (TASK_RENT_VIEWING_FOLLOW_UP or TASK_VIEWING_SCHEDULE)
-        view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_SCHEDULE"
+        # 5. Auto-spawn Viewing Schedule Task (TASK_VIEWING_SCHEDULE)
+        # In both Sale and Rent, the immediate operational task after presenting shortlisted units
+        # is to schedule the site visit appointment.
+        view_tmpl = "TASK_VIEWING_SCHEDULE"
         viewing_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
             template_id=view_tmpl,
@@ -987,7 +1009,7 @@ class WorkflowEngine:
             scheduled_start, scheduled_end, all_notes, lead_id
         )
 
-        # 3. Complete any open TASK_VIEWING_SCHEDULE or TASK_RENT_VIEWING_FOLLOW_UP
+        # 3. Complete any open TASK_VIEWING_SCHEDULE, TASK_VIEWING_RESCHEDULE, or TASK_INVEST_SCHEDULE_INSPECTION
         if task_id:
             await conn.execute(
                 "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
@@ -997,7 +1019,7 @@ class WorkflowEngine:
             """
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
-            WHERE template_id IN ('TASK_VIEWING_SCHEDULE', 'TASK_RENT_VIEWING_FOLLOW_UP')
+            WHERE template_id IN ('TASK_VIEWING_SCHEDULE', 'TASK_VIEWING_RESCHEDULE', 'TASK_INVEST_SCHEDULE_INSPECTION')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
               AND (
                   ($2::text IS NOT NULL AND lead_id = $2) OR
@@ -1022,41 +1044,70 @@ class WorkflowEngine:
                 opportunity_id, unit_id
             )
 
-        # 5. Record Activity ACT_VIEWING_SCHEDULED
+        # 5. Check if Investment or Rental
+        is_rent = False
+        is_invest = False
+        if lead_id:
+            inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", lead_id)
+            inq_u = (inq or "").upper()
+            is_rent = (inq_u == "RENT")
+            is_invest = (inq_u in ("INVEST", "INVESTMENT"))
+        elif opportunity_id:
+            inq = await conn.fetchval(
+                "SELECT l.inquiry_type FROM opportunities o JOIN leads l ON o.lead_id = l.lead_id WHERE o.opportunity_id = $1",
+                opportunity_id
+            )
+            inq_u = (inq or "").upper()
+            is_rent = (inq_u == "RENT")
+            is_invest = (inq_u in ("INVEST", "INVESTMENT"))
+
+        # 6. Record Activity ACT_VIEWING_SCHEDULED or ACT_INVEST_INSPECTION_SCHEDULED
         start_str = scheduled_start.strftime("%Y-%m-%d %H:%M")
+        sched_act_tmpl = "ACT_INVEST_INSPECTION_SCHEDULED" if is_invest else "ACT_VIEWING_SCHEDULED"
+        inspect_label = "المعاينة والفحص الفني والاستثماري" if is_invest else "المعاينة الميدانية"
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
-            template_id="ACT_VIEWING_SCHEDULED",
+            template_id=sched_act_tmpl,
             user_id=agent_user_id,
             customer_id=customer_id,
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             task_id=task_id,
             outcome="SCHEDULED",
-            notes=f"تم تحديد موعد معاينة ميدانية للوحدة #{unit_number} بتاريخ {start_str}. {all_notes or ''}".strip(),
+            notes=f"تم تحديد موعد {inspect_label} للوحدة #{unit_number} بتاريخ {start_str}. {all_notes or ''}".strip(),
             completed_at=now_dt
         )
 
-        # 6. Record Outbound Communication COMM_VIEWING_CONFIRMATION
+        # 7. Record Outbound Communication COMM_VIEWING_CONFIRMATION or COMM_INVEST_INSPECTION_CONFIRMATION
         comm_id = await get_next_id(conn, "communications", "comm")
-        comm_msg = f"مرحباً بك، نود تأكيد موعد المعاينة الميدانية للوحدة #{unit_number} بمشروع ({proj_name}). الموعد: {start_str}. {location_notes or ''}".strip()
+        comm_tmpl = "COMM_INVEST_INSPECTION_CONFIRMATION" if is_invest else "COMM_VIEWING_CONFIRMATION"
+        comm_subj = f"تأكيد موعد {inspect_label} للوحدة #{unit_number}"
+        comm_msg = f"مرحباً بك، نود تأكيد موعد {inspect_label} للوحدة #{unit_number} بمشروع ({proj_name}). الموعد: {start_str}. {location_notes or ''}".strip()
         await conn.execute(
             """
             INSERT INTO communications (
                 communication_id, customer_id, lead_id, channel, direction,
                 subject, body, sent_at, delivery_status, template_id, created_at
-            ) VALUES ($1, $2, $3, 'WHATSAPP', 'OUT', $4, $5, NOW(), 'SENT', 'COMM_VIEWING_CONFIRMATION', NOW())
+            ) VALUES ($1, $2, $3, 'WHATSAPP', 'OUT', $4, $5, NOW(), 'SENT', $6, NOW())
             """,
             comm_id, customer_id, lead_id,
-            f"تأكيد موعد المعاينة الميدانية للوحدة #{unit_number}",
-            comm_msg
+            comm_subj,
+            comm_msg,
+            comm_tmpl
         )
 
-        # 7. Auto-spawn Stage 3 Report Task: TASK_VIEWING_REPORT with 2h SLA after scheduled visit
+        # 8. Auto-spawn Post-Viewing Follow-up / Report Task with 2h SLA after scheduled visit
         report_due = scheduled_end + timedelta(hours=2)
+        if is_invest:
+            followup_tmpl = "TASK_INVEST_INSPECTION_REPORT"
+        elif is_rent:
+            followup_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP"
+        else:
+            followup_tmpl = "TASK_VIEWING_REPORT"
+
         report_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
-            template_id="TASK_VIEWING_REPORT",
+            template_id=followup_tmpl,
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             customer_id=customer_id,
@@ -1847,7 +1898,6 @@ class WorkflowEngine:
         ) or "user-19"
 
         comm_agent_id = effective_user_id or (await conn.fetchval("SELECT assigned_user_id FROM units WHERE unit_id = $1", unit_id))
-        comm_amount = round(final_rent * 0.025, 2)
         existing_comm = await conn.fetchrow(
             "SELECT commission_id FROM commissions WHERE contract_id = $1 OR contract_id = $2",
             tenancy_id, contract_number
@@ -1869,29 +1919,53 @@ class WorkflowEngine:
                     linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt
                 )
 
+            agent_profile = await conn.fetchrow("""
+                SELECT user_id, full_name, compensation_type, 
+                       CAST(base_salary AS FLOAT) AS base_salary,
+                       CAST(sales_commission_rate AS FLOAT) AS sales_commission_rate,
+                       CAST(rent_commission_rate AS FLOAT) AS rent_commission_rate,
+                       CAST(sales_fixed_cut AS FLOAT) AS sales_fixed_cut,
+                       CAST(rent_fixed_cut AS FLOAT) AS rent_fixed_cut
+                FROM users WHERE user_id = $1
+            """, comm_agent_id)
+
+            from app.services.calculation_service import CalculationService
+            calc = CalculationService.calculate_agent_commission(
+                transaction_type="RENT",
+                deal_value=final_rent,
+                agent_profile=dict(agent_profile) if agent_profile else None
+            )
+
             comm_id = await get_next_id(conn, "commissions", "comm")
             await conn.execute(
                 """
-                INSERT INTO commissions (commission_id, contract_id, user_id, commission_type, rate, amount, status)
-                VALUES ($1, $2, $3, 'RENT', 2.5, $4, 'PENDING')
+                INSERT INTO commissions (
+                    commission_id, contract_id, user_id, commission_type, rate, amount, status,
+                    compensation_type, gross_deal_value, gross_brokerage_amount,
+                    gov_fees_deducted, net_commission_base, calculation_notes
+                )
+                VALUES ($1, $2, $3, 'RENT', $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 """,
-                comm_id, linked_contract_id, comm_agent_id, comm_amount
+                comm_id, linked_contract_id, comm_agent_id, calc["rate"], calc["amount"], calc["status"],
+                calc["compensation_type"], calc["gross_deal_value"], calc["gross_brokerage_amount"],
+                calc["gov_fees_deducted"], calc["net_commission_base"], calc["calculation_notes"]
             )
 
-            # Spawn TASK_COMMISSION_SETTLEMENT for Finance/Accountant
-            agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
-            comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({agent_name} — عقد {contract_number} — {comm_amount:,.2f} ر.س)"
-            await WorkflowEngine.spawn_task_from_template(
-                conn=conn,
-                template_id="TASK_COMMISSION_SETTLEMENT",
-                lead_id=lead_id,
-                opportunity_id=opportunity_id,
-                customer_id=tenant_customer_id,
-                assigned_user_id=accountant_user_id,
-                priority="NORMAL",
-                custom_title=comm_task_title,
-                parent_task_id=parent_task_id
-            )
+            # Spawn TASK_COMMISSION_SETTLEMENT for Finance/Accountant if not salaried and amount > 0
+            if calc["amount"] > 0 and calc["status"] != "EXEMPT_SALARY":
+                agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
+                comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({agent_name} — عقد {contract_number} — {calc['amount']:,.2f} ر.س)"
+                await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_COMMISSION_SETTLEMENT",
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=tenant_customer_id,
+                    assigned_user_id=accountant_user_id,
+                    priority="NORMAL",
+                    custom_title=comm_task_title,
+                    parent_task_id=parent_task_id
+                )
 
         # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING
         monitoring_task, _ = await WorkflowEngine.spawn_task_from_template(
@@ -2486,14 +2560,36 @@ class WorkflowEngine:
                 )
 
             comm_agent_id = c["assigned_user_id"] or user_id or await conn.fetchval("SELECT user_id FROM users LIMIT 1")
+            agent_profile = await conn.fetchrow("""
+                SELECT user_id, full_name, compensation_type, 
+                       CAST(base_salary AS FLOAT) AS base_salary,
+                       CAST(sales_commission_rate AS FLOAT) AS sales_commission_rate,
+                       CAST(rent_commission_rate AS FLOAT) AS rent_commission_rate,
+                       CAST(sales_fixed_cut AS FLOAT) AS sales_fixed_cut,
+                       CAST(rent_fixed_cut AS FLOAT) AS rent_fixed_cut
+                FROM users WHERE user_id = $1
+            """, comm_agent_id)
+
+            from app.services.calculation_service import CalculationService
+            calc = CalculationService.calculate_agent_commission(
+                transaction_type="SALE",
+                deal_value=contract_val,
+                agent_profile=dict(agent_profile) if agent_profile else None
+            )
+
             comm_id = await get_next_id(conn, "commissions", "comm")
-            comm_amt = round(contract_val * 0.025, 2)
             await conn.execute(
                 """
-                INSERT INTO commissions (commission_id, contract_id, user_id, commission_type, rate, amount, status)
-                VALUES ($1, $2, $3, 'SALES', 2.5, $4, 'PENDING')
+                INSERT INTO commissions (
+                    commission_id, contract_id, user_id, commission_type, rate, amount, status,
+                    compensation_type, gross_deal_value, gross_brokerage_amount,
+                    gov_fees_deducted, net_commission_base, calculation_notes
+                )
+                VALUES ($1, $2, $3, 'SALES', $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 """,
-                comm_id, contract_id, comm_agent_id, comm_amt
+                comm_id, contract_id, comm_agent_id, calc["rate"], calc["amount"], calc["status"],
+                calc["compensation_type"], calc["gross_deal_value"], calc["gross_brokerage_amount"],
+                calc["gov_fees_deducted"], calc["net_commission_base"], calc["calculation_notes"]
             )
 
             activity = await WorkflowEngine.record_activity_from_template(
@@ -2532,20 +2628,21 @@ class WorkflowEngine:
                 parent_task_id=parent_task_id
             )
 
-            comm_agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
-            comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({comm_agent_name} — عقد {c['contract_number']} — {comm_amt:,.2f} ر.س)"
-            await WorkflowEngine.spawn_task_from_template(
-                conn=conn,
-                template_id="TASK_COMMISSION_SETTLEMENT",
-                lead_id=c["lead_id"],
-                opportunity_id=c["opportunity_id"],
-                customer_id=c["customer_id"],
-                assigned_user_id=finance_user_id,
-                priority="NORMAL",
-                custom_due_at=now_dt + timedelta(hours=72),
-                custom_title=comm_task_title,
-                parent_task_id=parent_task_id
-            )
+            if calc["amount"] > 0 and calc["status"] != "EXEMPT_SALARY":
+                comm_agent_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", comm_agent_id) or "الوسيط"
+                comm_task_title = f"المالية — تدقيق واعتماد وصرف عمولة الوسيط ({comm_agent_name} — عقد {c['contract_number']} — {calc['amount']:,.2f} ر.س)"
+                await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_COMMISSION_SETTLEMENT",
+                    lead_id=c["lead_id"],
+                    opportunity_id=c["opportunity_id"],
+                    customer_id=c["customer_id"],
+                    assigned_user_id=finance_user_id,
+                    priority="NORMAL",
+                    custom_due_at=now_dt + timedelta(hours=72),
+                    custom_title=comm_task_title,
+                    parent_task_id=parent_task_id
+                )
 
             pm_user_id = await conn.fetchval(
                 """
@@ -3552,8 +3649,8 @@ class WorkflowEngine:
                 "viewing_task": pres_res["viewing_task"]
             }
 
-        # 4. Stage D Handling: TASK_VIEWING_SCHEDULE & TASK_VIEWING_RESCHEDULE & TASK_RENT_VIEWING_FOLLOW_UP
-        if tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP"):
+        # 4. Stage D Handling: TASK_VIEWING_SCHEDULE & TASK_VIEWING_RESCHEDULE & TASK_RENT_VIEWING_FOLLOW_UP & TASK_INVEST_SCHEDULE_INSPECTION
+        if tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP", "TASK_INVEST_SCHEDULE_INSPECTION"):
             v_data = viewing_data or {}
             # If completing viewing follow up with inspection outcome directly:
             if tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP" and outcome in ("INTERESTED", "NOT_INTERESTED", "NEEDS_ANOTHER_UNIT", "NO_SHOW", "CANCELLED") and not v_data.get("scheduled_start"):
@@ -4118,11 +4215,25 @@ class WorkflowEngine:
         if tmpl_id == "TASK_INVEST_CONFIRM_OBJECTIVES":
             v_data = viewing_data or {}
             q_data = qualification_data or {}
-            t_cap = v_data.get("purchase_price") or q_data.get("budget_max") or 0.0
-            t_yield = v_data.get("target_yield_percent") or 8.0
-            horizon = v_data.get("investment_horizon_years") or 5
+            t_cap = v_data.get("purchase_price") or v_data.get("target_capital") or q_data.get("budget_max")
+            if not t_cap or float(t_cap) == 0.0:
+                if lead_id:
+                    t_cap = await conn.fetchval("SELECT budget_max FROM leads WHERE lead_id = $1", lead_id)
+                if (not t_cap or float(t_cap) == 0.0) and task.get("opportunity_id"):
+                    t_cap = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
+            t_cap = float(t_cap or 0.0)
+
+            t_yield = float(v_data.get("target_yield_percent") or 8.0)
+            horizon = int(v_data.get("investment_horizon_years") or 5)
             risk = (v_data.get("risk_tolerance") or "MEDIUM").upper()
             strat = (v_data.get("investment_strategy") or "BALANCED").upper()
+
+            # Ensure lead and opportunity budget/value are synchronized with the confirmed target capital
+            if t_cap > 0:
+                if lead_id:
+                    await conn.execute("UPDATE leads SET budget_max = $1, updated_at = NOW() WHERE lead_id = $2", t_cap, lead_id)
+                if task.get("opportunity_id"):
+                    await conn.execute("UPDATE opportunities SET expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2", t_cap, task["opportunity_id"])
 
             cand_unit_ids = list(v_data.get("unit_ids") or [])
             if v_data.get("unit_id") and v_data["unit_id"] not in cand_unit_ids:
@@ -4189,6 +4300,8 @@ class WorkflowEngine:
             sel_unit_id = v_data.get("unit_id")
             p_price = float(v_data.get("purchase_price") or 0.0)
             m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
+            if m_rent == 0.0 and v_data.get("gross_annual_rent"):
+                m_rent = float(v_data["gross_annual_rent"]) / 12.0
             vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
             opex = float(v_data.get("annual_operating_expenses") or 0.0)
             acq = float(v_data.get("acquisition_costs") or 0.0)
@@ -4205,6 +4318,22 @@ class WorkflowEngine:
                         cash_inv = p_price
                     if cf == 0.0:
                         cf = max(0.0, (m_rent * 12.0) - vac - opex)
+
+            if p_price == 0.0:
+                if lead_id:
+                    p_price = float(await conn.fetchval("SELECT budget_max FROM leads WHERE lead_id = $1", lead_id) or 0.0)
+                if p_price == 0.0 and task.get("opportunity_id"):
+                    p_price = float(await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"]) or 0.0)
+                if cash_inv <= 1.0 and p_price > 0:
+                    cash_inv = p_price
+                if m_rent == 0.0 and p_price > 0:
+                    m_rent = (p_price * 0.08) / 12.0
+                if opex == 0.0 and m_rent > 0:
+                    opex = (m_rent * 12.0) * 0.10
+                if vac == 0.0 and m_rent > 0:
+                    vac = (m_rent * 12.0) * 0.05
+                if cf == 0.0:
+                    cf = max(0.0, (m_rent * 12.0) - vac - opex)
 
             from app.services.calculation_service import CalculationService
             rental_metrics = CalculationService.calculate_rental_metrics(
@@ -4262,7 +4391,7 @@ class WorkflowEngine:
 
             next_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id="TASK_INVEST_VALIDATE_FINANCIALS",
+                template_id="TASK_INVEST_SCHEDULE_INSPECTION",
                 lead_id=lead_id,
                 opportunity_id=task["opportunity_id"],
                 customer_id=task["customer_id"],
@@ -4284,10 +4413,255 @@ class WorkflowEngine:
                 }
             }
 
-        # 3. TASK_INVEST_VALIDATE_FINANCIALS
+        # 3. TASK_INVEST_INSPECTION_REPORT: Complete Technical & Commercial Due Diligence Report
+        if tmpl_id == "TASK_INVEST_INSPECTION_REPORT":
+            v_data = viewing_data or {}
+            norm_outcome = (outcome or "RECOMMENDED").upper()
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            # 1. Resolve unit_id
+            target_unit_id = v_data.get("unit_id")
+            if not target_unit_id and task["opportunity_id"]:
+                target_unit_id = await conn.fetchval(
+                    "SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1 ORDER BY is_primary DESC LIMIT 1",
+                    task["opportunity_id"]
+                )
+            if not target_unit_id and lead_id:
+                target_unit_id = await conn.fetchval("SELECT unit_id FROM leads WHERE lead_id = $1", lead_id)
+            if not target_unit_id:
+                target_unit_id = await conn.fetchval("SELECT unit_id FROM units LIMIT 1") or "unit-1"
+
+            # 2. Extract Technical Due Diligence Fields
+            struct_cond = v_data.get("structural_condition") or "GOOD"
+            bld_age = int(v_data.get("building_age_years") or 5)
+            sbc_compliant = bool(v_data.get("saudi_building_code_compliant") if v_data.get("saudi_building_code_compliant") is not None else True)
+            hvac_st = v_data.get("hvac_status") or "OPERATIONAL"
+            elev_st = v_data.get("elevators_status") or "OPERATIONAL"
+            plumb_st = v_data.get("plumbing_network_status") or "GOOD"
+            elec_st = v_data.get("electrical_network_status") or "GOOD"
+            roof_st = v_data.get("roofing_and_insulation_status") or "GOOD"
+            fire_st = v_data.get("fire_safety_compliance") or "COMPLIANT"
+            est_capex = float(v_data.get("estimated_capex_sar") or 0.0)
+            tech_notes = v_data.get("technical_notes") or notes
+
+            # 3. Extract Commercial & Occupancy Fields
+            traffic_flow = v_data.get("location_traffic_flow") or "HIGH"
+            access_quality = v_data.get("access_and_egress_quality") or "GOOD"
+            parking_avail = v_data.get("parking_availability") or "ADEQUATE"
+            actual_occ = float(v_data.get("actual_occupancy_rate") if v_data.get("actual_occupancy_rate") is not None else 95.0)
+            tot_inspected = int(v_data.get("total_units_inspected") or 1)
+            occ_count = int(v_data.get("occupied_units_count") or 1)
+            vac_count = int(v_data.get("vacant_units_count") or 0)
+            rent_roll_ver = bool(v_data.get("rent_roll_verified") if v_data.get("rent_roll_verified") is not None else True)
+            pm_notes = v_data.get("property_manager_interview_notes")
+            comm_score = int(v_data.get("commercial_viability_score") or 85)
+            comm_notes = v_data.get("commercial_notes")
+
+            # 4. Extract Overall Recommendation
+            rec = v_data.get("recommendation")
+            if not rec:
+                rec = "REJECTED" if norm_outcome in ("REJECTED", "CANCELLED", "NOT_INTERESTED") else "RECOMMENDED"
+            price_adj = float(v_data.get("suggested_price_adjustment_sar") or 0.0)
+            verdict_summary = v_data.get("final_verdict_summary") or notes
+
+            # 4.5. Compute Financial Metrics (NOI, Cap Rate, Net Yield, CoC, OPEX, Vacancy Allowance)
+            from app.services.calculation_service import CalculationService
+            p_price = float(v_data.get("purchase_price") or 0.0)
+            # Prioritize Unit Asking Price over general Opportunity expected value / Lead budget
+            if p_price <= 0.0 and target_unit_id:
+                u_price = await conn.fetchval("SELECT asking_price FROM units WHERE unit_id = $1", target_unit_id)
+                if u_price and float(u_price) > 0:
+                    p_price = float(u_price)
+            if p_price <= 0.0 and task["opportunity_id"]:
+                opp_v = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
+                p_price = float(opp_v or 0.0)
+
+            # Monthly rent & Gross Annual rent resolution
+            gross_annual_rent = float(v_data.get("gross_annual_rent") or 0.0)
+            m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
+            if m_rent <= 0.0 and gross_annual_rent > 0.0:
+                m_rent = gross_annual_rent / 12.0
+            elif m_rent > 0.0 and gross_annual_rent <= 0.0:
+                gross_annual_rent = m_rent * 12.0
+            elif m_rent <= 0.0 and gross_annual_rent <= 0.0:
+                if target_unit_id:
+                    u_rent = await conn.fetchval("SELECT rent_price FROM units WHERE unit_id = $1", target_unit_id)
+                    if u_rent and float(u_rent) > 0:
+                        m_rent = float(u_rent) / 12.0 if float(u_rent) > 50000 else float(u_rent)
+                        gross_annual_rent = m_rent * 12.0
+                if m_rent <= 0.0 and p_price > 0.0:
+                    gross_annual_rent = p_price * 0.08
+                    m_rent = gross_annual_rent / 12.0
+
+            if "annual_vacancy_allowance" in v_data and v_data["annual_vacancy_allowance"] is not None:
+                vac_allowance = float(v_data["annual_vacancy_allowance"])
+            else:
+                vac_percent = max(0.0, 100.0 - actual_occ)
+                vac_allowance = gross_annual_rent * (vac_percent / 100.0)
+
+            if "annual_operating_expenses" in v_data and v_data["annual_operating_expenses"] is not None:
+                opex = float(v_data["annual_operating_expenses"])
+            else:
+                opex = gross_annual_rent * 0.10
+
+            cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+
+            r_metrics = CalculationService.calculate_rental_metrics(
+                monthly_rent=m_rent,
+                purchase_price=p_price,
+                annual_vacancy_allowance=vac_allowance,
+                annual_operating_expenses=opex,
+                acquisition_costs=est_capex
+            )
+            i_returns = CalculationService.calculate_investment_returns(
+                purchase_price=p_price,
+                cash_invested=cash_inv,
+                annual_pre_tax_cash_flow=r_metrics["net_operating_income"]
+            )
+
+            eff_gross_income = r_metrics["effective_annual_rent"]
+            noi = r_metrics["net_operating_income"]
+            tot_basis = r_metrics["total_investment_basis"]
+            gross_yield = r_metrics["gross_yield_percent"]
+            cap_rate = round((noi / p_price * 100.0), 2) if p_price > 0 else 0.0
+            net_yield = r_metrics["net_operating_yield_percent"]
+            coc_return = i_returns["cash_on_cash_return_percent"]
+
+            # 5. Insert into investment_due_diligence_reports
+            report_id = await get_next_id(conn, "investment_due_diligence_reports", "ddr")
+            viewing_id = await conn.fetchval(
+                "SELECT viewing_id FROM viewings WHERE opportunity_id = $1 ORDER BY scheduled_start DESC LIMIT 1",
+                task["opportunity_id"]
+            )
+            await conn.execute(
+                """
+                INSERT INTO investment_due_diligence_reports (
+                    report_id, opportunity_id, unit_id, viewing_id, inspector_user_id, inspection_date,
+                    structural_condition, building_age_years, saudi_building_code_compliant,
+                    hvac_status, elevators_status, plumbing_network_status, electrical_network_status,
+                    roofing_and_insulation_status, fire_safety_compliance, estimated_capex_sar, technical_notes,
+                    location_traffic_flow, access_and_egress_quality, parking_availability,
+                    actual_occupancy_rate, total_units_inspected, occupied_units_count, vacant_units_count,
+                    rent_roll_verified, property_manager_interview_notes, commercial_viability_score, commercial_notes,
+                    recommendation, suggested_price_adjustment_sar, final_verdict_summary,
+                    purchase_price_sar, gross_annual_rent_sar, vacancy_allowance_sar, effective_gross_income_sar,
+                    operating_expenses_opex_sar, net_operating_income_noi_sar, total_investment_basis_sar,
+                    gross_yield_percent, cap_rate_percent, net_yield_percent, cash_invested_sar, cash_on_cash_return_percent,
+                    created_at, updated_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5, NOW(),
+                    $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+                    $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,
+                    $28, $29, $30,
+                    $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42,
+                    NOW(), NOW()
+                )
+                """,
+                report_id, task["opportunity_id"], target_unit_id, viewing_id, user_id,
+                struct_cond, bld_age, sbc_compliant,
+                hvac_st, elev_st, plumb_st, elec_st,
+                roof_st, fire_st, est_capex, tech_notes,
+                traffic_flow, access_quality, parking_avail,
+                actual_occ, tot_inspected, occ_count, vac_count,
+                rent_roll_ver, pm_notes, comm_score, comm_notes,
+                rec, price_adj, verdict_summary,
+                p_price, gross_annual_rent, vac_allowance, eff_gross_income,
+                opex, noi, tot_basis,
+                gross_yield, cap_rate, net_yield, cash_inv, coc_return
+            )
+
+            # 6. Record Activity ACT_INVEST_INSPECTION_COMPLETED
+            act_notes = (
+                f"تم اكتمال تقرير الفحص الفني والاستثماري النافي للجهالة (#{report_id}): "
+                f"الهيكل: {struct_cond} | الكود السعودي: {'مطابق' if sbc_compliant else 'غير مطابق'} | "
+                f"CapEx تقديري: {est_capex:,.2f} ريال | إشغال فعلي: {actual_occ}% | "
+                f"صافي الدخل (NOI): {noi:,.2f} ريال سنوياً | معدل الرسملة: {cap_rate}% | "
+                f"صافي العائد بعد CapEx: {net_yield}% | العائد على النقد (CoC): {coc_return}% | "
+                f"التوصية الاستثمارية: {rec}."
+            )
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_INVEST_INSPECTION_COMPLETED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=rec,
+                notes=act_notes,
+                completed_at=now_dt
+            )
+
+            # 7. Update viewing record if present
+            if viewing_id:
+                await conn.execute(
+                    "UPDATE viewings SET status = 'COMPLETED', outcome = $1, notes = COALESCE(notes || E'\\n', '') || $2 WHERE viewing_id = $3",
+                    rec, act_notes, viewing_id
+                )
+
+            # 8. Route to Next Stage:
+            if rec != "REJECTED":
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_VALIDATE_FINANCIALS",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {
+                        "type": "INVEST_INSPECTION_COMPLETED",
+                        "report_id": report_id,
+                        "recommendation": rec,
+                        "estimated_capex_sar": est_capex,
+                        "actual_occupancy_rate": actual_occ,
+                        "next_task": next_task
+                    }
+                }
+            else:
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id="TASK_INVEST_COMPARE_RETURNS",
+                    lead_id=lead_id,
+                    opportunity_id=task["opportunity_id"],
+                    customer_id=task["customer_id"],
+                    assigned_user_id=task["assigned_user_id"] or user_id,
+                    priority="NORMAL",
+                    parent_task_id=task_id
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {
+                        "type": "INVEST_INSPECTION_REJECTED",
+                        "report_id": report_id,
+                        "recommendation": rec,
+                        "next_task": next_task
+                    }
+                }
+
+        # 4. TASK_INVEST_VALIDATE_FINANCIALS
         if tmpl_id == "TASK_INVEST_VALIDATE_FINANCIALS":
             norm_outcome = (outcome or "VALIDATED").upper()
             await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+
+            # Check if there is an inspection report to enrich validation notes
+            rep_row = await conn.fetchrow(
+                "SELECT estimated_capex_sar, actual_occupancy_rate, recommendation FROM investment_due_diligence_reports WHERE opportunity_id = $1 ORDER BY created_at DESC LIMIT 1",
+                task["opportunity_id"]
+            )
+            enrich_note = ""
+            if rep_row:
+                enrich_note = f" (مدعماً بتقرير الفحص الفني: CapEx تقديري {float(rep_row['estimated_capex_sar']):,.2f} ريال | إشغال فعلي {float(rep_row['actual_occupancy_rate'])}% | توصية {rep_row['recommendation']})"
 
             if norm_outcome in ("VALIDATED", "APPROVED", "CONNECTED", "COMPLETED"):
                 activity = await WorkflowEngine.record_activity_from_template(
@@ -4299,7 +4673,7 @@ class WorkflowEngine:
                     opportunity_id=task["opportunity_id"],
                     task_id=task_id,
                     outcome="VALIDATED",
-                    notes=notes or "تم تدقيق ومراجعة كافة الافتراضات المالية (الإيجار المتوقع، الشغور، النفقات التشغيلية، تكاليف الاستحواذ) بنجاح.",
+                    notes=(notes or "تم تدقيق ومراجعة كافة الافتراضات المالية (الإيجار المتوقع، الشغور، النفقات التشغيلية، تكاليف الاستحواذ) بنجاح.") + enrich_note,
                     completed_at=now_dt
                 )
                 next_task, _ = await WorkflowEngine.spawn_task_from_template(
@@ -4424,11 +4798,24 @@ class WorkflowEngine:
         # 5. TASK_INVEST_BASELINE_PERFORMANCE
         if tmpl_id == "TASK_INVEST_BASELINE_PERFORMANCE":
             v_data = viewing_data or {}
-            p_price = float(v_data.get("purchase_price") or 0.0)
-            m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
-            opex = float(v_data.get("annual_operating_expenses") or 0.0)
-            vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
-            cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+
+            rep_row = None
+            if task["opportunity_id"]:
+                rep_row = await conn.fetchrow(
+                    """
+                    SELECT * FROM investment_due_diligence_reports 
+                    WHERE opportunity_id = $1 
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    task["opportunity_id"]
+                )
+
+            p_price = float(v_data.get("purchase_price") or (float(rep_row["purchase_price_sar"]) if rep_row and rep_row["purchase_price_sar"] else 0.0))
+            m_rent = float(v_data.get("monthly_rent_forecast") or (float(rep_row["gross_annual_rent_sar"]) / 12.0 if rep_row and rep_row["gross_annual_rent_sar"] else 0.0))
+            opex = float(v_data.get("annual_operating_expenses") or (float(rep_row["operating_expenses_opex_sar"]) if rep_row and rep_row["operating_expenses_opex_sar"] else 0.0))
+            vac = float(v_data.get("annual_vacancy_allowance") or (float(rep_row["vacancy_allowance_sar"]) if rep_row and rep_row["vacancy_allowance_sar"] else 0.0))
+            capex = float(rep_row["estimated_capex_sar"] if rep_row and rep_row["estimated_capex_sar"] else 0.0)
+            cash_inv = float(v_data.get("cash_invested") or (float(rep_row["cash_invested_sar"]) if rep_row and rep_row["cash_invested_sar"] and rep_row["cash_invested_sar"] > 0 else (p_price if p_price > 0 else 1.0)))
 
             if task["opportunity_id"] and p_price == 0.0:
                 opp_v = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
@@ -4443,7 +4830,8 @@ class WorkflowEngine:
                 monthly_rent=m_rent,
                 purchase_price=p_price,
                 annual_vacancy_allowance=vac,
-                annual_operating_expenses=opex
+                annual_operating_expenses=opex,
+                acquisition_costs=capex
             )
             i_returns = CalculationService.calculate_investment_returns(
                 purchase_price=p_price,
@@ -4453,10 +4841,13 @@ class WorkflowEngine:
 
             await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
 
+            dd_ref = f" استناداً إلى تقرير الفحص النافي للجهالة (#{rep_row['report_id']})" if rep_row else ""
             base_notes = notes or (
-                f"تم تأسيس وتوثيق خط الأساس الاستثماري: تكلفة الاستحواذ: {p_price:,.2f} ريال | "
+                f"تم تأسيس وتوثيق خط الأساس الاستثماري{dd_ref}: تكلفة الاستحواذ: {p_price:,.2f} ريال | "
+                f"CapEx معتمد: {capex:,.2f} ريال | إجمالي التكلفة: {r_metrics['total_investment_basis']:,.2f} ريال | "
                 f"صافي الدخل التشغيلي المستهدف (NOI): {r_metrics['net_operating_income']:,.2f} ريال سنوياً | "
-                f"معدل العائد الصافي المستهدف: {r_metrics['net_operating_yield_percent']}% | "
+                f"معدل الرسملة (Cap Rate): {round((r_metrics['net_operating_income'] / p_price * 100.0), 2) if p_price > 0 else 0.0}% | "
+                f"معدل العائد الصافي المستهدف (Net Yield): {r_metrics['net_operating_yield_percent']}% | "
                 f"العائد على النقد المستثمر (CoC): {i_returns['cash_on_cash_return_percent']}%."
             )
             activity = await WorkflowEngine.record_activity_from_template(
@@ -4498,9 +4889,23 @@ class WorkflowEngine:
         # 6. TASK_INVEST_MONITOR_ACTUAL_RETURNS
         if tmpl_id == "TASK_INVEST_MONITOR_ACTUAL_RETURNS":
             v_data = viewing_data or {}
+
+            rep_row = None
+            if task["opportunity_id"]:
+                rep_row = await conn.fetchrow(
+                    """
+                    SELECT * FROM investment_due_diligence_reports 
+                    WHERE opportunity_id = $1 
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    task["opportunity_id"]
+                )
+
             act_inc = float(v_data.get("actual_rental_income") or 0.0)
             act_exp = float(v_data.get("actual_expenses") or 0.0)
             forecast_inc = float(v_data.get("monthly_rent_forecast") or 0.0) * 12.0
+            if forecast_inc == 0.0 and rep_row and rep_row["gross_annual_rent_sar"]:
+                forecast_inc = float(rep_row["gross_annual_rent_sar"])
 
             if forecast_inc == 0.0 and task["opportunity_id"]:
                 opp_v = await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"])
@@ -4517,9 +4922,11 @@ class WorkflowEngine:
 
             await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
 
+            dd_info = f" (مقارنة بخط أساس الفحص النافي للجهالة #{rep_row['report_id']})" if rep_row else ""
             mon_notes = notes or (
-                f"تمت مراجعة العوائد الفعلية ومقارنتها بخط الأساس: "
-                f"الدخل الفعلي: {act_inc:,.2f} ريال | المصروفات الفعلية: {act_exp:,.2f} ريال | "
+                f"تمت مراجعة العوائد الفعلية ومقارنتها بخط الأساس{dd_info}: "
+                f"الدخل الفعلي المحصل: {act_inc:,.2f} ريال | الدخل المستهدف بالخطة: {forecast_inc:,.2f} ريال | "
+                f"المصروفات الفعلية: {act_exp:,.2f} ريال | "
                 f"انحراف الأداء عن التوقعات: {var_data['variance_percent'] if var_data['variance_percent'] is not None else 0.0}%."
             )
             activity = await WorkflowEngine.record_activity_from_template(
@@ -4559,9 +4966,21 @@ class WorkflowEngine:
 
         # 7. TASK_INVEST_PORTFOLIO_REVIEW
         if tmpl_id == "TASK_INVEST_PORTFOLIO_REVIEW":
+            rep_row = None
+            if task["opportunity_id"]:
+                rep_row = await conn.fetchrow(
+                    """
+                    SELECT * FROM investment_due_diligence_reports 
+                    WHERE opportunity_id = $1 
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    task["opportunity_id"]
+                )
+
             rec_outcome = (outcome or "HOLD").upper()
             await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
 
+            dd_info = f" (مقارنة بمستهدف خط الأساس: عائد {float(rep_row['net_yield_percent'])}% و NOI {float(rep_row['net_operating_income_noi_sar']):,.2f} ريال)" if rep_row and rep_row['net_operating_income_noi_sar'] else ""
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_INVEST_PORTFOLIO_REVIEWED",
@@ -4571,7 +4990,7 @@ class WorkflowEngine:
                 opportunity_id=task["opportunity_id"],
                 task_id=task_id,
                 outcome=rec_outcome,
-                notes=notes or f"تم إنجاز المراجعة الدورية للمحفظة الاستثمارية. التوصية المعتمدة: ({rec_outcome}).",
+                notes=notes or f"تم إنجاز المراجعة الدورية للمحفظة الاستثمارية{dd_info}. التوصية الاستراتيجية المعتمدة: ({rec_outcome}).",
                 completed_at=now_dt
             )
 
@@ -4664,6 +5083,10 @@ class WorkflowEngine:
             act_template_id = "ACT_INVEST_OBJECTIVES_CONFIRMED"
         elif tmpl_id == "TASK_INVEST_COMPARE_RETURNS":
             act_template_id = "ACT_INVEST_RETURNS_COMPARED"
+        elif tmpl_id == "TASK_INVEST_SCHEDULE_INSPECTION":
+            act_template_id = "ACT_INVEST_INSPECTION_SCHEDULED"
+        elif tmpl_id == "TASK_INVEST_INSPECTION_REPORT":
+            act_template_id = "ACT_INVEST_INSPECTION_COMPLETED"
         elif tmpl_id == "TASK_INVEST_VALIDATE_FINANCIALS":
             act_template_id = "ACT_INVEST_FINANCIALS_VALIDATED"
         elif tmpl_id == "TASK_INVEST_PREPARE_ACQUISITION_OFFER":
@@ -4984,7 +5407,7 @@ class WorkflowEngine:
                     opp_reverted = "QUALIFIED"
 
         # C) Property Matching & Investment Evaluation reversions
-        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_INVEST_CONFIRM_OBJECTIVES", "TASK_INVEST_COMPARE_RETURNS", "TASK_INVEST_VALIDATE_FINANCIALS"):
+        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_INVEST_CONFIRM_OBJECTIVES", "TASK_INVEST_COMPARE_RETURNS", "TASK_INVEST_SCHEDULE_INSPECTION", "TASK_INVEST_INSPECTION_REPORT", "TASK_INVEST_VALIDATE_FINANCIALS"):
             if opp_id:
                 await conn.execute(
                     "UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1",
@@ -5210,11 +5633,14 @@ class WorkflowEngine:
             lead_row = await conn.fetchrow(
                 """
                 SELECT l.*, c.first_name, c.last_name, c.company_name, c.mobile, c.email,
-                       u.full_name as assigned_agent_name, mgr.full_name as manager_name
+                       u.full_name as assigned_agent_name, mgr.full_name as manager_name,
+                       pt.name_en as preferred_property_type_name_en,
+                       pt.name_ar as preferred_property_type_name_ar
                 FROM leads l
                 LEFT JOIN customers c ON l.customer_id = c.customer_id
                 LEFT JOIN users u ON l.assigned_user_id = u.user_id
                 LEFT JOIN users mgr ON u.manager_user_id = mgr.user_id
+                LEFT JOIN property_types pt ON l.preferred_property_type_id = pt.property_type_id
                 WHERE l.lead_id = $1
                 """,
                 lead_id
@@ -5256,11 +5682,14 @@ class WorkflowEngine:
                     lead_row = await conn.fetchrow(
                         """
                         SELECT l.*, c.first_name, c.last_name, c.company_name, c.mobile, c.email,
-                               u.full_name as assigned_agent_name, mgr.full_name as manager_name
+                               u.full_name as assigned_agent_name, mgr.full_name as manager_name,
+                               pt.name_en as preferred_property_type_name_en,
+                               pt.name_ar as preferred_property_type_name_ar
                         FROM leads l
                         LEFT JOIN customers c ON l.customer_id = c.customer_id
                         LEFT JOIN users u ON l.assigned_user_id = u.user_id
                         LEFT JOIN users mgr ON u.manager_user_id = mgr.user_id
+                        LEFT JOIN property_types pt ON l.preferred_property_type_id = pt.property_type_id
                         WHERE l.lead_id = $1
                         """,
                         lead_id
@@ -5559,6 +5988,12 @@ class WorkflowEngine:
                     "agent_user_id": cm["user_id"],
                     "agent_name": cm.get("agent_name") or "Agent",
                     "commission_type": cm.get("commission_type") or "SALES",
+                    "compensation_type": cm.get("compensation_type") or "COMMISSION",
+                    "gross_deal_value": float(cm.get("gross_deal_value") or 0),
+                    "gross_brokerage_amount": float(cm.get("gross_brokerage_amount") or 0),
+                    "gov_fees_deducted": float(cm.get("gov_fees_deducted") or 0),
+                    "net_commission_base": float(cm.get("net_commission_base") or 0),
+                    "calculation_notes": cm.get("calculation_notes") or "",
                     "rate": float(cm["rate"] or 0),
                     "amount": float(cm["amount"] or 0),
                     "status": cm["status"],
@@ -5835,6 +6270,9 @@ class WorkflowEngine:
         lead_status = lead_row.get("status") if lead_row else None
         lead_priority = lead_row.get("priority") if lead_row else None
         lead_created_at = lead_row.get("created_at").isoformat() if (lead_row and lead_row.get("created_at")) else None
+        preferred_property_type_id = lead_row.get("preferred_property_type_id") if lead_row else None
+        preferred_property_type_name_ar = lead_row.get("preferred_property_type_name_ar") if lead_row else None
+        preferred_property_type_name_en = lead_row.get("preferred_property_type_name_en") if lead_row else None
 
         if lead_row:
             cust_name = f"{lead_row['first_name'] or ''} {lead_row['last_name'] or ''}".strip() or lead_row["company_name"] or "Client"
@@ -6145,6 +6583,12 @@ class WorkflowEngine:
                 "agent_name": cm.get("agent_name") or "Agent",
                 "agent_user_id": cm.get("agent_user_id"),
                 "commission_type": cm.get("commission_type") or "SALES",
+                "compensation_type": cm.get("compensation_type") or "COMMISSION",
+                "gross_deal_value": cm.get("gross_deal_value") or 0.0,
+                "gross_brokerage_amount": cm.get("gross_brokerage_amount") or 0.0,
+                "gov_fees_deducted": cm.get("gov_fees_deducted") or 0.0,
+                "net_commission_base": cm.get("net_commission_base") or 0.0,
+                "calculation_notes": cm.get("calculation_notes") or "",
                 "rate": cm.get("rate") or 0.0,
                 "amount": cm["amount"],
                 "status": cm["status"],
@@ -6173,6 +6617,9 @@ class WorkflowEngine:
             "lead_status": lead_status,
             "lead_priority": lead_priority,
             "lead_created_at": lead_created_at,
+            "preferred_property_type_id": preferred_property_type_id,
+            "preferred_property_type_name_ar": preferred_property_type_name_ar,
+            "preferred_property_type_name_en": preferred_property_type_name_en,
             "current_stage": current_stage,
             "is_stalled": is_stalled,
             "stalled_reason_ar": stalled_reason_ar,

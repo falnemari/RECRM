@@ -612,6 +612,49 @@
             const body = overlay.querySelector('.recrm-situation-body');
             if (!body) return;
 
+            // Decision Ribbon: Inquiry Type + Preferred Property Type + Priority
+            const inqType = (d.inquiry_type || '').toUpperCase();
+            let inqBadge = '';
+            if (inqType === 'BUY') {
+                inqBadge = `<span style="background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em; display: inline-flex; align-items: center; gap: 4px;">🏠 ${isAr ? 'شراء' : 'BUY'}</span>`;
+            } else if (inqType === 'RENT') {
+                inqBadge = `<span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em; display: inline-flex; align-items: center; gap: 4px;">🔑 ${isAr ? 'إيجار' : 'RENT'}</span>`;
+            } else if (inqType === 'INVEST') {
+                inqBadge = `<span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em; display: inline-flex; align-items: center; gap: 4px;">💼 ${isAr ? 'استثمار' : 'INVEST'}</span>`;
+            } else if (inqType) {
+                inqBadge = `<span style="background: #f1f5f9; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em;">${inqType}</span>`;
+            }
+
+            const propTypeName = isAr 
+                ? (d.preferred_property_type_name_ar || d.preferred_property_type_name_en || '') 
+                : (d.preferred_property_type_name_en || d.preferred_property_type_name_ar || '');
+            const propTypeBadge = propTypeName 
+                ? `<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.88em;">🏢 ${propTypeName}</span>` 
+                : '';
+
+            const priVal = (d.lead_priority || 'NORMAL').toUpperCase();
+            let priBadge = '';
+            if (priVal === 'URGENT') priBadge = `<span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em;">🔥 ${isAr ? 'عاجل' : 'URGENT'}</span>`;
+            else if (priVal === 'HIGH') priBadge = `<span style="background: #ffedd5; color: #9a3412; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88em;">⚡ ${isAr ? 'مرتفع' : 'HIGH'}</span>`;
+            else if (priVal === 'LOW') priBadge = `<span style="background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.88em;">⬇️ ${isAr ? 'منخفض' : 'LOW'}</span>`;
+            else priBadge = `<span style="background: #f8fafc; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.88em; border: 1px solid #cbd5e1;">⏺️ ${isAr ? 'عادي' : 'NORMAL'}</span>`;
+
+            const decisionRibbonHtml = (inqBadge || propTypeBadge) ? `
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.78em; color: #64748b; font-weight: 700; text-transform: uppercase;">
+                            ${isAr ? '🎯 محددات القرار والطلب:' : '🎯 Decision Profile:'}
+                        </span>
+                        ${inqBadge}
+                        ${propTypeBadge}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.78em; color: #64748b; font-weight: 700;">${isAr ? 'الأولوية:' : 'Priority:'}</span>
+                        ${priBadge}
+                    </div>
+                </div>
+            ` : '';
+
             // Stalled banner
             let stalledBannerHtml = '';
             if (d.is_stalled) {
@@ -1200,6 +1243,7 @@
             }
 
             body.innerHTML = `
+                ${decisionRibbonHtml}
                 ${stalledBannerHtml}
                 ${infoCardsHtml}
                 ${metricsHtml}

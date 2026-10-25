@@ -576,6 +576,16 @@ async def update_lead(
         update_query = f"UPDATE leads SET {', '.join(updates)} WHERE lead_id = ${p_idx}"
         await conn.execute(update_query, *params)
 
+        # Sync priority to all active tasks associated with this lead and its opportunities
+        if payload.priority is not None:
+            new_pri = payload.priority.upper()
+            await conn.execute("""
+                UPDATE tasks
+                SET priority = $1
+                WHERE (lead_id = $2 OR opportunity_id IN (SELECT opportunity_id FROM opportunities WHERE lead_id = $2))
+                  AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            """, new_pri, lead_id)
+
 
         # Trigger workflow lead assignment handler ONLY IF assigned_user_id actually changed
         if payload.assigned_user_id and payload.assigned_user_id != old_assigned_user_id:

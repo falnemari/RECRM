@@ -62,6 +62,9 @@ async def run_migration():
             ORDER BY table_name, column_name;
         """)
         print(f"Found {len(uuid_cols)} UUID columns to convert.")
+        if len(uuid_cols) == 0:
+            print("No UUID columns found. ID migration has already been applied. Skipping.")
+            return
 
         # 4. Drop all foreign key constraints
         print("\n--- Dropping Foreign Key Constraints ---")

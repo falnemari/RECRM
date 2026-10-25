@@ -421,6 +421,12 @@ async def list_admin_users(
             u.status,
             u.manager_user_id,
             mgr.full_name AS manager_name,
+            u.compensation_type,
+            CAST(u.base_salary AS FLOAT) AS base_salary,
+            CAST(u.sales_commission_rate AS FLOAT) AS sales_commission_rate,
+            CAST(u.rent_commission_rate AS FLOAT) AS rent_commission_rate,
+            CAST(u.sales_fixed_cut AS FLOAT) AS sales_fixed_cut,
+            CAST(u.rent_fixed_cut AS FLOAT) AS rent_fixed_cut,
             u.created_at,
             u.updated_at
         FROM users u
@@ -482,6 +488,12 @@ async def get_admin_user(user_id: str, conn: asyncpg.Connection = Depends(get_db
             u.status,
             u.manager_user_id,
             mgr.full_name AS manager_name,
+            u.compensation_type,
+            CAST(u.base_salary AS FLOAT) AS base_salary,
+            CAST(u.sales_commission_rate AS FLOAT) AS sales_commission_rate,
+            CAST(u.rent_commission_rate AS FLOAT) AS rent_commission_rate,
+            CAST(u.sales_fixed_cut AS FLOAT) AS sales_fixed_cut,
+            CAST(u.rent_fixed_cut AS FLOAT) AS rent_fixed_cut,
             u.created_at,
             u.updated_at
         FROM users u
@@ -537,10 +549,15 @@ async def create_admin_user(
     async with conn.transaction():
         await conn.execute("""
             INSERT INTO users (
-                user_id, organization_id, branch_id, employee_no, full_name, email, mobile, status, manager_user_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                user_id, organization_id, branch_id, employee_no, full_name, email, mobile, status, manager_user_id,
+                compensation_type, base_salary, sales_commission_rate, rent_commission_rate, sales_fixed_cut, rent_fixed_cut
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         """, user_id, org_id, payload.branch_id, payload.employee_no, payload.full_name.strip(),
-             payload.email.strip(), payload.mobile, st, payload.manager_user_id)
+             payload.email.strip(), payload.mobile, st, payload.manager_user_id,
+             (payload.compensation_type or "COMMISSION").upper(), payload.base_salary or 0.0,
+             payload.sales_commission_rate if payload.sales_commission_rate is not None else 25.0,
+             payload.rent_commission_rate if payload.rent_commission_rate is not None else 25.0,
+             payload.sales_fixed_cut or 0.0, payload.rent_fixed_cut or 0.0)
 
         if payload.role_ids:
             for r_id in payload.role_ids:
@@ -580,7 +597,13 @@ async def update_admin_user(
         "employee_no": payload.employee_no,
         "branch_id": payload.branch_id,
         "manager_user_id": payload.manager_user_id,
-        "status": payload.status.upper() if payload.status else None
+        "status": payload.status.upper() if payload.status else None,
+        "compensation_type": payload.compensation_type.upper() if payload.compensation_type else None,
+        "base_salary": payload.base_salary,
+        "sales_commission_rate": payload.sales_commission_rate,
+        "rent_commission_rate": payload.rent_commission_rate,
+        "sales_fixed_cut": payload.sales_fixed_cut,
+        "rent_fixed_cut": payload.rent_fixed_cut
     }
 
     payload_dict = payload.model_dump(exclude_unset=True)

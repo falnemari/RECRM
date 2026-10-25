@@ -28,6 +28,9 @@ class TaskOut(BaseModel):
     lead_id: Optional[str] = None
     opportunity_id: Optional[str] = None
     inquiry_type: Optional[str] = None
+    preferred_property_type_id: Optional[str] = None
+    preferred_property_type_name: Optional[str] = None
+    preferred_property_type_name_ar: Optional[str] = None
     is_overdue: bool = False
 
 class TaskCompleteIn(BaseModel):
@@ -63,6 +66,7 @@ class TaskCompleteIn(BaseModel):
     risk_tolerance: Optional[str] = None
     investment_strategy: Optional[str] = None
     purchase_price: Optional[float] = None
+    gross_annual_rent: Optional[float] = None
     cash_invested: Optional[float] = None
     annual_pre_tax_cash_flow: Optional[float] = None
     annual_operating_expenses: Optional[float] = None
@@ -71,6 +75,31 @@ class TaskCompleteIn(BaseModel):
     monthly_rent_forecast: Optional[float] = None
     actual_rental_income: Optional[float] = None
     actual_expenses: Optional[float] = None
+    # Investment Due Diligence Inspection fields (Technical & Commercial)
+    structural_condition: Optional[str] = None
+    building_age_years: Optional[int] = None
+    saudi_building_code_compliant: Optional[bool] = None
+    hvac_status: Optional[str] = None
+    elevators_status: Optional[str] = None
+    plumbing_network_status: Optional[str] = None
+    electrical_network_status: Optional[str] = None
+    roofing_and_insulation_status: Optional[str] = None
+    fire_safety_compliance: Optional[str] = None
+    estimated_capex_sar: Optional[float] = None
+    technical_notes: Optional[str] = None
+    location_traffic_flow: Optional[str] = None
+    access_and_egress_quality: Optional[str] = None
+    parking_availability: Optional[str] = None
+    actual_occupancy_rate: Optional[float] = None
+    occupied_units_count: Optional[int] = None
+    vacant_units_count: Optional[int] = None
+    rent_roll_verified: Optional[bool] = None
+    property_manager_interview_notes: Optional[str] = None
+    commercial_viability_score: Optional[int] = None
+    commercial_notes: Optional[str] = None
+    recommendation: Optional[str] = None
+    suggested_price_adjustment_sar: Optional[float] = None
+    final_verdict_summary: Optional[str] = None
 
 class TaskReopenIn(BaseModel):
     reason: Optional[str] = None
@@ -108,6 +137,11 @@ class ActivityOut(BaseModel):
     customer_name: Optional[str] = None
     lead_id: Optional[str] = None
     opportunity_id: Optional[str] = None
+    inquiry_type: Optional[str] = None
+    preferred_property_type_id: Optional[str] = None
+    preferred_property_type_name: Optional[str] = None
+    preferred_property_type_name_ar: Optional[str] = None
+    priority: Optional[str] = "NORMAL"
     scheduled_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     status: str

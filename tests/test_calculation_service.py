@@ -295,6 +295,74 @@ class TestCalculationService(unittest.TestCase):
         self.assertEqual(data["tax_amount"], 2400.0)
         self.assertEqual(data["commission_gross"], 18400.0)
 
+    def test_estimate_technical_capex_and_adjustment(self):
+        # Scenario 1: Clean/Excellent property, 5 years old, compliant
+        res1 = CalculationService.estimate_technical_capex_and_adjustment(
+            purchase_price=10_000_000.0,
+            building_age_years=5,
+            structural_condition="EXCELLENT",
+            saudi_building_code_compliant=True,
+            hvac_status="OPERATIONAL",
+            elevators_status="OPERATIONAL",
+            roofing_and_insulation_status="GOOD"
+        )
+        self.assertEqual(res1["estimated_capex_sar"], 0.0)
+        self.assertEqual(res1["suggested_price_adjustment_sar"], 0.0)
+        self.assertEqual(res1["adjusted_target_purchase_price_sar"], 10_000_000.0)
+
+        # Scenario 2: Severe defects (CRITICAL structure, SBC non-compliant, faulty HVAC, inoperative elevator, leak, age 18)
+        res2 = CalculationService.estimate_technical_capex_and_adjustment(
+            purchase_price=10_000_000.0,
+            building_age_years=18,
+            structural_condition="CRITICAL",
+            saudi_building_code_compliant=False,
+            hvac_status="FAULTY",
+            elevators_status="INOPERATIVE",
+            roofing_and_insulation_status="WATER_LEAKAGE"
+        )
+        # Structural: 8% of 10M = 800,000
+        # SBC: max(50k, 1.5% of 10M = 150k) = 150,000
+        # HVAC: max(80k, 3.5% of 10M = 350k) = 350,000
+        # Elevators: max(100k, 2% of 10M = 200k) = 200,000
+        # Roofing: max(45k, 1.2% of 10M = 120k) = 120,000
+        # Age: 10M * ((18-15)*0.003) = 10M * 0.009 = 90,000
+        # Total = 800k + 150k + 350k + 200k + 120k + 90k = 1,710,000 SAR
+        self.assertEqual(res2["estimated_capex_sar"], 1_710_000.0)
+        self.assertEqual(res2["suggested_price_adjustment_sar"], 1_710_000.0)
+        self.assertEqual(res2["adjusted_target_purchase_price_sar"], 8_290_000.0)
+
+        # Scenario 3: Solvency Stress Test (lead-114 scenario: Price 12M, Max Budget 13M)
+        # Moderate defects: FAIR structure (2.5% = 300k), age 10 (2*0.15% = 0.3% = 36k) -> CapEx = 336k
+        res3 = CalculationService.estimate_technical_capex_and_adjustment(
+            purchase_price=12_000_000.0,
+            building_age_years=10,
+            structural_condition="FAIR",
+            saudi_building_code_compliant=True,
+            hvac_status="OPERATIONAL",
+            elevators_status="OPERATIONAL",
+            roofing_and_insulation_status="GOOD",
+            max_budget=13_000_000.0
+        )
+        self.assertEqual(res3["estimated_capex_sar"], 336_000.0)
+        self.assertEqual(res3["worst_case_total_cost_sar"], 12_336_000.0)
+        solv = res3["solvency_analysis"]
+        self.assertIsNotNone(solv)
+        self.assertEqual(solv["solvency_status"], "SOLVENT")
+        self.assertEqual(solv["capital_buffer_sar"], 664_000.0)
+        self.assertEqual(solv["negotiation_posture"], "SAFE_ABSORPTION")
+
+        # Scenario 4: Solvency Stress Test with Deficit (Max Budget 12M < Worst Case 12.336M)
+        res4 = CalculationService.estimate_technical_capex_and_adjustment(
+            purchase_price=12_000_000.0,
+            building_age_years=10,
+            structural_condition="FAIR",
+            max_budget=12_000_000.0
+        )
+        solv4 = res4["solvency_analysis"]
+        self.assertEqual(solv4["solvency_status"], "DEFICIT")
+        self.assertEqual(solv4["capital_buffer_sar"], -336_000.0)
+        self.assertEqual(solv4["negotiation_posture"], "MANDATORY_DISCOUNT_CONTINGENCY")
+
 
 if __name__ == "__main__":
     unittest.main()

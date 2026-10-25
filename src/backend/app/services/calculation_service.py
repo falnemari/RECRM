@@ -339,6 +339,132 @@ class CalculationService:
         }
 
     # =========================================================================
+    # 3.D. Technical Due Diligence & CapEx Engineering Estimator
+    # =========================================================================
+
+    @staticmethod
+    def estimate_technical_capex_and_adjustment(
+        purchase_price: float,
+        building_age_years: int = 5,
+        structural_condition: str = "GOOD",
+        saudi_building_code_compliant: bool = True,
+        hvac_status: str = "OPERATIONAL",
+        elevators_status: str = "OPERATIONAL",
+        roofing_and_insulation_status: str = "GOOD",
+        max_budget: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Estimates future Capital Expenditures (CapEx) and suggested purchase price
+        discount based on structural, mechanical, envelope, and regulatory findings.
+
+        Formulas:
+        1. Structural remediation:
+           - EXCELLENT: 0.0%
+           - GOOD: 0.5%
+           - FAIR: 2.5%
+           - CRITICAL: 8.0%
+        2. Saudi Building Code (SBC) retrofitting:
+           - Compliant: 0
+           - Non-compliant: max(50,000, 1.5% * purchase_price)
+        3. HVAC overhaul/replacement:
+           - OPERATIONAL: 0
+           - MAINTENANCE_REQUIRED: max(20,000, 1.0% * purchase_price)
+           - FAULTY: max(80,000, 3.5% * purchase_price)
+        4. Elevator refurbishment:
+           - OPERATIONAL: 0
+           - MAINTENANCE_REQUIRED: max(25,000, 0.75% * purchase_price)
+           - INOPERATIVE: max(100,000, 2.0% * purchase_price)
+        5. Roofing and insulation waterproofing:
+           - GOOD: 0
+           - NEEDS_REPAIR: max(15,000, 0.5% * purchase_price)
+           - WATER_LEAKAGE: max(45,000, 1.2% * purchase_price)
+        6. Age-based capital replacement reserve:
+           - Age > 15: purchase_price * ((age - 15) * 0.003)
+           - Age > 8: purchase_price * ((age - 8) * 0.0015)
+           - Otherwise: 0
+        """
+        base = max(0.0, float(purchase_price))
+        breakdown = {}
+
+        # 1. Structural
+        s_norm = (structural_condition or "GOOD").upper()
+        s_rates = {"EXCELLENT": 0.0, "GOOD": 0.005, "FAIR": 0.025, "CRITICAL": 0.08}
+        breakdown["structural_sar"] = round(base * s_rates.get(s_norm, 0.005), 2)
+
+        # 2. SBC Compliance
+        sbc = bool(saudi_building_code_compliant)
+        breakdown["sbc_retrofitting_sar"] = 0.0 if sbc else round(max(50000.0, base * 0.015), 2)
+
+        # 3. HVAC
+        h_norm = (hvac_status or "OPERATIONAL").upper()
+        if h_norm == "FAULTY":
+            breakdown["hvac_sar"] = round(max(80000.0, base * 0.035), 2)
+        elif h_norm == "MAINTENANCE_REQUIRED":
+            breakdown["hvac_sar"] = round(max(20000.0, base * 0.010), 2)
+        else:
+            breakdown["hvac_sar"] = 0.0
+
+        # 4. Elevators
+        e_norm = (elevators_status or "OPERATIONAL").upper()
+        if e_norm == "INOPERATIVE":
+            breakdown["elevators_sar"] = round(max(100000.0, base * 0.020), 2)
+        elif e_norm == "MAINTENANCE_REQUIRED":
+            breakdown["elevators_sar"] = round(max(25000.0, base * 0.0075), 2)
+        else:
+            breakdown["elevators_sar"] = 0.0
+
+        # 5. Roofing & Insulation
+        r_norm = (roofing_and_insulation_status or "GOOD").upper()
+        if r_norm == "WATER_LEAKAGE":
+            breakdown["roofing_insulation_sar"] = round(max(45000.0, base * 0.012), 2)
+        elif r_norm == "NEEDS_REPAIR":
+            breakdown["roofing_insulation_sar"] = round(max(15000.0, base * 0.005), 2)
+        else:
+            breakdown["roofing_insulation_sar"] = 0.0
+
+        # 6. Building Age Reserve
+        age = max(0, int(building_age_years))
+        if age > 15:
+            breakdown["age_reserve_sar"] = round(base * ((age - 15) * 0.003), 2)
+        elif age > 8:
+            breakdown["age_reserve_sar"] = round(base * ((age - 8) * 0.0015), 2)
+        else:
+            breakdown["age_reserve_sar"] = 0.0
+
+        total_capex = round(sum(breakdown.values()), 2)
+        suggested_price_adjustment = total_capex
+        adjusted_target_purchase_price = max(0.0, round(base - suggested_price_adjustment, 2))
+        worst_case_total_cost = round(base + total_capex, 2)
+
+        solvency_analysis = None
+        if max_budget is not None and max_budget > 0:
+            mb = float(max_budget)
+            buffer = round(mb - worst_case_total_cost, 2)
+            is_solvent = buffer >= 0
+            solvency_analysis = {
+                "max_budget_sar": round(mb, 2),
+                "worst_case_total_cost_sar": worst_case_total_cost,
+                "capital_buffer_sar": buffer,
+                "solvency_status": "SOLVENT" if is_solvent else "DEFICIT",
+                "negotiation_posture": "SAFE_ABSORPTION" if is_solvent else "MANDATORY_DISCOUNT_CONTINGENCY",
+                "assessment_ar": (
+                    f"ملاءة مكتملة: المستثمر قادر على استيعاب رفض البائع للتخفيض وإتمام الصفقة مع بقاء احتياطي قدره {buffer:,.2f} ر.س."
+                    if is_solvent else
+                    f"مخاطرة سيولة: تتجاوز التكلفة سقف ميزانية المستثمر بعجز قدره {abs(buffer):,.2f} ر.س — قبول التعديل السعري شرط إلزامي للاستمرار."
+                )
+            }
+
+        return {
+            "purchase_price": round(base, 2),
+            "estimated_capex_sar": total_capex,
+            "suggested_price_adjustment_sar": suggested_price_adjustment,
+            "adjusted_target_purchase_price_sar": adjusted_target_purchase_price,
+            "worst_case_total_cost_sar": worst_case_total_cost,
+            "solvency_analysis": solvency_analysis,
+            "breakdown": breakdown
+        }
+
+    # =========================================================================
     # 3.E. Financial & Commission Controls
     # =========================================================================
 
@@ -404,6 +530,110 @@ class CalculationService:
             "commission_net": round(base_comm, 2),
             "tax_amount": round(tax_amount, 2),
             "commission_gross": round(total_commission, 2),
+        }
+
+    @staticmethod
+    def calculate_agent_commission(
+        transaction_type: str,
+        deal_value: float,
+        brokerage_rate_percent: float = 2.5,
+        brokerage_flat_amount: Optional[float] = None,
+        agent_profile: Optional[Dict[str, Any]] = None,
+        vat_rate_percent: float = 15.0,
+    ) -> Dict[str, Any]:
+        """
+        Calculates agent commission ensuring Saudi statutory & government fees 
+        (RETT 5%, Ejar fee, 15% VAT) are 100% excluded from the commissionable base.
+
+        Supports:
+          1. SALARY: Salaried employee (exempt from deal commission, 0 SAR payout).
+          2. COMMISSION: Percentage split of NET brokerage fee (ex: 25% or 30%).
+          3. FIXED_CUT: Fixed lump-sum cut per deal (ex: 2,500 SAR per sale).
+          4. SALARY_PLUS_COMMISSION: Base salary + lower incentive commission cut.
+        """
+        t_type = (transaction_type or "SALE").upper()
+        deal_val = max(0.0, float(deal_value or 0.0))
+
+        # 1. Gross Office Brokerage (سعي المكتب قبل الضريبة)
+        if brokerage_flat_amount is not None and brokerage_flat_amount > 0:
+            gross_brokerage = float(brokerage_flat_amount)
+        else:
+            gross_brokerage = round(deal_val * (brokerage_rate_percent / 100.0), 2)
+
+        # 2. Government Fees to Exclude
+        # A) 15% VAT on Brokerage (ضريبة القيمة المضافة)
+        vat_amount = round(gross_brokerage * (vat_rate_percent / 100.0), 2)
+
+        # B) Statutory Pass-Through Taxes (for reporting/auditing)
+        # RETT 5% on sales or Ejar 125/200 on rentals are direct government collections
+        rett_or_ejar_fee = round(deal_val * 0.05, 2) if t_type == "SALE" else 125.0
+
+        total_gov_fees_deducted = vat_amount  # VAT on brokerage is directly isolated from brokerage
+
+        # 3. Net Commissionable Base (صافي سعي المكتب الفعلي)
+        net_commission_base = max(0.0, round(gross_brokerage, 2))
+
+        # 4. Resolve Agent Profile
+        profile = agent_profile or {}
+        comp_type = (profile.get("compensation_type") or "COMMISSION").upper()
+
+        sales_comm_rate = float(profile.get("sales_commission_rate") if profile.get("sales_commission_rate") is not None else 25.0)
+        rent_comm_rate = float(profile.get("rent_commission_rate") if profile.get("rent_commission_rate") is not None else 25.0)
+        sales_cut = float(profile.get("sales_fixed_cut") or 0.0)
+        rent_cut = float(profile.get("rent_fixed_cut") or 0.0)
+
+        # 5. Apply Agent Compensation Formula
+        if comp_type == "SALARY":
+            # Salaried Employee: No transaction commission
+            agent_amount = 0.0
+            rate = 0.0
+            status = "EXEMPT_SALARY"
+            notes = (
+                f"الوسيط موظف براتب شهري ثابت ({float(profile.get('base_salary') or 0):,.2f} ر.س) — "
+                f"معفى من عمولة الصفقات الفردية. صافي سعي المكتب المحقق: {net_commission_base:,.2f} ر.س."
+            )
+        elif comp_type == "FIXED_CUT":
+            # Flat fee / Cutting amount per closed deal
+            target_cut = sales_cut if t_type == "SALE" else rent_cut
+            # Cap at net brokerage to prevent office losses
+            agent_amount = min(target_cut, net_commission_base)
+            rate = round((agent_amount / net_commission_base * 100.0), 2) if net_commission_base > 0 else 0.0
+            status = "PENDING"
+            notes = (
+                f"مبلغ مقطوع ثابت ({target_cut:,.2f} ر.س) عن صفقة {t_type} "
+                f"من صافي سعي المكتب ({net_commission_base:,.2f} ر.س خالي من ضريبة الـ 15% والرسوم الحكومية)."
+            )
+        elif comp_type == "SALARY_PLUS_COMMISSION":
+            # Hybrid: Salary + Incentive Commission
+            rate = sales_comm_rate if t_type == "SALE" else rent_comm_rate
+            agent_amount = round(net_commission_base * (rate / 100.0), 2)
+            status = "PENDING"
+            notes = (
+                f"عمولة تحفيزية إضافية بنسبة {rate:.1f}% من صافي سعي المكتب ({net_commission_base:,.2f} ر.س) "
+                f"بالإضافة للراتب الأساسي ({float(profile.get('base_salary') or 0):,.2f} ر.س)."
+            )
+        else:  # COMMISSION
+            # Standard Commission Split on Net Brokerage
+            rate = sales_comm_rate if t_type == "SALE" else rent_comm_rate
+            agent_amount = round(net_commission_base * (rate / 100.0), 2)
+            status = "PENDING"
+            notes = (
+                f"نسبة عمولة {rate:.1f}% من صافي سعي المكتب ({net_commission_base:,.2f} ر.س) "
+                f"بعد استبعاد ضريبة القيمة المضافة والرسوم الحكومية."
+            )
+
+        return {
+            "transaction_type": t_type,
+            "compensation_type": comp_type,
+            "gross_deal_value": round(deal_val, 2),
+            "gross_brokerage_amount": round(gross_brokerage, 2),
+            "gov_fees_deducted": round(total_gov_fees_deducted, 2),
+            "statutory_pass_through_tax": round(rett_or_ejar_fee, 2),
+            "net_commission_base": round(net_commission_base, 2),
+            "rate": round(rate, 2),
+            "amount": round(agent_amount, 2),
+            "status": status,
+            "calculation_notes": notes
         }
 
     # =========================================================================

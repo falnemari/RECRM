@@ -219,6 +219,9 @@ async def list_tasks(
             t.lead_id,
             t.opportunity_id,
             COALESCE(l.inquiry_type, lo.inquiry_type) AS inquiry_type,
+            COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) AS preferred_property_type_id,
+            pt.name_en AS preferred_property_type_name,
+            pt.name_ar AS preferred_property_type_name_ar,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
@@ -226,6 +229,7 @@ async def list_tasks(
         LEFT JOIN leads l ON t.lead_id = l.lead_id
         LEFT JOIN opportunities o ON t.opportunity_id = o.opportunity_id
         LEFT JOIN leads lo ON o.lead_id = lo.lead_id
+        LEFT JOIN property_types pt ON COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) = pt.property_type_id
         WHERE {where_clause}
         ORDER BY {order_clause}
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -244,6 +248,14 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
     task_id = await get_next_id(conn, "tasks", "task")
     pri = (payload.priority or "NORMAL").upper()
     st = (payload.status or "OPEN").upper()
+
+    eff_lead = payload.lead_id
+    if not eff_lead and payload.opportunity_id:
+        eff_lead = await conn.fetchval("SELECT lead_id FROM opportunities WHERE opportunity_id = $1", payload.opportunity_id)
+    if eff_lead:
+        lead_pri = await conn.fetchval("SELECT priority FROM leads WHERE lead_id = $1", eff_lead)
+        if lead_pri and (not payload.priority or payload.priority.upper() == "NORMAL"):
+            pri = lead_pri.upper()
 
     user_name = None
     if payload.assigned_user_id:
@@ -314,6 +326,9 @@ async def get_task(
             t.lead_id,
             t.opportunity_id,
             COALESCE(l.inquiry_type, lo.inquiry_type) AS inquiry_type,
+            COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) AS preferred_property_type_id,
+            pt.name_en AS preferred_property_type_name,
+            pt.name_ar AS preferred_property_type_name_ar,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
@@ -321,6 +336,7 @@ async def get_task(
         LEFT JOIN leads l ON t.lead_id = l.lead_id
         LEFT JOIN opportunities o ON t.opportunity_id = o.opportunity_id
         LEFT JOIN leads lo ON o.lead_id = lo.lead_id
+        LEFT JOIN property_types pt ON COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) = pt.property_type_id
         WHERE t.task_id = $1
         """,
         task_id
@@ -421,6 +437,7 @@ async def complete_task(
             "risk_tolerance": payload.risk_tolerance,
             "investment_strategy": payload.investment_strategy,
             "purchase_price": payload.purchase_price,
+            "gross_annual_rent": payload.gross_annual_rent,
             "cash_invested": payload.cash_invested,
             "annual_pre_tax_cash_flow": payload.annual_pre_tax_cash_flow,
             "annual_operating_expenses": payload.annual_operating_expenses,
@@ -428,7 +445,32 @@ async def complete_task(
             "acquisition_costs": payload.acquisition_costs,
             "monthly_rent_forecast": payload.monthly_rent_forecast,
             "actual_rental_income": payload.actual_rental_income,
-            "actual_expenses": payload.actual_expenses
+            "actual_expenses": payload.actual_expenses,
+            # Investment Due Diligence Inspection fields
+            "structural_condition": payload.structural_condition,
+            "building_age_years": payload.building_age_years,
+            "saudi_building_code_compliant": payload.saudi_building_code_compliant,
+            "hvac_status": payload.hvac_status,
+            "elevators_status": payload.elevators_status,
+            "plumbing_network_status": payload.plumbing_network_status,
+            "electrical_network_status": payload.electrical_network_status,
+            "roofing_and_insulation_status": payload.roofing_and_insulation_status,
+            "fire_safety_compliance": payload.fire_safety_compliance,
+            "estimated_capex_sar": payload.estimated_capex_sar,
+            "technical_notes": payload.technical_notes,
+            "location_traffic_flow": payload.location_traffic_flow,
+            "access_and_egress_quality": payload.access_and_egress_quality,
+            "parking_availability": payload.parking_availability,
+            "actual_occupancy_rate": payload.actual_occupancy_rate,
+            "occupied_units_count": payload.occupied_units_count,
+            "vacant_units_count": payload.vacant_units_count,
+            "rent_roll_verified": payload.rent_roll_verified,
+            "property_manager_interview_notes": payload.property_manager_interview_notes,
+            "commercial_viability_score": payload.commercial_viability_score,
+            "commercial_notes": payload.commercial_notes,
+            "recommendation": payload.recommendation,
+            "suggested_price_adjustment_sar": payload.suggested_price_adjustment_sar,
+            "final_verdict_summary": payload.final_verdict_summary
         }
 
     async with conn.transaction():
@@ -558,8 +600,10 @@ async def list_activities(
     query = f"""
         SELECT 
             a.activity_id,
+            a.template_id,
             a.subject,
             a.description,
+            a.outcome,
             a.activity_type_id,
             at.code AS activity_type_code,
             at.name AS activity_type_name,
@@ -569,6 +613,11 @@ async def list_activities(
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
             a.lead_id,
             a.opportunity_id,
+            COALESCE(l.inquiry_type, lo.inquiry_type) AS inquiry_type,
+            COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) AS preferred_property_type_id,
+            pt.name_en AS preferred_property_type_name,
+            pt.name_ar AS preferred_property_type_name_ar,
+            COALESCE(l.priority, lo.priority, 'NORMAL') AS priority,
             a.scheduled_at,
             a.completed_at,
             a.status
@@ -576,6 +625,10 @@ async def list_activities(
         LEFT JOIN activity_types at ON a.activity_type_id = at.activity_type_id
         LEFT JOIN users u ON a.user_id = u.user_id
         LEFT JOIN customers c ON a.customer_id = c.customer_id
+        LEFT JOIN leads l ON a.lead_id = l.lead_id
+        LEFT JOIN opportunities o ON a.opportunity_id = o.opportunity_id
+        LEFT JOIN leads lo ON o.lead_id = lo.lead_id
+        LEFT JOIN property_types pt ON COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) = pt.property_type_id
         WHERE {where_clause}
         ORDER BY COALESCE(a.completed_at, a.scheduled_at, a.created_at) DESC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}

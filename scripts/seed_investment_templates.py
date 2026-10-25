@@ -154,24 +154,26 @@ TEMPLATES = [
 async def seed_templates():
     conn = await asyncpg.connect(settings.asyncpg_dsn)
     try:
+        from scripts.split_completion_criteria import CRITERIA_DATA
         for t in TEMPLATES:
+            tid = t[0]
+            crit_ar, crit_en = CRITERIA_DATA.get(tid, (t[6], t[6]))
             await conn.execute(
                 """
                 INSERT INTO workflow_templates (
                     template_id, template_type, standard_title_ar, standard_title_en,
-                    standard_subject_ar, standard_subject_en, owner_role, default_sla_minutes,
-                    completion_criteria, escalation_role, escalation_sla_minutes, created_at
-                ) VALUES ($1, $2, $3, $4, $3, $4, $5, $6, $7, 'BRANCH_MANAGER', 120, NOW())
+                    owner_role, default_sla_minutes,
+                    completion_criteria_ar, completion_criteria_en, escalation_role, escalation_sla_minutes, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'BRANCH_MANAGER', 120, NOW())
                 ON CONFLICT (template_id) DO UPDATE SET
                     standard_title_ar = EXCLUDED.standard_title_ar,
                     standard_title_en = EXCLUDED.standard_title_en,
-                    standard_subject_ar = EXCLUDED.standard_subject_ar,
-                    standard_subject_en = EXCLUDED.standard_subject_en,
                     owner_role = EXCLUDED.owner_role,
                     default_sla_minutes = EXCLUDED.default_sla_minutes,
-                    completion_criteria = EXCLUDED.completion_criteria
+                    completion_criteria_ar = EXCLUDED.completion_criteria_ar,
+                    completion_criteria_en = EXCLUDED.completion_criteria_en
                 """,
-                t[0], t[1], t[2], t[3], t[4], t[5], t[6]
+                t[0], t[1], t[2], t[3], t[4], t[5], crit_ar, crit_en
             )
         count = await conn.fetchval("SELECT count(*) FROM workflow_templates WHERE template_id LIKE '%INVEST%'")
         print(f"Successfully seeded {count} investment templates.")

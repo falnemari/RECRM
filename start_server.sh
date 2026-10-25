@@ -15,13 +15,21 @@ DASHBOARD_URL="${SERVER_URL}/ui/index.html"
 LOG_FILE="${SCRIPT_DIR}/server.log"
 PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python"
 
-# 1. Ensure Python symlink is bound to python3.12 (matching site-packages)
-if [ -f "/usr/bin/python3.12" ]; then
-    CURRENT_PY="$(readlink -f "$PYTHON_BIN" 2>/dev/null || true)"
-    if [ "$CURRENT_PY" != "/usr/bin/python3.12" ]; then
-        ln -sf /usr/bin/python3.12 "${SCRIPT_DIR}/.venv/bin/python" 2>/dev/null || true
-        ln -sf /usr/bin/python3.12 "${SCRIPT_DIR}/.venv/bin/python3" 2>/dev/null || true
-    fi
+# 1. Locate and validate Python Virtual Environment
+if [ ! -x "$PYTHON_BIN" ]; then
+    echo "=========================================================="
+    echo "  [✗] Error: Python environment not found or broken at:"
+    echo "      $PYTHON_BIN"
+    echo "=========================================================="
+    echo "  It looks like this project was transferred to a new laptop."
+    echo "  Please run the one-time setup script to configure your environment:"
+    echo ""
+    echo "      sudo bash setup_new_laptop.sh"
+    echo ""
+    echo "  This will install prerequisites, configure PostgreSQL,"
+    echo "  and set up a fresh Python virtual environment."
+    echo "=========================================================="
+    exit 1
 fi
 
 # Function to check if server is currently running
@@ -55,6 +63,13 @@ check_status() {
         echo "  [✓] PostgreSQL Database : RUNNING (port 5432)"
     else
         echo "  [✗] PostgreSQL Database : NOT RUNNING (run: sudo systemctl start postgresql)"
+    fi
+
+    if [ -x "$PYTHON_BIN" ]; then
+        PY_VER=$("$PYTHON_BIN" --version 2>&1 || echo "active")
+        echo "  [✓] Python Environment   : READY ($PY_VER)"
+    else
+        echo "  [✗] Python Environment   : NOT READY (run: sudo bash setup_new_laptop.sh)"
     fi
 
     if is_server_running; then

@@ -236,7 +236,9 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
             opp_id
         )
         self.assertIsNotNone(act)
-        self.assertIn("رأس المال المستهدف", act["description"])
+        self.assertIn("رأس المال المستهدف: 1,200,000.00", act["description"])
+        self.assertIn("العائد المستهدف: 8.0%", act["description"])
+        self.assertIn("الأفق الزمني: 5 سنوات", act["description"])
 
         # Verify candidate units added to opportunity_units
         u_count = await self.conn.fetchval(
@@ -325,13 +327,13 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(is_prim)
 
-        # Verify next task spawned is TASK_INVEST_VALIDATE_FINANCIALS
-        val_task = await self.conn.fetchrow(
-            "SELECT template_id, status FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_INVEST_VALIDATE_FINANCIALS'",
+        # Verify next task spawned is TASK_INVEST_SCHEDULE_INSPECTION (Due Diligence Site Inspection)
+        sched_task = await self.conn.fetchrow(
+            "SELECT template_id, status FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_INVEST_SCHEDULE_INSPECTION'",
             opp_id
         )
-        self.assertIsNotNone(val_task)
-        self.assertEqual(val_task["status"], "PENDING")
+        self.assertIsNotNone(sched_task)
+        self.assertEqual(sched_task["status"], "PENDING")
 
         # Cleanup
         await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)

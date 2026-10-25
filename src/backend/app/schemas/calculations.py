@@ -48,6 +48,20 @@ class CommissionCalculationIn(BaseModel):
     tax_rate_percent: float = 0.0
 
 
+class AgentCommissionCalculationIn(BaseModel):
+    transaction_type: str = "SALE"  # "SALE" or "RENT"
+    deal_value: float
+    brokerage_rate_percent: float = 2.5
+    brokerage_flat_amount: Optional[float] = None
+    compensation_type: str = "COMMISSION"  # "SALARY", "COMMISSION", "FIXED_CUT", "SALARY_PLUS_COMMISSION"
+    sales_commission_rate: Optional[float] = 25.0
+    rent_commission_rate: Optional[float] = 25.0
+    sales_fixed_cut: Optional[float] = 0.0
+    rent_fixed_cut: Optional[float] = 0.0
+    base_salary: Optional[float] = 0.0
+    vat_rate_percent: float = 15.0
+
+
 class BalanceCalculationIn(BaseModel):
     amount_due: float
     amount_paid: float

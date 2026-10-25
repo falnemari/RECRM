@@ -90,6 +90,12 @@ class UserOut(BaseModel):
     manager_name: Optional[str] = None
     effective_scope: str = "GLOBAL"
     roles: List[UserRoleBrief] = []
+    compensation_type: Optional[str] = "COMMISSION"
+    base_salary: Optional[float] = 0.0
+    sales_commission_rate: Optional[float] = 25.0
+    rent_commission_rate: Optional[float] = 25.0
+    sales_fixed_cut: Optional[float] = 0.0
+    rent_fixed_cut: Optional[float] = 0.0
     created_at: datetime
     updated_at: datetime
 
@@ -102,6 +108,12 @@ class UserCreateIn(BaseModel):
     manager_user_id: Optional[str] = None
     role_ids: Optional[List[str]] = []
     status: Optional[str] = "ACTIVE"
+    compensation_type: Optional[str] = "COMMISSION"
+    base_salary: Optional[float] = 0.0
+    sales_commission_rate: Optional[float] = 25.0
+    rent_commission_rate: Optional[float] = 25.0
+    sales_fixed_cut: Optional[float] = 0.0
+    rent_fixed_cut: Optional[float] = 0.0
 
 class UserUpdateIn(BaseModel):
     full_name: Optional[str] = None
@@ -112,6 +124,12 @@ class UserUpdateIn(BaseModel):
     manager_user_id: Optional[str] = None
     role_ids: Optional[List[str]] = None
     status: Optional[str] = None
+    compensation_type: Optional[str] = None
+    base_salary: Optional[float] = None
+    sales_commission_rate: Optional[float] = None
+    rent_commission_rate: Optional[float] = None
+    sales_fixed_cut: Optional[float] = None
+    rent_fixed_cut: Optional[float] = None
 
 
 # ==========================================

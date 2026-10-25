@@ -110,6 +110,25 @@ async def list_roles_reference(conn: asyncpg.Connection = Depends(get_db)):
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
     )
 
+@router.get("/workflow-templates", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_workflow_templates(conn: asyncpg.Connection = Depends(get_db)):
+    """
+    Returns all standard workflow templates (Tasks, Activities, Communications)
+    directly from the database as the Single Source of Truth for frontend localization.
+    """
+    rows = await conn.fetch("""
+        SELECT template_id, template_type, standard_title_ar, standard_title_en,
+               owner_role, default_sla_minutes,
+               completion_criteria_ar, completion_criteria_en, escalation_role, escalation_sla_minutes, created_at
+        FROM workflow_templates
+        ORDER BY template_type ASC, template_id ASC
+    """)
+    data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
 @router.get("/sop-catalog", response_model=CollectionEnvelope[Dict[str, Any]])
 async def list_sop_catalog(
     stage_code: Optional[str] = None,
@@ -136,7 +155,11 @@ async def list_sop_catalog(
     query = f"""
         SELECT 
             g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
-            g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
+            COALESCE(t.owner_role, g.responsible_role_code) AS responsible_role_code,
+            COALESCE(t.standard_title_ar, g.stage_name_ar) AS stage_name_ar,
+            COALESCE(t.standard_title_en, g.stage_name_en) AS stage_name_en,
+            t.completion_criteria_ar,
+            t.completion_criteria_en,
             g.required_now_ar, g.required_now_en,
             r.name_ar AS current_responsible_ar,
             r.name_en AS current_responsible_en,
@@ -148,7 +171,8 @@ async def list_sop_catalog(
             g.sample_notes_ar, g.sample_notes_en,
             g.display_order, g.is_active
         FROM workflow_sop_guidance g
-        LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        LEFT JOIN workflow_templates t ON g.template_id = t.template_id
+        LEFT JOIN roles r ON COALESCE(t.owner_role, g.responsible_role_code) = r.role_code
         WHERE {where_clause}
         ORDER BY g.display_order ASC
     """
@@ -186,6 +210,8 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
     ACT_TO_TASK_MAP = {
         "ACT_INVEST_OBJECTIVES_CONFIRMED": "TASK_INVEST_CONFIRM_OBJECTIVES",
         "ACT_INVEST_RETURNS_COMPARED": "TASK_INVEST_COMPARE_RETURNS",
+        "ACT_INVEST_INSPECTION_SCHEDULED": "TASK_INVEST_SCHEDULE_INSPECTION",
+        "ACT_INVEST_INSPECTION_COMPLETED": "TASK_INVEST_INSPECTION_REPORT",
         "ACT_INVEST_FINANCIALS_VALIDATED": "TASK_INVEST_VALIDATE_FINANCIALS",
         "ACT_INVEST_ACQUISITION_OFFER_PREPARED": "TASK_INVEST_PREPARE_ACQUISITION_OFFER",
         "ACT_INVEST_BASELINE_ESTABLISHED": "TASK_INVEST_BASELINE_PERFORMANCE",
@@ -241,7 +267,7 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
 
     # 4. Check exact title match in workflow_templates
     tmpl_match = await conn.fetchval(
-        "SELECT template_id FROM workflow_templates WHERE standard_title_ar = $1 OR standard_title_en = $1 OR standard_subject_ar = $1 OR standard_subject_en = $1",
+        "SELECT template_id FROM workflow_templates WHERE standard_title_ar = $1 OR standard_title_en = $1",
         search_code
     )
     if tmpl_match:
@@ -249,11 +275,14 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
         if search_code in ACT_TO_TASK_MAP:
             search_code = ACT_TO_TASK_MAP[search_code]
 
-    # 5. Query workflow_sop_guidance directly
-    row = await conn.fetchrow("""
+    base_select = """
         SELECT 
             g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
-            g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
+            COALESCE(t.owner_role, g.responsible_role_code) AS responsible_role_code,
+            COALESCE(t.standard_title_ar, g.stage_name_ar) AS stage_name_ar,
+            COALESCE(t.standard_title_en, g.stage_name_en) AS stage_name_en,
+            t.completion_criteria_ar,
+            t.completion_criteria_en,
             g.required_now_ar, g.required_now_en,
             r.name_ar AS current_responsible_ar,
             r.name_en AS current_responsible_en,
@@ -265,7 +294,13 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
             g.sample_notes_ar, g.sample_notes_en,
             g.display_order, g.is_active
         FROM workflow_sop_guidance g
-        LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        LEFT JOIN workflow_templates t ON g.template_id = t.template_id
+        LEFT JOIN roles r ON COALESCE(t.owner_role, g.responsible_role_code) = r.role_code
+    """
+
+    # 5. Query workflow_sop_guidance directly
+    row = await conn.fetchrow(f"""
+        {base_select}
         WHERE (g.template_id = $1 OR g.procedure_code = $1 OR g.guidance_id = $1)
           AND g.is_active = TRUE
         ORDER BY g.display_order ASC LIMIT 1
@@ -273,22 +308,8 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
 
     # 6. Try stage_code match
     if not row:
-        row = await conn.fetchrow("""
-            SELECT 
-                g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
-                g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
-                g.required_now_ar, g.required_now_en,
-                r.name_ar AS current_responsible_ar,
-                r.name_en AS current_responsible_en,
-                g.next_action_ar, g.next_action_en,
-                g.step_goal_ar, g.step_goal_en,
-                g.mandatory_conditions_ar, g.mandatory_conditions_en,
-                g.consequence_ar, g.consequence_en,
-                g.execution_steps_ar, g.execution_steps_en,
-                g.sample_notes_ar, g.sample_notes_en,
-                g.display_order, g.is_active
-            FROM workflow_sop_guidance g
-            LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        row = await conn.fetchrow(f"""
+            {base_select}
             WHERE g.stage_code = $1 AND g.is_active = TRUE
             ORDER BY g.display_order ASC LIMIT 1
         """, search_code.upper())
@@ -302,6 +323,8 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
                 resolved_template = "TASK_INVEST_CONFIRM_OBJECTIVES"
             elif any(w in norm for w in ["عائد", "عوائد", "مقارنة", "return"]):
                 resolved_template = "TASK_INVEST_COMPARE_RETURNS"
+            elif any(w in norm for w in ["فحص", "معاينة", "إنشائي", "نافي للجهالة", "inspect", "due diligence"]):
+                resolved_template = "TASK_INVEST_INSPECTION_REPORT" if any(x in norm for x in ["تقرير", "توثيق", "report", "complete"]) else "TASK_INVEST_SCHEDULE_INSPECTION"
             elif any(w in norm for w in ["افتراض", "تدقيق", "مالي", "validat"]):
                 resolved_template = "TASK_INVEST_VALIDATE_FINANCIALS"
             elif any(w in norm for w in ["استحواذ", "عرض", "acquisit", "offer"]):
@@ -317,7 +340,9 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
         elif "إيجار" in norm or "تأجير" in norm or "rent" in norm:
             if any(w in norm for w in ["مطابقة", "ترشيح", "وحدات", "match"]):
                 resolved_template = "TASK_RENT_MATCH_PROPERTIES"
-            elif any(w in norm for w in ["معاينة", "زيارة", "view"]):
+            elif any(w in norm for w in ["جدولة", "موعد", "schedule"]):
+                resolved_template = "TASK_VIEWING_SCHEDULE"
+            elif any(w in norm for w in ["معاينة", "زيارة", "متابعة", "رغبة", "view", "follow"]):
                 resolved_template = "TASK_RENT_VIEWING_FOLLOW_UP"
             elif any(w in norm for w in ["عقد", "صياغة", "إبرام", "tenancy", "lease"]):
                 resolved_template = "TASK_RENT_PREPARE_TENANCY"
@@ -363,44 +388,16 @@ async def get_sop_guide(code: str, conn: asyncpg.Connection = Depends(get_db)):
                 resolved_template = "TASK_OFFER_FOLLOWUP"
 
         if resolved_template:
-            row = await conn.fetchrow("""
-                SELECT 
-                    g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
-                    g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
-                    g.required_now_ar, g.required_now_en,
-                    r.name_ar AS current_responsible_ar,
-                    r.name_en AS current_responsible_en,
-                    g.next_action_ar, g.next_action_en,
-                    g.step_goal_ar, g.step_goal_en,
-                    g.mandatory_conditions_ar, g.mandatory_conditions_en,
-                    g.consequence_ar, g.consequence_en,
-                    g.execution_steps_ar, g.execution_steps_en,
-                    g.sample_notes_ar, g.sample_notes_en,
-                    g.display_order, g.is_active
-                FROM workflow_sop_guidance g
-                LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+            row = await conn.fetchrow(f"""
+                {base_select}
                 WHERE g.template_id = $1 AND g.is_active = TRUE
                 ORDER BY g.display_order ASC LIMIT 1
             """, resolved_template)
 
     # 8. If still not found, try partial text matching in stage_name_ar / stage_name_en
     if not row and len(raw_code) >= 3:
-        row = await conn.fetchrow("""
-            SELECT 
-                g.guidance_id, g.stage_code, g.entity_type, g.procedure_code, g.template_id,
-                g.responsible_role_code, g.stage_name_ar, g.stage_name_en,
-                g.required_now_ar, g.required_now_en,
-                r.name_ar AS current_responsible_ar,
-                r.name_en AS current_responsible_en,
-                g.next_action_ar, g.next_action_en,
-                g.step_goal_ar, g.step_goal_en,
-                g.mandatory_conditions_ar, g.mandatory_conditions_en,
-                g.consequence_ar, g.consequence_en,
-                g.execution_steps_ar, g.execution_steps_en,
-                g.sample_notes_ar, g.sample_notes_en,
-                g.display_order, g.is_active
-            FROM workflow_sop_guidance g
-            LEFT JOIN roles r ON g.responsible_role_code = r.role_code
+        row = await conn.fetchrow(f"""
+            {base_select}
             WHERE (g.stage_name_ar ILIKE $1 OR g.stage_name_en ILIKE $1 OR g.step_goal_ar ILIKE $1)
               AND g.is_active = TRUE
             ORDER BY g.display_order ASC LIMIT 1

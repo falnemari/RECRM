@@ -13,7 +13,7 @@ import logging
 from app.config import settings
 from app.database import init_db_pool, close_db_pool, pool
 from app.schemas.common import ErrorEnvelope, ErrorDetail
-from app.routers import auth, reference, leads, customers, properties, sales, management, reports, finance, communications, documents, marketing, listings, admin, calculations
+from app.routers import auth, reference, leads, customers, properties, sales, management, reports, finance, communications, documents, marketing, listings, admin, calculations, investment
 
 logger = logging.getLogger("recrm.scheduler")
 
@@ -132,6 +132,7 @@ app.include_router(marketing.router, prefix=settings.API_PREFIX)
 app.include_router(listings.router, prefix=settings.API_PREFIX)
 app.include_router(admin.router, prefix=settings.API_PREFIX)
 app.include_router(calculations.router, prefix=settings.API_PREFIX)
+app.include_router(investment.router, prefix=settings.API_PREFIX)
 
 # Mount Static UI prototype
 UI_DIR = Path(__file__).resolve().parent.parent.parent / "ui"

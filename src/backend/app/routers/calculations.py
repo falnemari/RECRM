@@ -6,6 +6,7 @@ from app.schemas.calculations import (
     RentalMetricsIn,
     InvestmentReturnsIn,
     CommissionCalculationIn,
+    AgentCommissionCalculationIn,
     BalanceCalculationIn,
     InvestmentComparisonIn,
 )
@@ -95,6 +96,30 @@ def calculate_commission_endpoint(payload: CommissionCalculationIn):
             tax_rate_percent=payload.tax_rate_percent
         )
         return ResponseEnvelope(data=comm, meta=BaseMeta())
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/agent-commission", response_model=ResponseEnvelope[dict])
+def calculate_agent_commission_endpoint(payload: AgentCommissionCalculationIn):
+    try:
+        agent_profile = {
+            "compensation_type": payload.compensation_type,
+            "sales_commission_rate": payload.sales_commission_rate,
+            "rent_commission_rate": payload.rent_commission_rate,
+            "sales_fixed_cut": payload.sales_fixed_cut,
+            "rent_fixed_cut": payload.rent_fixed_cut,
+            "base_salary": payload.base_salary,
+        }
+        res = CalculationService.calculate_agent_commission(
+            transaction_type=payload.transaction_type,
+            deal_value=payload.deal_value,
+            brokerage_rate_percent=payload.brokerage_rate_percent,
+            brokerage_flat_amount=payload.brokerage_flat_amount,
+            agent_profile=agent_profile,
+            vat_rate_percent=payload.vat_rate_percent,
+        )
+        return ResponseEnvelope(data=res, meta=BaseMeta())
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

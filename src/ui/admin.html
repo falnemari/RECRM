@@ -409,6 +409,7 @@
                             <th data-i18n="th_contact">Email & Mobile</th>
                             <th data-i18n="th_branch">Branch</th>
                             <th data-i18n="th_roles">Assigned Roles</th>
+                            <th>النمط المالي / Compensation</th>
                             <th data-i18n="th_scope">Data Scope</th>
                             <th data-i18n="th_manager">Direct Manager</th>
                             <th data-i18n="th_status">Status</th>
@@ -637,6 +638,44 @@
                         <span style="font-size: 0.85em; color: var(--text-muted); font-weight: 600;">Calculated Data Scope:</span>
                         <div id="modal-scope-preview-badge">
                             <span class="badge badge-scope-own">OWN</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                    <label style="font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block;">النمط المالي والتعويض / Compensation Profile</label>
+                    <div class="form-row">
+                        <div class="form-group" style="margin-bottom: 6px;">
+                            <label style="font-size: 0.82em;">نوع التعويض / Compensation Type</label>
+                            <select id="user-comp-type" onchange="toggleCompFields()">
+                                <option value="COMMISSION">📊 نسبة من صافي السعي (Commission Split)</option>
+                                <option value="SALARY">👔 موظف براتب شهري ثابت (Salaried Employee)</option>
+                                <option value="FIXED_CUT">✂️ مبلغ مقطوع لكل صفقة (Flat Cut)</option>
+                                <option value="SALARY_PLUS_COMMISSION">⚡ راتب أساسي + عمولة تحفيزية (Hybrid)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="group-base-salary" style="margin-bottom: 6px;">
+                            <label style="font-size: 0.82em;">الراتب الأساسي (ريال)</label>
+                            <input type="number" id="user-base-salary" step="100" placeholder="e.g. 8000">
+                        </div>
+                    </div>
+                    <div class="form-row" id="group-comm-rates" style="margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.82em;">نسبة سعي البيع (%)</label>
+                            <input type="number" id="user-sales-rate" step="0.5" placeholder="e.g. 30.0">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.82em;">نسبة سعي الإيجار (%)</label>
+                            <input type="number" id="user-rent-rate" step="0.5" placeholder="e.g. 25.0">
+                        </div>
+                    </div>
+                    <div class="form-row" id="group-fixed-cuts" style="margin-bottom: 0; display: none;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.82em;">مقطوع صفقة البيع (ريال)</label>
+                            <input type="number" id="user-sales-cut" step="100" placeholder="e.g. 2500">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.82em;">مقطوع صفقة الإيجار (ريال)</label>
+                            <input type="number" id="user-rent-cut" step="50" placeholder="e.g. 800">
                         </div>
                     </div>
                 </div>
@@ -1209,6 +1248,20 @@
                             </div>
                         </td>
                         <td><div class="badge-wrap-container">${rolesHtml}</div></td>
+                        <td>
+                            ${(() => {
+                                const cType = (u.compensation_type || 'COMMISSION').toUpperCase();
+                                if (cType === 'SALARY') {
+                                    return `<span class="badge" style="background:#e0e7ff; color:#3730a3;" title="Base salary: ${Number(u.base_salary || 0).toLocaleString()} SAR">👔 ${currentLang === 'ar' ? 'راتب ثابت' : 'Salaried'} (${Number(u.base_salary || 0).toLocaleString()} ر.س)</span>`;
+                                } else if (cType === 'FIXED_CUT') {
+                                    return `<span class="badge" style="background:#fef3c7; color:#92400e;" title="Sale cut: ${Number(u.sales_fixed_cut || 0).toLocaleString()} SAR">✂️ ${currentLang === 'ar' ? 'مقطوع' : 'Fixed Cut'} (${Number(u.sales_fixed_cut || 0).toLocaleString()} ر.س)</span>`;
+                                } else if (cType === 'SALARY_PLUS_COMMISSION') {
+                                    return `<span class="badge" style="background:#f3e8ff; color:#6b21a8;" title="${Number(u.base_salary || 0).toLocaleString()} SAR + ${u.sales_commission_rate}%">⚡ ${currentLang === 'ar' ? 'هجين' : 'Hybrid'} (${u.sales_commission_rate}%)</span>`;
+                                } else {
+                                    return `<span class="badge" style="background:#ecfdf5; color:#065f46;" title="${u.sales_commission_rate || 25}% of Net Brokerage">📊 ${currentLang === 'ar' ? 'نسبة سعي' : 'Commission'} (${u.sales_commission_rate || 25}%)</span>`;
+                                }
+                            })()}
+                        </td>
                         <td><span class="badge ${scopeBadgeClass}">${u.effective_scope}</span></td>
                         <td>${u.manager_name || '<span style="color: var(--text-muted);">--</span>'}</td>
                         <td>${stBadge}</td>
@@ -1218,6 +1271,31 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        function toggleCompFields() {
+            const compType = document.getElementById('user-comp-type').value;
+            const salaryGroup = document.getElementById('group-base-salary');
+            const commRatesGroup = document.getElementById('group-comm-rates');
+            const fixedCutsGroup = document.getElementById('group-fixed-cuts');
+
+            if (compType === 'SALARY') {
+                salaryGroup.style.display = 'block';
+                commRatesGroup.style.display = 'none';
+                fixedCutsGroup.style.display = 'none';
+            } else if (compType === 'FIXED_CUT') {
+                salaryGroup.style.display = 'none';
+                commRatesGroup.style.display = 'none';
+                fixedCutsGroup.style.display = 'flex';
+            } else if (compType === 'SALARY_PLUS_COMMISSION') {
+                salaryGroup.style.display = 'block';
+                commRatesGroup.style.display = 'flex';
+                fixedCutsGroup.style.display = 'none';
+            } else { // COMMISSION
+                salaryGroup.style.display = 'none';
+                commRatesGroup.style.display = 'flex';
+                fixedCutsGroup.style.display = 'none';
+            }
         }
 
         function openAddUserModal() {
@@ -1231,6 +1309,13 @@
             populateManagerSelect('user-manager');
             renderUserRolesCheckboxes([]);
             updateModalScopePreview();
+            document.getElementById('user-comp-type').value = 'COMMISSION';
+            document.getElementById('user-base-salary').value = '0';
+            document.getElementById('user-sales-rate').value = '25.0';
+            document.getElementById('user-rent-rate').value = '25.0';
+            document.getElementById('user-sales-cut').value = '0';
+            document.getElementById('user-rent-cut').value = '0';
+            toggleCompFields();
             document.getElementById('user-status').value = 'ACTIVE';
             document.getElementById('user-modal').style.display = 'flex';
         }
@@ -1250,6 +1335,13 @@
             document.getElementById('user-manager').value = u.manager_user_id || '';
             renderUserRolesCheckboxes(u.roles.map(r => r.role_id));
             updateModalScopePreview();
+            document.getElementById('user-comp-type').value = u.compensation_type || 'COMMISSION';
+            document.getElementById('user-base-salary').value = u.base_salary || '0';
+            document.getElementById('user-sales-rate').value = u.sales_commission_rate !== undefined ? u.sales_commission_rate : '25.0';
+            document.getElementById('user-rent-rate').value = u.rent_commission_rate !== undefined ? u.rent_commission_rate : '25.0';
+            document.getElementById('user-sales-cut').value = u.sales_fixed_cut || '0';
+            document.getElementById('user-rent-cut').value = u.rent_fixed_cut || '0';
+            toggleCompFields();
             document.getElementById('user-status').value = u.status || 'ACTIVE';
             document.getElementById('user-modal').style.display = 'flex';
         }
@@ -1327,7 +1419,13 @@
                 branch_id: document.getElementById('user-branch').value || null,
                 manager_user_id: document.getElementById('user-manager').value || null,
                 role_ids: checkedRoles,
-                status: document.getElementById('user-status').value
+                status: document.getElementById('user-status').value,
+                compensation_type: document.getElementById('user-comp-type').value,
+                base_salary: parseFloat(document.getElementById('user-base-salary').value) || 0.0,
+                sales_commission_rate: parseFloat(document.getElementById('user-sales-rate').value) || 0.0,
+                rent_commission_rate: parseFloat(document.getElementById('user-rent-rate').value) || 0.0,
+                sales_fixed_cut: parseFloat(document.getElementById('user-sales-cut').value) || 0.0,
+                rent_fixed_cut: parseFloat(document.getElementById('user-rent-cut').value) || 0.0
             };
 
             const url = uId ? `${API_BASE}/api/v1/admin/users/${uId}` : `${API_BASE}/api/v1/admin/users`;

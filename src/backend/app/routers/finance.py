@@ -15,6 +15,7 @@ from app.schemas.contracts import (
     InvoiceOut, CollectInvoiceIn, GenerateFeeInvoicesIn
 )
 from app.services.workflow_engine import WorkflowEngine
+from app.services.calculation_service import CalculationService
 
 router = APIRouter(tags=["Contracts, Payments & Commissions"])
 
@@ -248,7 +249,13 @@ async def get_contract_detail(
             c.commission_type,
             CAST(c.rate AS FLOAT) AS rate,
             CAST(c.amount AS FLOAT) AS amount,
-            c.status, c.approved_at, c.paid_at
+            c.status, c.approved_at, c.paid_at,
+            c.compensation_type,
+            CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+            CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+            CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+            CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+            c.calculation_notes
         FROM commissions c
         LEFT JOIN users u ON c.user_id = u.user_id
         WHERE c.contract_id = $1
@@ -442,18 +449,40 @@ async def convert_reservation_to_contract(
                 contract_id, f"PAY-{pay_idx:06d}", contract_val
             )
 
-        # 8. Assign default 2.5% broker commission to assigned unit agent or default agent
+        # 8. Calculate and assign broker commission based on agent compensation profile
         agent_id = await conn.fetchval("SELECT assigned_user_id FROM units WHERE unit_id = $1", res["unit_id"])
         if not agent_id:
             agent_id = await conn.fetchval("SELECT user_id FROM users LIMIT 1")
         if agent_id:
-            comm_amount = contract_val * 0.025
+            agent_profile = await conn.fetchrow("""
+                SELECT user_id, full_name, compensation_type, 
+                       CAST(base_salary AS FLOAT) AS base_salary,
+                       CAST(sales_commission_rate AS FLOAT) AS sales_commission_rate,
+                       CAST(rent_commission_rate AS FLOAT) AS rent_commission_rate,
+                       CAST(sales_fixed_cut AS FLOAT) AS sales_fixed_cut,
+                       CAST(rent_fixed_cut AS FLOAT) AS rent_fixed_cut
+                FROM users WHERE user_id = $1
+            """, agent_id)
+
+            calc = CalculationService.calculate_agent_commission(
+                transaction_type="SALE",
+                deal_value=contract_val,
+                agent_profile=dict(agent_profile) if agent_profile else None
+            )
+
+            comm_id = await conn.fetchval("SELECT ('comm-' || nextval('seq_commissions_id'))")
             await conn.execute(
                 """
-                INSERT INTO commissions (contract_id, user_id, commission_type, rate, amount, status)
-                VALUES ($1, $2, 'SALES', 2.5, $3, 'PENDING')
+                INSERT INTO commissions (
+                    commission_id, contract_id, user_id, commission_type, rate, amount, status,
+                    compensation_type, gross_deal_value, gross_brokerage_amount,
+                    gov_fees_deducted, net_commission_base, calculation_notes
+                )
+                VALUES ($1, $2, $3, 'SALES', $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 """,
-                contract_id, agent_id, comm_amount
+                comm_id, contract_id, agent_id, calc["rate"], calc["amount"], calc["status"],
+                calc["compensation_type"], calc["gross_deal_value"], calc["gross_brokerage_amount"],
+                calc["gov_fees_deducted"], calc["net_commission_base"], calc["calculation_notes"]
             )
 
         # 9. Register Activity ACT_CONTRACT_SIGNED
@@ -639,6 +668,12 @@ async def list_commissions(
             CAST(c.rate AS FLOAT) AS rate,
             CAST(c.amount AS FLOAT) AS amount,
             c.status, c.approved_at, c.paid_at,
+            c.compensation_type,
+            CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+            CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+            CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+            CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+            c.calculation_notes,
             con.contract_number,
             con.status AS contract_status,
             COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
@@ -672,6 +707,12 @@ async def approve_commission(commission_id: str, conn: asyncpg.Connection = Depe
             u.full_name AS user_name, c.commission_type,
             CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
             c.status, c.approved_at, c.paid_at,
+            c.compensation_type,
+            CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+            CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+            CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+            CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+            c.calculation_notes,
             con.contract_number,
             con.status AS contract_status,
             COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
@@ -726,6 +767,12 @@ async def payout_commission(commission_id: str, conn: asyncpg.Connection = Depen
             u.full_name AS user_name, c.commission_type,
             CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
             c.status, c.approved_at, c.paid_at,
+            c.compensation_type,
+            CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+            CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+            CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+            CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+            c.calculation_notes,
             con.contract_number,
             con.status AS contract_status,
             COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,

@@ -244,13 +244,13 @@ class TestRentalWorkflow(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNotNone(act)
 
-        # Verify next task is TASK_RENT_VIEWING_FOLLOW_UP
-        followup_task = await self.conn.fetchrow(
-            "SELECT template_id, status FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_RENT_VIEWING_FOLLOW_UP'",
+        # Verify next task is TASK_VIEWING_SCHEDULE
+        schedule_task = await self.conn.fetchrow(
+            "SELECT template_id, status FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_VIEWING_SCHEDULE'",
             opp_id
         )
-        self.assertIsNotNone(followup_task)
-        self.assertEqual(followup_task["status"], "PENDING")
+        self.assertIsNotNone(schedule_task)
+        self.assertEqual(schedule_task["status"], "PENDING")
 
         # Cleanup
         await self.conn.execute("DELETE FROM communications WHERE lead_id = $1", lead_id)

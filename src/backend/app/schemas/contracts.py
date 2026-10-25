@@ -44,6 +44,12 @@ class CommissionOut(BaseModel):
     contract_status: Optional[str] = None
     customer_name: Optional[str] = None
     unit_number: Optional[str] = None
+    compensation_type: Optional[str] = "COMMISSION"
+    gross_deal_value: Optional[float] = 0.0
+    gross_brokerage_amount: Optional[float] = 0.0
+    gov_fees_deducted: Optional[float] = 0.0
+    net_commission_base: Optional[float] = 0.0
+    calculation_notes: Optional[str] = None
 
 class CommissionCreate(BaseModel):
     user_id: str

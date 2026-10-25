@@ -665,33 +665,30 @@
     }
 
     function ensureUserProfileModal() {
-        const isAr = isArabic();
         let modalDiv = document.getElementById('user-profile-modal');
         if (modalDiv) {
-            const curLang = modalDiv.getAttribute('data-lang');
-            if (curLang === (isAr ? 'ar' : 'en')) return;
-            modalDiv.remove();
+            return;
         }
 
         modalDiv = document.createElement('div');
         modalDiv.id = 'user-profile-modal';
-        modalDiv.setAttribute('data-lang', isAr ? 'ar' : 'en');
         modalDiv.className = 'modal-overlay';
-        modalDiv.style.cssText = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 2000; direction: ${isAr ? 'rtl' : 'ltr'};`;
+        // Standardized English LTR layout for both language modes for clean, tidy rendering
+        modalDiv.style.cssText = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(3px); display: none; justify-content: center; align-items: center; z-index: 2000; direction: ltr; text-align: left; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;`;
         modalDiv.onclick = function(e) { if (e.target === modalDiv) window.closeUserProfileModal(); };
 
-        const modalTitle = isAr ? 'ملف المستخدم والأدوار وتسجيل الدخول' : 'User Profile & Authentication';
-        const lblBranch = isAr ? 'الفرع:' : 'Branch:';
-        const lblScope = isAr ? 'نطاق البيانات:' : 'Data Scope:';
-        const lblRoles = isAr ? 'الأدوار:' : 'Assigned Roles:';
-        const lblSwitch = isAr ? '🔄 تسجيل الدخول وتبديل المستخدم:' : '🔄 Switch Active User / Sign In:';
-        const tipSwitch = isAr ? '💡 القائمة مرتبة ومجمعة حسب الفروع 🏢. عند اختيار أي مستخدم والضغط على <strong>تسجيل الدخول / تبديل</strong>، سيتم تحديث جميع الصفحات فوراً.' : '💡 Grouped by branch 🏢. Selecting a user and clicking <strong>Switch User</strong> updates all pages immediately.';
-        const optLoading = isAr ? 'جاري تحميل المستخدمين والفروع...' : 'Loading users and branches...';
-        const btnSwitchText = isAr ? 'تسجيل الدخول / تبديل' : 'Switch User';
-        const btnSignOutText = isAr ? 'خروج' : 'Sign Out';
-        const lblPerms = isAr ? '📋 الصلاحيات الممنوحة للمستخدم الحالي:' : '📋 Active Granted Permissions:';
-        const adminText = isAr ? 'المدير العام الافتراضي: <strong>user-51</strong> (فهد خضر النمري)' : 'Default Administrator: <strong>user-51</strong> (Fahad Khader Alnemari)';
-        const btnCloseText = isAr ? 'إغلاق' : 'Close';
+        const modalTitle = 'User Profile & Authentication';
+        const lblBranch = 'Branch:';
+        const lblScope = 'Data Scope:';
+        const lblRoles = 'Assigned Roles:';
+        const lblSwitch = '🔄 Switch Active User / Sign In:';
+        const tipSwitch = '💡 Grouped by branch 🏢. Selecting a user and clicking <strong>Switch User</strong> updates all pages immediately.';
+        const optLoading = 'Loading users and branches...';
+        const btnSwitchText = 'Switch User';
+        const btnSignOutText = 'Sign Out';
+        const lblPerms = '📋 Active Granted Permissions:';
+        const adminText = 'Default Administrator: <strong>user-51</strong> (Fahad Khader Alnemari)';
+        const btnCloseText = 'Close';
 
         modalDiv.innerHTML = `
             <div class="modal-box" style="max-width: 780px; width: 95%; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25); overflow: hidden; font-family: inherit;">
@@ -791,7 +788,7 @@
             document.getElementById('modal-user-id').textContent = currentUserProfile.user_id || '--';
             document.getElementById('modal-user-email').textContent = currentUserProfile.email || '--';
             document.getElementById('modal-user-mobile').textContent = currentUserProfile.mobile || '--';
-            document.getElementById('modal-user-branch').textContent = currentUserProfile.branch_name || (isAr ? 'الإدارة العامة / غير مسند' : 'Headquarters / Unassigned');
+            document.getElementById('modal-user-branch').textContent = currentUserProfile.branch_name || 'Headquarters / Corporate Office';
             document.getElementById('modal-user-scope').textContent = currentUserProfile.effective_scope || 'GLOBAL';
             const statusBadge = document.getElementById('modal-user-status-badge');
             if (statusBadge) {
@@ -822,9 +819,9 @@
             }
         } else {
             // Signed out state display
-            document.getElementById('modal-user-fullname').textContent = isAr ? 'غير مسجل الدخول' : 'Not Signed In';
+            document.getElementById('modal-user-fullname').textContent = 'Not Signed In';
             document.getElementById('modal-user-id').textContent = 'GUEST';
-            document.getElementById('modal-user-email').textContent = isAr ? 'يرجى اختيار مستخدم لتسجيل الدخول' : 'Please select a user to sign in';
+            document.getElementById('modal-user-email').textContent = 'Please select a user to sign in';
             document.getElementById('modal-user-mobile').textContent = '--';
             document.getElementById('modal-user-branch').textContent = '--';
             document.getElementById('modal-user-scope').textContent = 'NONE';
@@ -835,9 +832,9 @@
                 statusBadge.style.color = '#991b1b';
             }
             const rolesWrap = document.getElementById('modal-user-roles');
-            if (rolesWrap) rolesWrap.innerHTML = `<span style="color: #64748b;">${isAr ? 'لا يوجد' : 'None'}</span>`;
+            if (rolesWrap) rolesWrap.innerHTML = `<span style="color: #64748b;">None</span>`;
             const permsWrap = document.getElementById('modal-user-permissions');
-            if (permsWrap) permsWrap.innerHTML = `<div style="color: #64748b;">${isAr ? 'قم بتسجيل الدخول لمعاينة الصلاحيات' : 'Sign in to view permissions'}</div>`;
+            if (permsWrap) permsWrap.innerHTML = `<div style="color: #64748b;">Sign in to view permissions</div>`;
         }
 
         // Populate switch user select grouped by branch
@@ -855,7 +852,7 @@
                     users.forEach(u => {
                         const bName = u.branch_name 
                             ? `${u.branch_name} (${u.branch_code || ''})` 
-                            : (isAr ? 'الإدارة العامة / غير مسند لفرع' : 'Headquarters / Unassigned Branch');
+                            : 'Headquarters / Corporate Office';
                         if (!branchesMap[bName]) branchesMap[bName] = [];
                         branchesMap[bName].push(u);
                     });
@@ -867,10 +864,10 @@
                             const rolesStr = (u.role_names && u.role_names.length > 0) ? u.role_names.join(', ') : (u.roles || []).join(', ');
                             const scope = u.effective_scope || 'GLOBAL';
                             let scopeLabel = `[${scope}]`;
-                            if (scope === 'OWN') scopeLabel = isAr ? '[🔒 OWN - بياناته فقط]' : '[🔒 OWN - Personal Only]';
-                            else if (scope === 'BRANCH') scopeLabel = isAr ? '[🏢 BRANCH - فرعه فقط]' : '[🏢 BRANCH - Branch Only]';
-                            else if (scope === 'TEAM') scopeLabel = isAr ? '[👥 TEAM - فريقه فقط]' : '[👥 TEAM - Team Only]';
-                            else if (scope === 'GLOBAL') scopeLabel = isAr ? '[🌐 GLOBAL - شامل]' : '[🌐 GLOBAL - All Branches]';
+                            if (scope === 'OWN') scopeLabel = '[🔒 OWN - Personal Only]';
+                            else if (scope === 'BRANCH') scopeLabel = '[🏢 BRANCH - Branch Only]';
+                            else if (scope === 'TEAM') scopeLabel = '[👥 TEAM - Team Only]';
+                            else if (scope === 'GLOBAL') scopeLabel = '[🌐 GLOBAL - All Branches]';
 
                             const activeUid = currentUserProfile ? currentUserProfile.user_id : '';
                             const isSelected = u.user_id === activeUid ? 'selected' : '';

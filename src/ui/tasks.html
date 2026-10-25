@@ -926,7 +926,7 @@
 
     <!-- Task Completion Modal (Stage 2 Outcome Recording) -->
     <div id="modal-complete-task" class="modal-overlay">
-        <div class="modal" style="max-width: 540px;">
+        <div class="modal" style="max-width: 680px;">
             <div class="modal-header">
                 <h3 id="comp-modal-title" data-i18n="comp_modal_title">Record Task Outcome</h3>
                 <button class="close-btn" onclick="closeModal('modal-complete-task')">&times;</button>
@@ -938,6 +938,7 @@
                 <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
                     <div style="font-weight: 600; font-size: 0.95em; color: var(--primary);" id="comp-task-name">Task Name</div>
                     <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 4px;" id="comp-task-context">Lead / Customer Info</div>
+                    <div id="comp-decision-ribbon" style="display: none; margin-top: 8px; padding: 6px 12px; border-radius: 6px; font-size: 0.84em; font-weight: 700;"></div>
                 </div>
 
                 <!-- Interactive SOP Step-by-Step Help Guide -->
@@ -1042,6 +1043,343 @@
                     <div class="form-group">
                         <label data-i18n="lbl_comp_offer_amount" style="font-size: 0.82em; font-weight: 600;">Proposed Offer Amount (SAR)</label>
                         <input type="number" id="comp-offer-price" placeholder="e.g. 780000" class="search-input" style="width: 100%; background: #fff;">
+                    </div>
+                </div>
+
+                <!-- Investment Objectives Confirmation Form (Shown for TASK_INVEST_CONFIRM_OBJECTIVES) -->
+                <div id="comp-invest-objectives-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.95em; color: #166534; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🎯 تحديد واعتماد الأهداف والمعايير الاستثمارية للمستثمر</span>
+                        <span style="font-size:0.75em; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:600;">Investment Objectives</span>
+                    </div>
+                    <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:12px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.82em; font-weight:700; color:#166534;">رأس المال المستهدف / الميزانية المرصودة (SAR) *</label>
+                                <input type="number" id="comp-invest-target-capital" placeholder="مثال: 15,000,000" class="search-input" style="width:100%; font-weight:700; color:#0f172a;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82em; font-weight:700; color:#166534;">صافي العائد الاستثماري السنوي المطلوب (%) *</label>
+                                <input type="number" step="0.1" id="comp-invest-target-yield" placeholder="مثال: 8.0" class="search-input" style="width:100%; font-weight:700;">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:10px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82em; font-weight:700; color:#166534;">الأفق الزمني للاستثمار (بالسنوات) *</label>
+                                <input type="number" id="comp-invest-horizon-years" placeholder="مثال: 5 أو 10 أو 12 سنة" class="search-input" style="width:100%; font-weight:700;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82em; font-weight:700; color:#166534;">درجة تحمل المخاطر *</label>
+                                <select id="comp-invest-risk-tolerance" class="select-filter" style="width:100%; font-weight:600;">
+                                    <option value="LOW">منخفضة المخاطر (Low Risk / Capital Preservation)</option>
+                                    <option value="MEDIUM" selected>متوسطة وموزونة (Medium Risk / Balanced)</option>
+                                    <option value="HIGH">عالية / نمو وتطوير (High Risk / Growth & Development)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:10px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82em; font-weight:700; color:#166534;">الإستراتيجية الاستثمارية المستهدفة *</label>
+                                <select id="comp-invest-strategy" class="select-filter" style="width:100%; font-weight:600;">
+                                    <option value="CORE">أصول مدرة للدخل التشغيلي الفوري (Core Income)</option>
+                                    <option value="BALANCED" selected>متوازنة — عائد دوري مع نمو رأسمالي (Balanced)</option>
+                                    <option value="GROWTH">تطوير عقاري وإعادة توظيف الأصول (Value-Add & Growth)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Returns & Comparison Form (Shown for TASK_INVEST_COMPARE_RETURNS) -->
+                <div id="comp-invest-returns-fields" style="display: none; background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.95em; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📈 دراسة ومقارنة العوائد الاستثمارية للوحدات</span>
+                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Financial Comparison</span>
+                    </div>
+                    <div style="background:#fff; border:1px solid #bae6fd; border-radius:6px; padding:12px; margin-bottom:10px;">
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label style="font-size:0.82em; font-weight:700; color:#0369a1;">الوحدة العقارية المرشحة للدراسة</label>
+                            <select id="comp-invest-ret-unit" class="select-filter" style="width:100%; font-weight:600;" onchange="onInvestCompareUnitChange()">
+                                <option value="">-- اختر وحدة استثمارية أو أدخل المعطيات يدوياً --</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">سعر الاستحواذ / الشراء المتوقع (SAR) *</label>
+                                <input type="number" id="comp-invest-ret-price" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">إجمالي الإيجار السنوي المتوقع (SAR) *</label>
+                                <input type="number" id="comp-invest-ret-rent" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مخصص الشغور السنوي (SAR)</label>
+                                <input type="number" id="comp-invest-ret-vac" placeholder="5% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مصاريف التشغيل السنوية OPEX (SAR)</label>
+                                <input type="number" id="comp-invest-ret-opex" placeholder="10% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">رأس المال النقدي المستثمر (Equity SAR)</label>
+                                <input type="number" id="comp-invest-ret-cash" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">تكاليف الاستحواذ الإضافية (SAR)</label>
+                                <input type="number" id="comp-invest-ret-acq" value="0" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Live Return Metrics -->
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px;">
+                        <div style="font-size:0.8em; font-weight:700; color:#1d4ed8; margin-bottom:6px;">⚡ مؤشرات العائد المحسوبة تلقائياً:</div>
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">صافي الدخل (NOI)</div>
+                                <div id="live-ret-noi" style="font-weight:700; color:#1e40af; font-size:0.95em;">0 SAR</div>
+                            </div>
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">العائد الصافي (Net Yield)</div>
+                                <div id="live-ret-cap-rate" style="font-weight:700; color:#16a34a; font-size:0.95em;">0.0%</div>
+                            </div>
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">العائد على النقد (Cash-on-Cash)</div>
+                                <div id="live-ret-coc" style="font-weight:700; color:#059669; font-size:0.95em;">0.0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Due Diligence Inspection Form (Shown for TASK_INVEST_INSPECTION_REPORT) -->
+                <div id="comp-invest-ddr-fields" style="display: none; background: #f8fafc; border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.95em; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🏢 بيانات الفحص الفني والاستثماري النافي للجهالة</span>
+                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Due Diligence</span>
+                    </div>
+
+                    <!-- 1. Financial Baseline Inputs -->
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:12px;">
+                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💰 المعطيات المالية الأساسية للفرصة (موروثة وقابلة للتعديل):</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">سعر الاستحواذ المقدر (SAR) *</label>
+                                <input type="number" id="comp-invest-price" class="search-input" style="width:100%; font-weight:600;" oninput="calculateLiveInvestmentMetrics(); autoCalculateEstimatedCapex();">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">إجمالي الإيجار السنوي المتوقع (SAR) *</label>
+                                <input type="number" id="comp-invest-gross-rent" class="search-input" style="width:100%; font-weight:600;" oninput="calculateLiveInvestmentMetrics()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مصاريف التشغيل السنوية OPEX (SAR)</label>
+                                <input type="number" id="comp-invest-opex" placeholder="10% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestmentMetrics()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">رأس المال النقدي المستثمر (SAR)</label>
+                                <input type="number" id="comp-invest-cash-inv" class="search-input" style="width:100%;" oninput="calculateLiveInvestmentMetrics()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Technical Due Diligence -->
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:12px;">
+                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>🔨 نتائج الفحص الفني والإنشائي:</span>
+                            <button type="button" class="btn btn-outline" style="font-size:0.75em; padding:2px 8px; height:auto; color:#0369a1; border-color:#7dd3fc;" onclick="autoCalculateEstimatedCapex(true)">⚡ احتساب CapEx آلياً من المعايير</button>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">سلامة الهيكل الخرساني</label>
+                                <select id="comp-invest-structural" class="select-filter" style="width:100%;" onchange="autoCalculateEstimatedCapex()">
+                                    <option value="EXCELLENT">ممتاز (سليم إنشائياً)</option>
+                                    <option value="GOOD" selected>جيد (بدون ملاحظات جوهرية)</option>
+                                    <option value="FAIR">متوسط (يحتاج صيانة طفيفة)</option>
+                                    <option value="CRITICAL">حرج (تصدعات وشروخ خطيرة)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">عمر المبنى التقديري (سنوات)</label>
+                                <input type="number" id="comp-invest-bld-age" value="5" class="search-input" style="width:100%;" oninput="autoCalculateEstimatedCapex()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مطابقة الكود السعودي للمباني</label>
+                                <select id="comp-invest-sbc" class="select-filter" style="width:100%;" onchange="autoCalculateEstimatedCapex()">
+                                    <option value="true" selected>✓ مطابق للكود السعودي</option>
+                                    <option value="false">✗ غير مطابق للكود</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">حالة التكييف والتهوية</label>
+                                <select id="comp-invest-hvac" class="select-filter" style="width:100%;" onchange="autoCalculateEstimatedCapex()">
+                                    <option value="OPERATIONAL" selected>يعمل بكفاءة عالية</option>
+                                    <option value="MAINTENANCE_REQUIRED">يحتاج صيانة / قطع غيار</option>
+                                    <option value="FAULTY">معطل / يتطلب استبدال</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">حالة المصاعد والصيانة الدورية</label>
+                                <select id="comp-invest-elevators" class="select-filter" style="width:100%;" onchange="autoCalculateEstimatedCapex()">
+                                    <option value="OPERATIONAL" selected>تعمل بعقود صيانة سارية</option>
+                                    <option value="MAINTENANCE_REQUIRED">تحتاج صيانة وتحديث</option>
+                                    <option value="INOPERATIVE">متوقفة / خارج الخدمة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">عزل الأسطح وسلامة المبنى</label>
+                                <select id="comp-invest-roofing" class="select-filter" style="width:100%;" onchange="autoCalculateEstimatedCapex()">
+                                    <option value="GOOD" selected>سليم ولا توجد تسريبات</option>
+                                    <option value="NEEDS_REPAIR">يحتاج تجديد عزل / صيانة</option>
+                                    <option value="WATER_LEAKAGE">تسريب مياه نشط ورطوبة</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px; background:#fff1f2; padding:8px; border-radius:6px; border:1px solid #fecdd3;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#9f1239;">المصاريف الرأسمالية المستقبلية CapEx (SAR)</label>
+                                <input type="number" id="comp-invest-capex" value="0" placeholder="e.g. 45000" class="search-input" style="width:100%; border-color:#fda4af; font-weight:700;" oninput="onCapexManualChange()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#9f1239;">التعديل السعري المقترح للخصم (SAR)</label>
+                                <input type="number" id="comp-invest-price-adj" value="0" placeholder="e.g. 45000" class="search-input" style="width:100%; border-color:#fda4af; font-weight:700;" oninput="onPriceAdjManualChange()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:8px;">
+                            <label style="font-size:0.8em; font-weight:600;">الملاحظات الفنية والهندسية</label>
+                            <input type="text" id="comp-invest-tech-notes" placeholder="ملاحظات الإنشاءات، الأحمال، التكييف، العزل..." class="search-input" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <!-- 3. Commercial & Occupancy Due Diligence -->
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:12px;">
+                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">👥 المعاينة التجارية ونسبة الإشغال الميداني:</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#166534;">نسبة الإشغال الميداني الفعلي (%) *</label>
+                                <input type="number" id="comp-invest-actual-occ" value="95" min="0" max="100" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestmentMetrics()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مطابقة عقود منصة إيجار (Rent Roll)</label>
+                                <select id="comp-invest-rent-roll" class="select-filter" style="width:100%;">
+                                    <option value="true" selected>✓ مطابقة بالكامل لمنصة إيجار</option>
+                                    <option value="false">✗ توجد فروقات / غير مطابقة</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">الوحدات المشغولة / الإجمالي</label>
+                                <div style="display:flex; gap:6px;">
+                                    <input type="number" id="comp-invest-occ-count" placeholder="مشغولة" value="1" class="search-input" style="width:50%;">
+                                    <input type="number" id="comp-invest-tot-units" placeholder="الإجمالي" value="1" class="search-input" style="width:50%;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مؤشر الجاذبية التجارية (1-100)</label>
+                                <input type="number" id="comp-invest-comm-score" value="85" min="1" max="100" class="search-input" style="width:100%;">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:8px;">
+                            <label style="font-size:0.8em; font-weight:600;">تقرير مقابلة إدارة العقار والحارس</label>
+                            <input type="text" id="comp-invest-pm-notes" placeholder="سلوك المستأجرين، الالتزام بالسداد، المشاكل التشغيلية..." class="search-input" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <!-- 4. Real-time Investment Calculation Ribbon -->
+                    <div id="comp-invest-live-calc-box" style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:6px; padding:10px;">
+                        <div style="font-size:0.82em; font-weight:700; color:#1d4ed8; margin-bottom:6px;">⚡ المؤشرات المالية التلقائية للفحص:</div>
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">صافي الدخل (NOI)</div>
+                                <div id="live-calc-noi" style="font-weight:700; color:#1e40af; font-size:0.95em;">0 SAR</div>
+                            </div>
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">معدل الرسملة (Cap Rate)</div>
+                                <div id="live-calc-cap-rate" style="font-weight:700; color:#16a34a; font-size:0.95em;">0.0%</div>
+                            </div>
+                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
+                                <div style="font-size:0.75em; color:#64748b;">صافي العائد بعد CapEx</div>
+                                <div id="live-calc-net-yield" style="font-weight:700; color:#059669; font-size:0.95em;">0.0%</div>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Investor Solvency Stress Test (In case seller rejects discount) -->
+                        <div id="live-calc-solvency-box" style="margin-top:10px; padding:10px 12px; background:#fff; border-radius:6px; border:1px solid #cbd5e1; font-size:0.8em;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+                                <span style="font-weight:700; color:#1e293b;">🛡️ اختبار ملاءة المستثمر في حال رفض البائع التعديل السعري:</span>
+                                <span id="live-calc-solvency-badge" style="font-weight:700; padding:2px 8px; border-radius:4px; background:#dcfce7; color:#15803d; font-size:0.9em;">ملاءة مكتملة</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; background:#f8fafc; padding:6px; border-radius:4px; text-align:center; margin-bottom:6px; border:1px solid #e2e8f0;">
+                                <div>
+                                    <div style="font-size:0.75em; color:#64748b;">ميزانية المستثمر القصوى</div>
+                                    <div id="live-calc-max-budget" style="font-weight:700; color:#0f172a; font-size:0.95em;">-</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.75em; color:#64748b;">التكلفة في أسوأ سيناريو (شراء + CapEx)</div>
+                                    <div id="live-calc-worst-cost" style="font-weight:700; color:#0f172a; font-size:0.95em;">-</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.75em; color:#64748b;">هامش الأمان المالي المتبقي</div>
+                                    <div id="live-calc-capital-buffer" style="font-weight:700; color:#16a34a; font-size:0.95em;">-</div>
+                                </div>
+                            </div>
+                            <div id="live-calc-solvency-note" style="font-weight:600; color:#475569; font-size:0.88em; line-height:1.4;">
+                                ...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Baseline Establishment Form (Shown for TASK_INVEST_BASELINE_PERFORMANCE) -->
+                <div id="comp-invest-baseline-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.92em; color: #166534; margin-bottom: 8px;">📊 توثيق واعتماد خط الأساس الاستثماري للأصل:</div>
+                    <div style="font-size:0.82em; color:#475569; margin-bottom:10px;">يتم استعراض وتأكيد معطيات خط الأساس المستخرجة مباشرة من تقرير الفحص النافي للجهالة:</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:600;">سعر الاستحواذ المعتمد (SAR)</label>
+                            <input type="number" id="comp-base-price" class="search-input" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:600;">رأس المال النقدي المستثمر (Equity)</label>
+                            <input type="number" id="comp-base-cash-inv" class="search-input" style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top:8px;">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:600;">إجمالي الإيجار السنوي (SAR)</label>
+                            <input type="number" id="comp-base-rent" class="search-input" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:600;">صافي الدخل المستهدف NOI (SAR)</label>
+                            <input type="number" id="comp-base-noi" class="search-input" style="width:100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Returns Monitoring Form (Shown for TASK_INVEST_MONITOR_ACTUAL_RETURNS) -->
+                <div id="comp-invest-monitor-fields" style="display: none; background: #f8fafc; border: 1.5px solid #a855f7; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.92em; color: #6b21a8; margin-bottom: 8px;">📈 مراقبة العوائد الفعلية ومقارنة الأداء بالخطة المالية:</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#15803d;">الدخل الإيجاري الفعلي المحصل (SAR) *</label>
+                            <input type="number" id="comp-mon-actual-income" placeholder="المبالغ المحصلة فعلياً" class="search-input" style="width:100%;" oninput="calculateLiveMonitoringVariance()">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#b91c1c;">المصروفات التشغيلية والصيانة الفعلية (SAR)</label>
+                            <input type="number" id="comp-mon-actual-exp" placeholder="المصروفات الفعلية المدفوعة" class="search-input" style="width:100%;">
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.82em; color:#581c87;">مقارنة بالدخل السنوي المستهدف: <strong id="comp-mon-target-disp">0 SAR</strong></span>
+                        <span style="font-size:0.85em; font-weight:700; color:#6b21a8;" id="comp-mon-var-badge">انحراف الأداء: 0.0%</span>
                     </div>
                 </div>
 
@@ -1246,7 +1584,7 @@
             });
         }
 
-        const WORKFLOW_TASK_TITLES = {
+        let WORKFLOW_TASK_TITLES = {
             'TASK_LEAD_FIRST_CONTACT': { ar: 'الطلب — الاتصال الأولي', en: 'Lead — First Contact' },
             'TASK_RENT_LEAD_FIRST_CONTACT': { ar: 'طلب الإيجار — الاتصال الأولي واستيفاء المتطلبات', en: 'Rental Lead — First Contact & Needs Analysis' },
             'TASK_INVEST_LEAD_FIRST_CONTACT': { ar: 'طلب استثماري — الاتصال الأولي وتأكيد الرغبة', en: 'Investment Lead — First Contact & Goals' },
@@ -1272,16 +1610,18 @@
             'TASK_CONTRACT_RECONCILIATION': { ar: 'العقد — المطابقة المالية وتسوية جدول الدفعات', en: 'Contract — Financial Reconciliation' },
             'TASK_RENT_PREPARE_TENANCY': { ar: 'عقد الإيجار — صياغة وإعداد اتفاقية الإيجار', en: 'Tenancy — Draft Rental Agreement' },
             'TASK_RENT_COLLECTION_MONITORING': { ar: 'الإيجار — متابعة وتحصيل الإيجارات', en: 'Tenancy — Rental Collection Monitoring' },
-            'TASK_INVEST_CONFIRM_OBJECTIVES': { ar: 'الاستثمار — تأكيد الأهداف والميزانية', en: 'Investment — Confirm Goals & Capital' },
-            'TASK_INVEST_COMPARE_RETURNS': { ar: 'الاستثمار — تحليل العوائد والمقارنة المالية', en: 'Investment — Yield & Cash-on-Cash Comparison' },
-            'TASK_INVEST_VALIDATE_FINANCIALS': { ar: 'الاستثمار — تدقيق الافتراضات المالية', en: 'Investment — Validate Financial Projections' },
-            'TASK_INVEST_PREPARE_ACQUISITION_OFFER': { ar: 'الاستثمار — إعداد عرض الاستحواذ', en: 'Investment — Prepare Acquisition Offer' },
-            'TASK_INVEST_BASELINE_PERFORMANCE': { ar: 'الاستثمار — توثيق خط الأساس المالي', en: 'Investment — Establish Performance Baseline' },
-            'TASK_INVEST_MONITOR_ACTUAL_RETURNS': { ar: 'الاستثمار — متابعة العوائد الفعلية ومقارنة الأداء', en: 'Investment — Monitor Actual Returns' },
-            'TASK_INVEST_PORTFOLIO_REVIEW': { ar: 'الاستثمار — مراجعة المحفظة الاستثمارية وتوصيات التطوير', en: 'Investment — Periodic Portfolio Review' }
+            'TASK_INVEST_CONFIRM_OBJECTIVES': { ar: 'الاستثمار — تأكيد وتحديد الأهداف الاستثمارية', en: 'Investment — Confirm Investment Objectives' },
+            'TASK_INVEST_COMPARE_RETURNS': { ar: 'الاستثمار — مقارنة العوائد الاستثمارية للوحدات المرشحة', en: 'Investment — Compare Property Returns' },
+            'TASK_INVEST_SCHEDULE_INSPECTION': { ar: 'الاستثمار — جدولة المعاينة والفحص الفني والاستثماري', en: 'Investment — Schedule Due Diligence Inspection' },
+            'TASK_INVEST_INSPECTION_REPORT': { ar: 'الاستثمار — إعداد ورفع تقرير الفحص الفني والاستثماري النافي للجهالة', en: 'Investment — Submit Due Diligence Inspection Report' },
+            'TASK_INVEST_VALIDATE_FINANCIALS': { ar: 'الاستثمار — تدقيق والتحقق من الافتراضات المالية', en: 'Investment — Validate Financial Assumptions' },
+            'TASK_INVEST_PREPARE_ACQUISITION_OFFER': { ar: 'الاستثمار — إعداد وتقديم عرض الاستحواذ', en: 'Investment — Prepare Acquisition Offer' },
+            'TASK_INVEST_BASELINE_PERFORMANCE': { ar: 'الاستثمار — تأسيس خط الأساس لأداء الاستثمار', en: 'Investment — Establish Performance Baseline' },
+            'TASK_INVEST_MONITOR_ACTUAL_RETURNS': { ar: 'الاستثمار — مراقبة ومقارنة العوائد الفعلية', en: 'Investment — Monitor Actual Returns' },
+            'TASK_INVEST_PORTFOLIO_REVIEW': { ar: 'الاستثمار — مراجعة أداء المحفظة الاستثمارية', en: 'Investment — Review Portfolio Performance' }
         };
 
-        const WORKFLOW_ACT_TITLES = {
+        let WORKFLOW_ACT_TITLES = {
             'ACT_LEAD_CREATED': { ar: 'الطلب — إنشاء وتعيين الطلب', en: 'Lead — Created & Assigned' },
             'ACT_LEAD_ROUTED': { ar: 'الطلب — توجيه لمدير الفرع', en: 'Lead — Routed to Branch Manager' },
             'ACT_LEAD_ASSIGNED': { ar: 'الطلب — تعيين وتوجيه الوسيط', en: 'Lead — Assigned to Agent' },
@@ -1295,18 +1635,45 @@
             'ACT_TASK_REOPENED': { ar: 'المهمة — إعادة فتح وتراجع ذكي', en: 'Task — Reopened & Smart Undo' }
         };
 
-        const WORKFLOW_COMM_TITLES = {
+        let WORKFLOW_COMM_TITLES = {
             'COMM_LEAD_INITIAL_CONTACT': { ar: 'الطلب — إشعار استلام الطلب والترحيب', en: 'Lead — Welcome Notification' },
             'COMM_OPPORTUNITY_RECOMMENDATIONS': { ar: 'الفرصة — إرسال توصيات الوحدات المقترحة', en: 'Opportunity — Property Recommendations' },
             'COMM_VIEWING_CONFIRMATION': { ar: 'المعاينة — تأكيد موعد وموقع المعاينة', en: 'Viewing — Confirmation & Location' },
             'COMM_VIEWING_REMINDER': { ar: 'المعاينة — تذكير بموعد الزيارة الميدانية', en: 'Viewing — Customer Reminder' }
         };
 
+        let workflowTemplatesLoaded = false;
+        async function loadWorkflowTemplates() {
+            if (workflowTemplatesLoaded) return;
+            try {
+                const res = await apiRequest(`${API_BASE}/api/v1/workflow-templates`);
+                if (res && res.data && Array.isArray(res.data)) {
+                    res.data.forEach(t => {
+                        const item = { 
+                            ar: t.standard_title_ar || t.template_id, 
+                            en: t.standard_title_en || t.template_id 
+                        };
+                        if (t.template_type === 'TASK') {
+                            WORKFLOW_TASK_TITLES[t.template_id] = item;
+                        } else if (t.template_type === 'ACTIVITY') {
+                            WORKFLOW_ACT_TITLES[t.template_id] = item;
+                        } else if (t.template_type === 'COMMUNICATION') {
+                            WORKFLOW_COMM_TITLES[t.template_id] = item;
+                        }
+                    });
+                    workflowTemplatesLoaded = true;
+                }
+            } catch (e) {
+                console.warn('Could not load dynamic workflow templates, using fallback', e);
+            }
+        }
+
         function getLocalizedTaskTitle(title, templateId) {
             const isAr = currentLang === 'ar';
             if (templateId && WORKFLOW_TASK_TITLES[templateId]) {
                 return isAr ? WORKFLOW_TASK_TITLES[templateId].ar : WORKFLOW_TASK_TITLES[templateId].en;
             }
+            if (isAr && title) return title;
             for (const k in WORKFLOW_TASK_TITLES) {
                 if (title === WORKFLOW_TASK_TITLES[k].ar) return isAr ? WORKFLOW_TASK_TITLES[k].ar : WORKFLOW_TASK_TITLES[k].en;
                 if (title === WORKFLOW_TASK_TITLES[k].en) return isAr ? WORKFLOW_TASK_TITLES[k].ar : WORKFLOW_TASK_TITLES[k].en;
@@ -1775,12 +2142,56 @@
                 const isActionable = (t.status === 'OPEN' || t.status === 'PENDING' || t.status === 'IN_PROGRESS');
                 const displayTitle = getLocalizedTaskTitle(t.title, t.template_id);
                 const assignedName = t.assigned_user_name || (isAr ? 'غير مسند' : 'Unassigned');
+                
+                // Inquiry & Preferred Property Type Badge for decision support
+                let inqBadgeHtml = '';
+                if (t.inquiry_type || t.preferred_property_type_name_ar || t.preferred_property_type_name) {
+                    const rawInq = (t.inquiry_type || '').toUpperCase();
+                    let inqLabel = isAr ? 'طلب عقاري' : 'Inquiry';
+                    let inqBg = '#eff6ff';
+                    let inqColor = '#1d4ed8';
+                    let inqBorder = '#bfdbfe';
+                    let inqIcon = '🎯';
+
+                    if (rawInq === 'RENT') {
+                        inqLabel = isAr ? 'إيجار' : 'Rent';
+                        inqBg = '#f0fdf4';
+                        inqColor = '#15803d';
+                        inqBorder = '#bbf7d0';
+                        inqIcon = '🔑';
+                    } else if (rawInq === 'INVEST' || rawInq === 'INVESTMENT') {
+                        inqLabel = isAr ? 'استثمار' : 'Invest';
+                        inqBg = '#f5f3ff';
+                        inqColor = '#6d28d9';
+                        inqBorder = '#ddd6fe';
+                        inqIcon = '💼';
+                    } else if (rawInq === 'BUY') {
+                        inqLabel = isAr ? 'شراء' : 'Buy';
+                        inqBg = '#eff6ff';
+                        inqColor = '#1d4ed8';
+                        inqBorder = '#bfdbfe';
+                        inqIcon = '🏠';
+                    }
+
+                    const pTypeName = isAr 
+                        ? (t.preferred_property_type_name_ar || t.preferred_property_type_name || '') 
+                        : (t.preferred_property_type_name || t.preferred_property_type_name_ar || '');
+
+                    inqBadgeHtml = `
+                        <div style="margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; background: ${inqBg}; color: ${inqColor}; border: 1px solid ${inqBorder}; border-radius: 4px; padding: 2px 7px; font-size: 0.76em; font-weight: 700;">
+                            <span>${inqIcon} ${inqLabel}</span>
+                            ${pTypeName ? `<span style="opacity: 0.85;">• 🏢 ${pTypeName}</span>` : ''}
+                        </div>
+                    `;
+                }
+
                 return `
                     <tr>
                         <td><span class="id-badge">${t.task_id}</span></td>
                         <td class="tasks-title-cell">
                             <strong>${displayTitle}</strong>
                             ${t.template_id ? `<div style="font-size:0.7em; color:#64748b; font-family:monospace; margin-top:2px;">[${t.template_id}]</div>` : ''}
+                            ${inqBadgeHtml}
                             ${t.is_overdue ? (isAr ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[متأخر]</span>' : '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>') : ''}
                             ${t.escalation_level > 1 ? (isAr ? '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 مصعد للمدير</span>' : '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 Escalated to Manager</span>') : ''}
                         </td>
@@ -1790,8 +2201,15 @@
                         <td>${assignedName}</td>
                         <td class="tasks-rel-cell">
                             <div><strong>${t.customer_name || 'N/A'}</strong></div>
-                            ${t.lead_id ? `<div style="font-size:0.75em; color:#0284c7; margin-top:2px; display:flex; align-items:center; gap:4px;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${t.lead_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
-                            ${t.opportunity_id ? `<div style="font-size:0.75em; color:#16a34a; margin-top:2px; display:flex; align-items:center; gap:4px;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a> <button type="button" class="btn-sm" style="font-size:0.72em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ oppId: '${t.opportunity_id}' })" title="Situation / مسار المعاملة">📍 مسار</button></div>` : ''}
+                            <div style="font-size:0.75em; margin-top:2px; display:flex; flex-direction:column; gap:2px;">
+                                ${t.lead_id ? `<div style="color:#0284c7;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;">${t.lead_id}</a></div>` : ''}
+                                ${t.opportunity_id ? `<div style="color:#16a34a;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;">${t.opportunity_id}</a></div>` : ''}
+                            </div>
+                            ${(t.lead_id || t.opportunity_id) ? `
+                                <div style="margin-top:4px;">
+                                    <button type="button" class="btn-sm" style="font-size:0.72em; padding:2px 8px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:4px; cursor:pointer; font-weight:600;" onclick="openSituationModal({ leadId: '${t.lead_id || ''}', oppId: '${t.opportunity_id || ''}' })" title="Situation / مسار المعاملة">📍 مسار المعاملة</button>
+                                </div>
+                            ` : ''}
                         </td>
                         <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : (t.status === 'CANCELLED' ? 'ملغاة' : t.status)))) : t.status}</span></td>
                         <td>
@@ -1858,6 +2276,16 @@
                     try { steps = JSON.parse(steps); } catch (e) { break; }
                 }
                 if (!Array.isArray(steps)) steps = [];
+                steps = steps.map((s, idx) => {
+                    if (typeof s === 'string') {
+                        return { step_no: idx + 1, title: s, description: '' };
+                    }
+                    return {
+                        step_no: s.step_no || (idx + 1),
+                        title: s.title || (isAr ? `الخطوة ${idx + 1}` : `Step ${idx + 1}`),
+                        description: s.description || ''
+                    };
+                });
                 currentSopSampleNotes = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
 
                 let stepsHtml = '';
@@ -1866,12 +2294,12 @@
                         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
                             ${steps.map(s => `
                                 <div style="background:white; border:1px solid #bae6fd; border-radius:6px; padding:8px 10px; display:flex; gap:10px; align-items:flex-start;">
-                                    <span style="background:#0284c7; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">
+                                    <span style="background:#0284c7; color:white; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75em; flex-shrink:0;">
                                         ${s.step_no}
                                     </span>
                                     <div style="flex:1;">
                                         <div style="font-weight:700; color:#0f172a; font-size:0.9em;">${s.title}</div>
-                                        <div style="font-size:0.82em; color:#475569; margin-top:2px; line-height:1.4;">${s.description}</div>
+                                        ${s.description ? `<div style="font-size:0.82em; color:#475569; margin-top:2px; line-height:1.4;">${s.description}</div>` : ''}
                                     </div>
                                 </div>
                             `).join('')}
@@ -1879,11 +2307,30 @@
                     `;
                 }
 
+                const reqNow = isAr ? g.required_now_ar : g.required_now_en;
+                const compCrit = isAr ? (g.completion_criteria_ar || g.completion_criteria) : (g.completion_criteria_en || g.completion_criteria_ar || g.completion_criteria);
+                const mandRules = isAr ? g.mandatory_conditions_ar : g.mandatory_conditions_en;
+
                 contentEl.innerHTML = `
                     <div style="line-height:1.5;">
+                        ${reqNow ? `
+                            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:0.84em; color:#166534;">
+                                ⚡ <strong>${isAr ? 'المطلوب إنجازه الآن: ' : 'Required Action: '}</strong> ${reqNow}
+                            </div>
+                        ` : ''}
+                        ${compCrit ? `
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:0.82em; color:#334155;">
+                                📋 <strong>${isAr ? 'معيار الإنجاز والاعتماد: ' : 'Completion Criteria: '}</strong> ${compCrit}
+                            </div>
+                        ` : ''}
                         <div style="font-size:0.82em; color:#0369a1; margin-bottom:8px;">
                             🎯 <strong>${isAr ? 'الهدف: ' : 'Goal: '}</strong> ${isAr ? g.step_goal_ar : g.step_goal_en}
                         </div>
+                        ${mandRules ? `
+                            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:0.82em; color:#92400e;">
+                                ⚖️ <strong>${isAr ? 'الشروط الإلزامية: ' : 'Mandatory Rules: '}</strong> ${mandRules}
+                            </div>
+                        ` : ''}
                         ${stepsHtml}
                         ${currentSopSampleNotes ? `
                             <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:8px 10px; margin-bottom:8px;">
@@ -1983,6 +2430,16 @@
                     try { steps = JSON.parse(steps); } catch (e) { break; }
                 }
                 if (!Array.isArray(steps)) steps = [];
+                steps = steps.map((s, idx) => {
+                    if (typeof s === 'string') {
+                        return { step_no: idx + 1, title: s, description: '' };
+                    }
+                    return {
+                        step_no: s.step_no || (idx + 1),
+                        title: s.title || (isAr ? `الخطوة ${idx + 1}` : `Step ${idx + 1}`),
+                        description: s.description || ''
+                    };
+                });
                 const sample = isAr ? (g.sample_notes_ar || '') : (g.sample_notes_en || '');
 
                 let stepsHtml = '';
@@ -2000,7 +2457,7 @@
                                         </span>
                                         <div style="flex:1;">
                                             <div style="font-weight:700; color:#0f172a; font-size:0.95em;">${s.title}</div>
-                                            <div style="font-size:0.88em; color:#475569; margin-top:4px; line-height:1.5;">${s.description}</div>
+                                            ${s.description ? `<div style="font-size:0.88em; color:#475569; margin-top:4px; line-height:1.5;">${s.description}</div>` : ''}
                                         </div>
                                     </div>
                                 `).join('')}
@@ -2009,8 +2466,45 @@
                     `;
                 }
 
+                let taskRibbonHtml = '';
+                const matchedTask = (typeof tasksData !== 'undefined' && tasksData) ? tasksData.find(x => x.template_id === code || x.task_id === code || x.title === title) : null;
+                if (matchedTask && (matchedTask.inquiry_type || matchedTask.preferred_property_type_name_ar || matchedTask.preferred_property_type_name)) {
+                    const rawInq = (matchedTask.inquiry_type || '').toUpperCase();
+                    let inqLabel = isAr ? 'طلب عقاري' : 'Inquiry';
+                    let inqBg = '#eff6ff';
+                    let inqColor = '#1d4ed8';
+                    let inqBorder = '#bfdbfe';
+                    let inqIcon = '🎯';
+                    if (rawInq === 'RENT') {
+                        inqLabel = isAr ? 'إيجار' : 'Rent';
+                        inqBg = '#f0fdf4'; inqColor = '#15803d'; inqBorder = '#bbf7d0'; inqIcon = '🔑';
+                    } else if (rawInq === 'INVEST' || rawInq === 'INVESTMENT') {
+                        inqLabel = isAr ? 'استثمار' : 'Invest';
+                        inqBg = '#f5f3ff'; inqColor = '#6d28d9'; inqBorder = '#ddd6fe'; inqIcon = '💼';
+                    } else if (rawInq === 'BUY') {
+                        inqLabel = isAr ? 'شراء' : 'Buy';
+                        inqBg = '#eff6ff'; inqColor = '#1d4ed8'; inqBorder = '#bfdbfe'; inqIcon = '🏠';
+                    }
+                    const pTypeName = isAr 
+                        ? (matchedTask.preferred_property_type_name_ar || matchedTask.preferred_property_type_name || '') 
+                        : (matchedTask.preferred_property_type_name || matchedTask.preferred_property_type_name_ar || '');
+                    
+                    taskRibbonHtml = `
+                        <div style="background:${inqBg}; border:1.5px solid ${inqBorder}; color:${inqColor}; border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.86em;">
+                            <span>${inqIcon} ${inqLabel}</span>
+                            ${pTypeName ? `<span>• 🏢 ${isAr ? 'نوع العقار المفضل:' : 'Preferred Property:'} ${pTypeName}</span>` : ''}
+                            <span style="margin-inline-start:auto; background:white; padding:2px 8px; border-radius:4px; border:1px solid ${inqBorder};">${matchedTask.priority || 'NORMAL'}</span>
+                        </div>
+                    `;
+                }
+
+                const modalReqNow = isAr ? g.required_now_ar : g.required_now_en;
+                const modalCompCrit = isAr ? (g.completion_criteria_ar || g.completion_criteria) : (g.completion_criteria_en || g.completion_criteria_ar || g.completion_criteria);
+                const modalMandRules = isAr ? g.mandatory_conditions_ar : g.mandatory_conditions_en;
+
                 bodyEl.innerHTML = `
                     <div style="line-height:1.6;">
+                        ${taskRibbonHtml}
                         <div style="background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px;">
                             <div style="font-weight:800; color:#0369a1; font-size:1em;">
                                 ${isAr ? g.stage_name_ar : g.stage_name_en}
@@ -2020,15 +2514,31 @@
                             </div>
                         </div>
 
-                        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:12px; margin-bottom:10px;">
-                            <div style="font-weight:700; color:#166534; font-size:0.88em; margin-bottom:4px;">🎯 ${isAr ? 'الهدف من الإجراء:' : 'Objective:'}</div>
-                            <div style="font-size:0.88em; color:#14532d;">${isAr ? g.step_goal_ar : g.step_goal_en}</div>
+                        ${modalReqNow ? `
+                            <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:12px; margin-bottom:10px;">
+                                <div style="font-weight:700; color:#166534; font-size:0.88em; margin-bottom:4px;">⚡ ${isAr ? 'المطلوب إنجازه الآن:' : 'Immediate Required Action:'}</div>
+                                <div style="font-size:0.88em; color:#14532d;">${modalReqNow}</div>
+                            </div>
+                        ` : ''}
+
+                        ${modalCompCrit ? `
+                            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; margin-bottom:10px;">
+                                <div style="font-weight:700; color:#334155; font-size:0.88em; margin-bottom:4px;">📋 ${isAr ? 'معيار الإنجاز والاعتماد (Definition of Done):' : 'Completion Criteria:'}</div>
+                                <div style="font-size:0.88em; color:#1e293b;">${modalCompCrit}</div>
+                            </div>
+                        ` : ''}
+
+                        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#0369a1; font-size:0.88em; margin-bottom:4px;">🎯 ${isAr ? 'الهدف من الإجراء:' : 'Objective:'}</div>
+                            <div style="font-size:0.88em; color:#0c4a6e;">${isAr ? g.step_goal_ar : g.step_goal_en}</div>
                         </div>
 
-                        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px; margin-bottom:10px;">
-                            <div style="font-weight:700; color:#92400e; font-size:0.88em; margin-bottom:4px;">⚖️ ${isAr ? 'الشروط الإلزامية والقواعد النظامية:' : 'Mandatory Rules:'}</div>
-                            <div style="font-size:0.88em; color:#78350f;">${isAr ? g.mandatory_conditions_ar : g.mandatory_conditions_en}</div>
-                        </div>
+                        ${modalMandRules ? `
+                            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px; margin-bottom:10px;">
+                                <div style="font-weight:700; color:#92400e; font-size:0.88em; margin-bottom:4px;">⚖️ ${isAr ? 'الشروط الإلزامية والقواعد النظامية:' : 'Mandatory Rules:'}</div>
+                                <div style="font-size:0.88em; color:#78350f;">${modalMandRules}</div>
+                            </div>
+                        ` : ''}
 
                         ${stepsHtml}
 
@@ -2047,8 +2557,41 @@
                 `;
             } catch (err) {
                 console.warn('openSopHelpModal error:', err);
+                let taskRibbonHtml = '';
+                const matchedTask = (typeof tasksData !== 'undefined' && tasksData) ? tasksData.find(x => x.template_id === code || x.task_id === code || x.title === title) : null;
+                if (matchedTask && (matchedTask.inquiry_type || matchedTask.preferred_property_type_name_ar || matchedTask.preferred_property_type_name)) {
+                    const rawInq = (matchedTask.inquiry_type || '').toUpperCase();
+                    let inqLabel = isAr ? 'طلب عقاري' : 'Inquiry';
+                    let inqBg = '#eff6ff';
+                    let inqColor = '#1d4ed8';
+                    let inqBorder = '#bfdbfe';
+                    let inqIcon = '🎯';
+                    if (rawInq === 'RENT') {
+                        inqLabel = isAr ? 'إيجار' : 'Rent';
+                        inqBg = '#f0fdf4'; inqColor = '#15803d'; inqBorder = '#bbf7d0'; inqIcon = '🔑';
+                    } else if (rawInq === 'INVEST' || rawInq === 'INVESTMENT') {
+                        inqLabel = isAr ? 'استثمار' : 'Invest';
+                        inqBg = '#f5f3ff'; inqColor = '#6d28d9'; inqBorder = '#ddd6fe'; inqIcon = '💼';
+                    } else if (rawInq === 'BUY') {
+                        inqLabel = isAr ? 'شراء' : 'Buy';
+                        inqBg = '#eff6ff'; inqColor = '#1d4ed8'; inqBorder = '#bfdbfe'; inqIcon = '🏠';
+                    }
+                    const pTypeName = isAr 
+                        ? (matchedTask.preferred_property_type_name_ar || matchedTask.preferred_property_type_name || '') 
+                        : (matchedTask.preferred_property_type_name || matchedTask.preferred_property_type_name_ar || '');
+                    
+                    taskRibbonHtml = `
+                        <div style="background:${inqBg}; border:1.5px solid ${inqBorder}; color:${inqColor}; border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.86em;">
+                            <span>${inqIcon} ${inqLabel}</span>
+                            ${pTypeName ? `<span>• 🏢 ${isAr ? 'نوع العقار المفضل:' : 'Preferred Property:'} ${pTypeName}</span>` : ''}
+                            <span style="margin-inline-start:auto; background:white; padding:2px 8px; border-radius:4px; border:1px solid ${inqBorder};">${matchedTask.priority || 'NORMAL'}</span>
+                        </div>
+                    `;
+                }
+
                 bodyEl.innerHTML = `
                     <div style="line-height:1.6;">
+                        ${taskRibbonHtml}
                         <div style="background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px;">
                             <div style="font-weight:800; color:#0369a1; font-size:1em;">
                                 💡 ${isAr ? 'الدليل الإرشادي المعتمد للمهمة' : 'Standard Operating Guidance'}
@@ -2123,9 +2666,52 @@
                 } catch (_) {}
             }
 
+            // Populate Decision Support Ribbon highlighting inquiry_type + preferred_property_type + priority
+            const ribbonEl = document.getElementById('comp-decision-ribbon');
+            if (ribbonEl) {
+                const inq = ((taskLead && taskLead.inquiry_type) || (taskOpp && taskOpp.inquiry_type) || (t && t.inquiry_type) || '').toUpperCase();
+                const pType = (taskLead && (taskLead.preferred_property_type_name_ar || taskLead.preferred_property_type_name)) ||
+                              (taskOpp && (taskOpp.preferred_property_type_name_ar || taskOpp.preferred_property_type_name)) ||
+                              (t && (t.preferred_property_type_name_ar || t.preferred_property_type_name)) || '';
+                const pri = (taskLead && taskLead.priority) || (t && t.priority) || 'NORMAL';
+
+                let inqBadge = isAr ? 'طلب عقاري' : 'Inquiry';
+                let inqColor = '#0369a1';
+                let inqBg = '#e0f2fe';
+                let inqBorder = '#bae6fd';
+                if (inq === 'RENT') {
+                    inqBadge = isAr ? '🔑 إيجار (RENT)' : '🔑 Rent';
+                    inqColor = '#15803d'; inqBg = '#dcfce7'; inqBorder = '#86efac';
+                } else if (inq === 'INVEST' || inq === 'INVESTMENT') {
+                    inqBadge = isAr ? '💼 استثمار (INVESTMENT)' : '💼 Investment';
+                    inqColor = '#6d28d9'; inqBg = '#ede9fe'; inqBorder = '#c4b5fd';
+                } else if (inq === 'BUY') {
+                    inqBadge = isAr ? '🏠 شراء (BUY)' : '🏠 Buy';
+                    inqColor = '#0369a1'; inqBg = '#e0f2fe'; inqBorder = '#bae6fd';
+                }
+
+                const priLabel = isAr ? (pri === 'URGENT' ? '🚨 عاجل' : (pri === 'HIGH' ? '🔥 هام' : '🔵 عادي')) : pri;
+
+                ribbonEl.style.display = 'flex';
+                ribbonEl.style.alignItems = 'center';
+                ribbonEl.style.flexWrap = 'wrap';
+                ribbonEl.style.gap = '10px';
+                ribbonEl.style.background = inqBg;
+                ribbonEl.style.border = `1.5px solid ${inqBorder}`;
+                ribbonEl.style.color = inqColor;
+                ribbonEl.innerHTML = `
+                    <div style="font-weight: 800;">${inqBadge}</div>
+                    <div style="opacity: 0.95;">🏢 ${isAr ? 'نوع العقار المفضل: ' : 'Preferred Property: '}<strong>${pType || (isAr ? 'غير محدد' : 'Any')}</strong></div>
+                    <div style="margin-inline-start: auto; background: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; border: 1px solid ${inqBorder};">
+                        ${isAr ? 'الأولوية: ' : 'Priority: '}<strong>${priLabel}</strong>
+                    </div>
+                `;
+            }
+
             // 1. Pre-fill Budget Range
             const prefillBMin = (taskLead && taskLead.budget_min != null) ? taskLead.budget_min : (taskOpp && taskOpp.budget_min != null ? taskOpp.budget_min : '');
             const prefillBMax = (taskLead && taskLead.budget_max != null) ? taskLead.budget_max : (taskOpp && taskOpp.budget_max != null ? taskOpp.budget_max : '');
+            window.currentInvestorMaxBudget = prefillBMax ? parseFloat(prefillBMax) : 0;
             if (prefillBMin !== '') document.getElementById('comp-budget-min').value = prefillBMin;
             if (prefillBMax !== '') document.getElementById('comp-budget-max').value = prefillBMax;
 
@@ -2153,11 +2739,21 @@
             const matchFields = document.getElementById('comp-matching-fields');
             const viewingFields = document.getElementById('comp-viewing-fields');
             const viewingReportFields = document.getElementById('comp-viewing-report-fields');
+            const ddrFields = document.getElementById('comp-invest-ddr-fields');
+            const baseFields = document.getElementById('comp-invest-baseline-fields');
+            const monFields = document.getElementById('comp-invest-monitor-fields');
+            const investObjFields = document.getElementById('comp-invest-objectives-fields');
+            const investRetFields = document.getElementById('comp-invest-returns-fields');
             if (qualFields) qualFields.style.display = 'none';
             if (cbFields) cbFields.style.display = 'none';
             if (matchFields) matchFields.style.display = 'none';
             if (viewingFields) viewingFields.style.display = 'none';
             if (viewingReportFields) viewingReportFields.style.display = 'none';
+            if (ddrFields) ddrFields.style.display = 'none';
+            if (baseFields) baseFields.style.display = 'none';
+            if (monFields) monFields.style.display = 'none';
+            if (investObjFields) investObjFields.style.display = 'none';
+            if (investRetFields) investRetFields.style.display = 'none';
 
             // Set default callback datetime to tomorrow 11:00 AM
             const cbInput = document.getElementById('comp-callback-datetime');
@@ -2267,7 +2863,7 @@
                 if (matchFields) matchFields.style.display = 'block';
                 populateMatchingUnits(t);
 
-            } else if (templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE') {
+            } else if (templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE' || templateId === 'TASK_INVEST_SCHEDULE_INSPECTION') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="SCHEDULED" checked onchange="toggleViewingScheduleFields(true)">
@@ -2489,16 +3085,127 @@
                         </div>
                     </label>
                 `;
+                if (investObjFields) {
+                    investObjFields.style.display = 'block';
+                    const initCap = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || prefillBMax || '';
+                    if (initCap) document.getElementById('comp-invest-target-capital').value = initCap;
+                    document.getElementById('comp-invest-target-yield').value = '8.0';
+                    document.getElementById('comp-invest-horizon-years').value = '5';
+                    document.getElementById('comp-invest-risk-tolerance').value = 'MEDIUM';
+                    document.getElementById('comp-invest-strategy').value = 'BALANCED';
+                }
             } else if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="RETURNS_COMPARED" checked>
                         <div>
                             <strong style="color:#166534;">${isAr ? '📈 تم احتساب ومقارنة العوائد الاستثمارية للوحدات' : '📈 Returns & Yields Calculated'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'احتساب العائد الصافي ومعدل CoC، وتوليد مهمة تدقيق الافتراضات المالية' : 'Calculate NOI & Cash-on-Cash, spawn financials validation task'}</div>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'احتساب العائد الصافي ومعدل CoC، وتوليد مهمة جدولة المعاينة والفحص الفني والاستثماري' : 'Calculate NOI & Cash-on-Cash, spawn due diligence inspection scheduling task'}</div>
                         </div>
                     </label>
                 `;
+                if (investRetFields) {
+                    investRetFields.style.display = 'block';
+                    populateInvestReturnsUnits(t, taskLead, taskOpp);
+                }
+            } else if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+                        <input type="radio" name="comp_outcome" value="RECOMMENDED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '⭐ موصى به — الفحص الفني والتجاري ممتاز' : '⭐ Recommended — Solid Due Diligence'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'الهيكل سليم ومطابق للكود ونسبة الإشغال ممتازة، المضي نحو تدقيق الفرضيات المالية' : 'Structure sound, SBC compliant, occupancy verified; advance to financial validation'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+                        <input type="radio" name="comp_outcome" value="RECOMMENDED_WITH_PRICE_ADJUSTMENT">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '⚠️ موصى به مع تعديل السعر (خصم الـ CapEx)' : '⚠️ Proceed with CapEx Price Adjustment'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توجد ملاحظات صيانة تتطلب نفقات رأسمالية (CapEx) يوصى بخصمها من قيمة العرض' : 'Recommend deducting estimated CapEx from acquisition offer price'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="REJECTED">
+                        <div>
+                            <strong style="color:#991b1b;">${isAr ? '🚫 استبعاد العقار — عيوب فنية أو انخفاض حاد في الإشغال' : '🚫 Rejected — Major Technical/Occupancy Defects'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'صرف النظر عن الأصل والعودة للبحث ومقارنة بدائل استثمارية أخرى' : 'Disqualify candidate property and return to comparative analysis'}</div>
+                        </div>
+                    </label>
+                `;
+                if (ddrFields) {
+                    ddrFields.style.display = 'block';
+
+                    // 1. Inherit Price & Rent from Unit (strictly prioritizing Unit Asking Price over general budget)
+                    let pPrice = (taskLead && taskLead.asking_price) || (taskLead && taskLead.unit_price) || (taskOpp && taskOpp.unit_price) || (taskOpp && taskOpp.asking_price) || 0;
+                    let pRent = (taskLead && taskLead.rent_price) || (taskOpp && taskOpp.rent_price) || 0;
+
+                    if (!pPrice && t && t.opportunity_id) {
+                        try {
+                            const uRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${t.opportunity_id}/units`);
+                            if (uRes.ok) {
+                                const uData = (await uRes.json()).data || [];
+                                if (uData.length > 0) {
+                                    pPrice = uData[0].asking_price || pPrice;
+                                    pRent = uData[0].rent_price || pRent;
+                                }
+                            }
+                        } catch (_) {}
+                    }
+                    if (!pPrice && taskOpp && taskOpp.expected_value) {
+                        pPrice = taskOpp.expected_value;
+                    } else if (!pPrice && taskLead && taskLead.budget_max) {
+                        pPrice = taskLead.budget_max;
+                    }
+                    if (!pRent) {
+                        pRent = pPrice ? pPrice * 0.08 : 0;
+                    }
+
+                    if (pPrice) {
+                        document.getElementById('comp-invest-price').value = pPrice;
+                        document.getElementById('comp-invest-cash-inv').value = pPrice;
+                    }
+                    if (pRent) {
+                        document.getElementById('comp-invest-gross-rent').value = pRent;
+                    }
+
+                    // 2. Fetch existing due diligence report if available
+                    if (t && t.opportunity_id) {
+                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
+                            .then(r => r.json())
+                            .then(j => {
+                                if (j.data && j.data.length > 0) {
+                                    const rep = j.data[0];
+                                    if (rep.purchase_price_sar) document.getElementById('comp-invest-price').value = rep.purchase_price_sar;
+                                    if (rep.gross_annual_rent_sar) document.getElementById('comp-invest-gross-rent').value = rep.gross_annual_rent_sar;
+                                    if (rep.operating_expenses_opex_sar) document.getElementById('comp-invest-opex').value = rep.operating_expenses_opex_sar;
+                                    if (rep.estimated_capex_sar != null) document.getElementById('comp-invest-capex').value = rep.estimated_capex_sar;
+                                    if (rep.suggested_price_adjustment_sar != null) document.getElementById('comp-invest-price-adj').value = rep.suggested_price_adjustment_sar;
+                                    if (rep.actual_occupancy_rate != null) document.getElementById('comp-invest-actual-occ').value = rep.actual_occupancy_rate;
+                                    if (rep.structural_condition) document.getElementById('comp-invest-structural').value = rep.structural_condition;
+                                    if (rep.building_age_years != null) document.getElementById('comp-invest-bld-age').value = rep.building_age_years;
+                                    if (rep.saudi_building_code_compliant != null) document.getElementById('comp-invest-sbc').value = String(rep.saudi_building_code_compliant);
+                                    if (rep.hvac_status) document.getElementById('comp-invest-hvac').value = rep.hvac_status;
+                                    if (rep.elevators_status) document.getElementById('comp-invest-elevators').value = rep.elevators_status;
+                                    if (rep.roofing_and_insulation_status) document.getElementById('comp-invest-roofing').value = rep.roofing_and_insulation_status;
+                                    if (rep.technical_notes) document.getElementById('comp-invest-tech-notes').value = rep.technical_notes;
+                                    if (rep.commercial_viability_score != null) document.getElementById('comp-invest-comm-score').value = rep.commercial_viability_score;
+                                    if (rep.property_manager_interview_notes) document.getElementById('comp-invest-pm-notes').value = rep.property_manager_interview_notes;
+                                    if (!rep.estimated_capex_sar) {
+                                        autoCalculateEstimatedCapex();
+                                    }
+                                } else {
+                                    autoCalculateEstimatedCapex();
+                                }
+                                calculateLiveInvestmentMetrics();
+                            }).catch(() => {
+                                autoCalculateEstimatedCapex();
+                                calculateLiveInvestmentMetrics();
+                            });
+                    } else {
+                        autoCalculateEstimatedCapex();
+                        calculateLiveInvestmentMetrics();
+                    }
+                }
             } else if (templateId === 'TASK_INVEST_VALIDATE_FINANCIALS') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
@@ -2509,6 +3216,32 @@
                         </div>
                     </label>
                 `;
+            } else if (templateId === 'TASK_INVEST_BASELINE_PERFORMANCE') {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="BASELINE_ESTABLISHED" checked>
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '📊 اعتماد وتوثيق خط الأساس الاستثماري' : '📊 Baseline Performance Established'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد مؤشرات الأداء (NOI و Cap Rate و Yield) كنقطة ارتكاز رسمية لبدء المتابعة الدورية' : 'Commit baseline metrics to track post-acquisition actual returns'}</div>
+                        </div>
+                    </label>
+                `;
+                if (baseFields) {
+                    baseFields.style.display = 'block';
+                    if (t && t.opportunity_id) {
+                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
+                            .then(r => r.json())
+                            .then(j => {
+                                if (j.data && j.data.length > 0) {
+                                    const rep = j.data[0];
+                                    if (rep.purchase_price_sar) document.getElementById('comp-base-price').value = rep.purchase_price_sar;
+                                    if (rep.cash_invested_sar) document.getElementById('comp-base-cash-inv').value = rep.cash_invested_sar;
+                                    if (rep.gross_annual_rent_sar) document.getElementById('comp-base-rent').value = rep.gross_annual_rent_sar;
+                                    if (rep.net_operating_income_noi_sar) document.getElementById('comp-base-noi').value = rep.net_operating_income_noi_sar;
+                                }
+                            }).catch(() => {});
+                    }
+                }
             } else if (templateId === 'TASK_INVEST_PORTFOLIO_REVIEW') {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
@@ -2538,11 +3271,28 @@
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="MONITORED" checked>
                         <div>
-                            <strong style="color:#166534;">${isAr ? '✓ تدقيق العوائد الفعلية والانتقال للمراجعة السنوية' : '✓ Returns Monitored — Advance to Portfolio Review'}</strong>
+                            <strong style="color:#166534;">${isAr ? '✓ تدقيق العوائد الفعلية ومقارنة الأداء' : '✓ Returns Monitored — Advance to Portfolio Review'}</strong>
                             <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'مقارنة الدخل الفعلي والمصروفات بخط الأساس وتوليد مهمة مراجعة أداء المحفظة الاستثمارية الختامية' : 'Compare actual vs baseline returns, spawn concluding portfolio review task'}</div>
                         </div>
                     </label>
                 `;
+                if (monFields) {
+                    monFields.style.display = 'block';
+                    if (t && t.opportunity_id) {
+                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
+                            .then(r => r.json())
+                            .then(j => {
+                                if (j.data && j.data.length > 0) {
+                                    const rep = j.data[0];
+                                    const gross = rep.gross_annual_rent_sar || (rep.purchase_price_sar * 0.08);
+                                    const targetDisp = document.getElementById('comp-mon-target-disp');
+                                    if (targetDisp) targetDisp.textContent = `${Number(gross).toLocaleString()} SAR`;
+                                    const monTarget = document.getElementById('comp-mon-forecast-income');
+                                    if (monTarget) monTarget.value = gross;
+                                }
+                            }).catch(() => {});
+                    }
+                }
             } else {
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
@@ -2605,11 +3355,20 @@
                     } catch (_) {}
                 }
 
-                const res = await fetch(`${API_BASE}/api/v1/units?page_size=30`);
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 const json = await res.json();
-                const units = json.data || [];
+                let units = json.data || [];
+
+                // Exclude SOLD and RENTED units strictly; exclude RESERVED unless already shortlisted for this deal
+                units = units.filter(u => {
+                    const st = (u.status || 'AVAILABLE').toUpperCase();
+                    if (st === 'SOLD' || st === 'RENTED') return false;
+                    if (st === 'RESERVED' && !shortlistedIds.includes(u.unit_id)) return false;
+                    return true;
+                });
+
                 if (units.length === 0) {
-                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات متاحة' : 'No available units'}</span>`;
+                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات متاحة بالمخزون حالياً' : 'No available units currently in inventory'}</span>`;
                     return;
                 }
                 const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
@@ -2670,7 +3429,10 @@
             try {
                 const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
                 const json = await res.json();
-                const invUnits = json.data || [];
+                const invUnits = (json.data || []).filter(u => {
+                    const st = (u.status || 'AVAILABLE').toUpperCase();
+                    return st !== 'SOLD' && st !== 'RENTED';
+                });
 
                 let shortlisted = [];
                 if (task.opportunity_id) {
@@ -2802,6 +3564,103 @@
                 if (offerVal) payload.offer_amount = parseFloat(offerVal);
             }
 
+            if (templateId === 'TASK_INVEST_CONFIRM_OBJECTIVES') {
+                const tCap = document.getElementById('comp-invest-target-capital')?.value;
+                const tYield = document.getElementById('comp-invest-target-yield')?.value;
+                const horizon = document.getElementById('comp-invest-horizon-years')?.value;
+                const risk = document.getElementById('comp-invest-risk-tolerance')?.value;
+                const strat = document.getElementById('comp-invest-strategy')?.value;
+
+                if (tCap) {
+                    payload.purchase_price = parseFloat(tCap);
+                    payload.budget_max = parseFloat(tCap);
+                }
+                if (tYield) payload.target_yield_percent = parseFloat(tYield);
+                if (horizon) payload.investment_horizon_years = parseInt(horizon, 10);
+                if (risk) payload.risk_tolerance = risk;
+                if (strat) payload.investment_strategy = strat;
+            }
+
+            if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
+                const uId = document.getElementById('comp-invest-ret-unit')?.value;
+                const price = document.getElementById('comp-invest-ret-price')?.value;
+                const rent = document.getElementById('comp-invest-ret-rent')?.value;
+                const opex = document.getElementById('comp-invest-ret-opex')?.value;
+                const vac = document.getElementById('comp-invest-ret-vac')?.value;
+                const cash = document.getElementById('comp-invest-ret-cash')?.value;
+                const acq = document.getElementById('comp-invest-ret-acq')?.value;
+
+                if (uId) payload.unit_id = uId;
+                if (price) payload.purchase_price = parseFloat(price);
+                if (rent) {
+                    payload.gross_annual_rent = parseFloat(rent);
+                    payload.monthly_rent_forecast = parseFloat(rent) / 12.0;
+                }
+                if (opex) payload.annual_operating_expenses = parseFloat(opex);
+                if (vac) payload.annual_vacancy_allowance = parseFloat(vac);
+                if (cash) payload.cash_invested = parseFloat(cash);
+                if (acq) payload.acquisition_costs = parseFloat(acq);
+            }
+
+            if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
+                const price = document.getElementById('comp-invest-price')?.value;
+                const grossRent = document.getElementById('comp-invest-gross-rent')?.value;
+                const opex = document.getElementById('comp-invest-opex')?.value;
+                const cashInv = document.getElementById('comp-invest-cash-inv')?.value;
+                const capex = document.getElementById('comp-invest-capex')?.value;
+                const priceAdj = document.getElementById('comp-invest-price-adj')?.value;
+                const actualOcc = document.getElementById('comp-invest-actual-occ')?.value;
+                const structCond = document.getElementById('comp-invest-structural')?.value;
+                const bldAge = document.getElementById('comp-invest-bld-age')?.value;
+                const sbc = document.getElementById('comp-invest-sbc')?.value;
+                const hvac = document.getElementById('comp-invest-hvac')?.value;
+                const elev = document.getElementById('comp-invest-elevators')?.value;
+                const roofing = document.getElementById('comp-invest-roofing')?.value;
+                const techNotes = document.getElementById('comp-invest-tech-notes')?.value;
+                const rentRoll = document.getElementById('comp-invest-rent-roll')?.value;
+                const occCount = document.getElementById('comp-invest-occ-count')?.value;
+                const totUnits = document.getElementById('comp-invest-tot-units')?.value;
+                const commScore = document.getElementById('comp-invest-comm-score')?.value;
+                const pmNotes = document.getElementById('comp-invest-pm-notes')?.value;
+
+                if (price) payload.purchase_price = parseFloat(price);
+                if (grossRent) payload.gross_annual_rent = parseFloat(grossRent);
+                if (opex) payload.annual_operating_expenses = parseFloat(opex);
+                if (cashInv) payload.cash_invested = parseFloat(cashInv);
+                if (capex) payload.estimated_capex_sar = parseFloat(capex);
+                if (priceAdj) payload.suggested_price_adjustment_sar = parseFloat(priceAdj);
+                if (actualOcc) payload.actual_occupancy_rate = parseFloat(actualOcc);
+                if (structCond) payload.structural_condition = structCond;
+                if (bldAge) payload.building_age_years = parseInt(bldAge, 10);
+                if (sbc) payload.saudi_building_code_compliant = (sbc === 'true');
+                if (hvac) payload.hvac_status = hvac;
+                if (elev) payload.elevators_status = elev;
+                if (roofing) payload.roofing_and_insulation_status = roofing;
+                if (techNotes) payload.technical_notes = techNotes;
+                if (rentRoll) payload.rent_roll_verified = (rentRoll === 'true');
+                if (occCount) payload.occupied_units_count = parseInt(occCount, 10);
+                if (totUnits) payload.total_units_inspected = parseInt(totUnits, 10);
+                if (commScore) payload.commercial_viability_score = parseInt(commScore, 10);
+                if (pmNotes) payload.property_manager_interview_notes = pmNotes;
+                payload.recommendation = outcome;
+            }
+
+            if (templateId === 'TASK_INVEST_BASELINE_PERFORMANCE') {
+                const bPrice = document.getElementById('comp-base-price')?.value;
+                const bCash = document.getElementById('comp-base-cash-inv')?.value;
+                const bRent = document.getElementById('comp-base-rent')?.value;
+                if (bPrice) payload.purchase_price = parseFloat(bPrice);
+                if (bCash) payload.cash_invested = parseFloat(bCash);
+                if (bRent) payload.monthly_rent_forecast = parseFloat(bRent) / 12.0;
+            }
+
+            if (templateId === 'TASK_INVEST_MONITOR_ACTUAL_RETURNS') {
+                const actInc = document.getElementById('comp-mon-actual-income')?.value;
+                const actExp = document.getElementById('comp-mon-actual-exp')?.value;
+                if (actInc) payload.actual_rental_income = parseFloat(actInc);
+                if (actExp) payload.actual_expenses = parseFloat(actExp);
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/complete`, {
                     method: 'POST',
@@ -2851,6 +3710,14 @@
                         showToast(isAr ? "🏆 تم إتمام تسليم العقار وإغلاق الصفقة (CLOSED_WON) وتحديث الوحدة إلى مباعة!" : "🏆 Property handover completed! Deal closed as WON and unit marked as SOLD!", "success");
                     } else if (templateId === 'TASK_CONTRACT_RECONCILIATION') {
                         showToast(isAr ? "💳 تم التحقق من مطابقة الدفعات والقيود المالية بنجاح!" : "💳 Financial reconciliation verified successfully!", "success");
+                    } else if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
+                        showToast(isAr ? "🏢 تم حفظ تقرير الفحص الفني والاستثماري النافي للجهالة بنجاح واحتساب مؤشرات NOI والـ Cap Rate وتوليد مهمة تدقيق الفرضيات المالية!" : "🏢 Due diligence report saved and financial validation task spawned!", "success");
+                    } else if (templateId === 'TASK_INVEST_BASELINE_PERFORMANCE') {
+                        showToast(isAr ? "📊 تم توثيق خط الأساس المالي الاستثماري للأصل بنجاح وبدء دورة المتابعة الدورية!" : "📊 Investment baseline established successfully!", "success");
+                    } else if (templateId === 'TASK_INVEST_MONITOR_ACTUAL_RETURNS') {
+                        showToast(isAr ? "📈 تم تسجيل ومطابقة العوائد التأجيرية الفعلية بخط الأساس بنجاح!" : "📈 Actual returns monitored and variance calculated!", "success");
+                    } else if (templateId === 'TASK_INVEST_PORTFOLIO_REVIEW') {
+                        showToast(isAr ? "💼 تم اعتماد التوصية الاستراتيجية للمحفظة الاستثمارية بنجاح!" : "💼 Portfolio strategic review completed successfully!", "success");
                     } else {
                         showToast(isAr ? "تم تسجيل النتيجة وتحديث حالة المعاملة بنجاح." : "Outcome saved and record status updated successfully.", "info");
                     }
@@ -2865,6 +3732,238 @@
             } catch (err) {
                 alert("Error: " + err.message);
             }
+        }
+
+        // --- Live Investment DD & Monitoring Calculations ---
+        function calculateLiveInvestmentMetrics() {
+            const price = parseFloat(document.getElementById('comp-invest-price')?.value || '0');
+            const grossRent = parseFloat(document.getElementById('comp-invest-gross-rent')?.value || '0');
+            const occ = parseFloat(document.getElementById('comp-invest-actual-occ')?.value || '95');
+            const capex = parseFloat(document.getElementById('comp-invest-capex')?.value || '0');
+            const opexIn = document.getElementById('comp-invest-opex')?.value;
+
+            // Vacancy allowance derived from actual occupancy
+            const vacPercent = Math.max(0, 100 - occ);
+            const vacAllowance = grossRent * (vacPercent / 100.0);
+            const egi = Math.max(0, grossRent - vacAllowance);
+
+            // Operating expenses
+            const opex = opexIn ? parseFloat(opexIn) : (grossRent * 0.10);
+            const noi = Math.max(0, egi - opex);
+
+            // Total Basis & Return yields
+            const totalBasis = price + capex;
+            const capRate = price > 0 ? ((noi / price) * 100).toFixed(2) : '0.00';
+            const netYield = totalBasis > 0 ? ((noi / totalBasis) * 100).toFixed(2) : '0.00';
+
+            const noiEl = document.getElementById('live-calc-noi');
+            if (noiEl) noiEl.textContent = `${Number(noi.toFixed(2)).toLocaleString()} SAR`;
+            const crEl = document.getElementById('live-calc-cap-rate');
+            if (crEl) crEl.textContent = `${capRate}%`;
+            const nyEl = document.getElementById('live-calc-net-yield');
+            if (nyEl) nyEl.textContent = `${netYield}%`;
+
+            // Solvency Stress Test under Seller Rejection
+            const maxBudget = window.currentInvestorMaxBudget || 0;
+            const worstCost = price + capex;
+            const buffer = maxBudget > 0 ? (maxBudget - worstCost) : null;
+
+            const mbEl = document.getElementById('live-calc-max-budget');
+            if (mbEl) mbEl.textContent = maxBudget > 0 ? `${Number(maxBudget.toFixed(2)).toLocaleString()} SAR` : 'غير محددة';
+            const wcEl = document.getElementById('live-calc-worst-cost');
+            if (wcEl) wcEl.textContent = `${Number(worstCost.toFixed(2)).toLocaleString()} SAR`;
+            const bufEl = document.getElementById('live-calc-capital-buffer');
+            const badgeEl = document.getElementById('live-calc-solvency-badge');
+            const noteEl = document.getElementById('live-calc-solvency-note');
+
+            if (bufEl && maxBudget > 0) {
+                bufEl.textContent = `${buffer >= 0 ? '+' : ''}${Number(buffer.toFixed(2)).toLocaleString()} SAR`;
+                bufEl.style.color = buffer >= 0 ? '#16a34a' : '#dc2626';
+            }
+            if (badgeEl && maxBudget > 0) {
+                if (buffer >= 0) {
+                    badgeEl.textContent = 'ملاءة مكتملة (Solvent)';
+                    badgeEl.style.background = '#dcfce7';
+                    badgeEl.style.color = '#15803d';
+                    if (noteEl) {
+                        noteEl.innerHTML = `<span style="color:#15803d;">✓ المستثمر يملك سيولة كافية ضمن ميزانيته القصوى (${Number(maxBudget.toFixed(2)).toLocaleString()} ر.س) لتحمل تكلفة الشراء كاملة والـ CapEx حتى في حال رفض البائع التعديل السعري (فائض أمان: <b>${Number(buffer.toFixed(2)).toLocaleString()} ريال</b>).</span>`;
+                    }
+                } else {
+                    const deficit = Math.abs(buffer);
+                    badgeEl.textContent = 'مخاطرة سيولة وعجز تمويلي (Deficit)';
+                    badgeEl.style.background = '#fee2e2';
+                    badgeEl.style.color = '#b91c1c';
+                    if (noteEl) {
+                        noteEl.innerHTML = `<span style="color:#b91c1c;">⚠️ تتجاوز التكلفة سقف ميزانية المستثمر بعجز قدره <b>${Number(deficit.toFixed(2)).toLocaleString()} SAR</b> — إتمام الصفقة مشروط حتماً بقبول البائع للتعديل السعري أو توفير تمويل خارجي.</span>`;
+                    }
+                }
+            } else if (badgeEl) {
+                badgeEl.textContent = 'بانتظار تحديد الميزانية';
+                badgeEl.style.background = '#f1f5f9';
+                badgeEl.style.color = '#64748b';
+                if (noteEl) noteEl.textContent = 'يرجى التأكد من تحديد ميزانية المستثمر القصوى لحساب اختبار الملاءة وهامش الأمان.';
+            }
+        }
+
+        function autoCalculateEstimatedCapex(force = false) {
+            const price = parseFloat(document.getElementById('comp-invest-price')?.value || '0');
+            const age = parseInt(document.getElementById('comp-invest-bld-age')?.value || '5', 10);
+            const structCond = (document.getElementById('comp-invest-structural')?.value || 'GOOD').toUpperCase();
+            const sbc = document.getElementById('comp-invest-sbc')?.value === 'true';
+            const hvac = (document.getElementById('comp-invest-hvac')?.value || 'OPERATIONAL').toUpperCase();
+            const elevators = (document.getElementById('comp-invest-elevators')?.value || 'OPERATIONAL').toUpperCase();
+            const roofing = (document.getElementById('comp-invest-roofing')?.value || 'GOOD').toUpperCase();
+
+            // 1. Structural Remediation
+            const structRates = { 'EXCELLENT': 0.0, 'GOOD': 0.005, 'FAIR': 0.025, 'CRITICAL': 0.08 };
+            const structuralCost = price * (structRates[structCond] ?? 0.005);
+
+            // 2. SBC Compliance Retrofitting
+            const sbcCost = sbc ? 0 : Math.max(50000, price * 0.015);
+
+            // 3. HVAC Overhaul/Maintenance
+            let hvacCost = 0;
+            if (hvac === 'FAULTY') hvacCost = Math.max(80000, price * 0.035);
+            else if (hvac === 'MAINTENANCE_REQUIRED') hvacCost = Math.max(20000, price * 0.010);
+
+            // 4. Elevators Refurbishment
+            let elevCost = 0;
+            if (elevators === 'INOPERATIVE') elevCost = Math.max(100000, price * 0.020);
+            else if (elevators === 'MAINTENANCE_REQUIRED') elevCost = Math.max(25000, price * 0.0075);
+
+            // 5. Roofing & Waterproofing
+            let roofingCost = 0;
+            if (roofing === 'WATER_LEAKAGE') roofingCost = Math.max(45000, price * 0.012);
+            else if (roofing === 'NEEDS_REPAIR') roofingCost = Math.max(15000, price * 0.005);
+
+            // 6. Age Reserve
+            let ageReserve = 0;
+            if (age > 15) ageReserve = price * ((age - 15) * 0.003);
+            else if (age > 8) ageReserve = price * ((age - 8) * 0.0015);
+
+            const totalCapex = Math.round(structuralCost + sbcCost + hvacCost + elevCost + roofingCost + ageReserve);
+            const suggestedDiscount = totalCapex;
+
+            const capexEl = document.getElementById('comp-invest-capex');
+            const priceAdjEl = document.getElementById('comp-invest-price-adj');
+
+            if (capexEl && (force || !capexEl.dataset.userEdited)) {
+                capexEl.value = totalCapex;
+            }
+            if (priceAdjEl && (force || !priceAdjEl.dataset.userEdited)) {
+                priceAdjEl.value = suggestedDiscount;
+            }
+            calculateLiveInvestmentMetrics();
+        }
+
+        function onCapexManualChange() {
+            const capexEl = document.getElementById('comp-invest-capex');
+            const priceAdjEl = document.getElementById('comp-invest-price-adj');
+            if (capexEl) capexEl.dataset.userEdited = 'true';
+            if (priceAdjEl && !priceAdjEl.dataset.userEdited && capexEl) {
+                priceAdjEl.value = capexEl.value;
+            }
+            calculateLiveInvestmentMetrics();
+        }
+
+        function onPriceAdjManualChange() {
+            const priceAdjEl = document.getElementById('comp-invest-price-adj');
+            if (priceAdjEl) priceAdjEl.dataset.userEdited = 'true';
+        }
+
+        function calculateLiveMonitoringVariance() {
+            const act = parseFloat(document.getElementById('comp-mon-actual-income')?.value || '0');
+            const target = parseFloat(document.getElementById('comp-mon-forecast-income')?.value || '0');
+            const badge = document.getElementById('comp-mon-var-badge');
+            if (badge && target > 0) {
+                const variance = (((act - target) / target) * 100).toFixed(2);
+                badge.textContent = `انحراف الأداء: ${variance > 0 ? '+' : ''}${variance}%`;
+                badge.style.color = variance >= 0 ? '#16a34a' : '#dc2626';
+            }
+        }
+
+        async function populateInvestReturnsUnits(task, taskLead, taskOpp) {
+            const unitSelect = document.getElementById('comp-invest-ret-unit');
+            if (!unitSelect) return;
+            const isAr = currentLang === 'ar';
+            unitSelect.innerHTML = `<option value="">${isAr ? 'جاري تحميل الوحدات العقارية...' : 'Loading units...'}</option>`;
+
+            let units = [];
+            try {
+                const res = await apiRequest(`${API_BASE}/api/v1/units?page_size=50`);
+                units = (res && res.data) ? res.data : [];
+            } catch (_) {}
+
+            // Exclude SOLD and RENTED
+            const validUnits = units.filter(u => {
+                const st = (u.status || '').toUpperCase();
+                return st !== 'SOLD' && st !== 'RENTED';
+            });
+
+            unitSelect.innerHTML = `<option value="">${isAr ? '-- اختر وحدة استثمارية أو أدخل المعطيات يدوياً --' : '-- Select unit or enter manually --'}</option>` +
+                validUnits.map(u => {
+                    const price = u.asking_price ? `${Number(u.asking_price).toLocaleString()} SAR` : '';
+                    const rent = u.rent_price ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '';
+                    const detail = [price, rent].filter(Boolean).join(' | ');
+                    return `<option value="${u.unit_id}" data-price="${u.asking_price || 0}" data-rent="${u.rent_price || 0}">${u.unit_number || u.unit_id} — ${u.property_type_name_ar || u.property_type_name || ''} ${detail ? '(' + detail + ')' : ''}</option>`;
+                }).join('');
+
+            // Set initial price from lead budget or opportunity expected value if available
+            const basePrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || '';
+            const priceInput = document.getElementById('comp-invest-ret-price');
+            if (priceInput && basePrice && !priceInput.value) {
+                priceInput.value = basePrice;
+                calculateLiveInvestReturnsMetrics();
+            }
+        }
+
+        function onInvestCompareUnitChange() {
+            const unitSelect = document.getElementById('comp-invest-ret-unit');
+            if (!unitSelect) return;
+            const opt = unitSelect.selectedOptions[0];
+            if (!opt || !opt.value) return;
+
+            const uPrice = parseFloat(opt.getAttribute('data-price') || '0');
+            const uRent = parseFloat(opt.getAttribute('data-rent') || '0');
+
+            if (uPrice > 0) document.getElementById('comp-invest-ret-price').value = uPrice;
+            if (uRent > 0) document.getElementById('comp-invest-ret-rent').value = uRent;
+            calculateLiveInvestReturnsMetrics();
+        }
+
+        function calculateLiveInvestReturnsMetrics() {
+            const price = parseFloat(document.getElementById('comp-invest-ret-price')?.value || '0');
+            let rent = parseFloat(document.getElementById('comp-invest-ret-rent')?.value || '0');
+            let opex = parseFloat(document.getElementById('comp-invest-ret-opex')?.value || '0');
+            let vac = parseFloat(document.getElementById('comp-invest-ret-vac')?.value || '0');
+            let cash = parseFloat(document.getElementById('comp-invest-ret-cash')?.value || '0');
+
+            if (price > 0 && rent === 0 && document.getElementById('comp-invest-ret-rent').value === '') {
+                rent = price * 0.08;
+                document.getElementById('comp-invest-ret-rent').value = Math.round(rent);
+            }
+            if (rent > 0 && opex === 0 && document.getElementById('comp-invest-ret-opex').value === '') {
+                opex = rent * 0.10;
+            }
+            if (rent > 0 && vac === 0 && document.getElementById('comp-invest-ret-vac').value === '') {
+                vac = rent * 0.05;
+            }
+            if (price > 0 && cash === 0 && document.getElementById('comp-invest-ret-cash').value === '') {
+                cash = price;
+                document.getElementById('comp-invest-ret-cash').value = Math.round(cash);
+            }
+
+            const noi = Math.max(0, rent - opex - vac);
+            const capRate = price > 0 ? (noi / price) * 100 : 0;
+            const coc = cash > 0 ? (noi / cash) * 100 : capRate;
+
+            const noiEl = document.getElementById('live-ret-noi');
+            const capEl = document.getElementById('live-ret-cap-rate');
+            const cocEl = document.getElementById('live-ret-coc');
+
+            if (noiEl) noiEl.textContent = `${Number(noi.toFixed(0)).toLocaleString()} SAR`;
+            if (capEl) capEl.textContent = `${capRate.toFixed(2)}%`;
+            if (cocEl) cocEl.textContent = `${coc.toFixed(2)}%`;
         }
 
         // --- Smart Reopen & Quick Undo Handling ---
@@ -3014,18 +4113,76 @@
                 const typeName = getLocalizedActTypeName(a.activity_type_name, a.activity_type_code);
                 const subj = getLocalizedActSubject(a.subject, a.template_id);
 
-                const leadDisplay = a.lead_id
-                    ? `<div style="display:inline-flex; align-items:center; gap:4px;">
-                        <a href="leads.html?search=${encodeURIComponent(a.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:2px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${a.lead_id}</a>
-                        <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${a.lead_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
-                      </div>`
+                let inqBadgeHtml = '';
+                if (a.inquiry_type || a.preferred_property_type_name_ar || a.preferred_property_type_name) {
+                    const rawInq = (a.inquiry_type || '').toUpperCase();
+                    let inqLabel = isAr ? 'طلب عقاري' : 'Inquiry';
+                    let inqBg = '#eff6ff';
+                    let inqColor = '#1d4ed8';
+                    let inqBorder = '#bfdbfe';
+                    let inqIcon = '🎯';
+
+                    if (rawInq === 'RENT') {
+                        inqLabel = isAr ? 'إيجار' : 'Rent';
+                        inqBg = '#f0fdf4';
+                        inqColor = '#15803d';
+                        inqBorder = '#bbf7d0';
+                        inqIcon = '🔑';
+                    } else if (rawInq === 'INVEST' || rawInq === 'INVESTMENT') {
+                        inqLabel = isAr ? 'استثمار' : 'Invest';
+                        inqBg = '#f5f3ff';
+                        inqColor = '#6d28d9';
+                        inqBorder = '#ddd6fe';
+                        inqIcon = '💼';
+                    } else if (rawInq === 'BUY') {
+                        inqLabel = isAr ? 'شراء' : 'Buy';
+                        inqBg = '#eff6ff';
+                        inqColor = '#1d4ed8';
+                        inqBorder = '#bfdbfe';
+                        inqIcon = '🏠';
+                    }
+
+                    const pTypeName = isAr 
+                        ? (a.preferred_property_type_name_ar || a.preferred_property_type_name || '') 
+                        : (a.preferred_property_type_name || a.preferred_property_type_name_ar || '');
+
+                    inqBadgeHtml = `
+                        <div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; background: ${inqBg}; color: ${inqColor}; border: 1px solid ${inqBorder}; border-radius: 4px; padding: 1px 6px; font-size: 0.74em; font-weight: 700;">
+                            <span>${inqIcon} ${inqLabel}</span>
+                            ${pTypeName ? `<span style="opacity: 0.85;">• 🏢 ${pTypeName}</span>` : ''}
+                        </div>
+                    `;
+                }
+
+                const priCls = (a.priority === 'URGENT') ? 'badge-urgent' : ((a.priority === 'HIGH') ? 'badge-high' : 'badge-normal');
+                const priBadge = a.priority ? `<span class="badge ${priCls}" style="font-size:0.7em; padding:1px 5px; margin-inline-start:4px;">${isAr ? (a.priority === 'URGENT' ? 'عاجل' : (a.priority === 'HIGH' ? 'هام' : (a.priority === 'NORMAL' ? 'عادي' : a.priority))) : a.priority}</span>` : '';
+
+                let relDisplay = [];
+                if (a.lead_id) {
+                    relDisplay.push(`<a href="leads.html?search=${encodeURIComponent(a.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${a.lead_id}</a>`);
+                }
+                if (a.opportunity_id) {
+                    relDisplay.push(`<a href="sales.html?opportunity_id=${encodeURIComponent(a.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0fdf4; border:1px solid #bbf7d0; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الفرصة البيعية' : 'View Opportunity'}">📊 ${a.opportunity_id}</a>`);
+                }
+                const trackBtn = (a.lead_id || a.opportunity_id) ? `<button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${a.lead_id || ''}', oppId: '${a.opportunity_id || ''}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍 مسار</button>` : '';
+
+                const leadDisplay = relDisplay.length > 0
+                    ? `<div style="display:flex; flex-direction:column; gap:3px;">
+                        <div style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                            ${relDisplay.join(' ')}
+                            ${trackBtn}
+                        </div>
+                       </div>`
                     : `<span style="color:#94a3b8; font-size:0.8em;">--</span>`;
 
                 return `
                     <tr>
                         <td class="col-act-type"><span class="channel-tag ${tagCls}">${icon} ${typeName}</span></td>
                         <td class="col-act-lead">${leadDisplay}</td>
-                        <td class="col-act-subj"><strong>${subj}</strong></td>
+                        <td class="col-act-subj">
+                            <div><strong>${subj}</strong> ${priBadge}</div>
+                            ${inqBadgeHtml}
+                        </td>
                         <td class="col-act-desc" style="color:var(--text-muted); font-size:0.85em;">${getLocalizedActDesc(a.description, a.template_id)}</td>
                         <td class="col-act-agent">${a.user_name || (isAr ? 'الوسيط' : 'Agent')}</td>
                         <td class="col-act-cust">${a.customer_name || 'N/A'}</td>
@@ -3074,20 +4231,19 @@
 
                 let businessHtml = [];
 
+                let relComms = [];
                 if (c.lead_id) {
-                    businessHtml.push(`
-                        <div style="display:inline-flex; align-items:center; gap:4px;">
-                            <a href="leads.html?search=${encodeURIComponent(c.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${c.lead_id}</a>
-                            <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${c.lead_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
-                        </div>
-                    `);
+                    relComms.push(`<a href="leads.html?search=${encodeURIComponent(c.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الطلب' : 'View Lead'}">🎯 ${c.lead_id}</a>`);
                 }
-
                 if (c.opportunity_id) {
+                    relComms.push(`<a href="sales.html?opportunity_id=${encodeURIComponent(c.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0fdf4; border:1px solid #bbf7d0; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الفرصة البيعية' : 'View Opportunity'}">📊 ${c.opportunity_id}</a>`);
+                }
+                if (relComms.length > 0) {
+                    const trackBtn = `<button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 5px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ leadId: '${c.lead_id || ''}', oppId: '${c.opportunity_id || ''}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍 مسار</button>`;
                     businessHtml.push(`
-                        <div style="display:inline-flex; align-items:center; gap:4px; margin-top:2px;">
-                            <a href="sales.html?opportunity_id=${encodeURIComponent(c.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:700; font-size:0.82em; background:#f0fdf4; border:1px solid #bbf7d0; padding:1px 6px; border-radius:4px;" title="${isAr ? 'عرض الفرصة البيعية' : 'View Opportunity'}">📊 ${c.opportunity_id}</a>
-                            <button type="button" class="btn-sm" style="font-size:0.7em; padding:1px 4px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:3px; cursor:pointer;" onclick="openSituationModal({ oppId: '${c.opportunity_id}' })" title="${isAr ? 'مسار المعاملة' : 'Lead Journey / Situation'}">📍</button>
+                        <div style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                            ${relComms.join(' ')}
+                            ${trackBtn}
                         </div>
                     `);
                 }
@@ -3146,6 +4302,7 @@
         let taskModalOpportunities = [];
 
         async function ensureReferenceDataLoaded() {
+            loadWorkflowTemplates();
             if (taskModalUsers.length === 0 || taskModalCustomers.length === 0 || 
                 taskModalLeads.length === 0 || taskModalOpportunities.length === 0) {
                 const [uRes, cRes, lRes, oRes] = await Promise.allSettled([
@@ -3679,6 +4836,11 @@
                 }
             }
 
+            loadWorkflowTemplates().then(() => {
+                if (typeof currentTasks !== 'undefined' && currentTasks && currentTasks.length > 0) {
+                    renderTasks(currentTasks);
+                }
+            });
             loadSummary();
             loadTasks();
             ensureReferenceDataLoaded().then(() => {
