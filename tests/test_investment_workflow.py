@@ -67,6 +67,10 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         # Cleanup test entities
+        await self.conn.execute("UPDATE units SET owner_customer_id = NULL WHERE owner_customer_id = $1", self.test_customer_id)
+        await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE customer_id = $1)", self.test_customer_id)
+        await self.conn.execute("DELETE FROM documents WHERE customer_id = $1", self.test_customer_id)
+        await self.conn.execute("DELETE FROM reservations WHERE customer_id = $1", self.test_customer_id)
         await self.conn.execute("DELETE FROM communications WHERE customer_id = $1 OR lead_id IN (SELECT lead_id FROM leads WHERE customer_id = $1)", self.test_customer_id)
         await self.conn.execute("DELETE FROM tasks WHERE customer_id = $1", self.test_customer_id)
         await self.conn.execute("DELETE FROM activities WHERE customer_id = $1", self.test_customer_id)
@@ -418,10 +422,17 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
 
     async def test_06_acquisition_offer_won_and_baseline_performance(self):
         """
-        6. Offer acceptance transitions opportunity/lead to WON and spawns TASK_INVEST_BASELINE_PERFORMANCE.
+        6. Offer acceptance transitions opportunity/lead to WON, reserves unit (AVAILABLE -> RESERVED),
+           creates reservation record & reservation document, and spawns TASK_INVEST_BASELINE_PERFORMANCE.
+           Baseline completion converts reservation (ACTIVE -> CONVERTED) and sells unit (RESERVED -> SOLD).
         """
         lead_id = "lead-test-invest-06"
         opp_id = "opp-test-invest-06"
+        test_unit = self.unit_a_id
+
+        # Ensure unit is initially AVAILABLE
+        await self.conn.execute("UPDATE units SET status = 'AVAILABLE', owner_customer_id = NULL WHERE unit_id = $1", test_unit)
+
         await self.conn.execute(
             """
             INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, status, priority, inquiry_type, created_at, updated_at)
@@ -435,6 +446,13 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
             VALUES ($1, $2, $3, $4, 'QUALIFIED', 1000000, NOW(), NOW())
             """,
             opp_id, lead_id, self.test_customer_id, self.agent_id
+        )
+        await self.conn.execute(
+            """
+            INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+            VALUES ($1, $2, TRUE, 1000000)
+            """,
+            opp_id, test_unit
         )
 
         offer_task, _ = await WorkflowEngine.spawn_task_from_template(
@@ -456,6 +474,18 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(res["business_transition"]["type"], "INVEST_ACQUISITION_WON")
+        self.assertEqual(res["business_transition"]["unit_status"], "RESERVED")
+        self.assertIsNotNone(res["business_transition"]["reservation_number"])
+
+        # Verify Unit status transitioned to RESERVED
+        unit_after_offer = await self.conn.fetchrow("SELECT status FROM units WHERE unit_id = $1", test_unit)
+        self.assertEqual(unit_after_offer["status"], "RESERVED")
+
+        # Verify Reservation created in DB with status ACTIVE
+        res_row = await self.conn.fetchrow("SELECT * FROM reservations WHERE opportunity_id = $1 AND unit_id = $2", opp_id, test_unit)
+        self.assertIsNotNone(res_row)
+        self.assertEqual(res_row["status"], "ACTIVE")
+        self.assertEqual(float(res_row["deposit_amount"]), 50000.0)  # 5% of 1,000,000
 
         # Verify Lead & Opportunity WON
         opp_db = await self.conn.fetchrow("SELECT stage FROM opportunities WHERE opportunity_id = $1", opp_id)
@@ -483,6 +513,16 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(base_res["business_transition"]["type"], "INVEST_BASELINE_ESTABLISHED")
+        self.assertEqual(base_res["business_transition"]["unit_status"], "SOLD")
+
+        # Verify Unit status transitioned to SOLD and ownership transferred
+        unit_after_base = await self.conn.fetchrow("SELECT status, owner_customer_id FROM units WHERE unit_id = $1", test_unit)
+        self.assertEqual(unit_after_base["status"], "SOLD")
+        self.assertEqual(unit_after_base["owner_customer_id"], self.test_customer_id)
+
+        # Verify Reservation converted to CONVERTED
+        res_converted = await self.conn.fetchrow("SELECT status FROM reservations WHERE opportunity_id = $1 AND unit_id = $2", opp_id, test_unit)
+        self.assertEqual(res_converted["status"], "CONVERTED")
 
         # Verify ACT_INVEST_BASELINE_ESTABLISHED recorded
         base_act = await self.conn.fetchrow(
@@ -497,10 +537,15 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(mon_task["template_id"], "TASK_INVEST_MONITOR_ACTUAL_RETURNS")
 
         # Cleanup
+        await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE opportunity_id = $1 OR lead_id = $2)", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM documents WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM reservations WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
         await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
         await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
         await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
         await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+        await self.conn.execute("UPDATE units SET status = 'AVAILABLE', owner_customer_id = NULL WHERE unit_id = $1", test_unit)
 
     async def test_07_monitor_actual_returns_and_portfolio_review(self):
         """

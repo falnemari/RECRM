@@ -344,6 +344,21 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
         now_dt = datetime.now(timezone.utc)
         first_contact_due_at = (now_dt + timedelta(minutes=30)) if assigned_user_id else None
 
+        # If preferred property type is Land, bedrooms_min should be None
+        eff_bedrooms_min = payload.bedrooms_min
+        eff_area_min_sqm = payload.area_min_sqm
+        if payload.preferred_property_type_id:
+            pt_info = await conn.fetchrow(
+                "SELECT code, category, name_en, name_ar FROM property_types WHERE property_type_id = $1",
+                payload.preferred_property_type_id
+            )
+            if pt_info:
+                pt_text = f"{pt_info['code'] or ''} {pt_info['category'] or ''} {pt_info['name_en'] or ''} {pt_info['name_ar'] or ''}".upper()
+                if "LAND" in pt_text or "أرض" in (pt_info['name_ar'] or ""):
+                    if eff_bedrooms_min and not eff_area_min_sqm:
+                        eff_area_min_sqm = float(eff_bedrooms_min)
+                    eff_bedrooms_min = None
+
         # 4. Generate Sequential Lead ID
         lead_id = await get_next_id(conn, "leads", "lead")
 
@@ -362,7 +377,7 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
             """,
             lead_id, org_id, customer_id, payload.lead_source_id, assigned_user_id,
             branch_id, payload.unit_id or None, payload.priority, payload.inquiry_type,
-            payload.budget_min, payload.budget_max, payload.bedrooms_min, payload.area_min_sqm,
+            payload.budget_min, payload.budget_max, eff_bedrooms_min, eff_area_min_sqm,
             payload.preferred_city_id, payload.preferred_property_type_id, first_contact_due_at
         )
 
@@ -464,7 +479,7 @@ async def update_lead(
 ):
 
     current_lead = await conn.fetchrow(
-        "SELECT assigned_user_id, status FROM leads WHERE lead_id = $1",
+        "SELECT assigned_user_id, status, preferred_property_type_id, bedrooms_min, area_min_sqm FROM leads WHERE lead_id = $1",
         lead_id
     )
     if not current_lead:
@@ -475,12 +490,14 @@ async def update_lead(
     params = []
     p_idx = 1
 
-    if payload.customer_id is not None:
+    fields_set = payload.model_fields_set
+
+    if "customer_id" in fields_set:
         updates.append(f"customer_id = ${p_idx}")
         params.append(payload.customer_id)
         p_idx += 1
 
-    if payload.lead_source_id is not None:
+    if "lead_source_id" in fields_set:
         updates.append(f"lead_source_id = ${p_idx}")
         params.append(payload.lead_source_id)
         p_idx += 1
@@ -503,39 +520,55 @@ async def update_lead(
         params.append(payload.inquiry_type.upper())
         p_idx += 1
 
-    if payload.assigned_user_id is not None:
+    if "assigned_user_id" in fields_set:
         updates.append(f"assigned_user_id = ${p_idx}")
         params.append(payload.assigned_user_id)
         p_idx += 1
 
-    if payload.budget_min is not None:
+    if "budget_min" in fields_set:
         updates.append(f"budget_min = ${p_idx}")
         params.append(payload.budget_min)
         p_idx += 1
 
-    if payload.budget_max is not None:
+    if "budget_max" in fields_set:
         updates.append(f"budget_max = ${p_idx}")
         params.append(payload.budget_max)
         p_idx += 1
 
-    if payload.bedrooms_min is not None:
-        updates.append(f"bedrooms_min = ${p_idx}")
-        params.append(payload.bedrooms_min)
-        p_idx += 1
-
-    if payload.area_min_sqm is not None:
-        updates.append(f"area_min_sqm = ${p_idx}")
-        params.append(payload.area_min_sqm)
-        p_idx += 1
-
-    if payload.preferred_city_id is not None:
+    if "preferred_city_id" in fields_set:
         updates.append(f"preferred_city_id = ${p_idx}")
         params.append(payload.preferred_city_id)
         p_idx += 1
 
-    if payload.preferred_property_type_id is not None:
+    if "preferred_property_type_id" in fields_set:
         updates.append(f"preferred_property_type_id = ${p_idx}")
         params.append(payload.preferred_property_type_id)
+        p_idx += 1
+
+    # Check if effective preferred property type is Land
+    eff_prop_type_id = payload.preferred_property_type_id if "preferred_property_type_id" in fields_set else current_lead["preferred_property_type_id"]
+    is_land_type = False
+    if eff_prop_type_id:
+        pt_row = await conn.fetchrow(
+            "SELECT code, category, name_en, name_ar FROM property_types WHERE property_type_id = $1",
+            eff_prop_type_id
+        )
+        if pt_row:
+            pt_text = f"{pt_row['code'] or ''} {pt_row['category'] or ''} {pt_row['name_en'] or ''} {pt_row['name_ar'] or ''}".upper()
+            if "LAND" in pt_text or "أرض" in (pt_row["name_ar"] or ""):
+                is_land_type = True
+
+    if "bedrooms_min" in fields_set:
+        target_beds = None if is_land_type else payload.bedrooms_min
+        updates.append(f"bedrooms_min = ${p_idx}")
+        params.append(target_beds)
+        p_idx += 1
+    elif is_land_type and current_lead["bedrooms_min"] is not None:
+        updates.append("bedrooms_min = NULL")
+
+    if "area_min_sqm" in fields_set:
+        updates.append(f"area_min_sqm = ${p_idx}")
+        params.append(payload.area_min_sqm)
         p_idx += 1
 
     if payload.unit_ids is not None:

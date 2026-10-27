@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from typing import Optional
+from typing import Optional, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -28,6 +28,13 @@ class DocumentOut(BaseModel):
     unit_number: Optional[str] = None
     contract_id: Optional[str] = None
     contract_number: Optional[str] = None
+    lead_id: Optional[str] = None
+    lead_number: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    task_id: Optional[str] = None
+    task_title: Optional[str] = None
+    notes: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
     file_name: str
     storage_uri: str
     file_hash: Optional[str] = None
@@ -48,11 +55,27 @@ class DocumentCreateIn(BaseModel):
     customer_id: Optional[str] = None
     unit_id: Optional[str] = None
     contract_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    task_id: Optional[str] = None
+    notes: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
     storage_uri: Optional[str] = None
     issued_at: Optional[date] = None
     expires_at: Optional[date] = None
     uploaded_by_user_id: Optional[str] = None
     status: Optional[str] = "ACTIVE"
+
+class DocumentGenerateIn(BaseModel):
+    document_type_code: str
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    task_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    contract_id: Optional[str] = None
+    custom_title: Optional[str] = None
+    custom_payload: Optional[Dict[str, Any]] = None
 
 class DocumentAccessLogOut(BaseModel):
     document_access_id: str

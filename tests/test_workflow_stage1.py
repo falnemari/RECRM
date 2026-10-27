@@ -455,6 +455,160 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_complete_task_lead_assign_with_branch_and_agent(self):
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            cust_id = "test-cust-assign-" + str(int(datetime.now(timezone.utc).timestamp()))
+            lead_id = "test-lead-assign-" + str(int(datetime.now(timezone.utc).timestamp()))
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, email)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Ahmed', 'Al-Ghamdi', '+966509988776', 'ahmed.assign@example.com')
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, inquiry_type, status, priority, branch_id, created_at, updated_at)
+                VALUES ($1, $2, $3, 'BUY', 'NEW', 'HIGH', 'branch-3', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id
+            )
+
+            # Spawn TASK_LEAD_ASSIGN
+            assign_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_LEAD_ASSIGN",
+                lead_id=lead_id,
+                customer_id=cust_id,
+                priority="HIGH"
+            )
+            self.assertIsNotNone(assign_task)
+            task_id = assign_task["task_id"]
+
+            # Complete TASK_LEAD_ASSIGN specifying target broker and branch
+            target_agent = self.agent_id
+            target_branch = "branch-1" # Dammam branch
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=task_id,
+                user_id="user-1",
+                outcome="ASSIGNED",
+                notes="تم تعيين الوسيط المختص بنجاح",
+                viewing_data={
+                    "assigned_user_id": target_agent,
+                    "branch_id": target_branch
+                }
+            )
+
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["business_transition"]["assigned_user_id"], target_agent)
+            self.assertEqual(res["business_transition"]["branch_id"], target_branch)
+
+            # Verify task status in database
+            t_row = await self.conn.fetchrow("SELECT status, completed_at FROM tasks WHERE task_id = $1", task_id)
+            self.assertEqual(t_row["status"], "COMPLETED")
+            self.assertIsNotNone(t_row["completed_at"])
+
+            # Verify lead is assigned and branch updated
+            l_row = await self.conn.fetchrow("SELECT assigned_user_id, branch_id, first_contact_due_at FROM leads WHERE lead_id = $1", lead_id)
+            self.assertEqual(l_row["assigned_user_id"], target_agent)
+            self.assertEqual(l_row["branch_id"], target_branch)
+            self.assertIsNotNone(l_row["first_contact_due_at"])
+
+            # Verify 30-min SLA contact task was spawned for the assigned agent
+            contact_task = await self.conn.fetchrow(
+                "SELECT task_id, template_id, assigned_user_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                lead_id
+            )
+            self.assertIsNotNone(contact_task)
+            self.assertEqual(contact_task["assigned_user_id"], target_agent)
+
+            # Verify activity ACT_LEAD_ASSIGNED
+            act = await self.conn.fetchrow(
+                "SELECT activity_id, outcome, user_id FROM activities WHERE lead_id = $1 AND template_id = 'ACT_LEAD_ASSIGNED'",
+                lead_id
+            )
+            self.assertIsNotNone(act)
+            self.assertEqual(act["outcome"], "ASSIGNED")
+            self.assertEqual(act["user_id"], target_agent)
+        finally:
+            await tr.rollback()
+
+    async def test_users_reference_returns_roles_and_branches(self):
+        # Verify users query returns role arrays and titles
+        users = await self.conn.fetch("""
+            SELECT 
+                u.user_id, u.full_name, u.branch_id, b.name AS branch_name,
+                COALESCE(array_agg(r.role_code ORDER BY r.role_code) FILTER (WHERE r.role_code IS NOT NULL), ARRAY[]::varchar[]) AS role_codes,
+                COALESCE(string_agg(COALESCE(r.name_ar, r.name), '، ' ORDER BY r.role_code), '') AS role_titles_ar
+            FROM users u
+            LEFT JOIN branches b ON u.branch_id = b.branch_id
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.role_id
+            WHERE u.status = 'ACTIVE'
+            GROUP BY u.user_id, u.full_name, u.branch_id, b.name
+            LIMIT 5
+        """)
+        self.assertGreater(len(users), 0)
+        for u in users:
+            self.assertIn("role_codes", u)
+            self.assertIn("role_titles_ar", u)
+
+        # Verify branches query returns active branches
+        branches = await self.conn.fetch("SELECT branch_id, name, status FROM branches WHERE status = 'ACTIVE'")
+        self.assertGreaterEqual(len(branches), 5)
+
+    async def test_lead_patch_allows_null_bedrooms_and_auto_clears_for_land(self):
+        from app.routers.leads import update_lead
+        from app.schemas.leads import LeadUpdate
+
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = f"test-lead-land-{int(datetime.now(timezone.utc).timestamp())}"
+            cust_id = f"test-cust-land-{int(datetime.now(timezone.utc).timestamp())}"
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Nasser', 'Al-Otaibi', '+966551239876')
+                """,
+                cust_id, self.org_id
+            )
+            # Create lead initially with bedrooms_min = 500 by mistake
+            await self.conn.execute(
+                """
+                INSERT INTO leads (
+                    lead_id, organization_id, customer_id, inquiry_type, status, priority,
+                    preferred_property_type_id, bedrooms_min, area_min_sqm, created_at, updated_at
+                ) VALUES ($1, $2, $3, 'BUY', 'NEW', 'NORMAL', 'property_type-10', 500, 500.0, NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id
+            )
+
+            # 1. Update lead explicitly clearing bedrooms_min to None
+            payload = LeadUpdate(bedrooms_min=None, area_min_sqm=500.0)
+            res = await update_lead(lead_id, payload, x_user_id=self.agent_id, conn=self.conn)
+            self.assertIsNone(res.data.bedrooms_min)
+            self.assertEqual(res.data.area_min_sqm, 500.0)
+
+            # Verify in database
+            db_row = await self.conn.fetchrow("SELECT bedrooms_min, area_min_sqm FROM leads WHERE lead_id = $1", lead_id)
+            self.assertIsNone(db_row["bedrooms_min"])
+            self.assertEqual(float(db_row["area_min_sqm"]), 500.0)
+
+            # 2. Update with bedrooms provided but preferred_property_type_id is Land -> should auto-clear
+            payload2 = LeadUpdate(bedrooms_min=6, preferred_property_type_id="property_type-10")
+            res2 = await update_lead(lead_id, payload2, x_user_id=self.agent_id, conn=self.conn)
+            self.assertIsNone(res2.data.bedrooms_min)
+
+            db_row2 = await self.conn.fetchrow("SELECT bedrooms_min FROM leads WHERE lead_id = $1", lead_id)
+            self.assertIsNone(db_row2["bedrooms_min"])
+        finally:
+            await tr.rollback()
+
 
 if __name__ == "__main__":
     unittest.main()

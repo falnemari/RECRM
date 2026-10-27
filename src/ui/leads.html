@@ -437,7 +437,7 @@
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
-                            <select id="lead-prop-type">
+                            <select id="lead-prop-type" onchange="onLeadPropTypeChange('add')">
                                 <option value="">-- Any Property Type --</option>
                             </select>
                         </div>
@@ -455,15 +455,16 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
+                        <div class="form-group" id="lead-bedrooms-group">
                             <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
                             <input type="number" id="lead-bedrooms" placeholder="e.g. 3" min="0">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="lead-area-group">
                             <label data-i18n="lbl_area_min">Min Area (sqm)</label>
-                            <input type="number" id="lead-area-min" placeholder="e.g. 150" min="0">
+                            <input type="number" id="lead-area-min" placeholder="e.g. 500" min="0">
                         </div>
                     </div>
+                    <div id="lead-land-hint" style="display:none; margin-top:-8px; margin-bottom:12px; font-size:0.84em; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; padding:6px 12px; border-radius:6px; font-weight:600;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closeAddLeadModal()" data-i18n="btn_cancel">Cancel</button>
@@ -630,7 +631,7 @@
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
-                            <select id="edit-lead-prop-type">
+                            <select id="edit-lead-prop-type" onchange="onLeadPropTypeChange('edit')">
                                 <option value="">-- Any Property Type --</option>
                             </select>
                         </div>
@@ -648,15 +649,16 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
+                        <div class="form-group" id="edit-lead-bedrooms-group">
                             <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
                             <input type="number" id="edit-lead-bedrooms" min="0">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="edit-lead-area-group">
                             <label data-i18n="lbl_area_min">Min Area (sqm)</label>
                             <input type="number" id="edit-lead-area-min" min="0">
                         </div>
                     </div>
+                    <div id="edit-lead-land-hint" style="display:none; margin-top:-8px; margin-bottom:12px; font-size:0.84em; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; padding:6px 12px; border-radius:6px; font-weight:600;"></div>
 
                     <!-- ================= INVENTORY SEARCH & MULTI-UNIT MATCHING ================= -->
                     <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 8px;">
@@ -1280,6 +1282,55 @@
             }
         }
 
+        function isPropertyTypeLand(propertyTypeId) {
+            if (!propertyTypeId) return false;
+            const pt = refPropertyTypes.find(p => p.property_type_id === propertyTypeId);
+            if (!pt) return false;
+            const code = (pt.code || '').toUpperCase();
+            const cat = (pt.category || '').toUpperCase();
+            const nameEn = (pt.name_en || '').toUpperCase();
+            const nameAr = pt.name_ar || '';
+            return code.includes('LAND') || cat.includes('LAND') || nameEn.includes('LAND') || nameAr.includes('أرض');
+        }
+
+        function onLeadPropTypeChange(mode) {
+            const isAr = currentLang === 'ar';
+            const prefix = mode === 'edit' ? 'edit-lead-' : 'lead-';
+            const ptSelect = document.getElementById(`${prefix}prop-type`);
+            const bedsGroup = document.getElementById(`${prefix}bedrooms-group`);
+            const bedsInput = document.getElementById(`${prefix}bedrooms`);
+            const areaGroup = document.getElementById(`${prefix}area-group`);
+            const areaInput = document.getElementById(`${prefix}area-min`);
+            const hintDiv = document.getElementById(`${prefix}land-hint`);
+
+            const isLand = isPropertyTypeLand(ptSelect ? ptSelect.value : '');
+
+            if (isLand) {
+                if (bedsGroup) {
+                    bedsGroup.style.display = 'none';
+                }
+                if (bedsInput) {
+                    bedsInput.value = '';
+                }
+                if (hintDiv) {
+                    hintDiv.style.display = 'block';
+                    hintDiv.textContent = isAr 
+                        ? '💡 نوع العقار (أرض) لا يتطلب تحديد عدد غرف، يرجى إدخال المساحة بالمتر المربع.'
+                        : '💡 Land property does not require bedrooms, please specify area in sqm.';
+                }
+                if (areaInput && (!areaInput.value || areaInput.value === '0')) {
+                    areaInput.placeholder = isAr ? 'مثال: 500 م²' : 'e.g. 500 sqm';
+                }
+            } else {
+                if (bedsGroup) {
+                    bedsGroup.style.display = 'block';
+                }
+                if (hintDiv) {
+                    hintDiv.style.display = 'none';
+                }
+            }
+        }
+
         function populateLeadAgentsForCity(cityId, selectedAgentId = null) {
             const agentSelect = document.getElementById('lead-assigned-user');
             const hintEl = document.getElementById('lead-assigned-agent-hint');
@@ -1781,6 +1832,7 @@
             document.getElementById('add-lead-form').reset();
             const activeUid = localStorage.getItem('recrm_user_id') || '';
             populateLeadAgentsForCity('', activeUid);
+            onLeadPropTypeChange('add');
             document.getElementById('add-lead-modal').style.display = 'flex';
         }
 
@@ -2023,6 +2075,11 @@
                 return;
             }
 
+            const bedsInput = document.getElementById('lead-bedrooms');
+            const bedsVal = bedsInput ? bedsInput.value.trim() : '';
+            const pType = document.getElementById('lead-prop-type')?.value;
+            const isLand = isPropertyTypeLand(pType);
+
             const payload = {
                 customer_id: custId,
                 inquiry_type: document.getElementById('lead-inquiry-type').value,
@@ -2030,10 +2087,10 @@
                 lead_source_id: document.getElementById('lead-source').value || null,
                 assigned_user_id: document.getElementById('lead-assigned-user').value || null,
                 preferred_city_id: document.getElementById('lead-city').value || null,
-                preferred_property_type_id: document.getElementById('lead-prop-type').value || null,
+                preferred_property_type_id: pType || null,
                 budget_min: parseFloat(document.getElementById('lead-budget-min').value) || null,
                 budget_max: parseFloat(document.getElementById('lead-budget-max').value) || null,
-                bedrooms_min: parseInt(document.getElementById('lead-bedrooms').value) || null,
+                bedrooms_min: (isLand || bedsVal === '') ? null : parseInt(bedsVal, 10),
                 area_min_sqm: parseFloat(document.getElementById('lead-area-min').value) || null
             };
 
@@ -2396,6 +2453,7 @@
             document.getElementById('edit-lead-budget-max').value = lead.budget_max ?? '';
             document.getElementById('edit-lead-bedrooms').value = lead.bedrooms_min ?? '';
             document.getElementById('edit-lead-area-min').value = lead.area_min_sqm ?? '';
+            onLeadPropTypeChange('edit');
 
             // Shortlisted units state initialization
             selectedUnitsForLead = [];
@@ -2478,6 +2536,11 @@
             e.preventDefault();
             const leadId = document.getElementById('edit-lead-id').value;
             const primaryUnit = selectedUnitsForLead.find(u => u.is_primary) || selectedUnitsForLead[0];
+            const bedsInput = document.getElementById('edit-lead-bedrooms');
+            const bedsVal = bedsInput ? bedsInput.value.trim() : '';
+            const pType = document.getElementById('edit-lead-prop-type')?.value;
+            const isLand = isPropertyTypeLand(pType);
+
             const payload = {
                 status: document.getElementById('edit-lead-status').value,
                 priority: document.getElementById('edit-lead-priority').value,
@@ -2486,10 +2549,10 @@
                 unit_id: primaryUnit ? primaryUnit.unit_id : (currentEditingLead?.unit_id || null),
                 lead_source_id: document.getElementById('edit-lead-source').value || null,
                 preferred_city_id: document.getElementById('edit-lead-city').value || null,
-                preferred_property_type_id: document.getElementById('edit-lead-prop-type')?.value || null,
+                preferred_property_type_id: pType || null,
                 budget_min: parseFloat(document.getElementById('edit-lead-budget-min').value) || null,
                 budget_max: parseFloat(document.getElementById('edit-lead-budget-max').value) || null,
-                bedrooms_min: parseInt(document.getElementById('edit-lead-bedrooms').value) || null,
+                bedrooms_min: (isLand || bedsVal === '') ? null : parseInt(bedsVal, 10),
                 area_min_sqm: parseFloat(document.getElementById('edit-lead-area-min').value) || null
             };
             if (selectedUnitsForLead.length > 0) {

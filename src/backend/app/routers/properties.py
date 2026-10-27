@@ -15,9 +15,11 @@ UNIT_SELECT_QUERY = """
     SELECT 
         u.unit_id,
         u.building_id,
-        b.project_id,
-        p.name_ar AS project_name_ar,
-        p.name_en AS project_name_en,
+        b.building_code,
+        b.name AS building_name,
+        COALESCE(u.project_id, b.project_id) AS project_id,
+        COALESCE(p_direct.name_ar, p_bld.name_ar) AS project_name_ar,
+        COALESCE(p_direct.name_en, p_bld.name_en) AS project_name_en,
         u.unit_number,
         u.floor_no,
         CAST(u.area_sqm AS FLOAT) AS area_sqm,
@@ -41,7 +43,8 @@ UNIT_SELECT_QUERY = """
         u.updated_at
     FROM units u
     LEFT JOIN buildings b ON u.building_id = b.building_id
-    LEFT JOIN projects p ON b.project_id = p.project_id
+    LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
+    LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
     LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
     LEFT JOIN customers oc ON u.owner_customer_id = oc.customer_id
     LEFT JOIN users usr ON u.assigned_user_id = usr.user_id
@@ -171,7 +174,7 @@ async def list_units(
             p_idx += 1
 
     if project_id:
-        conditions.append(f"b.project_id = ${p_idx}")
+        conditions.append(f"COALESCE(u.project_id, b.project_id) = ${p_idx}")
         params.append(project_id)
         p_idx += 1
 
@@ -201,7 +204,7 @@ async def list_units(
         p_idx += 1
 
     if search:
-        conditions.append(f"(u.unit_number ILIKE ${p_idx} OR p.name_en ILIKE ${p_idx} OR p.name_ar ILIKE ${p_idx} OR u.unit_id ILIKE ${p_idx})")
+        conditions.append(f"(u.unit_number ILIKE ${p_idx} OR COALESCE(p_direct.name_en, p_bld.name_en) ILIKE ${p_idx} OR COALESCE(p_direct.name_ar, p_bld.name_ar) ILIKE ${p_idx} OR u.unit_id ILIKE ${p_idx})")
         params.append(f"%{search}%")
         p_idx += 1
 
@@ -210,7 +213,8 @@ async def list_units(
         SELECT count(*) 
         FROM units u 
         LEFT JOIN buildings b ON u.building_id = b.building_id
-        LEFT JOIN projects p ON b.project_id = p.project_id
+        LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
+        LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
         WHERE {where_clause}
     """
     total = await conn.fetchval(count_query, *params)
@@ -218,7 +222,7 @@ async def list_units(
     query = f"""
         {UNIT_SELECT_QUERY}
         WHERE {where_clause}
-        ORDER BY p.name_en, u.unit_number
+        ORDER BY COALESCE(p_direct.name_en, p_bld.name_en), u.unit_number
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -336,18 +340,40 @@ async def create_unit(
     payload: UnitCreateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    # Verify building exists
-    bld = await conn.fetchrow("SELECT building_id FROM buildings WHERE building_id = $1", payload.building_id)
-    if not bld:
-        raise HTTPException(status_code=400, detail="Invalid building_id: building does not exist.")
+    effective_project_id = payload.project_id
+    effective_building_id = payload.building_id
 
-    # Check if unit_number already exists in this building
-    existing = await conn.fetchval(
-        "SELECT unit_id FROM units WHERE building_id = $1 AND LOWER(TRIM(unit_number)) = LOWER(TRIM($2))",
-        payload.building_id, payload.unit_number
-    )
-    if existing:
-        raise HTTPException(status_code=409, detail=f"Unit number '{payload.unit_number}' already exists in this building.")
+    # If building provided, verify it exists and inherit its project_id
+    if effective_building_id:
+        bld = await conn.fetchrow("SELECT building_id, project_id FROM buildings WHERE building_id = $1", effective_building_id)
+        if not bld:
+            raise HTTPException(status_code=400, detail="Invalid building_id: building does not exist.")
+        if not effective_project_id:
+            effective_project_id = bld["project_id"]
+
+        # Check if unit_number already exists in this building
+        existing = await conn.fetchval(
+            "SELECT unit_id FROM units WHERE building_id = $1 AND LOWER(TRIM(unit_number)) = LOWER(TRIM($2))",
+            effective_building_id, payload.unit_number
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail=f"Unit number '{payload.unit_number}' already exists in this building.")
+    else:
+        # Standalone property / Land without building
+        if not effective_project_id:
+            raise HTTPException(status_code=400, detail="يجب تحديد المشروع أو المبنى التابع له الوحدة العقارية.")
+
+        prj = await conn.fetchrow("SELECT project_id FROM projects WHERE project_id = $1", effective_project_id)
+        if not prj:
+            raise HTTPException(status_code=400, detail="المشروع المحدد غير موجود.")
+
+        # Check if unit_number already exists in this project without building
+        existing = await conn.fetchval(
+            "SELECT unit_id FROM units WHERE project_id = $1 AND building_id IS NULL AND LOWER(TRIM(unit_number)) = LOWER(TRIM($2))",
+            effective_project_id, payload.unit_number
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail=f"رقم الوحدة/القطعة '{payload.unit_number}' مسجل مسبقاً في هذا المشروع.")
 
     # If owner customer passed, verify customer exists
     if payload.owner_customer_id:
@@ -366,15 +392,15 @@ async def create_unit(
 
     await conn.execute("""
         INSERT INTO units (
-            unit_id, building_id, unit_number, property_type_id, floor_no,
+            unit_id, project_id, building_id, unit_number, property_type_id, floor_no,
             area_sqm, bedrooms, bathrooms, parking_spaces, orientation,
             asking_price, rent_price, status, owner_customer_id, assigned_user_id
         ) VALUES (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
-            $11, $12, $13, $14, $15
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, $9, $10, $11,
+            $12, $13, $14, $15, $16
         )
-    """, unit_id, payload.building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no,
+    """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no,
          payload.area_sqm, payload.bedrooms, payload.bathrooms, payload.parking_spaces, payload.orientation,
          payload.asking_price, payload.rent_price, st, payload.owner_customer_id, payload.assigned_user_id
     )
@@ -388,18 +414,43 @@ async def update_unit(
     payload: UnitUpdateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    current = await conn.fetchrow("SELECT unit_id, building_id, status FROM units WHERE unit_id = $1", unit_id)
+    current = await conn.fetchrow("SELECT unit_id, building_id, project_id, unit_number, status FROM units WHERE unit_id = $1", unit_id)
     if not current:
         raise HTTPException(status_code=404, detail="Unit not found")
 
-    target_bld_id = payload.building_id or current["building_id"]
-    if payload.unit_number:
+    payload_dict = payload.model_dump(exclude_unset=True)
+
+    target_bld_id = payload.building_id if "building_id" in payload_dict else current["building_id"]
+    target_prj_id = payload.project_id if "project_id" in payload_dict else current["project_id"]
+
+    if target_bld_id:
+        bld = await conn.fetchrow("SELECT building_id, project_id FROM buildings WHERE building_id = $1", target_bld_id)
+        if not bld:
+            raise HTTPException(status_code=400, detail="Invalid building_id: building does not exist.")
+        if not target_prj_id:
+            target_prj_id = bld["project_id"]
+    else:
+        if not target_prj_id:
+            raise HTTPException(status_code=400, detail="يجب تحديد المشروع للوحدة العقارية غير المرتبطة بمبنى.")
+        prj = await conn.fetchrow("SELECT project_id FROM projects WHERE project_id = $1", target_prj_id)
+        if not prj:
+            raise HTTPException(status_code=400, detail="المشروع المحدد غير موجود.")
+
+    check_num = payload.unit_number.strip() if payload.unit_number else current["unit_number"]
+    if target_bld_id:
         existing = await conn.fetchval(
             "SELECT unit_id FROM units WHERE building_id = $1 AND LOWER(TRIM(unit_number)) = LOWER(TRIM($2)) AND unit_id != $3",
-            target_bld_id, payload.unit_number, unit_id
+            target_bld_id, check_num, unit_id
         )
         if existing:
-            raise HTTPException(status_code=409, detail=f"Unit number '{payload.unit_number}' already exists in this building.")
+            raise HTTPException(status_code=409, detail=f"Unit number '{check_num}' already exists in this building.")
+    else:
+        existing = await conn.fetchval(
+            "SELECT unit_id FROM units WHERE project_id = $1 AND building_id IS NULL AND LOWER(TRIM(unit_number)) = LOWER(TRIM($2)) AND unit_id != $3",
+            target_prj_id, check_num, unit_id
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail=f"رقم الوحدة/القطعة '{check_num}' مسجل مسبقاً في هذا المشروع.")
 
     if payload.owner_customer_id:
         cust = await conn.fetchrow("SELECT customer_id FROM customers WHERE customer_id = $1", payload.owner_customer_id)
@@ -416,7 +467,8 @@ async def update_unit(
     p_idx = 1
 
     field_map = {
-        "building_id": payload.building_id,
+        "project_id": target_prj_id,
+        "building_id": payload.building_id if "building_id" in payload_dict else current["building_id"],
         "unit_number": payload.unit_number.strip() if payload.unit_number else None,
         "property_type_id": payload.property_type_id,
         "floor_no": payload.floor_no,
@@ -432,7 +484,10 @@ async def update_unit(
         "assigned_user_id": payload.assigned_user_id,
     }
 
-    payload_dict = payload.model_dump(exclude_unset=True)
+    # Ensure project_id is always synced
+    if "project_id" in payload_dict or ("building_id" in payload_dict and target_prj_id != current["project_id"]):
+        payload_dict["project_id"] = target_prj_id
+
     for k in payload_dict.keys():
         if k in field_map:
             val = field_map[k]

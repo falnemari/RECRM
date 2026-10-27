@@ -32,10 +32,16 @@ class TaskOut(BaseModel):
     preferred_property_type_name: Optional[str] = None
     preferred_property_type_name_ar: Optional[str] = None
     is_overdue: bool = False
+    parent_task_id: Optional[str] = None
+    lead_budget_max: Optional[float] = None
+    opp_expected_value: Optional[float] = None
+    opp_stage: Optional[str] = None
 
 class TaskCompleteIn(BaseModel):
     outcome: Optional[str] = "CONNECTED"
     notes: Optional[str] = None
+    assigned_user_id: Optional[str] = None
+    branch_id: Optional[str] = None
     budget_min: Optional[float] = None
     budget_max: Optional[float] = None
     preferred_property_type_id: Optional[str] = None
@@ -114,6 +120,7 @@ class TaskCreateIn(BaseModel):
     customer_id: Optional[str] = None
     lead_id: Optional[str] = None
     opportunity_id: Optional[str] = None
+    parent_task_id: Optional[str] = None
 
 class TaskUpdateIn(BaseModel):
     title: Optional[str] = None

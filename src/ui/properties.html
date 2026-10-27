@@ -457,7 +457,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label style="margin: 0;" data-i18n="lbl_project">Project</label>
+                            <label style="margin: 0;" data-i18n="lbl_project">Project *</label>
                             <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddProjectModal()">+ New Project</button>
                         </div>
                         <select id="add-project-id" onchange="onAddUnitProjectChange()">
@@ -466,23 +466,23 @@
                     </div>
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label style="margin: 0;" data-i18n="lbl_building">Building *</label>
+                            <label style="margin: 0;" data-i18n="lbl_building_optional">Building (Optional)</label>
                             <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddBuildingModal()">+ New Building</button>
                         </div>
-                        <select id="add-building-id" required onchange="onAddUnitBuildingChange()">
-                            <option value="">-- Select Building --</option>
+                        <select id="add-building-id" onchange="onAddUnitBuildingChange()">
+                            <option value="">-- No Building (Land / Standalone) --</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_unit_number">Unit Number *</label>
-                        <input type="text" id="add-unit-number" placeholder="e.g. U-101, APT-302" required>
+                        <label data-i18n="lbl_unit_number">Unit / Plot Number *</label>
+                        <input type="text" id="add-unit-number" placeholder="e.g. U-101, APT-302, Plot-52" required>
                     </div>
                 </div>
 
                 <div class="form-row-3">
                     <div class="form-group">
                         <label data-i18n="lbl_prop_type">Property Type</label>
-                        <select id="add-property-type-id">
+                        <select id="add-property-type-id" onchange="onPropertyTypeChange('add')">
                             <option value="">-- General / Apartment --</option>
                         </select>
                     </div>
@@ -586,17 +586,17 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="lbl_project">Project</label>
+                        <label data-i18n="lbl_project">Project *</label>
                         <select id="edit-project-id" onchange="onEditUnitProjectChange()">
                             <option value="">-- Select Project --</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_building">Building *</label>
-                        <select id="edit-building-id" required onchange="onEditUnitBuildingChange()"></select>
+                        <label data-i18n="lbl_building_optional">Building (Optional)</label>
+                        <select id="edit-building-id" onchange="onEditUnitBuildingChange()"></select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="lbl_unit_number">Unit Number *</label>
+                        <label data-i18n="lbl_unit_number">Unit / Plot Number *</label>
                         <input type="text" id="edit-unit-number" required>
                     </div>
                 </div>
@@ -604,7 +604,7 @@
                 <div class="form-row-3">
                     <div class="form-group">
                         <label data-i18n="lbl_prop_type">Property Type</label>
-                        <select id="edit-property-type-id"></select>
+                        <select id="edit-property-type-id" onchange="onPropertyTypeChange('edit')"></select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_unit_status">Status *</label>
@@ -826,6 +826,7 @@
                 btn_save_project: "+ Save Project",
                 btn_save_building: "+ Save Building",
                 lbl_building: "Building / Project",
+                lbl_building_optional: "Building (Optional / Multi-unit only)",
                 lbl_unit_number: "Unit Number",
                 lbl_prop_type: "Property Type",
                 lbl_unit_status: "Status",
@@ -935,6 +936,7 @@
                 btn_save_project: "+ حفظ المشروع",
                 btn_save_building: "+ حفظ المبنى",
                 lbl_building: "المبنى / المشروع",
+                lbl_building_optional: "المبنى (اختياري / للشقق فقط)",
                 lbl_unit_number: "رقم الوحدة",
                 lbl_prop_type: "نوع العقار",
                 lbl_unit_status: "الحالة",
@@ -1115,12 +1117,23 @@
             return `<span class="property-badge badge-sold">${s}</span>`;
         }
 
+        let isInitialLoadDone = false;
+
         function renderUnits() {
             const t = i18nData[currentLang];
             const counter = document.getElementById('counter-label');
-            counter.textContent = t.counter_text.replace('{count}', cachedUnits.length).replace('{total}', cachedTotal);
+            if (counter) {
+                counter.textContent = isInitialLoadDone
+                    ? t.counter_text.replace('{count}', cachedUnits.length).replace('{total}', cachedTotal)
+                    : (t.loading_inventory || 'Loading inventory...');
+            }
 
             const container = document.getElementById('units-grid');
+            if (!container) return;
+            if (!isInitialLoadDone) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;" data-i18n="loading_inventory">${t.loading_inventory || 'Loading live property inventory from database...'}</div>`;
+                return;
+            }
             if (!cachedUnits || cachedUnits.length === 0) {
                 container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">${t.no_units_found}</div>`;
                 return;
@@ -1165,8 +1178,8 @@
                             <div class="property-price">${price}</div>
                             <div class="property-meta">
                                 <div>${t.lbl_type}: <strong>${propTypeName}</strong> | ${t.lbl_orientation}: <strong>${orientationText}</strong></div>
-                                <div>${t.lbl_area}: <strong>${u.area_sqm || '--'} ${t.lbl_sqm}</strong> | ${t.lbl_floor}: <strong>${u.floor_no ?? '--'}</strong></div>
-                                <div>${t.lbl_bedrooms}: <strong>${u.bedrooms ?? '--'}</strong> | ${t.lbl_baths}: <strong>${u.bathrooms ?? '--'}</strong></div>
+                                <div>${t.lbl_area}: <strong>${u.area_sqm || '--'} ${t.lbl_sqm}</strong> | ${t.lbl_floor}: <strong>${u.floor_no != null ? u.floor_no : '--'}</strong></div>
+                                <div>${t.lbl_bedrooms}: <strong>${u.bedrooms != null ? u.bedrooms : '--'}</strong> | ${t.lbl_baths}: <strong>${u.bathrooms != null ? u.bathrooms : '--'}</strong></div>
                                 <div>${t.lbl_owner}: <strong>${owner}</strong></div>
                             </div>
                         </div>
@@ -1229,6 +1242,7 @@
                 const json = await res.json();
                 cachedUnits = json.data || [];
                 cachedTotal = json.meta?.total || cachedUnits.length;
+                isInitialLoadDone = true;
                 const totalPages = Math.max(1, Math.ceil(cachedTotal / unitsPageSize));
                 if (currentUnitsPage > totalPages) currentUnitsPage = totalPages;
 
@@ -1257,6 +1271,7 @@
                 renderUnits();
             } catch (err) {
                 console.error(err);
+                isInitialLoadDone = true;
                 const t = i18nData[currentLang];
                 document.getElementById('units-grid').innerHTML = `<div style="grid-column: 1/-1; color: red; text-align: center;">${t.failed_load}</div>`;
             }
@@ -1509,7 +1524,7 @@
             if (!bldSelect) return;
             const curVal = bldSelect.value;
             const filtered = prjId ? cachedBuildings.filter(b => b.project_id === prjId) : cachedBuildings;
-            bldSelect.innerHTML = `<option value="">-- ${isAr ? 'اختر المبنى' : 'Select Building'} --</option>` +
+            bldSelect.innerHTML = `<option value="">${isAr ? '-- بدون مبنى (أرض / عقار مستقل) --' : '-- No Building (Land / Standalone) --'}</option>` +
                 filtered.map(b => {
                     const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
                     const bName = b.building_name || b.building_code;
@@ -1517,8 +1532,6 @@
                 }).join('');
             if (filtered.some(b => b.building_id === curVal)) {
                 bldSelect.value = curVal;
-            } else if (filtered.length === 1) {
-                bldSelect.value = filtered[0].building_id;
             } else {
                 bldSelect.value = '';
             }
@@ -1532,8 +1545,6 @@
                     const prjSelect = document.getElementById('add-project-id');
                     if (prjSelect && prjSelect.value !== b.project_id) {
                         prjSelect.value = b.project_id;
-                        onAddUnitProjectChange();
-                        document.getElementById('add-building-id').value = bldId;
                     }
                 }
             }
@@ -1568,7 +1579,7 @@
             if (!bldSelect) return;
             const curVal = bldSelect.value;
             const filtered = prjId ? cachedBuildings.filter(b => b.project_id === prjId) : cachedBuildings;
-            bldSelect.innerHTML = `<option value="">-- ${isAr ? 'اختر المبنى' : 'Select Building'} --</option>` +
+            bldSelect.innerHTML = `<option value="">${isAr ? '-- بدون مبنى (أرض / عقار مستقل) --' : '-- No Building (Land / Standalone) --'}</option>` +
                 filtered.map(b => {
                     const pName = isAr ? (b.project_name_ar || b.project_name_en) : (b.project_name_en || b.project_name_ar);
                     const bName = b.building_name || b.building_code;
@@ -1576,8 +1587,6 @@
                 }).join('');
             if (filtered.some(b => b.building_id === curVal)) {
                 bldSelect.value = curVal;
-            } else if (filtered.length === 1) {
-                bldSelect.value = filtered[0].building_id;
             } else {
                 bldSelect.value = '';
             }
@@ -1591,10 +1600,46 @@
                     const prjSelect = document.getElementById('edit-project-id');
                     if (prjSelect && prjSelect.value !== b.project_id) {
                         prjSelect.value = b.project_id;
-                        onEditUnitProjectChange();
-                        document.getElementById('edit-building-id').value = bldId;
                     }
                 }
+            }
+        }
+
+        function onPropertyTypeChange(prefix) {
+            const ptSelect = document.getElementById(`${prefix}-property-type-id`);
+            const ptId = ptSelect?.value || '';
+            const ptObj = cachedPropertyTypes.find(pt => pt.property_type_id === ptId);
+            const isAr = currentLang === 'ar';
+            const isLand = ptObj && (
+                (ptObj.name_ar && (ptObj.name_ar.includes('أرض') || ptObj.name_ar.includes('الأراضي'))) ||
+                (ptObj.name_en && ptObj.name_en.toUpperCase().includes('LAND'))
+            );
+
+            const floorInput = document.getElementById(`${prefix}-floor-no`);
+            const bedsInput = document.getElementById(`${prefix}-bedrooms`);
+            const bathsInput = document.getElementById(`${prefix}-bathrooms`);
+            const bldSelect = document.getElementById(`${prefix}-building-id`);
+
+            if (isLand) {
+                if (bldSelect) {
+                    bldSelect.value = '';
+                }
+                if (floorInput) {
+                    floorInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
+                    if (prefix === 'add') floorInput.value = '';
+                }
+                if (bedsInput) {
+                    bedsInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
+                    if (prefix === 'add') bedsInput.value = '';
+                }
+                if (bathsInput) {
+                    bathsInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
+                    if (prefix === 'add') bathsInput.value = '';
+                }
+            } else {
+                if (floorInput) floorInput.placeholder = 'e.g. 2';
+                if (bedsInput) bedsInput.placeholder = 'e.g. 3';
+                if (bathsInput) bathsInput.placeholder = 'e.g. 2';
             }
         }
 
@@ -1653,8 +1698,15 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Failed to create project');
+                    let errMsg = 'Failed to create project';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
                 }
 
                 const json = await res.json();
@@ -1700,8 +1752,15 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Failed to create building');
+                    let errMsg = 'Failed to create building';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
                 }
 
                 const json = await res.json();
@@ -1728,6 +1787,7 @@
             document.getElementById('add-building-id').value = '';
             document.getElementById('add-unit-number').value = '';
             document.getElementById('add-property-type-id').value = '';
+            onPropertyTypeChange('add');
             document.getElementById('add-status').value = 'AVAILABLE';
             document.getElementById('add-floor-no').value = '';
             document.getElementById('add-area-sqm').value = '';
@@ -1748,8 +1808,15 @@
 
         async function saveNewUnit(e) {
             e.preventDefault();
+            const prjId = document.getElementById('add-project-id')?.value || '';
+            const bldId = document.getElementById('add-building-id')?.value || '';
+            if (!prjId && !bldId) {
+                alert(currentLang === 'ar' ? 'يرجى اختيار المشروع التابع له العقار' : 'Please select a Project for this property');
+                return;
+            }
             const payload = {
-                building_id: document.getElementById('add-building-id').value,
+                project_id: prjId || null,
+                building_id: bldId || null,
                 unit_number: document.getElementById('add-unit-number').value.trim(),
                 property_type_id: document.getElementById('add-property-type-id').value || null,
                 status: document.getElementById('add-status').value,
@@ -1772,8 +1839,15 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const errJson = await res.json().catch(() => ({}));
-                    throw new Error(errJson.detail || 'Failed to create unit');
+                    let errMsg = 'Failed to create unit';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const txt = await res.text();
+                        if (txt) errMsg = txt;
+                    }
+                    throw new Error(errMsg);
                 }
                 const resJson = await res.json();
                 closeAddUnitModal();
@@ -1801,12 +1875,13 @@
                 const bldObj = cachedBuildings.find(b => b.building_id === u.building_id);
                 const editPrj = document.getElementById('edit-project-id');
                 if (editPrj) {
-                    editPrj.value = (bldObj && bldObj.project_id) ? bldObj.project_id : '';
+                    editPrj.value = u.project_id || (bldObj && bldObj.project_id) || '';
                     onEditUnitProjectChange();
                 }
                 document.getElementById('edit-building-id').value = u.building_id || '';
                 document.getElementById('edit-unit-number').value = u.unit_number || '';
                 document.getElementById('edit-property-type-id').value = u.property_type_id || '';
+                onPropertyTypeChange('edit');
                 document.getElementById('edit-status').value = u.status || 'AVAILABLE';
                 document.getElementById('edit-floor-no').value = u.floor_no != null ? u.floor_no : '';
                 document.getElementById('edit-area-sqm').value = u.area_sqm != null ? u.area_sqm : '';
@@ -1832,8 +1907,15 @@
         async function updateExistingUnit(e) {
             e.preventDefault();
             const unitId = document.getElementById('edit-unit-id').value;
+            const prjId = document.getElementById('edit-project-id')?.value || '';
+            const bldId = document.getElementById('edit-building-id')?.value || '';
+            if (!prjId && !bldId) {
+                alert(currentLang === 'ar' ? 'يرجى اختيار المشروع التابع له العقار' : 'Please select a Project for this property');
+                return;
+            }
             const payload = {
-                building_id: document.getElementById('edit-building-id').value,
+                project_id: prjId || null,
+                building_id: bldId || null,
                 unit_number: document.getElementById('edit-unit-number').value.trim(),
                 property_type_id: document.getElementById('edit-property-type-id').value || null,
                 status: document.getElementById('edit-status').value,
@@ -1856,8 +1938,15 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const errJson = await res.json().catch(() => ({}));
-                    throw new Error(errJson.detail || 'Failed to update unit');
+                    let errMsg = 'Failed to update unit';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const txt = await res.text();
+                        if (txt) errMsg = txt;
+                    }
+                    throw new Error(errMsg);
                 }
                 closeEditUnitModal();
                 showToast(`✓ Unit ${unitId} updated successfully!`);
@@ -1923,7 +2012,11 @@
                 }
                 document.getElementById('det-price').textContent = price;
 
-                document.getElementById('det-building').textContent = `[${projectName}] ${u.building_id}`;
+                const bldName = u.building_name || u.building_code;
+                const bldText = bldName
+                    ? `[${projectName}] ${bldName}`
+                    : (u.building_id ? `[${projectName}] ${u.building_id}` : `[${projectName}] ${isAr ? 'عقار مستقل / أرض (بدون مبنى)' : 'Standalone / Land (No building)'}`);
+                document.getElementById('det-building').textContent = bldText;
                 
                 let pType = isAr 
                     ? (u.property_type_name_ar || propTypeMapAr[u.property_type_name] || u.property_type_name || 'شقة')

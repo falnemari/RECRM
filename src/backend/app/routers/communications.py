@@ -222,6 +222,10 @@ async def list_tasks(
             COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) AS preferred_property_type_id,
             pt.name_en AS preferred_property_type_name,
             pt.name_ar AS preferred_property_type_name_ar,
+            t.parent_task_id,
+            COALESCE(l.budget_max, lo.budget_max) AS lead_budget_max,
+            o.expected_value AS opp_expected_value,
+            o.stage AS opp_stage,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
@@ -250,12 +254,32 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
     st = (payload.status or "OPEN").upper()
 
     eff_lead = payload.lead_id
-    if not eff_lead and payload.opportunity_id:
-        eff_lead = await conn.fetchval("SELECT lead_id FROM opportunities WHERE opportunity_id = $1", payload.opportunity_id)
+    eff_opp = payload.opportunity_id
+
+    # Bidirectional synchronization between Lead and Opportunity
+    if eff_lead and not eff_opp:
+        eff_opp = await conn.fetchval(
+            "SELECT opportunity_id FROM opportunities WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 1",
+            eff_lead
+        )
+    elif eff_opp and not eff_lead:
+        eff_lead = await conn.fetchval(
+            "SELECT lead_id FROM opportunities WHERE opportunity_id = $1",
+            eff_opp
+        )
+
+    # Always inherit priority strictly from the associated lead
     if eff_lead:
         lead_pri = await conn.fetchval("SELECT priority FROM leads WHERE lead_id = $1", eff_lead)
-        if lead_pri and (not payload.priority or payload.priority.upper() == "NORMAL"):
+        if lead_pri:
             pri = lead_pri.upper()
+
+    # Also resolve customer_id if missing
+    eff_cust = payload.customer_id
+    if not eff_cust and eff_lead:
+        eff_cust = await conn.fetchval("SELECT customer_id FROM leads WHERE lead_id = $1", eff_lead)
+    elif not eff_cust and eff_opp:
+        eff_cust = await conn.fetchval("SELECT customer_id FROM opportunities WHERE opportunity_id = $1", eff_opp)
 
     user_name = None
     if payload.assigned_user_id:
@@ -264,8 +288,8 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
             user_name = usr["full_name"]
 
     cust_name = None
-    if payload.customer_id:
-        c = await conn.fetchrow("SELECT first_name, last_name, company_name FROM customers WHERE customer_id = $1", payload.customer_id)
+    if eff_cust:
+        c = await conn.fetchrow("SELECT first_name, last_name, company_name FROM customers WHERE customer_id = $1", eff_cust)
         if c:
             cust_name = (f"{c['first_name'] or ''} {c['last_name'] or ''}").strip() or c["company_name"]
 
@@ -273,12 +297,12 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
         """
         INSERT INTO tasks (
             task_id, assigned_user_id, customer_id, lead_id, opportunity_id,
-            title, due_at, priority, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            title, due_at, priority, status, template_id, parent_task_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         """,
-        task_id, payload.assigned_user_id, payload.customer_id,
-        payload.lead_id, payload.opportunity_id, payload.title,
-        payload.due_at, pri, st
+        task_id, payload.assigned_user_id, eff_cust,
+        eff_lead, eff_opp, payload.title,
+        payload.due_at, pri, st, payload.template_id, payload.parent_task_id
     )
 
     is_od = False
@@ -287,16 +311,18 @@ async def create_task(payload: TaskCreateIn, conn: asyncpg.Connection = Depends(
 
     out = TaskOut(
         task_id=task_id,
+        template_id=payload.template_id,
         title=payload.title,
         due_at=payload.due_at,
         priority=pri,
         status=st,
         assigned_user_id=payload.assigned_user_id,
         assigned_user_name=user_name,
-        customer_id=payload.customer_id,
+        customer_id=eff_cust,
         customer_name=cust_name,
-        lead_id=payload.lead_id,
-        opportunity_id=payload.opportunity_id,
+        lead_id=eff_lead,
+        opportunity_id=eff_opp,
+        parent_task_id=payload.parent_task_id,
         is_overdue=is_od
     )
     return ResponseEnvelope(data=out)
@@ -329,6 +355,10 @@ async def get_task(
             COALESCE(l.preferred_property_type_id, lo.preferred_property_type_id) AS preferred_property_type_id,
             pt.name_en AS preferred_property_type_name,
             pt.name_ar AS preferred_property_type_name_ar,
+            t.parent_task_id,
+            COALESCE(l.budget_max, lo.budget_max) AS lead_budget_max,
+            o.expected_value AS opp_expected_value,
+            o.stage AS opp_stage,
             CASE WHEN t.status IN ('OPEN', 'PENDING', 'IN_PROGRESS') AND t.due_at < NOW() THEN true ELSE false END AS is_overdue
         FROM tasks t
         LEFT JOIN users u ON t.assigned_user_id = u.user_id
@@ -416,6 +446,8 @@ async def complete_task(
             "preferred_city_id": payload.preferred_city_id
         }
         viewing_data = {
+            "assigned_user_id": payload.assigned_user_id,
+            "branch_id": payload.branch_id,
             "unit_id": payload.unit_id,
             "unit_ids": payload.unit_ids,
             "callback_at": payload.callback_at,

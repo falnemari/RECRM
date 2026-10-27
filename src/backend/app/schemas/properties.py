@@ -30,7 +30,9 @@ class BuildingCreateIn(BaseModel):
 
 class UnitOut(BaseModel):
     unit_id: str
-    building_id: str
+    building_id: Optional[str] = None
+    building_name: Optional[str] = None
+    building_code: Optional[str] = None
     project_id: Optional[str] = None
     project_name_ar: Optional[str] = None
     project_name_en: Optional[str] = None
@@ -57,7 +59,8 @@ class UnitOut(BaseModel):
     updated_at: datetime
 
 class UnitCreateIn(BaseModel):
-    building_id: str
+    project_id: Optional[str] = None
+    building_id: Optional[str] = None
     unit_number: str
     property_type_id: Optional[str] = None
     floor_no: Optional[int] = None
@@ -73,6 +76,7 @@ class UnitCreateIn(BaseModel):
     assigned_user_id: Optional[str] = None
 
 class UnitUpdateIn(BaseModel):
+    project_id: Optional[str] = None
     building_id: Optional[str] = None
     unit_number: Optional[str] = None
     property_type_id: Optional[str] = None

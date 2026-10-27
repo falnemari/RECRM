@@ -237,6 +237,29 @@
         .type-tag.legal { background: #f3e8ff; color: #6b21a8; }
         .type-tag.id { background: #ecfdf5; color: #047857; }
         .type-tag.fin { background: #fef9c3; color: #854d0e; }
+        .type-tag.tech { background: #dbeafe; color: #1e40af; }
+        .type-tag.offer { background: #ffedd5; color: #9a3412; }
+
+        .cat-pill {
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.84em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .cat-pill:hover {
+            background: #e2e8f0;
+        }
+        .cat-pill.active {
+            background: #1e3a8a;
+            color: white;
+            border-color: #1e3a8a;
+            box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+        }
 
         /* Modals */
         .modal-overlay {
@@ -370,21 +393,44 @@
             </div>
         </div>
 
+        <!-- Category Filter Tabs -->
+        <div class="category-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+            <button class="cat-pill active" onclick="setDocCategory('ALL', this)">📂 كافة الوثائق والمستندات</button>
+            <button class="cat-pill" onclick="setDocCategory('INSPECTION', this)">🔍 تقارير الفحص والتقييم النافي للجهالة</button>
+            <button class="cat-pill" onclick="setDocCategory('OFFERS', this)">💼 خطابات التفاوض وعروض الاستحواذ</button>
+            <button class="cat-pill" onclick="setDocCategory('CONTRACTS', this)">📑 العقود والاتفاقيات الموثقة</button>
+            <button class="cat-pill" onclick="setDocCategory('FINANCE', this)">💰 الفواتير وإشعارات RETT والمالية</button>
+            <button class="cat-pill" onclick="setDocCategory('LEGAL', this)">🏛️ صكوك الملكية والوثائق الثبوتية</button>
+        </div>
+
         <!-- Toolbar & Filters -->
         <div class="toolbar">
             <div class="filters">
                 <input type="text" id="doc-search" class="search-input" placeholder="Search file, customer, unit, contract..." onkeyup="filterDocuments()">
                 <select id="doc-type-filter" class="select-filter" onchange="loadDocuments()">
                     <option value="" data-i18n="opt_all_types">All Document Types</option>
-                    <option value="TITLE_DEED" data-i18n="opt_type_deed">Title Deed</option>
-                    <option value="NATIONAL_ID" data-i18n="opt_type_id">National ID</option>
-                    <option value="PASSPORT" data-i18n="opt_type_passport">Passport</option>
-                    <option value="LEASE" data-i18n="opt_type_lease">Lease Agreement</option>
-                    <option value="SALE_CONTRACT" data-i18n="opt_type_sale">Sale Contract</option>
-                    <option value="MANAGEMENT_CONTRACT" data-i18n="opt_type_mgmt">Management Agreement</option>
-                    <option value="INVOICE" data-i18n="opt_type_invoice">Invoice</option>
-                    <option value="PAYMENT_RECEIPT" data-i18n="opt_type_receipt">Payment Receipt</option>
-                    <option value="PROPERTY_PHOTO" data-i18n="opt_type_photo">Property Photo / Plan</option>
+                    <option value="DUE_DILIGENCE_REPORT">تقرير الفحص الفني والاستثماري (Due Diligence)</option>
+                    <option value="COUNTER_OFFER_LETTER">خطاب التفاوض وتعديل السعر (CapEx)</option>
+                    <option value="COMMERCIAL_OFFER">خطاب عرض الاستحواذ / الشراء الرسمي</option>
+                    <option value="BASELINE_FINANCIAL_SHEET">ورقة خط الأساس المالي والاستثماري</option>
+                    <option value="TAQEEM_VALUATION">تقرير التقييم العقاري المعتمد (مقيم)</option>
+                    <option value="TAX_ZAKAT_CLEARANCE">إشعار ضريبة التصرفات العقارية (RETT)</option>
+                    <option value="TITLE_DEED">صك ملكية عقارية إلكتروني</option>
+                    <option value="TITLE_DEED_AUDIT">تقرير التدقيق القانوني للصك والسجل العقاري</option>
+                    <option value="DEFECTS_DISCLOSURE">إقرار البائع بالإفصاح عن عيوب العقار</option>
+                    <option value="SOIL_ENVIRONMENTAL_REPORT">تقرير جسات التربة والسلامة الإنشائية SBC</option>
+                    <option value="MORTGAGE_PREAPPROVAL">خطاب التأهيل والترشيح للتمويل البنكي</option>
+                    <option value="SALE_CONTRACT">عقد بيع نهائي موثق</option>
+                    <option value="LEASE">عقد إيجار موحد موثق (إيجار)</option>
+                    <option value="RESERVATION">سند واتفاقية حجز الوحدة وسداد العربون</option>
+                    <option value="MANAGEMENT_CONTRACT">اتفاقية إدارة أملاك</option>
+                    <option value="INVOICE">فاتورة ضريبية رسمية (سداد / سعي وساطة)</option>
+                    <option value="PAYMENT_RECEIPT">سند قبض مالي معتمد</option>
+                    <option value="COMMISSION_SETTLEMENT">سند صرف واعتماد عمولة الوسيط فال</option>
+                    <option value="HANDOVER_PROTOCOL">محضر الفحص والاستلام والتسليم النهائي</option>
+                    <option value="NATIONAL_ID">الهوية الوطنية / السجل التجاري</option>
+                    <option value="PASSPORT">جواز السفر</option>
+                    <option value="PROPERTY_PHOTO">مخطط / صورة عقار معتمد</option>
                 </select>
                 <select id="doc-status-filter" class="select-filter" onchange="loadDocuments()">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
@@ -441,15 +487,28 @@
                 <div class="form-group">
                     <label data-i18n="lbl_doc_type">Document Classification Type *</label>
                     <select id="up-doc-type" required>
-                        <option value="TITLE_DEED" data-i18n="opt_type_deed">Title Deed</option>
-                        <option value="NATIONAL_ID" data-i18n="opt_type_id">National ID</option>
-                        <option value="PASSPORT" data-i18n="opt_type_passport">Passport</option>
-                        <option value="LEASE" data-i18n="opt_type_lease">Lease Agreement</option>
-                        <option value="SALE_CONTRACT" data-i18n="opt_type_sale">Sale Contract</option>
-                        <option value="MANAGEMENT_CONTRACT" data-i18n="opt_type_mgmt">Management Agreement</option>
-                        <option value="INVOICE" data-i18n="opt_type_invoice">Tax Invoice</option>
-                        <option value="PAYMENT_RECEIPT" data-i18n="opt_type_receipt">Payment Receipt</option>
-                        <option value="PROPERTY_PHOTO" data-i18n="opt_type_photo">Property Photo / Plan</option>
+                        <option value="DUE_DILIGENCE_REPORT">تقرير الفحص الفني والاستثماري (Due Diligence)</option>
+                        <option value="COUNTER_OFFER_LETTER">خطاب التفاوض وتعديل السعر (CapEx)</option>
+                        <option value="COMMERCIAL_OFFER">خطاب عرض الاستحواذ / الشراء الرسمي</option>
+                        <option value="BASELINE_FINANCIAL_SHEET">ورقة خط الأساس المالي والاستثماري</option>
+                        <option value="TAQEEM_VALUATION">تقرير التقييم العقاري المعتمد (مقيم)</option>
+                        <option value="TAX_ZAKAT_CLEARANCE">إشعار ضريبة التصرفات العقارية (RETT)</option>
+                        <option value="TITLE_DEED" selected>صك ملكية عقارية إلكتروني</option>
+                        <option value="TITLE_DEED_AUDIT">تقرير التدقيق القانوني للصك والسجل العقاري</option>
+                        <option value="DEFECTS_DISCLOSURE">إقرار البائع بالإفصاح عن عيوب العقار</option>
+                        <option value="SOIL_ENVIRONMENTAL_REPORT">تقرير جسات التربة والسلامة الإنشائية SBC</option>
+                        <option value="MORTGAGE_PREAPPROVAL">خطاب التأهيل والترشيح للتمويل البنكي</option>
+                        <option value="SALE_CONTRACT">عقد بيع نهائي موثق</option>
+                        <option value="LEASE">عقد إيجار موحد موثق (إيجار)</option>
+                        <option value="RESERVATION">سند واتفاقية حجز الوحدة وسداد العربون</option>
+                        <option value="MANAGEMENT_CONTRACT">اتفاقية إدارة أملاك</option>
+                        <option value="INVOICE">فاتورة ضريبية رسمية (سداد / سعي وساطة)</option>
+                        <option value="PAYMENT_RECEIPT">سند قبض مالي معتمد</option>
+                        <option value="COMMISSION_SETTLEMENT">سند صرف واعتماد عمولة الوسيط فال</option>
+                        <option value="HANDOVER_PROTOCOL">محضر الفحص والاستلام والتسليم النهائي</option>
+                        <option value="NATIONAL_ID">الهوية الوطنية / السجل التجاري</option>
+                        <option value="PASSPORT">جواز السفر</option>
+                        <option value="PROPERTY_PHOTO">مخطط / صورة عقار معتمد</option>
                     </select>
                 </div>
                 <div class="form-row">
@@ -502,6 +561,28 @@
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-audit')" data-i18n="btn_close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Document Live HTML & Print Preview -->
+    <div id="modal-doc-preview" class="modal-overlay">
+        <div class="modal" style="max-width: 980px; width: 95%; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px;">
+            <div class="modal-header" style="background: #1e3a8a; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2em;">📄</span>
+                    <div>
+                        <h3 id="doc-preview-title" style="margin: 0; font-size: 1.05em; color: white;">معاينة المستند الرسمي</h3>
+                        <div id="doc-preview-meta" style="font-size: 0.75em; color: #93c5fd;">وثيقة رسمية معتمدة وموثقة رقمياً طبقاً للأنظمة العقارية السعودية</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" class="btn btn-sm" style="background: #2563eb; color: white; border: none; font-weight: bold;" onclick="printCurrentPreviewDoc()">🖨️ طباعة المستند</button>
+                    <button class="close-btn" style="color: white; font-size: 1.4em;" onclick="closeModal('modal-doc-preview')">&times;</button>
+                </div>
+            </div>
+            <div style="flex: 1; position: relative; background: #e2e8f0;">
+                <iframe id="doc-preview-iframe" style="width: 100%; height: 100%; border: none; background: white;" src="about:blank"></iframe>
             </div>
         </div>
     </div>
@@ -655,12 +736,83 @@
             }
         }
 
+        let currentDocCategory = 'ALL';
+
+        function setDocCategory(cat, btn) {
+            currentDocCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            applyCombinedFilters();
+        }
+
+        function applyCombinedFilters() {
+            let filtered = [...docsData];
+            if (currentDocCategory === 'INSPECTION') {
+                filtered = filtered.filter(d => {
+                    const c = (d.document_type_code || '').toUpperCase();
+                    return c.includes('DILIGENCE') || c.includes('TAQEEM') || c.includes('BASELINE') || c.includes('SOIL') || c.includes('DEFECT');
+                });
+            } else if (currentDocCategory === 'OFFERS') {
+                filtered = filtered.filter(d => {
+                    const c = (d.document_type_code || '').toUpperCase();
+                    return c.includes('OFFER') || c.includes('COUNTER') || c.includes('RESERVATION');
+                });
+            } else if (currentDocCategory === 'CONTRACTS') {
+                filtered = filtered.filter(d => {
+                    const c = (d.document_type_code || '').toUpperCase();
+                    return c.includes('CONTRACT') || c.includes('LEASE') || c.includes('HANDOVER');
+                });
+            } else if (currentDocCategory === 'FINANCE') {
+                filtered = filtered.filter(d => {
+                    const c = (d.document_type_code || '').toUpperCase();
+                    return c.includes('INVOICE') || c.includes('RECEIPT') || c.includes('TAX') || c.includes('COMMISSION');
+                });
+            } else if (currentDocCategory === 'LEGAL') {
+                filtered = filtered.filter(d => {
+                    const c = (d.document_type_code || '').toUpperCase();
+                    return c.includes('DEED') || c.includes('ID') || c.includes('PASSPORT') || c.includes('LICENSE');
+                });
+            }
+            
+            const term = (document.getElementById('doc-search').value || '').toLowerCase().trim();
+            if (term) {
+                filtered = filtered.filter(d =>
+                    (d.file_name && d.file_name.toLowerCase().includes(term)) ||
+                    (d.customer_name && d.customer_name.toLowerCase().includes(term)) ||
+                    (d.unit_number && d.unit_number.toLowerCase().includes(term)) ||
+                    (d.contract_number && d.contract_number.toLowerCase().includes(term)) ||
+                    (d.lead_id && d.lead_id.toLowerCase().includes(term)) ||
+                    (d.opportunity_id && d.opportunity_id.toLowerCase().includes(term)) ||
+                    (d.notes && d.notes.toLowerCase().includes(term))
+                );
+            }
+            renderDocuments(filtered);
+        }
+
+        function openDocumentPreview(docId, fileName) {
+            document.getElementById('doc-preview-title').textContent = fileName || 'معاينة المستند الرسمي';
+            const iframe = document.getElementById('doc-preview-iframe');
+            iframe.src = `${API_BASE}/api/v1/documents/${docId}/html`;
+            window.currentPreviewDocId = docId;
+            openModal('modal-doc-preview');
+        }
+
+        function printCurrentPreviewDoc() {
+            if (window.currentPreviewDocId) {
+                printDocument(window.currentPreviewDocId);
+            }
+        }
+
+        function printDocument(docId) {
+            window.open(`${API_BASE}/api/v1/documents/${docId}/html`, '_blank');
+        }
+
         async function loadDocuments() {
             const type = document.getElementById('doc-type-filter').value;
             const status = document.getElementById('doc-status-filter').value;
             const expiringOnly = document.getElementById('doc-expiring-only').checked;
 
-            let url = `${API_BASE}/api/v1/documents?page_size=50`;
+            let url = `${API_BASE}/api/v1/documents?page_size=100`;
             if (type) url += `&document_type=${type}`;
             if (status) url += `&status=${status}`;
             if (expiringOnly) url += `&is_expiring_soon=true`;
@@ -669,10 +821,10 @@
                 const res = await fetch(url);
                 const json = await res.json();
                 docsData = json.data || [];
-                renderDocuments(docsData);
+                applyCombinedFilters();
             } catch (err) {
                 console.error(err);
-                document.getElementById('docs-tbody').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Failed to load documents.</td></tr>';
+                document.getElementById('docs-tbody').innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Failed to load documents.</td></tr>';
             }
         }
 
@@ -684,39 +836,46 @@
             }
 
             tbody.innerHTML = items.map(d => {
-                let linked = 'General';
-                if (d.customer_name) linked = `👤 ${d.customer_name}`;
-                else if (d.unit_number) linked = `🏠 Unit ${d.unit_number}`;
-                else if (d.contract_number) linked = `📄 ${d.contract_number}`;
+                let linkedItems = [];
+                if (d.customer_name) linkedItems.push(`👤 ${d.customer_name}`);
+                if (d.unit_number) linkedItems.push(`🏠 وحدة ${d.unit_number}`);
+                if (d.lead_id) linkedItems.push(`📋 طلب #${d.lead_id}`);
+                if (d.opportunity_id) linkedItems.push(`💼 فرصة #${d.opportunity_id}`);
+                if (d.contract_number) linkedItems.push(`📄 عقد ${d.contract_number}`);
+                let linked = linkedItems.join(' | ') || (currentLang === 'ar' ? 'عام' : 'General');
 
                 let tagCls = 'type-tag';
-                const code = d.document_type_code || '';
+                const code = (d.document_type_code || '').toUpperCase();
                 if (code.includes('DEED') || code.includes('CONTRACT') || code.includes('LEASE')) tagCls += ' legal';
                 else if (code.includes('ID') || code.includes('PASSPORT')) tagCls += ' id';
-                else if (code.includes('INVOICE') || code.includes('RECEIPT')) tagCls += ' fin';
+                else if (code.includes('INVOICE') || code.includes('RECEIPT') || code.includes('TAX') || code.includes('COMMISSION')) tagCls += ' fin';
+                else if (code.includes('DILIGENCE') || code.includes('TAQEEM') || code.includes('BASELINE') || code.includes('SOIL') || code.includes('DEFECT')) tagCls += ' tech';
+                else if (code.includes('OFFER') || code.includes('COUNTER')) tagCls += ' offer';
 
-                let statusBadge = `<span class="badge badge-active">${d.status}</span>`;
-                if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">Archived</span>`;
-                else if (d.is_expired) statusBadge = `<span class="badge badge-expired">Expired</span>`;
-                else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">Expiring Soon</span>`;
+                let statusBadge = `<span class="badge badge-active">${currentLang === 'ar' ? 'ساري ومعتمد' : d.status}</span>`;
+                if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">${currentLang === 'ar' ? 'مؤرشف' : 'Archived'}</span>`;
+                else if (d.is_expired) statusBadge = `<span class="badge badge-expired">${currentLang === 'ar' ? 'منتهي' : 'Expired'}</span>`;
+                else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">${currentLang === 'ar' ? 'ينتهي قريباً' : 'Expiring Soon'}</span>`;
 
                 return `
                     <tr>
                         <td><span class="id-badge">${d.document_id}</span></td>
                         <td>
-                            <strong>📄 ${d.file_name}</strong>
-                            <span style="font-size:0.75em; color:var(--text-muted); margin-inline-start:4px;">(v${d.version_no})</span>
+                            <div style="font-weight:700; color:#0f172a;">📄 ${d.file_name}</div>
+                            ${d.notes ? `<div style="font-size:0.75em; color:var(--text-muted); margin-top:2px;">${d.notes}</div>` : ''}
                         </td>
                         <td><span class="${tagCls}">${d.document_type_name || code}</span></td>
-                        <td>${linked}</td>
+                        <td style="font-size:0.82em; color:#334155;">${linked}</td>
                         <td>${d.issued_at || '--'}</td>
-                        <td style="${d.is_expired ? 'color:var(--danger); font-weight:700;' : ''}">${d.expires_at || 'Never'}</td>
+                        <td style="${d.is_expired ? 'color:var(--danger); font-weight:700;' : ''}">${d.expires_at || (currentLang === 'ar' ? 'دائم / غير محدد' : 'Never')}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <div style="display:flex; gap:4px;">
-                                <button class="btn btn-sm btn-outline" onclick="downloadDocument('${d.document_id}')">⬇ Download</button>
-                                <button class="btn btn-sm btn-outline" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">Audit</button>
-                                ${d.status === 'ACTIVE' ? `<button class="btn btn-sm btn-danger" onclick="archiveDoc('${d.document_id}')">Archive</button>` : ''}
+                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                <button class="btn btn-sm btn-primary" style="background:#1e3a8a; color:white; font-weight:bold;" onclick="openDocumentPreview('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">👁️ معاينة</button>
+                                <button class="btn btn-sm btn-outline" onclick="printDocument('${d.document_id}')">🖨️ طباعة</button>
+                                <button class="btn btn-sm btn-outline" onclick="downloadDocument('${d.document_id}')">⬇ تنزيل</button>
+                                <button class="btn btn-sm btn-outline" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">سجل الأمان</button>
+                                ${d.status === 'ACTIVE' ? `<button class="btn btn-sm btn-danger" onclick="archiveDoc('${d.document_id}')">أرشفة</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -725,14 +884,7 @@
         }
 
         function filterDocuments() {
-            const term = document.getElementById('doc-search').value.toLowerCase();
-            const filtered = docsData.filter(d =>
-                d.file_name.toLowerCase().includes(term) ||
-                (d.customer_name && d.customer_name.toLowerCase().includes(term)) ||
-                (d.unit_number && d.unit_number.toLowerCase().includes(term)) ||
-                (d.contract_number && d.contract_number.toLowerCase().includes(term))
-            );
-            renderDocuments(filtered);
+            applyCombinedFilters();
         }
 
         async function downloadDocument(docId) {

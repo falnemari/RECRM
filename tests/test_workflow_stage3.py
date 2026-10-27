@@ -378,6 +378,230 @@ class TestWorkflowStage3(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_stage3_viewing_report_offer_ceiling_enforcement(self):
+        """
+        Rule: Proposed offer amount in TASK_VIEWING_REPORT must never exceed the property unit's price.
+        - If offer_amount > unit_asking_price: raises ValueError with Arabic explanation.
+        - If offer_amount <= unit_asking_price: updates opportunity expected_value and opportunity_units offered_price.
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-stage3-ceiling"
+            cust_id = "test-cust-stage3-ceiling"
+            opp_id = "test-opp-stage3-ceiling"
+            unit_id = "test-unit-ceiling-01"
+
+            await self.conn.execute("DELETE FROM communications WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM viewings WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM activities WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+            await self.conn.execute("DELETE FROM units WHERE unit_id = $1", unit_id)
+
+            # Insert Unit with asking price = 800,000 SAR
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, unit_number, property_type_id, area_sqm, asking_price, status, created_at, updated_at)
+                VALUES ($1, 'Unit-Ceiling-Test', 'property_type-10', 500.0, 800000.0, 'AVAILABLE', NOW(), NOW())
+                """,
+                unit_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Tariq', 'Al-Hazmi', '+966511223344', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+
+            # Lead with budget_max = 1,000,000 SAR (higher than unit price 800,000 SAR)
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, branch_id, status, priority, inquiry_type, budget_min, budget_max, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'HIGH', 'BUY', 500000, 1000000, NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id, self.branch_id
+            )
+
+            # Opportunity initialized with buyer's budget_max = 1,000,000 SAR
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'VIEWING', 1000000, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            # Insert scheduled viewing linked to unit_id (asking_price 800,000)
+            v_id = "test-viewing-ceiling-01"
+            await self.conn.execute(
+                """
+                INSERT INTO viewings (
+                    viewing_id, opportunity_id, lead_id, unit_id, customer_id, agent_user_id,
+                    scheduled_start, scheduled_end, status, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, NOW() - INTERVAL '1 hour', NOW(), 'SCHEDULED', NOW(), NOW())
+                """,
+                v_id, opp_id, lead_id, unit_id, cust_id, self.agent_id
+            )
+
+            # Spawn report task
+            rep_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_VIEWING_REPORT",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id,
+                priority="HIGH"
+            )
+
+            # 1. Attempt to complete with offer_amount = 1,000,000 (exceeds unit asking price 800,000)
+            with self.assertRaises(ValueError) as ctx:
+                await WorkflowEngine.complete_task_with_outcome(
+                    conn=self.conn,
+                    task_id=rep_task["task_id"],
+                    user_id=self.agent_id,
+                    outcome="INTERESTED",
+                    notes="العميل يرغب بتقديم عرض بمبلغ 1,000,000 ريال",
+                    viewing_data={"offer_amount": 1000000.0}
+                )
+            self.assertIn("لا يمكن أن يتجاوز العرض المالي المقترح", str(ctx.exception))
+            self.assertIn("800,000.00", str(ctx.exception))
+
+            # 2. Attempt with Stage 4 submit_commercial_offer directly: also blocked if offer > asking
+            with self.assertRaises(ValueError) as ctx2:
+                await WorkflowEngine.submit_commercial_offer(
+                    conn=self.conn,
+                    opportunity_id=opp_id,
+                    unit_id=unit_id,
+                    offer_amount=950000.0,
+                    user_id=self.agent_id
+                )
+            self.assertIn("لا يمكن أن يتجاوز العرض المالي", str(ctx2.exception))
+
+            # 3. Complete with valid offer_amount = 780,000 (<= 800,000 unit asking price)
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=rep_task["task_id"],
+                user_id=self.agent_id,
+                outcome="INTERESTED",
+                notes="تم الاتفاق على تقديم عرض بقيمة 780,000 ريال",
+                viewing_data={"offer_amount": 780000.0}
+            )
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["new_stage"], "NEGOTIATION")
+
+            # Verify Opportunity expected_value was updated from 1,000,000 down to proposed 780,000
+            opp_row = await self.conn.fetchrow("SELECT stage, expected_value FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(opp_row["stage"], "NEGOTIATION")
+            self.assertEqual(float(opp_row["expected_value"]), 780000.0)
+
+            # Verify opportunity_units offered_price was updated to 780,000
+            ou_row = await self.conn.fetchrow("SELECT offered_price FROM opportunity_units WHERE opportunity_id = $1 AND unit_id = $2", opp_id, unit_id)
+            self.assertIsNotNone(ou_row)
+            self.assertEqual(float(ou_row["offered_price"]), 780000.0)
+
+        finally:
+            await tr.rollback()
+
+    async def test_stage3_viewing_report_interested_without_offer_caps_bloated_opp_value(self):
+        """
+        Rule: When TASK_VIEWING_REPORT is completed with INTERESTED without an explicit offer amount,
+        if opportunities.expected_value was bloated by buyer's budget_max (1,000,000 SAR) and exceeds
+        the unit asking price (800,000 SAR), it must be capped at the unit asking price (800,000 SAR).
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-stage3-cap"
+            cust_id = "test-cust-stage3-cap"
+            opp_id = "test-opp-stage3-cap"
+            unit_id = "test-unit-cap-01"
+
+            await self.conn.execute("DELETE FROM communications WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM viewings WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM activities WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+            await self.conn.execute("DELETE FROM units WHERE unit_id = $1", unit_id)
+
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, unit_number, property_type_id, area_sqm, asking_price, status, created_at, updated_at)
+                VALUES ($1, 'Unit-Cap-Test', 'property_type-10', 500.0, 800000.0, 'AVAILABLE', NOW(), NOW())
+                """,
+                unit_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Sami', 'Al-Omari', '+966522334455', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, branch_id, status, priority, inquiry_type, budget_max, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'NORMAL', 'BUY', 1000000, NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id, self.branch_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'VIEWING', 1000000, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO viewings (
+                    viewing_id, opportunity_id, lead_id, unit_id, customer_id, agent_user_id,
+                    scheduled_start, scheduled_end, status, created_at, updated_at
+                ) VALUES ('viewing-cap-01', $1, $2, $3, $4, $5, NOW() - INTERVAL '1 hour', NOW(), 'SCHEDULED', NOW(), NOW())
+                """,
+                opp_id, lead_id, unit_id, cust_id, self.agent_id
+            )
+
+            rep_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_VIEWING_REPORT",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+
+            # Complete with INTERESTED without passing offer_amount
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=rep_task["task_id"],
+                user_id=self.agent_id,
+                outcome="INTERESTED",
+                notes="العميل مهتم جداً"
+            )
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["new_stage"], "NEGOTIATION")
+
+            # Check that expected_value was capped to unit asking price (800,000 SAR)
+            opp_row = await self.conn.fetchrow("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(float(opp_row["expected_value"]), 800000.0)
+
+        finally:
+            await tr.rollback()
+
 
 if __name__ == "__main__":
     unittest.main()

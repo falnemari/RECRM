@@ -39,27 +39,21 @@ class TestRentalWorkflow(unittest.IsolatedAsyncioTestCase):
             email="faisal.rent@example.com"
         )
 
-        # Create or fetch an available rental unit
-        existing_unit = await self.conn.fetchrow(
-            "SELECT unit_id, unit_number, rent_price, status FROM units WHERE status = 'AVAILABLE' LIMIT 1"
+        # Dedicated Isolated Test Unit (Never borrow live inventory units)
+        bld_id = await self.conn.fetchval("SELECT building_id FROM buildings LIMIT 1") or "bld-1"
+        pt_id = await self.conn.fetchval("SELECT property_type_id FROM property_types LIMIT 1") or "pt-1"
+        self.test_unit_id = "unit-rent-test-01"
+        await self.conn.execute(
+            """
+            INSERT INTO units (
+                unit_id, building_id, property_type_id,
+                unit_number, floor_no, bedrooms, bathrooms, area_sqm,
+                rent_price, status, created_at, updated_at
+            ) VALUES ($1, $2, $3, 'R-101', 1, 2, 2, 95.0, 42000, 'AVAILABLE', NOW(), NOW())
+            ON CONFLICT (unit_id) DO UPDATE SET status = 'AVAILABLE', rent_price = 42000
+            """,
+            self.test_unit_id, bld_id, pt_id
         )
-        if existing_unit:
-            self.test_unit_id = existing_unit["unit_id"]
-        else:
-            bld_id = await self.conn.fetchval("SELECT building_id FROM buildings LIMIT 1") or "bld-1"
-            pt_id = await self.conn.fetchval("SELECT property_type_id FROM property_types LIMIT 1") or "pt-1"
-            self.test_unit_id = "unit-rent-test-01"
-            await self.conn.execute("DELETE FROM units WHERE unit_id = $1", self.test_unit_id)
-            await self.conn.execute(
-                """
-                INSERT INTO units (
-                    unit_id, organization_id, building_id, property_type_id,
-                    unit_number, floor_number, bedrooms, bathrooms, area_sqm,
-                    rent_price, status, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, 'R-101', 1, 2, 2, 95.0, 42000, 'AVAILABLE', NOW(), NOW())
-                """,
-                self.test_unit_id, self.org_id, bld_id, pt_id
-            )
 
     async def asyncTearDown(self):
         # Reset test unit status to AVAILABLE if modified

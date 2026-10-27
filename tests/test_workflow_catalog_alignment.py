@@ -446,6 +446,85 @@ class TestWorkflowCatalogAlignment(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_ad_hoc_best_practice_task_spawning(self):
+        """
+        Verify that on-demand / ad-hoc best-practice tasks across Sales, Rental, and Investment
+        can be spawned cleanly from the template catalog with SLA and completion criteria.
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-adhoc-01"
+            cust_id = "test-cust-adhoc-01"
+
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, first_name, last_name, customer_type, status, created_at, updated_at)
+                VALUES ($1, $2, 'فهد', 'الاستثماري', 'INVESTOR', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, branch_id, assigned_user_id, status, priority, inquiry_type, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'HIGH', 'INVESTMENT', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.branch_id, self.agent_id
+            )
+
+            # 1. Spawn Investment Price Discount Negotiation
+            t1, is_new1 = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT",
+                lead_id=lead_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+            self.assertTrue(is_new1)
+            self.assertEqual(t1["template_id"], "TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT")
+            self.assertEqual(t1["priority"], "HIGH")  # Adopted from lead
+
+            # 2. Spawn Legal Title Audit
+            t2, is_new2 = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_INVEST_LEGAL_TITLE_AUDIT",
+                lead_id=lead_id,
+                customer_id=cust_id
+            )
+            self.assertTrue(is_new2)
+            self.assertEqual(t2["template_id"], "TASK_INVEST_LEGAL_TITLE_AUDIT")
+
+            # 3. Spawn Sales Concessions
+            t3, is_new3 = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_SALE_NEGOTIATE_CONCESSIONS",
+                lead_id=lead_id,
+                customer_id=cust_id
+            )
+            self.assertTrue(is_new3)
+
+            # 4. Spawn Rental Tenant Screening
+            t4, is_new4 = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_RENT_TENANT_SCREENING_CREDIT",
+                lead_id=lead_id,
+                customer_id=cust_id
+            )
+            self.assertTrue(is_new4)
+
+            # Verify SOP guidance exists for all 4
+            for tid in ["TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT", "TASK_INVEST_LEGAL_TITLE_AUDIT", "TASK_SALE_NEGOTIATE_CONCESSIONS", "TASK_RENT_TENANT_SCREENING_CREDIT"]:
+                sop = await self.conn.fetchrow("SELECT * FROM workflow_sop_guidance WHERE template_id = $1", tid)
+                self.assertIsNotNone(sop, f"SOP guidance must exist for {tid}")
+                self.assertTrue(len(sop["execution_steps_ar"]) > 10)
+
+        finally:
+            await tr.rollback()
+
 
 if __name__ == "__main__":
     unittest.main()

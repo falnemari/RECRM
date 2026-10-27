@@ -56,14 +56,50 @@ async def list_users(
     query = f"""
         SELECT 
             u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status,
-            u.branch_id, b.name AS branch_name, b.city_id
+            u.branch_id, b.name AS branch_name, b.city_id,
+            COALESCE(array_agg(r.role_code ORDER BY r.role_code) FILTER (WHERE r.role_code IS NOT NULL), ARRAY[]::varchar[]) AS role_codes,
+            COALESCE(array_agg(r.name_ar ORDER BY r.role_code) FILTER (WHERE r.name_ar IS NOT NULL), ARRAY[]::varchar[]) AS role_names_ar,
+            COALESCE(array_agg(r.name_en ORDER BY r.role_code) FILTER (WHERE r.name_en IS NOT NULL), ARRAY[]::varchar[]) AS role_names_en,
+            COALESCE(string_agg(COALESCE(r.name_ar, r.name), '، ' ORDER BY r.role_code), '') AS role_titles_ar
         FROM users u
         LEFT JOIN branches b ON u.branch_id = b.branch_id
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE {where_clause}
+        GROUP BY u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status, u.branch_id, b.name, b.city_id
         ORDER BY u.full_name
     """
     rows = await conn.fetch(query, *params)
     data = [dict(row) for row in rows]
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
+    )
+
+@router.get("/branches", response_model=CollectionEnvelope[Dict[str, Any]])
+async def list_reference_branches(
+    city_id: Optional[str] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    conditions = ["b.status = 'ACTIVE'"]
+    params = []
+    p_idx = 1
+    if city_id:
+        conditions.append(f"b.city_id = ${p_idx}")
+        params.append(city_id)
+        p_idx += 1
+    where_clause = " AND ".join(conditions)
+    query = f"""
+        SELECT 
+            b.branch_id, b.branch_code, b.name, b.city_id,
+            c.name_ar AS city_name_ar, c.name_en AS city_name_en, b.status
+        FROM branches b
+        LEFT JOIN cities c ON b.city_id = c.city_id
+        WHERE {where_clause}
+        ORDER BY b.name
+    """
+    rows = await conn.fetch(query, *params)
+    data = [dict(r) for r in rows]
     return CollectionEnvelope(
         data=data,
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))
@@ -119,11 +155,21 @@ async def list_workflow_templates(conn: asyncpg.Connection = Depends(get_db)):
     rows = await conn.fetch("""
         SELECT template_id, template_type, standard_title_ar, standard_title_en,
                owner_role, default_sla_minutes,
-               completion_criteria_ar, completion_criteria_en, escalation_role, escalation_sla_minutes, created_at
+               completion_criteria_ar, completion_criteria_en, escalation_role, escalation_sla_minutes, created_at,
+               next_template_id, outcome_transitions
         FROM workflow_templates
         ORDER BY template_type ASC, template_id ASC
     """)
-    data = [dict(row) for row in rows]
+    import json
+    data = []
+    for row in rows:
+        d = dict(row)
+        if d.get("outcome_transitions") and isinstance(d["outcome_transitions"], str):
+            try:
+                d["outcome_transitions"] = json.loads(d["outcome_transitions"])
+            except Exception:
+                pass
+        data.append(d)
     return CollectionEnvelope(
         data=data,
         meta=CollectionMeta(page=1, page_size=len(data), total=len(data))

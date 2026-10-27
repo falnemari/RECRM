@@ -54,22 +54,22 @@ class TestInvestmentDueDiligenceInspection(unittest.IsolatedAsyncioTestCase):
             email="tariq.invest@example.com"
         )
 
-        # Unit
-        self.test_unit_id = await self.conn.fetchval("SELECT unit_id FROM units WHERE status = 'AVAILABLE' LIMIT 1")
-        if not self.test_unit_id:
-            bld = await self.conn.fetchval("SELECT building_id FROM buildings LIMIT 1") or "bld-1"
-            pt = await self.conn.fetchval("SELECT property_type_id FROM property_types LIMIT 1") or "pt-1"
-            self.test_unit_id = "unit-test-inv-ddr"
-            await self.conn.execute(
-                """
-                INSERT INTO units (unit_id, building_id, unit_number, property_type_id, asking_price, rent_price, status, created_at, updated_at)
-                VALUES ($1, $2, 'INV-101', $3, 2500000.0, 200000.0, 'AVAILABLE', NOW(), NOW())
-                ON CONFLICT (unit_id) DO NOTHING
-                """,
-                self.test_unit_id, bld, pt
-            )
+        # Dedicated Isolated Test Unit (Never borrow live inventory units)
+        bld = await self.conn.fetchval("SELECT building_id FROM buildings LIMIT 1") or "bld-1"
+        pt = await self.conn.fetchval("SELECT property_type_id FROM property_types LIMIT 1") or "pt-1"
+        self.test_unit_id = "unit-test-inv-ddr"
+        await self.conn.execute(
+            """
+            INSERT INTO units (unit_id, building_id, unit_number, property_type_id, asking_price, rent_price, status, created_at, updated_at)
+            VALUES ($1, $2, 'INV-DDR-101', $3, 2500000.0, 200000.0, 'AVAILABLE', NOW(), NOW())
+            ON CONFLICT (unit_id) DO UPDATE SET status = 'AVAILABLE', owner_customer_id = NULL, asking_price = 2500000.0, rent_price = 200000.0, updated_at = NOW()
+            """,
+            self.test_unit_id, bld, pt
+        )
 
     async def asyncTearDown(self):
+        if hasattr(self, "test_unit_id"):
+            await self.conn.execute("UPDATE units SET status = 'AVAILABLE', owner_customer_id = NULL WHERE unit_id = $1", self.test_unit_id)
         await self.conn.close()
 
     async def test_01_compare_returns_spawns_due_diligence_inspection_schedule(self):
@@ -424,6 +424,7 @@ class TestInvestmentDueDiligenceInspection(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rematch_task["status"], "PENDING")
 
         # Cleanup
+        await self.conn.execute("UPDATE units SET status = 'AVAILABLE', owner_customer_id = NULL WHERE unit_id = $1", self.test_unit_id)
         await self.conn.execute("DELETE FROM investment_due_diligence_reports WHERE opportunity_id = $1", opp_id)
         await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
         await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
@@ -567,6 +568,7 @@ class TestInvestmentDueDiligenceInspection(unittest.IsolatedAsyncioTestCase):
         self.assertIn("196,000", rev_act["description"]) # Cited due diligence baseline
 
         # Cleanup
+        await self.conn.execute("UPDATE units SET status = 'AVAILABLE', owner_customer_id = NULL WHERE unit_id = $1", self.test_unit_id)
         await self.conn.execute("DELETE FROM investment_due_diligence_reports WHERE opportunity_id = $1", opp_id)
         await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
         await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
