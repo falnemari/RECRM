@@ -808,13 +808,13 @@
                     <div class="form-group">
                         <label data-i18n="lbl_assigned_agent">Assign Agent</label>
                         <select id="task-agent" onchange="onTaskAgentChange()">
-                            <option value="">Select agent</option>
+                            <option value="" data-i18n="opt_select_agent">Select agent</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_related_customer">Related Customer</label>
                         <select id="task-cust" onchange="onTaskCustomerChange()">
-                            <option value="">Select customer</option>
+                            <option value="" data-i18n="opt_select_customer">Select customer</option>
                         </select>
                     </div>
                 </div>
@@ -822,13 +822,13 @@
                     <div class="form-group">
                         <label data-i18n="lbl_related_lead">Related Lead</label>
                         <select id="task-lead" onchange="onTaskLeadChange()">
-                            <option value="">Select lead (optional)</option>
+                            <option value="" data-i18n="opt_select_lead_optional">Select lead (optional)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_related_opp">Related Opportunity</label>
                         <select id="task-opp" onchange="onTaskOppChange()">
-                            <option value="">Select opportunity (optional)</option>
+                            <option value="" data-i18n="opt_select_opp_optional">Select opportunity (optional)</option>
                         </select>
                     </div>
                 </div>
@@ -930,10 +930,10 @@
                     <div class="form-group">
                         <label data-i18n="lbl_channel">Channel *</label>
                         <select id="comm-chan" required>
-                            <option value="WHATSAPP">WhatsApp</option>
-                            <option value="EMAIL">Email</option>
-                            <option value="PHONE">Phone</option>
-                            <option value="SMS">SMS</option>
+                            <option value="WHATSAPP" data-i18n="opt_chan_whatsapp">WhatsApp</option>
+                            <option value="EMAIL" data-i18n="opt_chan_email">Email</option>
+                            <option value="PHONE" data-i18n="opt_chan_phone">Phone</option>
+                            <option value="SMS" data-i18n="opt_chan_sms">SMS</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -990,50 +990,77 @@
 
     <!-- Task Completion Modal (Stage 2 Outcome Recording) -->
     <div id="modal-complete-task" class="modal-overlay">
-        <div class="modal" style="max-width: 680px;">
+        <div class="modal" style="max-width: 880px; width: 95%;">
             <div class="modal-header">
-                <h3 id="comp-modal-title" data-i18n="comp_modal_title">Record Task Outcome</h3>
+                <h3 id="comp-modal-title" data-i18n="comp_modal_title">تسجيل إنجاز المهمة والنتيجة</h3>
                 <button class="close-btn" onclick="closeModal('modal-complete-task')">&times;</button>
             </div>
             <form id="form-complete-task" onsubmit="submitTaskCompletion(event)">
                 <input type="hidden" id="comp-task-id">
                 <input type="hidden" id="comp-template-id">
                 
-                <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                    <div style="font-weight: 600; font-size: 0.95em; color: var(--primary);" id="comp-task-name">Task Name</div>
-                    <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 4px;" id="comp-task-context">Lead / Customer Info</div>
-                    <div id="comp-decision-ribbon" style="display: none; margin-top: 8px; padding: 6px 12px; border-radius: 6px; font-size: 0.84em; font-weight: 700;"></div>
+                <!-- 1. مسمى المهمة ومعلومات الصفقة والطلب -->
+                <div style="background: #f8fafc; border: 1.5px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 1.1em; color: var(--primary);" id="comp-task-name">اسم المهمة</div>
+                    <div style="font-size: 0.88em; color: var(--text-muted); margin-top: 6px; line-height: 1.5;" id="comp-task-context">معلومات العميل والطلب</div>
+                    <div id="comp-decision-ribbon" style="display: none; margin-top: 10px; padding: 8px 14px; border-radius: 6px; font-size: 0.86em; font-weight: 700;"></div>
                 </div>
 
-                <!-- Reference Documents & Decision Evidence Panel -->
-                <div id="comp-docs-container" style="display: none; background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-weight: 700; color: #9a3412; font-size: 0.9em; display:flex; align-items:center; gap:6px;">
-                            <span>📑</span> <span data-i18n="lbl_comp_docs_title">الوثائق والمستندات والتقارير المرجعية الداعمة لاتخاذ القرار:</span>
-                        </span>
-                        <button type="button" class="btn btn-sm" style="background:#ea580c; color:#fff; font-size:0.75em; padding:3px 10px; border-radius:4px; font-weight:700;" onclick="openTaskDocumentGeneratorModal()">+ إصدار وتوثيق مستند</button>
-                    </div>
-                    <div id="comp-docs-list" style="display:flex; flex-direction:column; gap:6px; font-size:0.84em;">
-                        <!-- Injected by loadTaskReferenceDocuments -->
-                    </div>
-                </div>
-
-                <!-- Interactive SOP Step-by-Step Help Guide -->
+                <!-- 2. دليل خطوات تنفيذ المهمة خطوة بخطوة (SOP Help Guide) -->
                 <div id="comp-sop-help-container" style="margin-bottom: 16px;">
-                    <details id="comp-sop-help-details" style="background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 10px 14px; font-size: 0.86em;" open>
+                    <details id="comp-sop-help-details" style="background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 12px 16px; font-size: 0.88em;" open>
                         <summary style="font-weight: 700; color: #0369a1; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
                             <span>💡 <span id="comp-sop-guide-title">دليل خطوات تنفيذ المهمة خطوة بخطوة</span></span>
-                            <span style="font-size: 0.8em; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 10px; font-weight: 600;">SOP Help</span>
+                            <span id="comp-sop-badge" style="font-size: 0.8em; color: #0284c7; background: #e0f2fe; padding: 3px 10px; border-radius: 10px; font-weight: 700;">دليل الصنعة المعتمد</span>
                         </summary>
-                        <div id="comp-sop-steps-content" style="margin-top: 10px;">
+                        <div id="comp-sop-steps-content" style="margin-top: 12px;">
                             <!-- Injected by completeTask via /api/v1/sop-guide -->
                         </div>
                     </details>
                 </div>
 
+                <!-- 3. سجلات ومعطيات دعم اتخاذ القرار الموجبة للتنفيذ -->
+                <div id="comp-docs-container" style="display: none; background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                        <span style="font-weight: 700; color: #9a3412; font-size: 0.92em; display:flex; align-items:center; gap:6px;">
+                            <span>🎯</span> <span id="lbl_comp_docs_title_txt" data-i18n="lbl_comp_docs_title">سجلات ومعطيات دعم اتخاذ القرار الموجبة للتنفيذ:</span>
+                        </span>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="btn btn-sm" id="btn-comp-issue-doc" style="background:#ea580c; color:#fff; font-size:0.78em; padding:4px 12px; border-radius:4px; font-weight:700;" onclick="openTaskDocumentGeneratorModal()">+ إصدار وتوثيق مستند</button>
+                        </div>
+                    </div>
+
+                    <!-- Mini Tabs for Decision Support Records -->
+                    <div id="comp-records-nav" style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <button type="button" class="cat-pill active" id="tab-btn-docs" onclick="switchTaskRecordTab('docs')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">📑 <span id="txt-tab-docs">الوثائق المؤرشفة</span> (<span id="count-rec-docs">0</span>)</button>
+                        <button type="button" class="cat-pill" id="tab-btn-deposits" onclick="switchTaskRecordTab('deposits')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">💰 <span id="txt-tab-deposits">العربون والودائع</span> (<span id="count-rec-deposits">0</span>)</button>
+                        <button type="button" class="cat-pill" id="tab-btn-viewings" onclick="switchTaskRecordTab('viewings')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">🔍 <span id="txt-tab-viewings">المعاينة والفحص</span> (<span id="count-rec-viewings">0</span>)</button>
+                        <button type="button" class="cat-pill" id="tab-btn-solvency" onclick="switchTaskRecordTab('solvency')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">👤 <span id="txt-tab-solvency">التأهيل والملاءة</span></button>
+                        <button type="button" class="cat-pill" id="tab-btn-finance" onclick="switchTaskRecordTab('finance')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">🧾 <span id="txt-tab-finance">الفواتير والمحاسبة</span> (<span id="count-rec-invoices">0</span>)</button>
+                    </div>
+
+                    <!-- Tab Contents -->
+                    <div id="tab-content-docs" class="task-rec-tab-content" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.86em;">
+                        <div id="comp-docs-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </div>
+                    <div id="tab-content-deposits" class="task-rec-tab-content" style="display: none; font-size: 0.86em;">
+                        <div id="comp-deposits-list"></div>
+                    </div>
+                    <div id="tab-content-viewings" class="task-rec-tab-content" style="display: none; font-size: 0.86em;">
+                        <div id="comp-viewings-list"></div>
+                    </div>
+                    <div id="tab-content-solvency" class="task-rec-tab-content" style="display: none; font-size: 0.86em;">
+                        <div id="comp-solvency-content"></div>
+                    </div>
+                    <div id="tab-content-finance" class="task-rec-tab-content" style="display: none; font-size: 0.86em;">
+                        <div id="comp-invoices-list"></div>
+                    </div>
+                </div>
+
+                <!-- 4. استكمال ما تبقى من محتويات إنجاز المهمة (النتيجة وحقول النموذج) -->
                 <!-- Outcome Selector Section -->
                 <div class="form-group" style="margin-bottom: 16px;">
-                    <label data-i18n="lbl_comp_outcome" style="font-weight: 600; display: block; margin-bottom: 8px;">Task Outcome *</label>
+                    <label data-i18n="lbl_comp_outcome" style="font-weight: 700; display: block; margin-bottom: 8px;">النتيجة المعتمدة للمهمة *</label>
                     <div id="comp-outcome-options" style="display: flex; flex-direction: column; gap: 8px;">
                         <!-- Injected by completeTask -->
                     </div>
@@ -1196,79 +1223,67 @@
                 </div>
 
                 <!-- Investment Returns & Comparison Form (Shown for TASK_INVEST_COMPARE_RETURNS) -->
-                <div id="comp-invest-returns-fields" style="display: none; background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-weight: 700; font-size: 0.95em; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>📈 دراسة ومقارنة العوائد الاستثمارية للوحدات</span>
-                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Financial Comparison</span>
+                <div id="comp-invest-returns-fields" style="display: none; background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 1.05em; color: #0369a1; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📈 دراسة ومقارنة العوائد الاستثمارية للوحدات (1 إلى 3 وحدات)</span>
+                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Investment Feasibility & Benchmark</span>
                     </div>
-                    <div style="background:#fff; border:1px solid #bae6fd; border-radius:6px; padding:12px; margin-bottom:10px;">
-                        <div class="form-group" style="margin-bottom:10px;">
-                            <label style="font-size:0.82em; font-weight:700; color:#0369a1;">الوحدة العقارية المرشحة للدراسة</label>
-                            <select id="comp-invest-ret-unit" class="select-filter" style="width:100%; font-weight:600;" onchange="onInvestCompareUnitChange()">
-                                <option value="">-- اختر وحدة استثمارية أو أدخل المعطيات يدوياً --</option>
-                            </select>
+                    <div style="font-size:0.83em; color:#475569; margin-bottom:12px; line-height:1.5;">
+                        اختر من 1 إلى 3 وحدات عقارية من المخزون الاستثماري لإجراء دراسة جدوى الأصل أو المفاضلة بين البدائل واحتساب مؤشرات Cap Rate و NOI والعائد على النقد وإصدار التقرير الرسمي للمستثمر.
+                    </div>
+
+                    <!-- Available Units Checklist / Cards -->
+                    <div style="font-size:0.82em; font-weight:700; color:#0369a1; margin-bottom:6px;">
+                        🏢 قائمة الوحدات الاستثمارية المتاحة (اختر من 1 إلى 3 وحدات للدراسة والمقارنة):
+                    </div>
+                    <div id="invest-compare-unit-selector-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:10px; margin-bottom:10px;">
+                        <!-- Injected by populateInvestReturnsUnits -->
+                    </div>
+
+                    <!-- Selection Status Bar -->
+                    <div id="invest-compare-selection-status" style="font-size:0.82em; font-weight:700; color:#0369a1; padding:6px 12px; background:#e0f2fe; border-radius:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>📊 الوحدات المختارة: <strong id="invest-selected-count">0</strong> من 3</span>
+                        <span id="invest-selection-hint" style="color:#d97706; font-size:0.9em;">يرجى اختيار وحدة عقارية واحدة على الأقل</span>
+                    </div>
+
+                    <!-- Dynamic Side-by-Side Comparison Matrix -->
+                    <div id="invest-compare-matrix-container" style="display:none; background:#ffffff; border:1.5px solid #7dd3fc; border-radius:8px; padding:12px; margin-bottom:12px; overflow-x:auto;">
+                        <div style="font-size:0.85em; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>📊 دراسة الجدوى ومصفوفة المفاضلة المالية (Investment Matrix):</span>
+                            <span style="font-size:0.75em; background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:10px; font-weight:700;">الأصل الموصى به للاستحواذ ⭐</span>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">سعر الاستحواذ / الشراء المتوقع (SAR) *</label>
-                                <input type="number" id="comp-invest-ret-price" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">إجمالي الإيجار السنوي المتوقع (SAR) *</label>
-                                <input type="number" id="comp-invest-ret-rent" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مخصص الشغور السنوي (SAR)</label>
-                                <input type="number" id="comp-invest-ret-vac" placeholder="5% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مصاريف التشغيل السنوية OPEX (SAR)</label>
-                                <input type="number" id="comp-invest-ret-opex" placeholder="10% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رأس المال النقدي المستثمر (Equity SAR)</label>
-                                <input type="number" id="comp-invest-ret-cash" class="search-input" style="width:100%; font-weight:700;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تكاليف الاستحواذ الإضافية (SAR)</label>
-                                <input type="number" id="comp-invest-ret-acq" value="0" class="search-input" style="width:100%;" oninput="calculateLiveInvestReturnsMetrics()">
-                            </div>
+                        <div id="invest-compare-matrix-columns" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+                            <!-- Injected by renderInvestCompareMatrix -->
                         </div>
                     </div>
-                    <!-- Live Return Metrics -->
-                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px;">
-                        <div style="font-size:0.8em; font-weight:700; color:#1d4ed8; margin-bottom:6px;">⚡ مؤشرات العائد المحسوبة تلقائياً:</div>
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
-                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
-                                <div style="font-size:0.75em; color:#64748b;">صافي الدخل (NOI)</div>
-                                <div id="live-ret-noi" style="font-weight:700; color:#1e40af; font-size:0.95em;">0 SAR</div>
-                            </div>
-                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
-                                <div style="font-size:0.75em; color:#64748b;">العائد الصافي (Net Yield)</div>
-                                <div id="live-ret-cap-rate" style="font-weight:700; color:#16a34a; font-size:0.95em;">0.0%</div>
-                            </div>
-                            <div style="background:#fff; padding:6px; border-radius:4px; border:1px solid #dbeafe;">
-                                <div style="font-size:0.75em; color:#64748b;">العائد على النقد (Cash-on-Cash)</div>
-                                <div id="live-ret-coc" style="font-weight:700; color:#059669; font-size:0.95em;">0.0%</div>
-                            </div>
-                        </div>
+
+                    <!-- Recommendation & Notes -->
+                    <div class="form-group" style="margin-top:10px;">
+                        <label style="font-size:0.82em; font-weight:700; color:#0369a1;">🎯 توصية المستشار ومبررات جدوى الأصل المعتمد (تُطبع بالتقرير الرسمي) *</label>
+                        <textarea id="comp-invest-recommendation-notes" rows="3" class="search-input" style="width:100%; resize:vertical; font-size:0.86em; font-weight:500;" placeholder="بناءً على تحليل التدفقات النقدية ومعدل الرسملة (Cap Rate) ومخاطر الشغور، نوصي بالاستحواذ على الأصل المختار لتحقيقه أعلى عائد تشغيلي صافي واستقراراً نقدياً للمستثمر..."></textarea>
+                    </div>
+
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; margin-top:10px; font-size:0.8em; color:#1e40af; line-height:1.5;">
+                        ⚡ <strong>المطابقة وأرشفة الوثائق:</strong> عند إنجاز هذه المهمة، سيقوم النظام تلقائياً بربط الوحدة بالأصل وتوليد <strong>تقرير الجدوى والمفاضلة المالية الرسمي (PDF/HTML)</strong> وأرشفته في سجل مستندات العميل وترقية المعاملة للمرحلة التالية بحسب المسار المختار (معاينة وفحص فني، أو عرض استحواذ مباشر).
                     </div>
                 </div>
 
                 <!-- Investment Due Diligence Inspection Form (Shown for TASK_INVEST_INSPECTION_REPORT) -->
                 <div id="comp-invest-ddr-fields" style="display: none; background: #f8fafc; border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
                     <div style="font-weight: 700; font-size: 0.95em; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>🏢 بيانات الفحص الفني والاستثماري النافي للجهالة</span>
-                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Due Diligence</span>
+                        <span>🏢 بيانات الفحص الفني والاستثماري النافي للجهالة (Due Diligence)</span>
+                        <span style="font-size:0.75em; background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:12px; font-weight:600;">Technical & Site Audit</span>
                     </div>
 
-                    <!-- 1. Financial Baseline Inputs -->
+                    <!-- 1. Financial Baseline Inputs (Auto-Inherited from Comparison Step) -->
                     <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💰 المعطيات المالية الأساسية للفرصة (موروثة وقابلة للتعديل):</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <div style="font-size:0.85em; font-weight:700; color:#1e293b;">💰 المعطيات المالية للأصل (مستوردة آلياً من دراسة الجدوى السابقة):</div>
+                            <span style="font-size:0.75em; background:#ecfdf5; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:10px; font-weight:700;">✓ موروثة تلقائياً دون تكرار</span>
+                        </div>
+                        <div style="font-size:0.78em; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; border-radius:4px; padding:6px 10px; margin-bottom:10px; line-height:1.5;">
+                            ℹ️ تم تحميل سعر الشراء والإيجار ومصاريف التشغيل المعتمدة تلقائياً. ركّز في هذه الشاشة على الفحص الإنشائي الميداني واحتساب مصاريف الإصلاحات (CapEx) وخصمها من السعر.
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label style="font-size:0.8em; font-weight:600;">سعر الاستحواذ المقدر (SAR) *</label>
@@ -1280,6 +1295,10 @@
                             </div>
                         </div>
                         <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:600;">مخصص الشغور السنوي (SAR)</label>
+                                <input type="number" id="comp-invest-vac" placeholder="محسوب من نسبة الشغور تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestmentMetrics(true)">
+                            </div>
                             <div class="form-group">
                                 <label style="font-size:0.8em; font-weight:600;">مصاريف التشغيل السنوية OPEX (SAR)</label>
                                 <input type="number" id="comp-invest-opex" placeholder="10% تلقائياً" class="search-input" style="width:100%;" oninput="calculateLiveInvestmentMetrics()">
@@ -1383,8 +1402,8 @@
                             <div class="form-group">
                                 <label style="font-size:0.8em; font-weight:600;">الوحدات المشغولة / الإجمالي</label>
                                 <div style="display:flex; gap:6px;">
-                                    <input type="number" id="comp-invest-occ-count" placeholder="مشغولة" value="1" class="search-input" style="width:50%;">
-                                    <input type="number" id="comp-invest-tot-units" placeholder="الإجمالي" value="1" class="search-input" style="width:50%;">
+                                    <input type="number" id="comp-invest-occ-count" placeholder="مشغولة" value="1" min="0" class="search-input" style="width:50%;" oninput="onOccCountChange()">
+                                    <input type="number" id="comp-invest-tot-units" placeholder="الإجمالي" value="1" min="1" class="search-input" style="width:50%;">
                                 </div>
                             </div>
                             <div class="form-group">
@@ -1521,22 +1540,22 @@
     </div>
 
     <!-- Modal: Document Live HTML & Print Preview -->
-    <div id="modal-doc-preview" class="modal-overlay">
-        <div class="modal" style="max-width: 980px; width: 95%; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px;">
-            <div class="modal-header" style="background: #1e3a8a; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2em;">📄</span>
-                    <div>
-                        <h3 id="doc-preview-title" style="margin: 0; font-size: 1.05em; color: white;">معاينة المستند الرسمي</h3>
-                        <div id="doc-preview-meta" style="font-size: 0.75em; color: #93c5fd;">وثيقة رسمية معتمدة وموثقة رقمياً طبقاً للأنظمة العقارية السعودية</div>
+    <div id="modal-doc-preview" class="modal-overlay" onclick="if(event.target === this) closeModal('modal-doc-preview')">
+        <div class="modal" style="max-width: 1000px; width: 95%; height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+            <div class="modal-header" style="background: #1e3a8a; color: white; padding: 12px 20px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0; gap: 16px; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; overflow: hidden;">
+                    <span style="font-size: 1.3em; flex-shrink: 0;">📄</span>
+                    <div style="min-width: 0; overflow: hidden;">
+                        <h3 id="doc-preview-title" style="margin: 0; font-size: 1.05em; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">معاينة المستند الرسمي</h3>
+                        <div id="doc-preview-meta" style="font-size: 0.75em; color: #93c5fd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">وثيقة رسمية معتمدة وموثقة رقمياً طبقاً للأنظمة العقارية السعودية</div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button type="button" class="btn btn-sm" style="background: #2563eb; color: white; border: none; font-weight: bold;" onclick="printCurrentPreviewDoc()">🖨️ طباعة المستند</button>
-                    <button class="close-btn" style="color: white; font-size: 1.4em;" onclick="closeModal('modal-doc-preview')">&times;</button>
+                <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                    <button type="button" class="btn btn-sm" style="background: #2563eb; color: white; border: none; font-weight: bold; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" onclick="printCurrentPreviewDoc()">🖨️ طباعة المستند</button>
+                    <button type="button" class="close-btn" style="color: white; font-size: 1.4em; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" onclick="closeModal('modal-doc-preview')" title="إغلاق">&times;</button>
                 </div>
             </div>
-            <div style="flex: 1; position: relative; background: #e2e8f0;">
+            <div style="flex: 1; position: relative; background: #e2e8f0; height: calc(100% - 60px);">
                 <iframe id="doc-preview-iframe" style="width: 100%; height: 100%; border: none; background: white;" src="about:blank"></iframe>
             </div>
         </div>
@@ -1555,6 +1574,8 @@
                     <option value="DUE_DILIGENCE_REPORT">تقرير الفحص الفني والاستثماري (Due Diligence)</option>
                     <option value="COUNTER_OFFER_LETTER">خطاب التفاوض وتعديل السعر مقابل عيوب CapEx</option>
                     <option value="COMMERCIAL_OFFER">خطاب عرض الاستحواذ / الشراء الرسمي</option>
+                    <option value="OFFER_DECISION">وثيقة قرار واعتماد العرض المالي</option>
+                    <option value="RESERVATION">سند حجز الوحدة العقارية وإيداع العربون</option>
                     <option value="BASELINE_FINANCIAL_SHEET">ورقة خط الأساس المالي والاستثماري للأصل</option>
                     <option value="TAQEEM_VALUATION">تقرير التقييم العقاري المعتمد (مقيم)</option>
                     <option value="TAX_ZAKAT_CLEARANCE">إشعار ضريبة التصرفات العقارية (RETT)</option>
@@ -1616,6 +1637,8 @@
                 opt_act_call: "Phone Call", opt_act_whatsapp: "WhatsApp", opt_act_email: "Email",
                 opt_act_meeting: "Meeting", opt_act_viewing: "Property Viewing", opt_act_followup: "Follow-up",
                 opt_act_note: "Internal Note", opt_dir_outbound: "Outbound", opt_dir_inbound: "Inbound",
+                opt_chan_whatsapp: "WhatsApp", opt_chan_email: "Email", opt_chan_phone: "Phone", opt_chan_sms: "SMS",
+                opt_select_agent: "Select agent", opt_select_customer: "Select customer", opt_select_lead_optional: "Select lead (optional)", opt_select_opp_optional: "Select opportunity (optional)",
                 opt_act_completed: "Completed", opt_act_planned: "Planned",
                 lbl_act_datetime: "Appointment / Execution Time",
                 lbl_overdue_only: "Show Overdue Only",
@@ -1682,6 +1705,8 @@
                 opt_act_call: "مكالمة هاتفية", opt_act_whatsapp: "واتساب", opt_act_email: "بريد إلكتروني",
                 opt_act_meeting: "اجتماع", opt_act_viewing: "معاينة عقار", opt_act_followup: "متابعة",
                 opt_act_note: "ملاحظة داخلية", opt_dir_outbound: "صادر", opt_dir_inbound: "وارد",
+                opt_chan_whatsapp: "واتساب", opt_chan_email: "بريد إلكتروني", opt_chan_phone: "هاتف", opt_chan_sms: "رسالة نصية SMS",
+                opt_select_agent: "-- اختيار الوسيط --", opt_select_customer: "-- اختيار العميل --", opt_select_lead_optional: "-- اختيار الطلب (اختياري) --", opt_select_opp_optional: "-- اختيار الفرصة البيعية (اختياري) --",
                 opt_act_completed: "منجز", opt_act_planned: "مجدول",
                 lbl_act_datetime: "الموعد / تاريخ التنفيذ",
                 lbl_overdue_only: "عرض المتأخرات فقط",
@@ -2000,6 +2025,25 @@
             });
             const langLbl = document.getElementById('lang-label');
             if (langLbl) langLbl.textContent = i18nData[currentLang].lang_label;
+
+            // Update Task Completion Modal localized elements
+            const sopGuideTitle = document.getElementById('comp-sop-guide-title');
+            if (sopGuideTitle) sopGuideTitle.textContent = lang === 'ar' ? 'دليل خطوات تنفيذ المهمة خطوة بخطوة' : 'Task Step-by-Step Execution Guide';
+            const sopBadge = document.getElementById('comp-sop-badge');
+            if (sopBadge) sopBadge.textContent = lang === 'ar' ? 'دليل الصنعة المعتمد' : 'Standard Operating Procedure (SOP)';
+            const issueDocBtn = document.getElementById('btn-comp-issue-doc');
+            if (issueDocBtn) issueDocBtn.textContent = lang === 'ar' ? '+ إصدار وتوثيق مستند' : '+ Issue & Archive Document';
+
+            const tabDocs = document.getElementById('txt-tab-docs');
+            if (tabDocs) tabDocs.textContent = lang === 'ar' ? 'الوثائق المؤرشفة' : 'Archived Documents';
+            const tabDep = document.getElementById('txt-tab-deposits');
+            if (tabDep) tabDep.textContent = lang === 'ar' ? 'العربون والودائع' : 'Earnest & Deposits';
+            const tabView = document.getElementById('txt-tab-viewings');
+            if (tabView) tabView.textContent = lang === 'ar' ? 'المعاينة والفحص' : 'Inspection & Viewings';
+            const tabSolv = document.getElementById('txt-tab-solvency');
+            if (tabSolv) tabSolv.textContent = lang === 'ar' ? 'التأهيل والملاءة' : 'Solvency & Qualification';
+            const tabFin = document.getElementById('txt-tab-finance');
+            if (tabFin) tabFin.textContent = lang === 'ar' ? 'الفواتير والمحاسبة' : 'Invoices & Accounting';
 
             populateTaskAgentFilter();
             if (tasksData && tasksData.length > 0) renderTasks(tasksData);
@@ -2989,13 +3033,13 @@
                 let inqBg = '#e0f2fe';
                 let inqBorder = '#bae6fd';
                 if (inq === 'RENT') {
-                    inqBadge = isAr ? '🔑 إيجار (RENT)' : '🔑 Rent';
+                    inqBadge = isAr ? '🔑 إيجار' : '🔑 Rent';
                     inqColor = '#15803d'; inqBg = '#dcfce7'; inqBorder = '#86efac';
                 } else if (inq === 'INVEST' || inq === 'INVESTMENT') {
-                    inqBadge = isAr ? '💼 استثمار (INVESTMENT)' : '💼 Investment';
+                    inqBadge = isAr ? '💼 استثمار' : '💼 Investment';
                     inqColor = '#6d28d9'; inqBg = '#ede9fe'; inqBorder = '#c4b5fd';
                 } else if (inq === 'BUY') {
-                    inqBadge = isAr ? '🏠 شراء (BUY)' : '🏠 Buy';
+                    inqBadge = isAr ? '🏠 شراء' : '🏠 Buy';
                     inqColor = '#0369a1'; inqBg = '#e0f2fe'; inqBorder = '#bae6fd';
                 }
 
@@ -3514,11 +3558,18 @@
                 }
             } else if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
                 container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
                         <input type="radio" name="comp_outcome" value="RETURNS_COMPARED" checked>
                         <div>
-                            <strong style="color:#166534;">${isAr ? '📈 تم احتساب ومقارنة العوائد الاستثمارية للوحدات' : '📈 Returns & Yields Calculated'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'احتساب العائد الصافي ومعدل CoC، وتوليد مهمة جدولة المعاينة والفحص الفني والاستثماري' : 'Calculate NOI & Cash-on-Cash, spawn due diligence inspection scheduling task'}</div>
+                            <strong style="color:#166534;">${isAr ? '📈 المسار المعياري: اعتماد النتائج — جدولة المعاينة والفحص الفني النافي للجهالة (Due Diligence)' : '📈 Standard: Returns Compared — Schedule Due Diligence Inspection'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'أفضل الممارسات: فحص سلامة الهيكل الإنشائي والتكييف والمصاعد وعقود منصة إيجار قبل الشراء' : 'Best practice: Verify building code, mechanicals, and lease contracts roll before purchase'}</div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="FAST_TRACK_OFFER">
+                        <div>
+                            <strong style="color:#c2410c;">${isAr ? '⚡ المسار السريع: اعتماد الأصل الموصى به وموافقة المستثمر — الانتقال المباشر لتقديم عرض الاستحواذ' : '⚡ Fast-Track: Investor Approved Unit — Advance Directly to Acquisition Offer'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تجاوز الفحص الفني (للوحدات الجديدة تحت ضمان المطور، أو الوحدات المفحوصة مسبقاً من العميل)' : 'Bypass due diligence inspection (for brand new units under warranty or pre-inspected assets)'}</div>
                         </div>
                     </label>
                 `;
@@ -3556,15 +3607,40 @@
                     // 1. Inherit Price & Rent from Unit (strictly prioritizing Unit Asking Price over general budget)
                     let pPrice = (taskLead && taskLead.asking_price) || (taskLead && taskLead.unit_price) || (taskOpp && taskOpp.unit_price) || (taskOpp && taskOpp.asking_price) || 0;
                     let pRent = (taskLead && taskLead.rent_price) || (taskOpp && taskOpp.rent_price) || 0;
+                    let pOpex = 0;
+                    let pCash = 0;
 
-                    if (!pPrice && t && t.opportunity_id) {
+                    if (t && t.opportunity_id) {
                         try {
                             const uRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${t.opportunity_id}/units`);
                             if (uRes.ok) {
                                 const uData = (await uRes.json()).data || [];
                                 if (uData.length > 0) {
-                                    pPrice = uData[0].asking_price || pPrice;
-                                    pRent = uData[0].rent_price || pRent;
+                                    const primU = uData.find(u => u.is_primary) || uData[0];
+                                    pPrice = primU.offered_price || primU.asking_price || pPrice;
+                                    pRent = primU.rent_price || pRent;
+                                }
+                            }
+                        } catch (_) {}
+
+                        // Seamlessly inherit full financial model from previous Feasibility / Comparison Document
+                        try {
+                            const dRes = await fetch(`${API_BASE}/api/v1/documents?opportunity_id=${encodeURIComponent(t.opportunity_id)}&page_size=20`);
+                            if (dRes.ok) {
+                                const dJson = await dRes.json();
+                                const cDoc = (dJson.data || []).find(d => (d.document_type_code || '').includes('INVEST_COMPARATIVE_REPORT') || (d.file_name || '').includes('المقارنة') || (d.file_name || '').includes('الجدوى'));
+                                if (cDoc && cDoc.metadata) {
+                                    const meta = typeof cDoc.metadata === 'string' ? JSON.parse(cDoc.metadata) : cDoc.metadata;
+                                    const cUnits = meta.compared_units || [];
+                                    const prim = cUnits.find(u => u.is_primary) || cUnits[0];
+                                    let pVac = null;
+                                    if (prim) {
+                                        if (prim.purchase_price) pPrice = prim.purchase_price;
+                                        if (prim.gross_annual_rent) pRent = prim.gross_annual_rent;
+                                        if (prim.annual_vacancy_allowance != null) pVac = prim.annual_vacancy_allowance;
+                                        if (prim.annual_operating_expenses) pOpex = prim.annual_operating_expenses;
+                                        if (prim.cash_invested) pCash = prim.cash_invested;
+                                    }
                                 }
                             }
                         } catch (_) {}
@@ -3577,14 +3653,31 @@
                     if (!pRent) {
                         pRent = pPrice ? pPrice * 0.08 : 0;
                     }
+                    if (!pOpex) {
+                        pOpex = Math.round(pRent * 0.10);
+                    }
+                    if (!pCash) {
+                        pCash = pPrice;
+                    }
 
                     if (pPrice) {
                         document.getElementById('comp-invest-price').value = pPrice;
-                        document.getElementById('comp-invest-cash-inv').value = pPrice;
+                        document.getElementById('comp-invest-cash-inv').value = pCash;
                     }
                     if (pRent) {
                         document.getElementById('comp-invest-gross-rent').value = pRent;
                     }
+                    if (pOpex) {
+                        document.getElementById('comp-invest-opex').value = pOpex;
+                    }
+                    if (pVac != null) {
+                        const vacEl = document.getElementById('comp-invest-vac');
+                        if (vacEl) {
+                            vacEl.value = pVac;
+                            vacEl.dataset.manual = 'true';
+                        }
+                    }
+                    calculateLiveInvestmentMetrics();
 
                     // 2. Fetch existing due diligence report if available
                     if (t && t.opportunity_id) {
@@ -3595,10 +3688,22 @@
                                     const rep = j.data[0];
                                     if (rep.purchase_price_sar) document.getElementById('comp-invest-price').value = rep.purchase_price_sar;
                                     if (rep.gross_annual_rent_sar) document.getElementById('comp-invest-gross-rent').value = rep.gross_annual_rent_sar;
+                                    if (rep.vacancy_allowance_sar != null) {
+                                        const vacEl = document.getElementById('comp-invest-vac');
+                                        if (vacEl) {
+                                            vacEl.value = rep.vacancy_allowance_sar;
+                                            vacEl.dataset.manual = 'true';
+                                        }
+                                    }
                                     if (rep.operating_expenses_opex_sar) document.getElementById('comp-invest-opex').value = rep.operating_expenses_opex_sar;
                                     if (rep.estimated_capex_sar != null) document.getElementById('comp-invest-capex').value = rep.estimated_capex_sar;
                                     if (rep.suggested_price_adjustment_sar != null) document.getElementById('comp-invest-price-adj').value = rep.suggested_price_adjustment_sar;
                                     if (rep.actual_occupancy_rate != null) document.getElementById('comp-invest-actual-occ').value = rep.actual_occupancy_rate;
+                                    if (rep.occupied_units_count != null) document.getElementById('comp-invest-occ-count').value = rep.occupied_units_count;
+                                    if (rep.total_units_inspected != null) {
+                                        const occVal = rep.occupied_units_count || 1;
+                                        document.getElementById('comp-invest-tot-units').value = Math.max(rep.total_units_inspected, occVal);
+                                    }
                                     if (rep.structural_condition) document.getElementById('comp-invest-structural').value = rep.structural_condition;
                                     if (rep.building_age_years != null) document.getElementById('comp-invest-bld-age').value = rep.building_age_years;
                                     if (rep.saudi_building_code_compliant != null) document.getElementById('comp-invest-sbc').value = String(rep.saudi_building_code_compliant);
@@ -4616,6 +4721,51 @@
                 `;
             }
 
+            // Auto-populate Financial Settlement & Fee Collection Fields
+            if (templateId === 'TASK_COMMISSION_SETTLEMENT') {
+                let calculatedComm = '';
+                const titleMatch = (t && t.title ? t.title : '').match(/([\d,]+(\.\d{1,2})?)\s*ر\.س/);
+                if (titleMatch) {
+                    calculatedComm = titleMatch[1].replace(/,/g, '');
+                } else if (taskOpp && taskOpp.expected_value) {
+                    calculatedComm = (parseFloat(taskOpp.expected_value) * 0.025 * 0.30).toFixed(2);
+                } else if (taskLead && taskLead.budget_max) {
+                    calculatedComm = (parseFloat(taskLead.budget_max) * 0.025 * 0.30).toFixed(2);
+                }
+                const netCommEl = document.getElementById('comp-comm-net-amount');
+                if (netCommEl && calculatedComm) {
+                    netCommEl.value = calculatedComm;
+                }
+                const falEl = document.getElementById('comp-comm-fal-no');
+                if (falEl && !falEl.value) {
+                    falEl.value = '1200018890';
+                }
+                const ibanEl = document.getElementById('comp-comm-iban');
+                if (ibanEl && !ibanEl.value) {
+                    ibanEl.value = 'SA0380000000608010167519';
+                }
+                const jrnEl = document.getElementById('comp-comm-journal-ref');
+                if (jrnEl && !jrnEl.value) {
+                    jrnEl.value = 'JV-' + (taskId ? taskId.replace('task-', '') : '2026-081');
+                }
+            } else if (templateId === 'TASK_COLLECT_SAUDI_FEES') {
+                let rettVal = '';
+                let vatVal = '';
+                const baseVal = (taskOpp && taskOpp.expected_value) ? parseFloat(taskOpp.expected_value) : ((taskLead && taskLead.budget_max) ? parseFloat(taskLead.budget_max) : 0);
+                if (baseVal > 0) {
+                    rettVal = (baseVal * 0.05).toFixed(2);
+                    vatVal = (baseVal * 0.025 * 0.15).toFixed(2);
+                }
+                const rettEl = document.getElementById('comp-fees-rett');
+                if (rettEl && rettVal) rettEl.value = rettVal;
+                const vatEl = document.getElementById('comp-fees-vat');
+                if (vatEl && vatVal) vatEl.value = vatVal;
+                const sadadEl = document.getElementById('comp-fees-sadad');
+                if (sadadEl && !sadadEl.value) {
+                    sadadEl.value = '9028' + Math.floor(100000 + Math.random() * 900000);
+                }
+            }
+
             openModal('modal-complete-task');
         }
 
@@ -4696,19 +4846,28 @@
                 const json = await res.json();
                 let units = json.data || [];
 
-                // Exclude SOLD and RENTED units strictly; exclude RESERVED unless already shortlisted for this deal
+                const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
+
+                // Exclude SOLD and RENTED units strictly; exclude RESERVED unless already shortlisted for this deal;
+                // Filter by listing_purpose matching inquiry_type (Rent vs Sale vs Investment)
                 units = units.filter(u => {
                     const st = (u.status || 'AVAILABLE').toUpperCase();
                     if (st === 'SOLD' || st === 'RENTED') return false;
                     if (st === 'RESERVED' && !shortlistedIds.includes(u.unit_id)) return false;
+
+                    const lp = (u.listing_purpose || 'ALL').toUpperCase();
+                    if (lp !== 'ALL' && lp !== 'UNSPECIFIED' && lp !== '') {
+                        if (inq === 'RENT' && lp !== 'RENT') return false;
+                        if (inq === 'BUY' && lp !== 'SALE') return false;
+                        if ((inq === 'INVESTMENT' || inq === 'INVEST') && lp !== 'INVESTMENT' && lp !== 'SALE') return false;
+                    }
                     return true;
                 });
 
                 if (units.length === 0) {
-                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات متاحة بالمخزون حالياً' : 'No available units currently in inventory'}</span>`;
+                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات مطابقة لنوع هذا الطلب بالمخزون حالياً' : 'No matching units for this inquiry type currently in inventory'}</span>`;
                     return;
                 }
-                const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
                 // Sort so that previously shortlisted units appear at the top and are pre-checked
                 units.sort((a, b) => {
                     const aShort = shortlistedIds.includes(a.unit_id) ? 1 : 0;
@@ -4718,6 +4877,19 @@
                 listEl.innerHTML = units.slice(0, 8).map((u, idx) => {
                     const isChecked = shortlistedIds.length > 0 ? shortlistedIds.includes(u.unit_id) : (idx < 3);
                     const ownerName = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                    
+                    const lp = (u.listing_purpose || 'ALL').toUpperCase();
+                    let lpBadge = '';
+                    if (lp === 'RENT') {
+                        lpBadge = `<span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🔑 ${isAr ? 'للإيجار' : 'Rent'}</span>`;
+                    } else if (lp === 'SALE') {
+                        lpBadge = `<span style="background:#dcfce7; color:#166534; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🏠 ${isAr ? 'للبيع' : 'Sale'}</span>`;
+                    } else if (lp === 'INVESTMENT') {
+                        lpBadge = `<span style="background:#f3e8ff; color:#7e22ce; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">💼 ${isAr ? 'استثمار' : 'Invest'}</span>`;
+                    } else {
+                        lpBadge = `<span style="background:#f1f5f9; color:#475569; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🌐 ${isAr ? 'عام' : 'All'}</span>`;
+                    }
+
                     let priceTag = '';
                     if (inq === 'RENT') {
                         const r = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '--';
@@ -4736,8 +4908,16 @@
                     return `
                     <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;">
                         <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${isChecked ? 'checked' : ''}>
-                        <span class="id-badge">${u.unit_id}</span>
-                        <span><strong>#${u.unit_number}</strong> (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) — ${u.property_type_name || (isAr ? 'عقار' : 'Property')} | ${priceTag}</span>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">
+                                <span>🏢 ${u.unit_number || u.unit_id}</span>
+                                ${lpBadge}
+                                <span style="color:var(--text-muted); font-size:0.85em;">(${u.property_type_name_ar || u.property_type_name || 'وحدة'})</span>
+                            </div>
+                            <div style="font-size:0.8em; color:var(--text-muted);">
+                                <span>${priceTag}</span> | <span>👤 ${ownerName}</span>
+                            </div>
+                        </div>
                     </label>
                     `;
                 }).join('');
@@ -4842,6 +5022,16 @@
         /* ============================================================== */
         /* TASK REFERENCE DOCUMENTS & DECISION SUPPORT SYSTEM             */
         /* ============================================================== */
+        function switchTaskRecordTab(tab) {
+            document.querySelectorAll('.task-rec-tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#comp-records-nav .cat-pill').forEach(el => el.classList.remove('active'));
+
+            const contentEl = document.getElementById(`tab-content-${tab}`);
+            if (contentEl) contentEl.style.display = 'flex';
+            const btnEl = document.getElementById(`tab-btn-${tab}`);
+            if (btnEl) btnEl.classList.add('active');
+        }
+
         async function loadTaskReferenceDocuments(taskObj, taskLead, taskOpp) {
             const container = document.getElementById('comp-docs-container');
             const listEl = document.getElementById('comp-docs-list');
@@ -4850,8 +5040,10 @@
             const isAr = currentLang === 'ar';
             const leadId = (taskObj && taskObj.lead_id) || (taskLead && taskLead.lead_id) || '';
             const oppId = (taskObj && taskObj.opportunity_id) || (taskOpp && taskOpp.opportunity_id) || '';
+            const taskTitle = (taskObj && taskObj.title) || '';
+            const templateId = (taskObj && taskObj.template_id) || '';
 
-            if (!leadId && !oppId) {
+            if (!leadId && !oppId && !taskTitle) {
                 container.style.display = 'none';
                 return;
             }
@@ -4859,23 +5051,72 @@
             container.style.display = 'block';
             listEl.innerHTML = `<div style="color:#64748b; padding:4px 0;">${isAr ? 'جاري استدعاء الوثائق والمستندات المرجعية...' : 'Loading reference documents...'}</div>`;
 
+            // Reset record counters
+            const countDocs = document.getElementById('count-rec-docs');
+            const countDep = document.getElementById('count-rec-deposits');
+            const countView = document.getElementById('count-rec-viewings');
+            const countInv = document.getElementById('count-rec-invoices');
+
+            let docs = [];
+            let reservations = [];
+            let viewings = [];
+            let invoices = [];
+
+            const param = oppId ? `opportunity_id=${encodeURIComponent(oppId)}` : `lead_id=${encodeURIComponent(leadId)}`;
+
             try {
-                let url = `${API_BASE}/api/v1/documents?page_size=50`;
-                if (oppId) url += `&opportunity_id=${encodeURIComponent(oppId)}`;
-                else if (leadId) url += `&lead_id=${encodeURIComponent(leadId)}`;
+                const [docsRes, resRes, viewRes, invRes] = await Promise.allSettled([
+                    apiRequest(`${API_BASE}/api/v1/documents?page_size=50&${param}`),
+                    apiRequest(`${API_BASE}/api/v1/reservations?page_size=10&${param}`),
+                    apiRequest(`${API_BASE}/api/v1/viewings?page_size=10&${param}`),
+                    apiRequest(`${API_BASE}/api/v1/invoices?limit=10&${param}`)
+                ]);
 
-                const res = await apiRequest(url);
-                const docs = (res && res.data) ? res.data : [];
-
-                if (docs.length === 0) {
-                    listEl.innerHTML = `
-                        <div style="background:#fff; border:1px dashed #fdba74; border-radius:6px; padding:10px; text-align:center; color:#c2410c;">
-                            ${isAr ? 'لا توجد وثائق مؤرشفة لهذا الطلب حتى الآن. يمكنك إصدار وتوثيق المستندات الرسمية بالضغط على زر (+ إصدار وتوثيق مستند).' : 'No archived documents found for this workflow yet. Click (+ Issue Document) to generate one.'}
-                        </div>
-                    `;
-                    return;
+                if (docsRes.status === 'fulfilled' && docsRes.value && docsRes.value.data) {
+                    docs = docsRes.value.data;
                 }
+                if (resRes.status === 'fulfilled' && resRes.value && resRes.value.data) {
+                    reservations = resRes.value.data;
+                }
+                if (viewRes.status === 'fulfilled' && viewRes.value && viewRes.value.data) {
+                    viewings = viewRes.value.data;
+                }
+                if (invRes.status === 'fulfilled' && invRes.value && invRes.value.data) {
+                    invoices = invRes.value.data;
+                }
+            } catch (e) {
+                console.warn("Parallel fetch error in decision records:", e);
+            }
 
+            // Fallback contract search
+            const cMatch = taskTitle.match(/(TEN-[\w\-]+|CON-[\w\-]+)/i);
+            if (cMatch && cMatch[1]) {
+                const cNum = cMatch[1].toUpperCase();
+                const hasContractDoc = docs.some(d => (d.file_name || '').toUpperCase().includes(cNum) || (d.contract_number || '').toUpperCase().includes(cNum));
+                if (!hasContractDoc) {
+                    try {
+                        const cRes = await apiRequest(`${API_BASE}/api/v1/documents?search=${encodeURIComponent(cNum)}`);
+                        if (cRes && cRes.data && cRes.data.length > 0) {
+                            docs = [...cRes.data, ...docs.filter(d => !cRes.data.some(cd => cd.document_id === d.document_id))];
+                        }
+                    } catch (_) {}
+                }
+            }
+
+            // Update badge counters
+            if (countDocs) countDocs.textContent = docs.length;
+            if (countDep) countDep.textContent = reservations.length;
+            if (countView) countView.textContent = viewings.length;
+            if (countInv) countInv.textContent = invoices.length;
+
+            // 1. Render Documents
+            if (docs.length === 0) {
+                listEl.innerHTML = `
+                    <div style="background:#fff; border:1px dashed #fdba74; border-radius:6px; padding:10px; text-align:center; color:#c2410c;">
+                        ${isAr ? 'لا توجد وثائق مؤرشفة لهذا الطلب حتى الآن. يمكنك إصدار وتوثيق المستندات الرسمية بالضغط على زر (+ إصدار وتوثيق مستند).' : 'No archived documents found for this workflow yet. Click (+ Issue Document) to generate one.'}
+                    </div>
+                `;
+            } else {
                 listEl.innerHTML = docs.map(d => {
                     const code = (d.document_type_code || '').toUpperCase();
                     let badgeColor = '#0369a1';
@@ -4905,9 +5146,157 @@
                         </div>
                     `;
                 }).join('');
-            } catch (err) {
-                console.error("Error loading task documents:", err);
-                listEl.innerHTML = `<div style="color:red;">فشل تحميل الوثائق المرجعية: ${err}</div>`;
+            }
+
+            // 2. Render Deposits & Reservations
+            const depListEl = document.getElementById('comp-deposits-list');
+            if (depListEl) {
+                if (reservations.length === 0) {
+                    depListEl.innerHTML = `
+                        <div style="background:#fff; border:1px dashed #cbd5e1; border-radius:6px; padding:12px; text-align:center; color:#64748b;">
+                            ${isAr ? '⚠️ لا توجد حجوزات أو ودائع مالية مسجلة لهذا الطلب حتى الآن. يجب التحقق من سداد العربون قبل صياغة العقود.' : 'No reservations or earnest deposits recorded for this deal yet.'}
+                        </div>
+                    `;
+                } else {
+                    depListEl.innerHTML = reservations.map(r => {
+                        const isPaid = r.status === 'CONVERTED' || r.status === 'ACTIVE';
+                        const badgeBg = isPaid ? '#dcfce7' : '#fef3c7';
+                        const badgeClr = isPaid ? '#15803d' : '#b45309';
+                        const badgeTxt = isPaid ? (isAr ? '✓ العربون مسدد ومثبت' : 'Deposit Confirmed') : (isAr ? '⏳ بانتظار سداد العربون' : 'Pending Deposit');
+                        const depAmount = (r.deposit_amount || 0).toLocaleString();
+                        const agreedPrice = (r.agreed_price || r.asking_price || 0).toLocaleString();
+
+                        return `
+                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:10px 14px; margin-bottom:6px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                                    <div>
+                                        <strong style="color:#0f172a; font-size:0.95em;">سند حجز رقم #${r.reservation_number || r.reservation_id}</strong>
+                                        <span style="font-size:0.8em; color:#64748b; margin-inline-start:6px;">(وحدة: <strong>${r.unit_number || 'غير محدد'}</strong> - مشروع: ${r.project_name || 'عام'})</span>
+                                    </div>
+                                    <span style="background:${badgeBg}; color:${badgeClr}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${badgeTxt}</span>
+                                </div>
+                                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.84em; color:#334155; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+                                    <div>مبلغ العربون المسدد: <strong style="color:#15803d; font-size:1.05em;">${depAmount} ريال</strong></div>
+                                    <div>سعر البيع المتفق عليه: <strong>${agreedPrice} ريال</strong></div>
+                                    <div>تاريخ الحجز: <strong>${r.reserved_at ? r.reserved_at.substring(0, 10) : '--'}</strong></div>
+                                    ${r.expires_at ? `<div>المهلة حتى: <strong style="color:#b45309;">${r.expires_at.substring(0, 10)}</strong></div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 3. Render Viewings & Inspections
+            const viewListEl = document.getElementById('comp-viewings-list');
+            if (viewListEl) {
+                if (viewings.length === 0) {
+                    viewListEl.innerHTML = `
+                        <div style="background:#fff; border:1px dashed #cbd5e1; border-radius:6px; padding:12px; text-align:center; color:#64748b;">
+                            ${isAr ? 'ℹ️ لم يتم تسجيل معاينات ميدانية أو زيارات فحص سابقة لهذا الطلب.' : 'No site viewings or technical inspections recorded yet.'}
+                        </div>
+                    `;
+                } else {
+                    viewListEl.innerHTML = viewings.map(v => {
+                        const vDate = v.scheduled_start ? v.scheduled_start.substring(0, 16).replace('T', ' ') : '--';
+                        let outcomeColor = '#0369a1';
+                        let outcomeBg = '#e0f2fe';
+                        if (v.outcome === 'RECOMMENDED' || v.outcome === 'ACCEPTED') {
+                            outcomeColor = '#15803d'; outcomeBg = '#dcfce7';
+                        } else if (v.outcome === 'REJECTED') {
+                            outcomeColor = '#b91c1c'; outcomeBg = '#fee2e2';
+                        }
+
+                        return `
+                            <div style="background:#fff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:6px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                                    <div>
+                                        <strong style="color:#0f172a; font-size:0.92em;">معاينة وحدة 🏠 ${v.unit_number || 'عام'}</strong>
+                                        <span style="font-size:0.8em; color:#64748b; margin-inline-start:6px;">(${v.project_name || ''} - موعد: <strong>${vDate}</strong>)</span>
+                                    </div>
+                                    <span style="background:${outcomeBg}; color:${outcomeColor}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${v.outcome || v.status}</span>
+                                </div>
+                                ${v.notes ? `<div style="font-size:0.82em; color:#334155; line-height:1.45; background:#f8fafc; padding:6px 10px; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;">${v.notes}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 4. Render Solvency & Qualification
+            const solContentEl = document.getElementById('comp-solvency-content');
+            if (solContentEl) {
+                const lead = taskLead || window.currentExecutingLead || {};
+                const opp = taskOpp || window.currentExecutingOpp || {};
+                const bMin = (lead.budget_min != null ? lead.budget_min : opp.budget_min) || 0;
+                const bMax = (lead.budget_max != null ? lead.budget_max : opp.budget_max) || 0;
+                const inq = (lead.inquiry_type || opp.inquiry_type || (taskObj && taskObj.inquiry_type) || 'BUY').toUpperCase();
+                const pType = lead.preferred_property_type_name_ar || lead.preferred_property_type_name || opp.preferred_property_type_name_ar || 'غير محدد';
+                const city = lead.preferred_city_name_ar || lead.preferred_city_name || opp.preferred_city_name_ar || 'غير محدد';
+                const qualStatus = lead.qualification_status || opp.stage || 'QUALIFIED';
+
+                let inqName = 'شراء تمليك';
+                if (inq === 'RENT') inqName = 'استئجار سكني / تجاري';
+                else if (inq.includes('INVEST')) inqName = 'استثمار عقاري وتوليد عوائد';
+
+                solContentEl.innerHTML = `
+                    <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px;">
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:0.86em;">
+                            <div><span style="color:#64748b;">نوع الاحتياج المصرح:</span> <strong>${inqName}</strong></div>
+                            <div><span style="color:#64748b;">حالة التأهيل المالي:</span> <strong style="color:#15803d;">✓ ${qualStatus}</strong></div>
+                            <div><span style="color:#64748b;">الميزانية المستهدفة:</span> <strong style="color:#1e3a8a;">${bMin ? bMin.toLocaleString() : '0'} إلى ${bMax ? bMax.toLocaleString() : 'غير مقيد'} ريال</strong></div>
+                            <div><span style="color:#64748b;">النوع والمدينة المفضلة:</span> <strong>${pType} (${city})</strong></div>
+                            <div><span style="color:#64748b;">العميل المسجل:</span> <strong>${lead.customer_name || (taskObj && taskObj.customer_name) || '--'}</strong></div>
+                            <div><span style="color:#64748b;">أولوية التعامل:</span> <strong style="color:#c2410c;">${lead.priority || (taskObj && taskObj.priority) || 'NORMAL'}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 5. Render Invoices & Accounting
+            const invListEl = document.getElementById('comp-invoices-list');
+            if (invListEl) {
+                if (invoices.length === 0) {
+                    invListEl.innerHTML = `
+                        <div style="background:#fff; border:1px dashed #cbd5e1; border-radius:6px; padding:12px; text-align:center; color:#64748b;">
+                            ${isAr ? 'لا توجد فواتير ضريبية أو قيود محاسبية مسجلة لهذا الطلب حتى الآن.' : 'No invoices or tax records found for this deal.'}
+                        </div>
+                    `;
+                } else {
+                    invListEl.innerHTML = invoices.map(inv => {
+                        const isPaid = inv.status === 'PAID';
+                        const badgeClr = isPaid ? '#15803d' : '#b45309';
+                        const badgeBg = isPaid ? '#dcfce7' : '#fef3c7';
+
+                        return `
+                            <div style="background:#fff; border:1px solid #fed7aa; border-radius:6px; padding:10px 14px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                <div>
+                                    <strong style="color:#0f172a; font-size:0.92em;">فاتورة ضريبية #${inv.invoice_number}</strong>
+                                    <div style="font-size:0.8em; color:#64748b; margin-top:2px;">
+                                        المبلغ الإجمالي: <strong style="color:#0f172a;">${(inv.total_amount || 0).toLocaleString()} ريال</strong> (ضريبة: ${(inv.tax_amount || 0).toLocaleString()} ريال)
+                                    </div>
+                                </div>
+                                <span style="background:${badgeBg}; color:${badgeClr}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${inv.status}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Context-Aware Default Tab Selection based on task type:
+            const upperTitle = taskTitle.toUpperCase();
+            const upperTpl = templateId.toUpperCase();
+
+            if (upperTitle.includes('عقد') || upperTitle.includes('حجز') || upperTitle.includes('عربون') || upperTpl.includes('CONTRACT') || upperTpl.includes('RESERVATION')) {
+                if (reservations.length > 0) switchTaskRecordTab('deposits');
+                else switchTaskRecordTab('docs');
+            } else if (upperTitle.includes('معاين') || upperTitle.includes('فحص') || upperTpl.includes('VIEWING') || upperTpl.includes('INSPECTION')) {
+                if (viewings.length > 0) switchTaskRecordTab('viewings');
+                else switchTaskRecordTab('docs');
+            } else if (upperTitle.includes('تأهيل') || upperTpl.includes('QUALIFY')) {
+                switchTaskRecordTab('solvency');
+            } else {
+                switchTaskRecordTab('docs');
             }
         }
 
@@ -5064,29 +5453,93 @@
             }
 
             if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
-                const uId = document.getElementById('comp-invest-ret-unit')?.value;
-                const price = document.getElementById('comp-invest-ret-price')?.value;
-                const rent = document.getElementById('comp-invest-ret-rent')?.value;
-                const opex = document.getElementById('comp-invest-ret-opex')?.value;
-                const vac = document.getElementById('comp-invest-ret-vac')?.value;
-                const cash = document.getElementById('comp-invest-ret-cash')?.value;
-                const acq = document.getElementById('comp-invest-ret-acq')?.value;
-
-                if (uId) payload.unit_id = uId;
-                if (price) payload.purchase_price = parseFloat(price);
-                if (rent) {
-                    payload.gross_annual_rent = parseFloat(rent);
-                    payload.monthly_rent_forecast = parseFloat(rent) / 12.0;
+                const checkedBoxes = Array.from(document.querySelectorAll('input[name="invest_compare_unit_select"]:checked'));
+                if (checkedBoxes.length < 1) {
+                    alert(currentLang === 'ar' ? 'الرجاء اختيار وحدة عقارية واحدة على الأقل لإجراء الدراسة المالية وإصدار التقرير للمستثمر.' : 'Please select at least 1 unit for financial study.');
+                    return;
                 }
-                if (opex) payload.annual_operating_expenses = parseFloat(opex);
-                if (vac) payload.annual_vacancy_allowance = parseFloat(vac);
-                if (cash) payload.cash_invested = parseFloat(cash);
-                if (acq) payload.acquisition_costs = parseFloat(acq);
+
+                const comparedUnits = [];
+                let primaryUnitId = document.querySelector('input[name="invest_primary_radio"]:checked')?.value;
+                if (!primaryUnitId && checkedBoxes.length > 0) {
+                    primaryUnitId = checkedBoxes[0].value;
+                }
+
+                for (const chk of checkedBoxes) {
+                    const uId = chk.value;
+                    const uNumber = chk.getAttribute('data-unit-number') || uId;
+                    const propType = chk.getAttribute('data-prop-type') || 'وحدة استثمارية';
+                    const area = chk.getAttribute('data-area') || '';
+                    const price = parseFloat(document.getElementById(`comp-inv-price-${uId}`)?.value || '0');
+                    const rent = parseFloat(document.getElementById(`comp-inv-rent-${uId}`)?.value || '0');
+                    const vac = parseFloat(document.getElementById(`comp-inv-vac-${uId}`)?.value || '0');
+                    const opex = parseFloat(document.getElementById(`comp-inv-opex-${uId}`)?.value || '0');
+                    const acq = parseFloat(document.getElementById(`comp-inv-acq-${uId}`)?.value || '0');
+                    const cash = parseFloat(document.getElementById(`comp-inv-cash-${uId}`)?.value || (price > 0 ? (price + acq) : 0));
+                    const notesVal = document.getElementById(`comp-inv-notes-${uId}`)?.value?.trim() || '';
+                    const isPrim = (uId === primaryUnitId);
+
+                    if (price <= 0) {
+                        alert(currentLang === 'ar'
+                            ? `يرجى إدراج سعر الاستحواذ المقترح للوحدة (${uNumber}) أولاً، حيث لا يمكن إتمام دراسة العوائد دون إدراج سعر الأصل.`
+                            : `Please enter acquisition price for unit (${uNumber}) before completing.`);
+                        return;
+                    }
+
+                    if (rent < 0 || vac < 0 || opex < 0) {
+                        alert(currentLang === 'ar'
+                            ? `يرجى التأكد من أن قيم الإيجار والشغور والمصاريف للوحدة (${uNumber}) غير سالبة.`
+                            : `Please ensure rent, vacancy, and OPEX for unit (${uNumber}) are non-negative.`);
+                        return;
+                    }
+
+                    const effectiveRent = Math.max(0, rent - vac);
+                    const noi = effectiveRent - opex;
+                    const capRate = price > 0 ? (noi / price) * 100 : 0;
+                    const grossYield = price > 0 ? (rent / price) * 100 : 0;
+                    const effectiveBasis = cash > 0 ? cash : (price + acq);
+                    const coc = effectiveBasis > 0 ? (noi / effectiveBasis) * 100 : capRate;
+                    const payback = noi > 0 ? (price / noi) : 0;
+
+                    comparedUnits.push({
+                        unit_id: uId,
+                        unit_number: uNumber,
+                        property_type: propType,
+                        area_sqm: area,
+                        purchase_price: price,
+                        gross_annual_rent: rent,
+                        monthly_rent_forecast: rent / 12.0,
+                        annual_vacancy_allowance: vac,
+                        annual_operating_expenses: opex,
+                        acquisition_costs: acq,
+                        cash_invested: cash,
+                        net_operating_income: Math.round(noi),
+                        cap_rate: parseFloat(capRate.toFixed(2)),
+                        gross_yield_percent: parseFloat(grossYield.toFixed(2)),
+                        cash_on_cash_return_percent: parseFloat(coc.toFixed(2)),
+                        payback_years: parseFloat(payback.toFixed(1)),
+                        investment_notes: notesVal,
+                        is_primary: isPrim
+                    });
+                }
+
+                const primaryObj = comparedUnits.find(u => u.is_primary) || comparedUnits[0];
+                payload.compared_units = comparedUnits;
+                payload.unit_id = primaryObj.unit_id;
+                payload.purchase_price = primaryObj.purchase_price;
+                payload.gross_annual_rent = primaryObj.gross_annual_rent;
+                payload.monthly_rent_forecast = primaryObj.monthly_rent_forecast;
+                payload.annual_vacancy_allowance = primaryObj.annual_vacancy_allowance;
+                payload.annual_operating_expenses = primaryObj.annual_operating_expenses;
+                payload.acquisition_costs = primaryObj.acquisition_costs;
+                payload.cash_invested = primaryObj.cash_invested;
+                payload.recommendation_notes = document.getElementById('comp-invest-recommendation-notes')?.value || '';
             }
 
             if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
                 const price = document.getElementById('comp-invest-price')?.value;
                 const grossRent = document.getElementById('comp-invest-gross-rent')?.value;
+                const vac = document.getElementById('comp-invest-vac')?.value;
                 const opex = document.getElementById('comp-invest-opex')?.value;
                 const cashInv = document.getElementById('comp-invest-cash-inv')?.value;
                 const capex = document.getElementById('comp-invest-capex')?.value;
@@ -5107,6 +5560,7 @@
 
                 if (price) payload.purchase_price = parseFloat(price);
                 if (grossRent) payload.gross_annual_rent = parseFloat(grossRent);
+                if (vac !== undefined && vac !== '') payload.annual_vacancy_allowance = parseFloat(vac);
                 if (opex) payload.annual_operating_expenses = parseFloat(opex);
                 if (cashInv) payload.cash_invested = parseFloat(cashInv);
                 if (capex) payload.estimated_capex_sar = parseFloat(capex);
@@ -5120,8 +5574,10 @@
                 if (roofing) payload.roofing_and_insulation_status = roofing;
                 if (techNotes) payload.technical_notes = techNotes;
                 if (rentRoll) payload.rent_roll_verified = (rentRoll === 'true');
-                if (occCount) payload.occupied_units_count = parseInt(occCount, 10);
-                if (totUnits) payload.total_units_inspected = parseInt(totUnits, 10);
+                const occParsed = occCount ? parseInt(occCount, 10) : 1;
+                const totParsed = totUnits ? parseInt(totUnits, 10) : occParsed;
+                payload.occupied_units_count = occParsed;
+                payload.total_units_inspected = Math.max(totParsed, occParsed);
                 if (commScore) payload.commercial_viability_score = parseInt(commScore, 10);
                 if (pmNotes) payload.property_manager_interview_notes = pmNotes;
                 payload.recommendation = outcome;
@@ -5256,6 +5712,8 @@
                         showToast(isAr ? "🏆 تم إتمام تسليم العقار وإغلاق الصفقة (CLOSED_WON) وتحديث الوحدة إلى مباعة!" : "🏆 Property handover completed! Deal closed as WON and unit marked as SOLD!", "success");
                     } else if (templateId === 'TASK_CONTRACT_RECONCILIATION') {
                         showToast(isAr ? "💳 تم التحقق من مطابقة الدفعات والقيود المالية بنجاح!" : "💳 Financial reconciliation verified successfully!", "success");
+                    } else if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
+                        showToast(isAr ? "📈 تم إنجاز دراسة ومقارنة العوائد الاستثمارية للوحدات وإصدار التقرير المالي المعتمد بنجاح!" : "📈 Investment returns compared and official comparative report generated successfully!", "success");
                     } else if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
                         showToast(isAr ? "🏢 تم حفظ تقرير الفحص الفني والاستثماري النافي للجهالة بنجاح واحتساب مؤشرات NOI والـ Cap Rate وتوليد مهمة تدقيق الفرضيات المالية!" : "🏢 Due diligence report saved and financial validation task spawned!", "success");
                     } else if (templateId === 'TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT') {
@@ -5295,16 +5753,41 @@
         }
 
         // --- Live Investment DD & Monitoring Calculations ---
-        function calculateLiveInvestmentMetrics() {
+        function onOccCountChange() {
+            const occEl = document.getElementById('comp-invest-occ-count');
+            const totEl = document.getElementById('comp-invest-tot-units');
+            if (occEl && totEl) {
+                const occ = parseInt(occEl.value, 10) || 0;
+                const tot = parseInt(totEl.value, 10) || 0;
+                if (tot < occ) {
+                    totEl.value = occ;
+                }
+            }
+        }
+
+        function calculateLiveInvestmentMetrics(isVacManual = false) {
             const price = parseFloat(document.getElementById('comp-invest-price')?.value || '0');
             const grossRent = parseFloat(document.getElementById('comp-invest-gross-rent')?.value || '0');
             const occ = parseFloat(document.getElementById('comp-invest-actual-occ')?.value || '95');
             const capex = parseFloat(document.getElementById('comp-invest-capex')?.value || '0');
             const opexIn = document.getElementById('comp-invest-opex')?.value;
+            const vacIn = document.getElementById('comp-invest-vac')?.value;
 
-            // Vacancy allowance derived from actual occupancy
-            const vacPercent = Math.max(0, 100 - occ);
-            const vacAllowance = grossRent * (vacPercent / 100.0);
+            // Vacancy allowance derived from actual occupancy unless manually specified
+            let vacAllowance = 0;
+            const vacEl = document.getElementById('comp-invest-vac');
+            if (isVacManual) {
+                if (vacEl) vacEl.dataset.manual = 'true';
+                vacAllowance = parseFloat(vacIn || '0');
+            } else if (vacEl && vacEl.dataset.manual === 'true' && vacIn !== undefined && vacIn !== '') {
+                vacAllowance = parseFloat(vacIn || '0');
+            } else {
+                const vacPercent = Math.max(0, 100 - occ);
+                vacAllowance = Math.round(grossRent * (vacPercent / 100.0));
+                if (vacEl) {
+                    vacEl.value = vacAllowance;
+                }
+            }
             const egi = Math.max(0, grossRent - vacAllowance);
 
             // Operating expenses
@@ -5442,88 +5925,846 @@
             }
         }
 
+        let investAvailableUnitsList = [];
+
         async function populateInvestReturnsUnits(task, taskLead, taskOpp) {
-            const unitSelect = document.getElementById('comp-invest-ret-unit');
-            if (!unitSelect) return;
+            const listEl = document.getElementById('invest-compare-unit-selector-list');
+            if (!listEl) return;
             const isAr = currentLang === 'ar';
-            unitSelect.innerHTML = `<option value="">${isAr ? 'جاري تحميل الوحدات العقارية...' : 'Loading units...'}</option>`;
+            listEl.innerHTML = `<div style="grid-column: 1/-1; color:#64748b; padding:10px; text-align:center;">${isAr ? 'جاري استدعاء الوحدات الاستثمارية المتاحة...' : 'Loading candidate units...'}</div>`;
 
             let units = [];
             try {
-                const res = await apiRequest(`${API_BASE}/api/v1/units?page_size=50`);
+                const res = await apiRequest(`${API_BASE}/api/v1/units?page_size=100`);
                 units = (res && res.data) ? res.data : [];
             } catch (_) {}
 
             // Exclude SOLD and RENTED
-            const validUnits = units.filter(u => {
+            let validUnits = units.filter(u => {
                 const st = (u.status || '').toUpperCase();
-                return st !== 'SOLD' && st !== 'RENTED';
+                const purpose = (u.listing_purpose || '').toUpperCase();
+                const isNotSoldOrRented = st !== 'SOLD' && st !== 'RENTED';
+                const isInvestment = purpose === 'INVESTMENT' || purpose === 'ALL' || !purpose;
+                return isNotSoldOrRented && isInvestment;
             });
 
-            unitSelect.innerHTML = `<option value="">${isAr ? '-- اختر وحدة استثمارية أو أدخل المعطيات يدوياً --' : '-- Select unit or enter manually --'}</option>` +
-                validUnits.map(u => {
-                    const price = u.asking_price ? `${Number(u.asking_price).toLocaleString()} SAR` : '';
-                    const rent = u.rent_price ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '';
-                    const detail = [price, rent].filter(Boolean).join(' | ');
-                    return `<option value="${u.unit_id}" data-price="${u.asking_price || 0}" data-rent="${u.rent_price || 0}">${u.unit_number || u.unit_id} — ${u.property_type_name_ar || u.property_type_name || ''} ${detail ? '(' + detail + ')' : ''}</option>`;
-                }).join('');
+            // If fewer than 2 units matched purpose filter, fallback to all non-sold units
+            if (validUnits.length < 2) {
+                validUnits = units.filter(u => {
+                    const st = (u.status || '').toUpperCase();
+                    return st !== 'SOLD' && st !== 'RENTED';
+                });
+            }
 
-            // Set initial price from lead budget or opportunity expected value if available
-            const basePrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || '';
-            const priceInput = document.getElementById('comp-invest-ret-price');
-            if (priceInput && basePrice && !priceInput.value) {
-                priceInput.value = basePrice;
-                calculateLiveInvestReturnsMetrics();
+            investAvailableUnitsList = validUnits;
+
+            if (validUnits.length === 0) {
+                listEl.innerHTML = `<div style="grid-column: 1/-1; background:#fff; border:1px dashed #cbd5e1; padding:12px; text-align:center; color:#c2410c;">${isAr ? 'لا توجد وحدات عقارية متاحة حالياً للمقارنة.' : 'No available properties for comparison.'}</div>`;
+                return;
+            }
+
+            // Fetch already linked units for this opportunity if any
+            let preSelectedIds = [];
+            if (taskOpp && taskOpp.opportunity_id) {
+                try {
+                    const oppRes = await apiRequest(`${API_BASE}/api/v1/sales/opportunities/${taskOpp.opportunity_id}`);
+                    if (oppRes && oppRes.units && oppRes.units.length > 0) {
+                        preSelectedIds = oppRes.units.map(u => u.unit_id);
+                    }
+                } catch (_) {}
+            }
+
+            // If no pre-selected, default-select the first unit or up to 3 units if multiple available
+            if (preSelectedIds.length === 0) {
+                preSelectedIds = validUnits.slice(0, Math.min(3, Math.max(1, validUnits.length))).map(u => u.unit_id);
+            }
+
+            listEl.innerHTML = validUnits.map(u => {
+                const isChecked = preSelectedIds.includes(u.unit_id);
+                const priceFmt = u.asking_price ? `${Number(u.asking_price).toLocaleString()} SAR` : (isAr ? 'حسب التقييم' : 'At Valuation');
+                const rentFmt = u.rent_price ? `${Number(u.rent_price).toLocaleString()} SAR/سنة` : `<span style="color:#d97706; font-size:0.9em;">${isAr ? '(الإيجار: غير محدد)' : '(Rent: Not set)'}</span>`;
+                const propTypeName = isAr ? (u.property_type_name_ar || u.property_type_name || 'شقة سكنية') : (u.property_type_name || 'Residential');
+                const purposeBadge = (u.listing_purpose || 'ALL').toUpperCase();
+
+                return `
+                    <label class="invest-unit-card-label" id="invest-card-${u.unit_id}" style="display:flex; align-items:flex-start; gap:8px; background:#fff; border:${isChecked ? '2px solid #0284c7' : '1px solid #cbd5e1'}; border-radius:6px; padding:8px 10px; cursor:pointer; transition:0.15s ease;">
+                        <input type="checkbox" name="invest_compare_unit_select" value="${u.unit_id}"
+                            data-unit-number="${u.unit_number || u.unit_id}"
+                            data-prop-type="${propTypeName}"
+                            data-area="${u.area_sqm || ''}"
+                            data-price="${u.asking_price != null ? u.asking_price : ''}"
+                            data-rent="${u.rent_price != null ? u.rent_price : ''}"
+                            data-opex="${u.annual_operating_expenses != null ? u.annual_operating_expenses : ''}"
+                            data-vac-rate="${u.annual_vacancy_rate != null ? u.annual_vacancy_rate : ''}"
+                            data-notes="${(u.investment_notes || '').replace(/"/g, '&quot;')}"
+                            ${isChecked ? 'checked' : ''}
+                            onchange="onInvestUnitSelectionChange()"
+                            style="margin-top:3px; transform:scale(1.15); cursor:pointer;">
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="color:#0369a1; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.unit_number || u.unit_id}</strong>
+                                <span style="font-size:0.68em; background:#f1f5f9; color:#475569; padding:1px 5px; border-radius:4px; font-weight:700;">${purposeBadge}</span>
+                            </div>
+                            <div style="font-size:0.75em; color:#64748b; margin-top:1px;">${propTypeName} ${u.area_sqm ? `• ${u.area_sqm} م²` : ''}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:0.78em;">
+                                <span style="font-weight:700; color:#0f172a;">${priceFmt}</span>
+                                <span style="color:#16a34a; font-weight:600;">${rentFmt}</span>
+                            </div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            onInvestUnitSelectionChange();
+        }
+
+        function onInvestUnitSelectionChange() {
+            const isAr = currentLang === 'ar';
+            const allCheckboxes = Array.from(document.querySelectorAll('input[name="invest_compare_unit_select"]'));
+            const checkedBoxes = allCheckboxes.filter(c => c.checked);
+            const count = checkedBoxes.length;
+
+            if (count > 3) {
+                alert(isAr ? 'الحد الأقصى للمقارنة الاستثمارية هو 3 وحدات عقارية فقط.' : 'Maximum 3 units can be compared simultaneously.');
+                const lastChecked = checkedBoxes[checkedBoxes.length - 1];
+                if (lastChecked) lastChecked.checked = false;
+                onInvestUnitSelectionChange();
+                return;
+            }
+
+            // Update card styling
+            allCheckboxes.forEach(chk => {
+                const card = document.getElementById(`invest-card-${chk.value}`);
+                if (card) {
+                    card.style.borderColor = chk.checked ? '#0284c7' : '#cbd5e1';
+                    card.style.background = chk.checked ? '#f0f9ff' : '#ffffff';
+                }
+            });
+
+            // Update count & hint
+            const countEl = document.getElementById('invest-selected-count');
+            const hintEl = document.getElementById('invest-selection-hint');
+            const matrixContainer = document.getElementById('invest-compare-matrix-container');
+
+            if (countEl) countEl.textContent = count;
+            if (count === 0) {
+                if (hintEl) {
+                    hintEl.textContent = isAr ? 'يرجى اختيار وحدة عقارية واحدة على الأقل' : 'Please select at least 1 unit';
+                    hintEl.style.color = '#d97706';
+                }
+                if (matrixContainer) matrixContainer.style.display = 'none';
+            } else if (count === 1) {
+                if (hintEl) {
+                    hintEl.textContent = isAr ? '✓ تم اختيار وحدة واحدة (دراسة جدوى استثمارية شاملة للأصل)' : '✓ 1 unit selected (Comprehensive Asset Feasibility)';
+                    hintEl.style.color = '#16a34a';
+                }
+                if (matrixContainer) matrixContainer.style.display = 'block';
+                renderInvestCompareMatrix();
+            } else {
+                if (hintEl) {
+                    hintEl.textContent = isAr ? `✓ تم اختيار ${count} وحدات (مصفوفة مفاضلة ومقارنة مالية معيارية)` : `✓ ${count} units selected (Comparative Benchmark Matrix)`;
+                    hintEl.style.color = '#16a34a';
+                }
+                if (matrixContainer) matrixContainer.style.display = 'block';
+                renderInvestCompareMatrix();
             }
         }
 
-        function onInvestCompareUnitChange() {
-            const unitSelect = document.getElementById('comp-invest-ret-unit');
-            if (!unitSelect) return;
-            const opt = unitSelect.selectedOptions[0];
-            if (!opt || !opt.value) return;
+        function renderInvestCompareMatrix() {
+            const isAr = currentLang === 'ar';
+            const container = document.getElementById('invest-compare-matrix-columns');
+            if (!container) return;
 
-            const uPrice = parseFloat(opt.getAttribute('data-price') || '0');
-            const uRent = parseFloat(opt.getAttribute('data-rent') || '0');
+            const checkedBoxes = Array.from(document.querySelectorAll('input[name="invest_compare_unit_select"]:checked'));
+            if (checkedBoxes.length < 1) {
+                container.innerHTML = '';
+                return;
+            }
 
-            if (uPrice > 0) document.getElementById('comp-invest-ret-price').value = uPrice;
-            if (uRent > 0) document.getElementById('comp-invest-ret-rent').value = uRent;
-            calculateLiveInvestReturnsMetrics();
+            // Remember previous input values so user edits aren't wiped when toggling
+            const prevValues = {};
+            checkedBoxes.forEach(chk => {
+                const uid = chk.value;
+                prevValues[uid] = {
+                    price: document.getElementById(`comp-inv-price-${uid}`)?.value,
+                    rent: document.getElementById(`comp-inv-rent-${uid}`)?.value,
+                    vac: document.getElementById(`comp-inv-vac-${uid}`)?.value,
+                    vacRate: document.getElementById(`comp-inv-vac-rate-${uid}`)?.value,
+                    opex: document.getElementById(`comp-inv-opex-${uid}`)?.value,
+                    opexRate: document.getElementById(`comp-inv-opex-rate-${uid}`)?.value,
+                    occStatus: document.getElementById(`comp-inv-occ-status-${uid}`)?.value,
+                    acq: document.getElementById(`comp-inv-acq-${uid}`)?.value,
+                    acqRate: document.getElementById(`comp-inv-acq-rate-${uid}`)?.value,
+                    cash: document.getElementById(`comp-inv-cash-${uid}`)?.value,
+                    notes: document.getElementById(`comp-inv-notes-${uid}`)?.value,
+                    isPrimary: document.getElementById(`comp-inv-prim-${uid}`)?.checked
+                };
+            });
+
+            // Determine which unit should be marked primary (recommended)
+            let currentPrimaryId = checkedBoxes.length === 1 ? checkedBoxes[0].value : (checkedBoxes.find(c => prevValues[c.value]?.isPrimary)?.value || checkedBoxes[0].value);
+
+            container.innerHTML = checkedBoxes.map((chk, idx) => {
+                const uid = chk.value;
+                const unum = chk.getAttribute('data-unit-number') || uid;
+                const ptype = chk.getAttribute('data-prop-type') || '';
+                const basePriceStr = chk.getAttribute('data-price');
+                const baseRentStr = chk.getAttribute('data-rent');
+                const baseOpexStr = chk.getAttribute('data-opex');
+                const baseVacRateStr = chk.getAttribute('data-vac-rate');
+                const baseNotes = chk.getAttribute('data-notes') || '';
+
+                const basePrice = (basePriceStr && parseFloat(basePriceStr) > 0) ? parseFloat(basePriceStr) : null;
+                const baseRent = (baseRentStr && parseFloat(baseRentStr) > 0) ? parseFloat(baseRentStr) : null;
+                const baseOpex = (baseOpexStr && parseFloat(baseOpexStr) > 0) ? parseFloat(baseOpexStr) : null;
+                const baseVacRate = (baseVacRateStr && baseVacRateStr !== '') ? parseFloat(baseVacRateStr) : null;
+
+                // Real values without made-up defaults
+                const initPrice = (prevValues[uid]?.price !== undefined && prevValues[uid]?.price !== '') ? prevValues[uid].price : (basePrice !== null ? basePrice : '');
+                const initRent = (prevValues[uid]?.rent !== undefined && prevValues[uid]?.rent !== '') ? prevValues[uid].rent : (baseRent !== null ? baseRent : '');
+
+                let initVacRate = '';
+                let initVac = '';
+                if (prevValues[uid]?.vacRate !== undefined && prevValues[uid]?.vacRate !== '') {
+                    initVacRate = prevValues[uid].vacRate;
+                    initVac = prevValues[uid]?.vac !== undefined ? prevValues[uid].vac : (initRent ? Math.round(parseFloat(initRent) * (parseFloat(initVacRate) / 100)) : '');
+                } else if (prevValues[uid]?.vac !== undefined && prevValues[uid]?.vac !== '') {
+                    initVac = prevValues[uid].vac;
+                    initVacRate = (initRent && parseFloat(initRent) > 0) ? parseFloat(((parseFloat(initVac) / parseFloat(initRent)) * 100).toFixed(1)) : '';
+                } else if (baseVacRate !== null) {
+                    initVacRate = baseVacRate;
+                    initVac = (initRent && parseFloat(initRent) > 0) ? Math.round(parseFloat(initRent) * (baseVacRate / 100)) : (baseVacRate === 0 ? '0' : '');
+                }
+
+                let initOpex = '';
+                let initOpexRate = '';
+                if (prevValues[uid]?.opexRate !== undefined && prevValues[uid]?.opexRate !== '') {
+                    initOpexRate = prevValues[uid].opexRate;
+                    initOpex = prevValues[uid]?.opex !== undefined ? prevValues[uid].opex : (initRent ? Math.round(parseFloat(initRent) * (parseFloat(initOpexRate) / 100)) : '');
+                } else if (prevValues[uid]?.opex !== undefined && prevValues[uid]?.opex !== '') {
+                    initOpex = prevValues[uid].opex;
+                    initOpexRate = (initRent && parseFloat(initRent) > 0) ? parseFloat(((parseFloat(initOpex) / parseFloat(initRent)) * 100).toFixed(1)) : '';
+                } else if (baseOpex !== null) {
+                    initOpex = baseOpex;
+                    initOpexRate = (initRent && parseFloat(initRent) > 0) ? parseFloat(((baseOpex / parseFloat(initRent)) * 100).toFixed(1)) : '';
+                }
+
+                let initAcqRate = '';
+                let initAcq = '';
+                if (prevValues[uid]?.acqRate !== undefined && prevValues[uid]?.acqRate !== '') {
+                    initAcqRate = prevValues[uid].acqRate;
+                    initAcq = prevValues[uid]?.acq !== undefined ? prevValues[uid].acq : (initPrice ? Math.round(parseFloat(initPrice) * (parseFloat(initAcqRate) / 100)) : '');
+                } else if (prevValues[uid]?.acq !== undefined && prevValues[uid]?.acq !== '') {
+                    initAcq = prevValues[uid].acq;
+                    initAcqRate = (initPrice && parseFloat(initPrice) > 0) ? parseFloat(((parseFloat(initAcq) / parseFloat(initPrice)) * 100).toFixed(2)) : '';
+                }
+
+                const initOccStatus = prevValues[uid]?.occStatus || (initVacRate === '100' || initVacRate === 100 ? 'NEW_VACANT' : (initVacRate === '0' || initVacRate === 0 ? 'STABILIZED' : 'CUSTOM'));
+                const initCash = (prevValues[uid]?.cash !== undefined && prevValues[uid]?.cash !== '') ? prevValues[uid].cash : (initPrice !== '' ? (parseFloat(initPrice) + (parseFloat(initAcq) || 0)) : '');
+                const initNotes = (prevValues[uid]?.notes !== undefined && prevValues[uid]?.notes !== '') ? prevValues[uid].notes : baseNotes;
+                const isPrim = (uid === currentPrimaryId || checkedBoxes.length === 1);
+
+                const hasDbPrice = (basePrice !== null);
+                const hasDbRent = (baseRent !== null);
+
+                return `
+                    <div id="matrix-col-${uid}" style="background:#fff; border:${isPrim ? '2px solid #0284c7' : '1px solid #cbd5e1'}; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; position:relative; box-shadow:${isPrim ? '0 2px 8px rgba(2,132,199,0.15)' : 'none'};">
+                        <!-- Header with Primary Selector -->
+                        <div style="background:${isPrim ? '#e0f2fe' : '#f8fafc'}; border:1px solid ${isPrim ? '#bae6fd' : '#e2e8f0'}; border-radius:6px; padding:8px; text-align:center;">
+                            <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.82em; color:${isPrim ? '#0369a1' : '#475569'};">
+                                <input type="radio" name="invest_primary_radio" id="comp-inv-prim-${uid}" value="${uid}" ${isPrim ? 'checked' : ''} onchange="onInvestPrimaryRadioChange('${uid}')">
+                                <span>${isAr ? (checkedBoxes.length === 1 ? '⭐ الأصل المعتمد للاستحواذ' : '⭐ الخيار الموصى به') : (checkedBoxes.length === 1 ? '⭐ Approved Target Asset' : '⭐ Recommended')}</span>
+                            </label>
+                            <div style="font-weight:800; font-size:1.05em; color:#0f172a; margin-top:4px;">${unum}</div>
+                            <div style="font-size:0.75em; color:#64748b;">${ptype}</div>
+                            <div style="margin-top:4px;">
+                                ${hasDbPrice && hasDbRent
+                                    ? `<span style="font-size:0.7em; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:700;">✓ أسعار مسجلة في المخزون</span>`
+                                    : `<span style="font-size:0.7em; background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:700;">✍️ إدراج بيانات الأصل المالية</span>`
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Explicit Financial Inputs Mechanism -->
+                        <div style="display:flex; flex-direction:column; gap:7px; font-size:0.8em;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                                    <label style="font-weight:700; color:#0369a1;">سعر الاستحواذ المقترح (SAR) *</label>
+                                    ${hasDbPrice ? `<span style="font-size:0.72em; color:#16a34a;">المخزون: ${Number(basePrice).toLocaleString()} SAR</span>` : ''}
+                                </div>
+                                <input type="number" id="comp-inv-price-${uid}" value="${initPrice}" placeholder="أدخل سعر الاستحواذ بالريال..." class="search-input" style="width:100%; font-weight:700; padding:4px 8px; font-size:0.9em;" oninput="onInvestPriceChange('${uid}')">
+                            </div>
+
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                                    <label style="font-weight:700; color:#0369a1;">إجمالي الإيجار السنوي المتوقع (SAR)</label>
+                                    ${hasDbRent ? `<span style="font-size:0.72em; color:#16a34a;">المسجل: ${Number(baseRent).toLocaleString()} SAR</span>` : ''}
+                                </div>
+                                <input type="number" id="comp-inv-rent-${uid}" value="${initRent}" placeholder="الإيجار السنوي التعاقدي أو المتوقع عند التشغيل..." class="search-input" style="width:100%; font-weight:700; padding:4px 8px; font-size:0.9em;" oninput="onInvestRentChange('${uid}')">
+                            </div>
+
+                            <!-- Occupancy Nature Helper Selector -->
+                            <div>
+                                <label style="font-weight:600; color:#475569; font-size:0.82em;">حالة إشغال الأصل (نوع الاستثمار):</label>
+                                <select id="comp-inv-occ-status-${uid}" class="search-input" style="width:100%; padding:3px 6px; font-size:0.82em; font-weight:600;" onchange="onInvestOccupancyStatusChange('${uid}')">
+                                    <option value="CUSTOM" ${initOccStatus === 'CUSTOM' ? 'selected' : ''}>⚙️ تخصيص يدوي حر بالكامل</option>
+                                    <option value="NEW_VACANT" ${initOccStatus === 'NEW_VACANT' ? 'selected' : ''}>🏗️ مبنى جديد بالكامل (شغور 100% قيد التسكين)</option>
+                                    <option value="STABILIZED" ${initOccStatus === 'STABILIZED' ? 'selected' : ''}>🏢 مؤجر ومستقر بالكامل (شغور 0%)</option>
+                                    <option value="PARTIAL_VACANT" ${initOccStatus === 'PARTIAL_VACANT' ? 'selected' : ''}>🏬 تأجير جزئي (شغور 10%)</option>
+                                    <option value="NNN_LEASE" ${initOccStatus === 'NNN_LEASE' ? 'selected' : ''}>📜 عقد ثلاثي الصافي NNN (تشغيل 0%)</option>
+                                </select>
+                            </div>
+
+                            <!-- Vacancy: Free Dual Input (% and SAR) -->
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; color:#0369a1; font-size:0.82em;">مخصص الشغور السنوي (Vacancy):</label>
+                                    <span style="font-size:0.7em; color:#64748b;">(متاح حر 0% إلى 100%)</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:6px;">
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">النسبة المئوية (%)</div>
+                                        <div style="display:flex; align-items:center; gap:2px;">
+                                            <input type="number" id="comp-inv-vac-rate-${uid}" value="${initVacRate}" min="0" max="100" step="0.5" placeholder="0" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700; text-align:center;" oninput="onInvestVacRateChange('${uid}')">
+                                            <span style="font-weight:700; color:#64748b; font-size:0.8em;">%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">المبلغ السنوي (SAR)</div>
+                                        <input type="number" id="comp-inv-vac-${uid}" value="${initVac}" min="0" placeholder="0 SAR" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700;" oninput="onInvestVacAmtChange('${uid}')">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Operating Expenses (OPEX): Free Dual Input (% and SAR) -->
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; color:#0369a1; font-size:0.82em;">مصاريف التشغيل والإدارة (OPEX):</label>
+                                    <span style="font-size:0.7em; color:#64748b;">(مبلغ حر أو نسبة)</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:6px;">
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">النسبة المئوية (%)</div>
+                                        <div style="display:flex; align-items:center; gap:2px;">
+                                            <input type="number" id="comp-inv-opex-rate-${uid}" value="${initOpexRate}" min="0" step="0.5" placeholder="0" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700; text-align:center;" oninput="onInvestOpexRateChange('${uid}')">
+                                            <span style="font-weight:700; color:#64748b; font-size:0.8em;">%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">المبلغ السنوي (SAR)</div>
+                                        <input type="number" id="comp-inv-opex-${uid}" value="${initOpex}" min="0" placeholder="0 SAR" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700;" oninput="onInvestOpexAmtChange('${uid}')">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Closing Costs (Acquisition Fees): Free Dual Input (% and SAR) -->
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; color:#0369a1; font-size:0.82em;">تكاليف ورسوم الاستحواذ (Closing Costs):</label>
+                                    <span style="font-size:0.7em; color:#64748b;">(ضريبة، سعي، فحص)</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:6px;">
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">النسبة المئوية (%)</div>
+                                        <div style="display:flex; align-items:center; gap:2px;">
+                                            <input type="number" id="comp-inv-acq-rate-${uid}" value="${initAcqRate}" min="0" step="0.25" placeholder="0" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700; text-align:center;" oninput="onInvestAcqRateChange('${uid}')">
+                                            <span style="font-weight:700; color:#64748b; font-size:0.8em;">%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.75em; color:#475569; margin-bottom:2px;">المبلغ الإجمالي (SAR)</div>
+                                        <input type="number" id="comp-inv-acq-${uid}" value="${initAcq}" min="0" placeholder="0 SAR" class="search-input" style="width:100%; padding:3px 6px; font-size:0.85em; font-weight:700;" oninput="onInvestAcqAmtChange('${uid}')">
+                                    </div>
+                                </div>
+                                <!-- Quick preset & reset buttons -->
+                                <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; align-items:center;">
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#f1f5f9; border:1px solid #cbd5e1;" onclick="applyAcqPreset('${uid}', 0)" title="معفى من الضريبة أو الرسوم على البائع">0% إعفاء</button>
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#f1f5f9; border:1px solid #cbd5e1;" onclick="applyAcqPreset('${uid}', 2.5)" title="سعي الوساطة العقارية فقط">2.5% سعي</button>
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#f1f5f9; border:1px solid #cbd5e1;" onclick="applyAcqPreset('${uid}', 5.0)" title="ضريبة التصرفات العقارية RETT">5% ضريبة</button>
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#eff6ff; color:#0369a1; border:1px solid #93c5fd; font-weight:700;" onclick="applyAcqPreset('${uid}', 7.5)" title="ضريبة التصرفات 5% + السعي 2.5%">⚖️ 7.5% شامل</button>
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; margin-right:auto;" onclick="resetAcqFees('${uid}')" title="إلغاء وتصفير الرسوم وتعديل النقد">✕ تصفير/إلغاء</button>
+                                </div>
+                            </div>
+
+                            <!-- Equity Cash Invested -->
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; color:#0369a1; font-size:0.82em;">رأس المال المستثمر نقداً (Equity SAR):</label>
+                                    <button type="button" class="btn btn-xs" style="padding:1px 5px; font-size:0.68em; background:#ecfdf5; color:#15803d; border:1px solid #86efac; font-weight:700;" onclick="syncCashToFullBasis('${uid}')" title="إعادة ضبط النقد ليساوي السعر + الرسوم (شراء كاش 100%)">💵 كاش كامل 100%</button>
+                                </div>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="number" id="comp-inv-cash-${uid}" value="${initCash}" min="0" placeholder="المبلغ النقدي المدفوع من المستثمر..." class="search-input" style="flex:1; padding:4px 8px; font-size:0.88em; font-weight:700;" oninput="onInvestCashChange('${uid}')">
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                    <span id="comp-inv-equity-hint-${uid}" style="font-size:0.7em; color:#64748b;">(أساس حساب العائد على النقد CoC)</span>
+                                    <div style="display:flex; gap:3px;">
+                                        <button type="button" class="btn btn-xs" style="padding:1px 4px; font-size:0.65em; background:#f8fafc; border:1px solid #cbd5e1;" onclick="applyLeverageRatio('${uid}', 0.30)" title="دفعة أولى 30% تمويل بنكي + الرسوم">تمويل 30%</button>
+                                        <button type="button" class="btn btn-xs" style="padding:1px 4px; font-size:0.65em; background:#f8fafc; border:1px solid #cbd5e1;" onclick="applyLeverageRatio('${uid}', 0.20)" title="دفعة أولى 20% تمويل بنكي + الرسوم">تمويل 20%</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="font-weight:600; color:#64748b; font-size:0.82em;">مرجع ومصدر البيانات المالية للأصل</label>
+                                <input type="text" id="comp-inv-notes-${uid}" value="${initNotes}" placeholder="مثال: عقد إيجار TEN-XXX، أو كشف حساب المالك..." class="search-input" style="width:100%; padding:3px 6px; font-size:0.75em;">
+                            </div>
+
+                            <div>
+                                <button type="button" class="btn btn-xs" style="background:#f0fdf4; color:#166534; border:1px solid #86efac; border-radius:4px; font-weight:700; width:100%; padding:4px 6px;" onclick="syncInvestDataToUnit('${uid}')">💾 حفظ البيانات في سجل الوحدة بالمخزون</button>
+                            </div>
+                        </div>
+
+                        <!-- Live Calculated Yield Metrics Box -->
+                        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px; margin-top:2px;">
+                            <div style="font-size:0.75em; font-weight:700; color:#1e40af; margin-bottom:4px; text-align:center;">⚡ مؤشرات العائد المحسوبة لحظياً:</div>
+                            <div id="comp-inv-status-${uid}" style="display:none; color:#b45309; background:#fffbeb; padding:4px; border-radius:4px; font-size:0.73em; font-weight:700; text-align:center; margin-bottom:4px;">
+                                ⚠️ يرجى إدخال سعر الاستحواذ المقترح لحساب المؤشرات
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px; text-align:center; font-size:0.78em;">
+                                <div style="background:#fff; padding:4px; border-radius:4px; border:1px solid #dbeafe;">
+                                    <div style="color:#64748b; font-size:0.88em;">صافي الدخل (NOI)</div>
+                                    <div id="comp-inv-noi-${uid}" style="font-weight:700; color:#1e40af;">--</div>
+                                </div>
+                                <div style="background:#fff; padding:4px; border-radius:4px; border:1px solid #dbeafe;">
+                                    <div style="color:#64748b; font-size:0.88em;">العائد الصافي (Cap Rate)</div>
+                                    <div id="comp-inv-cap-${uid}" style="font-weight:700; color:#16a34a;">--</div>
+                                </div>
+                                <div style="background:#fff; padding:4px; border-radius:4px; border:1px solid #dbeafe;">
+                                    <div style="color:#64748b; font-size:0.88em;">العائد الإجمالي (Yield)</div>
+                                    <div id="comp-inv-gross-${uid}" style="font-weight:700; color:#0369a1;">--</div>
+                                </div>
+                                <div style="background:#fff; padding:4px; border-radius:4px; border:1px solid #dbeafe;">
+                                    <div style="color:#64748b; font-size:0.88em;">العائد على النقد (CoC)</div>
+                                    <div id="comp-inv-coc-${uid}" style="font-weight:700; color:#7c3aed;">--</div>
+                                </div>
+                            </div>
+                            <div style="text-align:center; font-size:0.72em; color:#475569; margin-top:4px;">
+                                فترة الاسترداد: <strong id="comp-inv-payback-${uid}" style="color:#0f172a;">--</strong>
+                            </div>
+
+                            <!-- Pro-Forma Stabilized Cap Rate Box (Shown when Vacancy is high e.g. New Building) -->
+                            <div id="comp-inv-stabilized-box-${uid}" style="display:none; background:#fefce8; border:1px solid #fde047; border-radius:5px; padding:6px; margin-top:6px; text-align:center;">
+                                <div style="font-size:0.74em; font-weight:800; color:#854d0e;">⭐ العائد المستهدف بعد التسكين والتشغيل الكامل (Stabilized Pro-Forma):</div>
+                                <div style="display:flex; justify-content:space-around; align-items:center; margin-top:3px;">
+                                    <div>
+                                        <span style="font-size:0.7em; color:#713f12;">صافي الدخل المستهدف: </span>
+                                        <strong id="comp-inv-stab-noi-${uid}" style="color:#166534; font-size:0.85em;">--</strong>
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7em; color:#713f12;">معدل الرسملة المستهدف: </span>
+                                        <strong id="comp-inv-stab-cap-${uid}" style="color:#0284c7; font-size:0.88em; font-weight:800;">--</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Calculate live metrics for all columns
+            checkedBoxes.forEach(chk => {
+                calculateInvestUnitCardMetrics(chk.value);
+            });
         }
 
-        function calculateLiveInvestReturnsMetrics() {
-            const price = parseFloat(document.getElementById('comp-invest-ret-price')?.value || '0');
-            let rent = parseFloat(document.getElementById('comp-invest-ret-rent')?.value || '0');
-            let opex = parseFloat(document.getElementById('comp-invest-ret-opex')?.value || '0');
-            let vac = parseFloat(document.getElementById('comp-invest-ret-vac')?.value || '0');
-            let cash = parseFloat(document.getElementById('comp-invest-ret-cash')?.value || '0');
+        function onInvestPrimaryRadioChange(selectedUid) {
+            const checkedBoxes = Array.from(document.querySelectorAll('input[name="invest_compare_unit_select"]:checked'));
+            checkedBoxes.forEach(chk => {
+                const uid = chk.value;
+                const col = document.getElementById(`matrix-col-${uid}`);
+                const isSelected = (uid === selectedUid);
+                if (col) {
+                    col.style.border = isSelected ? '2px solid #0284c7' : '1px solid #cbd5e1';
+                    col.style.boxShadow = isSelected ? '0 2px 8px rgba(2,132,199,0.15)' : 'none';
+                    const header = col.querySelector('div:first-child');
+                    if (header) {
+                        header.style.background = isSelected ? '#e0f2fe' : '#f8fafc';
+                        header.style.borderColor = isSelected ? '#bae6fd' : '#e2e8f0';
+                    }
+                }
+            });
+        }
 
-            if (price > 0 && rent === 0 && document.getElementById('comp-invest-ret-rent').value === '') {
-                rent = price * 0.08;
-                document.getElementById('comp-invest-ret-rent').value = Math.round(rent);
-            }
-            if (rent > 0 && opex === 0 && document.getElementById('comp-invest-ret-opex').value === '') {
-                opex = rent * 0.10;
-            }
-            if (rent > 0 && vac === 0 && document.getElementById('comp-invest-ret-vac').value === '') {
-                vac = rent * 0.05;
-            }
-            if (price > 0 && cash === 0 && document.getElementById('comp-invest-ret-cash').value === '') {
-                cash = price;
-                document.getElementById('comp-invest-ret-cash').value = Math.round(cash);
+        function onInvestPriceChange(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const acqRateInput = document.getElementById(`comp-inv-acq-rate-${uid}`);
+            const acqInput = document.getElementById(`comp-inv-acq-${uid}`);
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+
+            if (acqRateInput && acqRateInput.value !== '' && price > 0) {
+                const rate = parseFloat(acqRateInput.value);
+                if (!isNaN(rate) && acqInput) {
+                    acqInput.value = Math.round(price * (rate / 100));
+                }
             }
 
-            const noi = Math.max(0, rent - opex - vac);
+            const acqVal = parseFloat(acqInput?.value || '0');
+            if (cashInput) {
+                cashInput.value = price > 0 ? (price + acqVal) : '';
+            }
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestRentChange(uid) {
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const vacRateInput = document.getElementById(`comp-inv-vac-rate-${uid}`);
+            const vacAmtInput = document.getElementById(`comp-inv-vac-${uid}`);
+            const opexRateInput = document.getElementById(`comp-inv-opex-rate-${uid}`);
+            const opexAmtInput = document.getElementById(`comp-inv-opex-${uid}`);
+
+            if (vacRateInput && vacRateInput.value !== '' && rent > 0) {
+                const vr = parseFloat(vacRateInput.value);
+                if (!isNaN(vr) && vacAmtInput) {
+                    vacAmtInput.value = Math.round(rent * (vr / 100));
+                }
+            } else if (vacAmtInput && vacAmtInput.value !== '' && rent > 0) {
+                const va = parseFloat(vacAmtInput.value);
+                if (!isNaN(va) && vacRateInput) {
+                    vacRateInput.value = parseFloat(((va / rent) * 100).toFixed(1));
+                }
+            }
+
+            if (opexRateInput && opexRateInput.value !== '' && rent > 0) {
+                const or_ = parseFloat(opexRateInput.value);
+                if (!isNaN(or_) && opexAmtInput) {
+                    opexAmtInput.value = Math.round(rent * (or_ / 100));
+                }
+            } else if (opexAmtInput && opexAmtInput.value !== '' && rent > 0) {
+                const oa = parseFloat(opexAmtInput.value);
+                if (!isNaN(oa) && opexRateInput) {
+                    opexRateInput.value = parseFloat(((oa / rent) * 100).toFixed(1));
+                }
+            }
+
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestVacRateChange(uid) {
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-vac-rate-${uid}`);
+            const amtInput = document.getElementById(`comp-inv-vac-${uid}`);
+            let rate = parseFloat(rateInput?.value || '0');
+            if (isNaN(rate)) rate = 0;
+            if (rate < 0) rate = 0;
+            if (rate > 100) rate = 100;
+            if (rateInput && rateInput.value !== '' && !isNaN(rate)) rateInput.value = rate;
+
+            if (amtInput && rent > 0) {
+                amtInput.value = Math.round(rent * (rate / 100));
+            }
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestVacAmtChange(uid) {
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const amt = parseFloat(document.getElementById(`comp-inv-vac-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-vac-rate-${uid}`);
+            if (rateInput && rent > 0) {
+                const rate = (amt / rent) * 100;
+                rateInput.value = parseFloat(rate.toFixed(1));
+            }
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestOpexRateChange(uid) {
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-opex-rate-${uid}`);
+            const amtInput = document.getElementById(`comp-inv-opex-${uid}`);
+            let rate = parseFloat(rateInput?.value || '0');
+            if (isNaN(rate)) rate = 0;
+            if (rate < 0) rate = 0;
+            if (rateInput && rateInput.value !== '' && !isNaN(rate)) rateInput.value = rate;
+
+            if (amtInput && rent > 0) {
+                amtInput.value = Math.round(rent * (rate / 100));
+            }
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestOpexAmtChange(uid) {
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const amt = parseFloat(document.getElementById(`comp-inv-opex-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-opex-rate-${uid}`);
+            if (rateInput && rent > 0) {
+                const rate = (amt / rent) * 100;
+                rateInput.value = parseFloat(rate.toFixed(1));
+            }
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestOccupancyStatusChange(uid) {
+            const status = document.getElementById(`comp-inv-occ-status-${uid}`)?.value;
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const vacRateInput = document.getElementById(`comp-inv-vac-rate-${uid}`);
+            const vacAmtInput = document.getElementById(`comp-inv-vac-${uid}`);
+            const opexRateInput = document.getElementById(`comp-inv-opex-rate-${uid}`);
+            const opexAmtInput = document.getElementById(`comp-inv-opex-${uid}`);
+
+            if (status === 'NEW_VACANT') {
+                if (vacRateInput) vacRateInput.value = '100';
+                if (vacAmtInput) vacAmtInput.value = rent > 0 ? rent : '0';
+            } else if (status === 'STABILIZED') {
+                if (vacRateInput) vacRateInput.value = '0';
+                if (vacAmtInput) vacAmtInput.value = '0';
+            } else if (status === 'PARTIAL_VACANT') {
+                if (vacRateInput) vacRateInput.value = '10';
+                if (vacAmtInput) vacAmtInput.value = rent > 0 ? Math.round(rent * 0.10) : '0';
+            } else if (status === 'NNN_LEASE') {
+                if (opexRateInput) opexRateInput.value = '0';
+                if (opexAmtInput) opexAmtInput.value = '0';
+            }
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestAcqRateChange(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-acq-rate-${uid}`);
+            const amtInput = document.getElementById(`comp-inv-acq-${uid}`);
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+            let rate = parseFloat(rateInput?.value || '0');
+            if (isNaN(rate)) rate = 0;
+            if (rate < 0) rate = 0;
+
+            const newAcq = price > 0 ? Math.round(price * (rate / 100)) : 0;
+            if (amtInput) amtInput.value = newAcq > 0 ? newAcq : (rate === 0 ? '0' : '');
+
+            if (cashInput && price > 0) {
+                cashInput.value = price + newAcq;
+            }
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestAcqAmtChange(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const amtInput = document.getElementById(`comp-inv-acq-${uid}`);
+            const rateInput = document.getElementById(`comp-inv-acq-rate-${uid}`);
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+            const amt = parseFloat(amtInput?.value || '0');
+
+            if (rateInput && price > 0) {
+                rateInput.value = amt > 0 ? parseFloat(((amt / price) * 100).toFixed(2)) : (amt === 0 ? '0' : '');
+            }
+
+            if (cashInput && price > 0) {
+                cashInput.value = price + (amt > 0 ? amt : 0);
+            }
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function applyAcqPreset(uid, rate) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            if (price <= 0) {
+                alert(currentLang === 'ar' ? 'يرجى إدخال سعر الاستحواذ أولاً لحساب الرسوم.' : 'Please enter acquisition price first.');
+                return;
+            }
+            const rateInput = document.getElementById(`comp-inv-acq-rate-${uid}`);
+            const amtInput = document.getElementById(`comp-inv-acq-${uid}`);
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+
+            if (rateInput) rateInput.value = rate;
+            const acqAmt = Math.round(price * (rate / 100));
+            if (amtInput) amtInput.value = acqAmt;
+            if (cashInput) cashInput.value = price + acqAmt;
+
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function resetAcqFees(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const rateInput = document.getElementById(`comp-inv-acq-rate-${uid}`);
+            const amtInput = document.getElementById(`comp-inv-acq-${uid}`);
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+
+            if (rateInput) rateInput.value = '0';
+            if (amtInput) amtInput.value = '0';
+            if (cashInput && price > 0) {
+                cashInput.value = price; // Reset cash back to pure purchase price without fees!
+            }
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function applyStatutoryFees(uid) {
+            applyAcqPreset(uid, 7.5);
+        }
+
+        function syncCashToFullBasis(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const acq = parseFloat(document.getElementById(`comp-inv-acq-${uid}`)?.value || '0');
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+            if (cashInput && price > 0) {
+                cashInput.value = price + acq;
+            }
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function applyLeverageRatio(uid, downPaymentRatio) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            if (price <= 0) {
+                alert(currentLang === 'ar' ? 'يرجى إدخال سعر الاستحواذ أولاً.' : 'Please enter acquisition price first.');
+                return;
+            }
+            const acq = parseFloat(document.getElementById(`comp-inv-acq-${uid}`)?.value || '0');
+            const cashInput = document.getElementById(`comp-inv-cash-${uid}`);
+            const equity = Math.round(price * downPaymentRatio) + acq;
+            if (cashInput) cashInput.value = equity;
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function onInvestCashChange(uid) {
+            updateInvestEquityHint(uid);
+            calculateInvestUnitCardMetrics(uid);
+        }
+
+        function updateInvestEquityHint(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const acq = parseFloat(document.getElementById(`comp-inv-acq-${uid}`)?.value || '0');
+            const cash = parseFloat(document.getElementById(`comp-inv-cash-${uid}`)?.value || '0');
+            const hintEl = document.getElementById(`comp-inv-equity-hint-${uid}`);
+            if (!hintEl) return;
+            const totalBasis = price + acq;
+            if (totalBasis > 0 && cash > 0) {
+                const ratio = ((cash / totalBasis) * 100).toFixed(1);
+                hintEl.textContent = currentLang === 'ar' ? `(${ratio}% من إجمالي تكلفة الاستحواذ)` : `(${ratio}% of total acquisition cost)`;
+            } else {
+                hintEl.textContent = currentLang === 'ar' ? '(أساس حساب العائد على النقد CoC)' : '(Basis for Cash-on-Cash CoC)';
+            }
+        }
+
+        async function syncInvestDataToUnit(uid) {
+            const price = parseFloat(document.getElementById(`comp-inv-price-${uid}`)?.value || '0');
+            const rent = parseFloat(document.getElementById(`comp-inv-rent-${uid}`)?.value || '0');
+            const opex = parseFloat(document.getElementById(`comp-inv-opex-${uid}`)?.value || '0');
+            const vac = parseFloat(document.getElementById(`comp-inv-vac-${uid}`)?.value || '0');
+            const vacRate = parseFloat(document.getElementById(`comp-inv-vac-rate-${uid}`)?.value || '0');
+            const notes = document.getElementById(`comp-inv-notes-${uid}`)?.value?.trim() || '';
+
+            const payload = {};
+            if (price > 0) payload.asking_price = price;
+            if (rent >= 0) payload.rent_price = rent;
+            if (opex >= 0) payload.annual_operating_expenses = opex;
+            if (!isNaN(vacRate) && vacRate >= 0) {
+                payload.annual_vacancy_rate = parseFloat(vacRate.toFixed(2));
+            } else if (rent > 0 && vac >= 0) {
+                payload.annual_vacancy_rate = parseFloat(((vac / rent) * 100).toFixed(2));
+            }
+            if (notes) payload.investment_notes = notes;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units/${uid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast(currentLang === 'ar' ? `✓ تم حفظ وتحديث بيانات الوحدة (${uid}) في المخزون بنجاح!` : `✓ Unit (${uid}) updated in inventory successfully!`, 'success');
+                } else {
+                    alert('فشل تحديث سجل الوحدة بالمخزون');
+                }
+            } catch (err) {
+                alert(`خطأ: ${err}`);
+            }
+        }
+
+        function calculateInvestUnitCardMetrics(uid) {
+            const priceVal = document.getElementById(`comp-inv-price-${uid}`)?.value;
+            const rentVal = document.getElementById(`comp-inv-rent-${uid}`)?.value;
+            const vacVal = document.getElementById(`comp-inv-vac-${uid}`)?.value;
+            const opexVal = document.getElementById(`comp-inv-opex-${uid}`)?.value;
+            const acqVal = document.getElementById(`comp-inv-acq-${uid}`)?.value;
+            const cashVal = document.getElementById(`comp-inv-cash-${uid}`)?.value;
+
+            const price = parseFloat(priceVal || '0');
+            const rent = parseFloat(rentVal || '0');
+            const vac = parseFloat(vacVal || '0');
+            const opex = parseFloat(opexVal || '0');
+            const acq = parseFloat(acqVal || '0');
+            const cash = parseFloat(cashVal || (price > 0 ? (price + acq) : '0'));
+
+            const statusEl = document.getElementById(`comp-inv-status-${uid}`);
+            const noiEl = document.getElementById(`comp-inv-noi-${uid}`);
+            const capEl = document.getElementById(`comp-inv-cap-${uid}`);
+            const grossEl = document.getElementById(`comp-inv-gross-${uid}`);
+            const cocEl = document.getElementById(`comp-inv-coc-${uid}`);
+            const paybackEl = document.getElementById(`comp-inv-payback-${uid}`);
+            const stabBox = document.getElementById(`comp-inv-stabilized-box-${uid}`);
+            const stabNoiEl = document.getElementById(`comp-inv-stab-noi-${uid}`);
+            const stabCapEl = document.getElementById(`comp-inv-stab-cap-${uid}`);
+
+            if (price <= 0) {
+                if (statusEl) {
+                    statusEl.textContent = currentLang === 'ar' ? '⚠️ يرجى إدخال سعر الاستحواذ المقترح لحساب المؤشرات' : '⚠️ Please enter acquisition price';
+                    statusEl.style.display = 'block';
+                }
+                if (noiEl) noiEl.textContent = '--';
+                if (capEl) capEl.textContent = '--';
+                if (grossEl) grossEl.textContent = '--';
+                if (cocEl) cocEl.textContent = '--';
+                if (paybackEl) paybackEl.textContent = '--';
+                if (stabBox) stabBox.style.display = 'none';
+                return;
+            }
+
+            if (statusEl) statusEl.style.display = 'none';
+
+            const effectiveRent = Math.max(0, rent - vac);
+            const noi = effectiveRent - opex; // can be negative if opex > effectiveRent
             const capRate = price > 0 ? (noi / price) * 100 : 0;
-            const coc = cash > 0 ? (noi / cash) * 100 : capRate;
+            const grossYield = price > 0 ? (rent / price) * 100 : 0;
+            const effectiveBasis = cash > 0 ? cash : (price + acq);
+            const coc = effectiveBasis > 0 ? (noi / effectiveBasis) * 100 : capRate;
+            const payback = noi > 0 ? (price / noi) : 0;
 
-            const noiEl = document.getElementById('live-ret-noi');
-            const capEl = document.getElementById('live-ret-cap-rate');
-            const cocEl = document.getElementById('live-ret-coc');
+            updateInvestEquityHint(uid);
 
-            if (noiEl) noiEl.textContent = `${Number(noi.toFixed(0)).toLocaleString()} SAR`;
-            if (capEl) capEl.textContent = `${capRate.toFixed(2)}%`;
-            if (cocEl) cocEl.textContent = `${coc.toFixed(2)}%`;
+            if (noiEl) {
+                if (noi < 0) {
+                    noiEl.innerHTML = `<span style="color:#dc2626; font-weight:800;">${Number(noi.toFixed(0)).toLocaleString()} SAR</span><div style="font-size:0.7em; color:#dc2626;">(عجز تشغيلي قيد التسكين)</div>`;
+                } else {
+                    noiEl.innerHTML = `<span style="color:#16a34a; font-weight:800;">${Number(noi.toFixed(0)).toLocaleString()} SAR</span>`;
+                }
+            }
+            if (capEl) {
+                capEl.textContent = `${capRate.toFixed(2)}%`;
+                capEl.style.color = capRate > 0 ? '#16a34a' : (capRate < 0 ? '#dc2626' : '#64748b');
+            }
+            if (grossEl) grossEl.textContent = `${grossYield.toFixed(2)}%`;
+            if (cocEl) {
+                cocEl.textContent = `${coc.toFixed(2)}%`;
+                cocEl.style.color = coc > 0 ? '#7c3aed' : (coc < 0 ? '#dc2626' : '#64748b');
+            }
+            if (paybackEl) {
+                if (payback > 0) {
+                    paybackEl.textContent = `${payback.toFixed(1)} سنة`;
+                    paybackEl.style.color = '#0f172a';
+                } else if (vac >= rent && rent > 0) {
+                    paybackEl.textContent = 'قيد التسكين (شغور 100%)';
+                    paybackEl.style.color = '#b45309';
+                } else {
+                    paybackEl.textContent = '--';
+                    paybackEl.style.color = '#64748b';
+                }
+            }
+
+            // Stabilized Pro-Forma yield when vacancy is high (>= 20% or 100%)
+            const vacRate = rent > 0 ? (vac / rent) * 100 : 0;
+            if (stabBox) {
+                if (rent > 0 && vacRate >= 20) {
+                    stabBox.style.display = 'block';
+                    const stabNoi = Math.max(0, rent - opex);
+                    const stabCap = price > 0 ? (stabNoi / price) * 100 : 0;
+                    if (stabNoiEl) stabNoiEl.textContent = `${Number(stabNoi.toFixed(0)).toLocaleString()} SAR`;
+                    if (stabCapEl) stabCapEl.textContent = `${stabCap.toFixed(2)}%`;
+                } else {
+                    stabBox.style.display = 'none';
+                }
+            }
         }
 
         // --- Smart Reopen & Quick Undo Handling ---
@@ -5852,8 +7093,25 @@
         }
 
         // --- Modals ---
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModal(id) { 
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'flex'; 
+        }
+        function closeModal(id) { 
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none'; 
+            if (id === 'modal-doc-preview') {
+                const iframe = document.getElementById('doc-preview-iframe');
+                if (iframe) iframe.src = 'about:blank';
+                window.currentPreviewDocId = null;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('modal-doc-preview');
+            }
+        });
 
         // --- Task Modal Reference Data & Cascading Logic ---
         let taskModalUsers = [];

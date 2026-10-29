@@ -532,7 +532,36 @@ class TestRentalWorkflow(unittest.IsolatedAsyncioTestCase):
                 rent_amount=48000.0
             )
 
+        # 10. Verify LEASE Contract Document was automatically archived in documents table
+        lease_doc = await self.conn.fetchrow(
+            """
+            SELECT d.*, dt.code AS doc_code
+            FROM documents d
+            JOIN document_types dt ON d.document_type_id = dt.document_type_id
+            WHERE dt.code = 'LEASE' AND (d.lead_id = $1 OR d.opportunity_id = $2)
+            """,
+            lead_id, opp_id
+        )
+        self.assertIsNotNone(lease_doc, "Official Lease Agreement document must be archived in documents table")
+        self.assertIn("عقد_إيجار_موحد_موثق", lease_doc["file_name"])
+
+        # 11. Verify TASK_RENT_COLLECTION_MONITORING is assigned to an ACCOUNTANT user
+        mon_task = await self.conn.fetchrow(
+            """
+            SELECT t.*, r.role_code
+            FROM tasks t
+            LEFT JOIN users u ON t.assigned_user_id = u.user_id
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.role_id
+            WHERE t.template_id = 'TASK_RENT_COLLECTION_MONITORING' AND (t.lead_id = $1 OR t.opportunity_id = $2)
+            """,
+            lead_id, opp_id
+        )
+        self.assertIsNotNone(mon_task, "Monitoring task must be created")
+        self.assertIn(mon_task["role_code"], ("ACCOUNTANT", "FINANCE"))
+
         # Cleanup
+        await self.conn.execute("DELETE FROM documents WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
         await self.conn.execute("DELETE FROM rent_collections WHERE tenancy_id = $1", tenancy_id)
         await self.conn.execute("DELETE FROM tenancies WHERE tenancy_id = $1", tenancy_id)
         await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)

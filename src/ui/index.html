@@ -442,6 +442,53 @@
             border-radius: 4px;
         }
 
+        /* Top Navigation Tooltips & Workspace Styling */
+        .nav ul li {
+            position: relative;
+        }
+        .nav-tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: #0f172a;
+            color: #f8fafc;
+            border: 1px solid #38bdf8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            line-height: 1.45;
+            white-space: normal;
+            width: 260px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+            z-index: 1000;
+            text-align: start;
+        }
+        [dir="rtl"] .nav-tooltip {
+            text-align: right;
+            font-family: var(--ar-font);
+        }
+        .nav ul li:hover .nav-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+        .workspace-deal-row {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .workspace-deal-row:hover {
+            background-color: #f8fafc;
+        }
+        .selected-deal-row {
+            background-color: #f0fdf4 !important;
+            border-inline-start: 4px solid #16a34a !important;
+        }
+
         @media (max-width: 1024px) {
             .drilldown-split-grid {
                 grid-template-columns: 1fr !important;
@@ -664,46 +711,25 @@
         </div>
 
         <!-- ================= DRILLDOWN EXPLORER & LIVE PULSE STREAM (SPLIT VIEW) ================= -->
-        <div class="drilldown-split-grid" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 32px;">
-            <!-- LEFT COLUMN: HIERARCHICAL DRILLDOWN EXPLORER -->
-            <div class="card-box" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <!-- Dynamic Interactive Breadcrumbs -->
-                <div id="drill-breadcrumbs" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                    <span class="breadcrumb-item current" id="bc-root">🌐 Global Overview</span>
-                </div>
+        <!-- ================= PERSONAL WORKSPACE & DEALS EXPLORER (FULL WIDTH) ================= -->
+        <div class="card-box workspace-full-box" style="background: white; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 32px; width: 100%; box-sizing: border-box;">
+            <!-- Dynamic Interactive Breadcrumbs -->
+            <div id="drill-breadcrumbs" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <span class="breadcrumb-item current" id="bc-root">🌐 Global Overview</span>
+            </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                    <h3 id="drill-view-title" style="margin: 0; font-size: 1.15em; color: var(--text-main);">🏢 Branches Performance Breakdown</h3>
-                    <span id="drill-counter-badge" class="badge" style="background: #e2e8f0; color: #334155; font-size: 0.8em; padding: 3px 8px; border-radius: 4px;">--</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h3 id="drill-view-title" style="margin: 0; font-size: 1.2em; color: var(--text-main);">🏢 Branches Performance Breakdown</h3>
+                    <span id="drill-counter-badge" class="badge" style="background: #e2e8f0; color: #334155; font-size: 0.82em; padding: 3px 10px; border-radius: 4px; font-weight: 700;">--</span>
                 </div>
-
-                <div id="drilldown-table-container" style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
-                    <!-- Dynamically rendered table: Branches -> Agents -> Opportunities -->
+                <div style="font-size: 0.84em; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 6px; font-weight: 600;">
+                    <span id="workspace-action-hint">💡 اضغط على سطر أي صفقة أو فرصة بيعية لاستعراض سجلها ومسارها التشغيلي الشامل أدناه</span>
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: LIVE ENGAGEMENT & ACTIVITY PULSE FEED -->
-            <div class="card-box" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1em; color: var(--text-main);" data-i18n="pulse_stream_title">⚡ Live Operational Pulse</h3>
-                        <small style="color: var(--text-muted); font-size: 0.8em;" data-i18n="pulse_stream_sub">Activities, tasks, WhatsApp & lead updates</small>
-                    </div>
-                    <button class="btn btn-outline btn-sm" onclick="fetchFunnelData()" style="padding: 4px 8px; font-size: 0.8em;">🔄 <span data-i18n="btn_refresh">Refresh</span></button>
-                </div>
-
-                <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <button class="pulse-filter-chip active" onclick="filterPulseFeed('ALL', this)" data-i18n="chip_all">All</button>
-                    <button class="pulse-filter-chip" id="chip-filter-viewing" data-filter="VIEWING" onclick="filterPulseFeed('VIEWING', this)" style="border-color: #bae6fd;" data-i18n="chip_viewings">👁️ Viewings</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('ACTIVITY', this)" data-i18n="chip_activities">📞 Activities</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('TASK', this)" data-i18n="chip_tasks">📋 Tasks</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('COMMUNICATION', this)" data-i18n="chip_messages">💬 Messages</button>
-                    <button class="pulse-filter-chip" onclick="filterPulseFeed('LEAD_UPDATE', this)" data-i18n="chip_lead_updates">⚡ Lead Updates</button>
-                </div>
-
-                <div id="live-pulse-list" style="flex-grow: 1; overflow-y: auto; max-height: 440px; display: flex; flex-direction: column; gap: 10px; padding-inline-end: 4px;">
-                    <!-- Dynamically rendered pulse items -->
-                </div>
+            <div id="drilldown-table-container" style="overflow-x: auto; max-height: 540px; overflow-y: auto;">
+                <!-- Dynamically rendered table: Branches -> Agents -> Opportunities -->
             </div>
         </div>
 
@@ -765,107 +791,6 @@
                 <div id="lh-panel-viewings" class="lh-tab-panel" style="display: none;"></div>
                 <div id="lh-panel-offers" class="lh-tab-panel" style="display: none;"></div>
                 <div id="lh-panel-contracts" class="lh-tab-panel" style="display: none;"></div>
-            </div>
-        </div>
-
-        <div class="module-grid">
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">👥</div>
-                    <h3 class="module-title" data-i18n="m_cust_title">Customers 360</h3>
-                    <p class="module-desc" data-i18n="m_cust_desc">Directory of buyers, tenants, owners and investors with complete 360-degree relationship history.</p>
-                </div>
-                <a href="customers.html" class="btn" data-i18n="m_cust_btn">Manage Customers 360 →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">🎯</div>
-                    <h3 class="module-title" data-i18n="m_leads_title">Leads</h3>
-                    <p class="module-desc" data-i18n="m_leads_desc">Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.</p>
-                </div>
-                <a href="leads.html" class="btn" data-i18n="m_leads_btn">Open Leads Queue →</a>
-            </div>
-            
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">🏢</div>
-                    <h3 class="module-title" data-i18n="m_props_title">Property Inventory</h3>
-                    <p class="module-desc" data-i18n="m_props_desc">Manage projects, buildings and units hierarchy, status tracking, listings and criteria matching.</p>
-                </div>
-                <a href="properties.html" class="btn" data-i18n="m_props_btn">Explore Properties →</a>
-            </div>
-            
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">📊</div>
-                    <h3 class="module-title" data-i18n="m_sales_title">Sales Pipeline</h3>
-                    <p class="module-desc" data-i18n="m_sales_desc">Track opportunities, schedule viewings, record offers and manage unit reservations.</p>
-                </div>
-                <a href="sales.html" class="btn" data-i18n="m_sales_btn">View Pipeline Board →</a>
-            </div>
-            
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">🏠</div>
-                    <h3 class="module-title" data-i18n="m_pm_title">Property Management</h3>
-                    <p class="module-desc" data-i18n="m_pm_desc">Manage landlord contracts, tenancy agreements, maintenance tickets and rent collections.</p>
-                </div>
-                <a href="management.html" class="btn" data-i18n="m_pm_btn">Manage Tenancies →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">💳</div>
-                    <h3 class="module-title" data-i18n="m_fin_title">Finance & Contracts</h3>
-                    <p class="module-desc" data-i18n="m_fin_desc">Convert reservations, track installment receipts, monitor receivables and manage broker commissions.</p>
-                </div>
-                <a href="finance.html" class="btn" data-i18n="m_fin_btn">Open Finance Center →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">📋</div>
-                    <h3 class="module-title" data-i18n="m_tasks_title">Tasks & Activities</h3>
-                    <p class="module-desc" data-i18n="m_tasks_desc">Manage agent follow-up to-dos, SLA queues, call logs and client communication histories.</p>
-                </div>
-                <a href="tasks.html" class="btn" data-i18n="m_tasks_btn">Open Tasks Queue →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">📁</div>
-                    <h3 class="module-title" data-i18n="m_docs_title">Document Vault & Compliance</h3>
-                    <p class="module-desc" data-i18n="m_docs_desc">Secure repository for deeds, contracts, IDs, audit access tracking and expiration alerts.</p>
-                </div>
-                <a href="documents.html" class="btn" data-i18n="m_docs_btn">Open Document Vault →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">📢</div>
-                    <h3 class="module-title" data-i18n="m_marketing_title">Marketing & Campaigns</h3>
-                    <p class="module-desc" data-i18n="m_marketing_desc">Track advertising campaigns, lead sources, conversion funnels, event stream and customer acquisition costs.</p>
-                </div>
-                <a href="campaigns.html" class="btn" data-i18n="m_marketing_btn">Open Marketing Hub →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">🏷️</div>
-                    <h3 class="module-title" data-i18n="m_listings_title">Property Listings & Syndication</h3>
-                    <p class="module-desc" data-i18n="m_listings_desc">Broadcast units to public portals, manage live listing pricing, photo galleries and expiration alerts.</p>
-                </div>
-                <a href="listings.html" class="btn" data-i18n="m_listings_btn">Open Listings Board →</a>
-            </div>
-
-            <div class="module-card">
-                <div>
-                    <div class="module-icon">🛡️</div>
-                    <h3 class="module-title" data-i18n="m_admin_title">Administration & Security</h3>
-                    <p class="module-desc" data-i18n="m_admin_desc">Manage branches, operational staff, RBAC permission matrices, audit logs and least-privilege data scopes.</p>
-                </div>
-                <a href="admin.html" class="btn" data-i18n="m_admin_btn">Open Governance Console →</a>
             </div>
         </div>
     </div>
@@ -1144,6 +1069,88 @@
             }
         };
 
+        const NAV_TOOLTIP_DESCRIPTIONS = {
+            ar: {
+                nav_dashboard: "الرؤية الإستراتيجية والمؤشرات القيادية ومساحة عمل الوسطاء وسجل المسار التشغيلي 360°.",
+                nav_customers: "دليل المشترين والمستأجرين والملاك والمطورين مع استعراض كامل لسجل التعاملات.",
+                nav_leads: "استقبال وتأهيل وتوجيه طلبات الشراء والإيجار ومراقبة مؤشرات سرعة الاستجابة لاتفاقية مستوى الخدمة SLA.",
+                nav_properties: "إدارة المشاريع والمباني والوحدات وتتبع حالات الجاهزية والتأجير والبيع والمطابقة.",
+                nav_sales: "تتبع الفرص البيعية، جدولة المعاينات الميدانية، تسجيل العروض المالية وإدارة الحجوزات والعقود.",
+                nav_finance: "متابعة تحويل الحجوزات، تحصيل الدفعات، الفواتير وسندات القبض وإدارة عمولات الوسطاء.",
+                nav_management: "إدارة عقود الوساطة مع الملاك، اتفاقيات الإيجار السكني والتجاري، وطلبات الصيانة والتحصيل.",
+                nav_tasks: "متابعة مهام العمل التنفيذية، سجل المكالمات والمراسلات وتطبيق إجراءات الصنعة المعتمدة.",
+                nav_documents: "خزينة المستندات الرقمية للصكوك، الهويات، العقود، وتقارير الفحص والامتثال والنافي للجهالة.",
+                nav_marketing: "متابعة الحملات الإعلانية، قنوات الجذب، ومعدلات التحويل وتكاليف الاستحواذ.",
+                nav_listings: "نشر وتسويق الوحدات المتاحة على المنصات العقارية وإدارة الأسعار وتحديثات المعارض.",
+                nav_admin: "إدارة المستخدمين والفروع، الصلاحيات RBAC، التدقيق وسجل العمليات الإدارية وتطبيق حوكمة الصلاحيات.",
+                nav_api: "الواجهة البرمجية التوثيقية المفتوحة التفاعلية لجميع نقاط الاتصال (Swagger OpenAPI)."
+            },
+            en: {
+                nav_dashboard: "Executive overview, operational KPIs, personal broker workspace and 360° journey audit.",
+                nav_customers: "Directory of buyers, tenants, owners and investors with complete 360-degree relationship history.",
+                nav_leads: "Capture, qualify, assign and monitor SLA response times across web, portal and phone inquiries.",
+                nav_properties: "Manage projects, buildings and units hierarchy, status tracking, listings and criteria matching.",
+                nav_sales: "Track opportunities, schedule viewings, record offers and manage unit reservations.",
+                nav_finance: "Convert reservations, track installment receipts, monitor receivables and manage broker commissions.",
+                nav_management: "Manage landlord contracts, tenancy agreements, maintenance tickets and rent collections.",
+                nav_tasks: "Manage agent follow-up to-dos, SLA queues, call logs and client communication histories.",
+                nav_documents: "Secure repository for deeds, contracts, IDs, audit access tracking and compliance.",
+                nav_marketing: "Track advertising campaigns, lead sources, conversion funnels, event stream and customer acquisition costs.",
+                nav_listings: "Broadcast units to public portals, manage live listing pricing, photo galleries and expiration alerts.",
+                nav_admin: "Manage branches, operational staff, RBAC permission matrices, audit logs and least-privilege data scopes.",
+                nav_api: "Interactive OpenAPI / Swagger documentation for backend endpoints."
+            }
+        };
+
+        function updateNavTooltips() {
+            const descs = NAV_TOOLTIP_DESCRIPTIONS[currentLang] || NAV_TOOLTIP_DESCRIPTIONS.ar;
+            document.querySelectorAll('.nav ul li').forEach(li => {
+                const a = li.querySelector('a');
+                if (!a) return;
+                // Always remove browser native single-line tooltip to prevent duplicate popups
+                a.removeAttribute('title');
+                const tipKey = a.getAttribute('data-i18n');
+                const desc = descs[tipKey] || '';
+                if (desc) {
+                    let tipBox = li.querySelector('.nav-tooltip');
+                    if (!tipBox) {
+                        tipBox = document.createElement('div');
+                        tipBox.className = 'nav-tooltip';
+                        li.appendChild(tipBox);
+                    }
+                    tipBox.textContent = desc;
+                }
+            });
+        }
+
+        function onWorkspaceDealClick(leadId, oppId, rowEl) {
+            document.querySelectorAll('.workspace-deal-row').forEach(r => r.classList.remove('selected-deal-row'));
+            if (rowEl) rowEl.classList.add('selected-deal-row');
+
+            if (leadId) {
+                const quickSelect = document.getElementById('lead-history-quick-select');
+                if (quickSelect) quickSelect.value = leadId;
+                const searchInput = document.getElementById('lead-history-search-input');
+                if (searchInput) searchInput.value = leadId;
+
+                loadLeadHistory(leadId);
+
+                const histSection = document.getElementById('lead-history-section');
+                if (histSection) {
+                    histSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    histSection.style.boxShadow = '0 0 0 3px #0284c7';
+                    setTimeout(() => {
+                        histSection.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                    }, 2000);
+                }
+            } else {
+                const msg = currentLang === 'ar' 
+                    ? `الفرصة ${oppId} غير مرتبطة بمعرف طلب محدد مباشرة، يمكنك تتبع سجل العميل عبر مسار البيع` 
+                    : `Opportunity ${oppId} has no direct linked Lead ID.`;
+                alert(msg);
+            }
+        }
+
         let currentLang = 'en';
 
         function setGlobalArabicFont(fontVal) {
@@ -1172,6 +1179,7 @@
             document.title = currentLang === 'ar'
                 ? 'لوحة العمليات العقارية - RE CRM'
                 : 'Real Estate Operations Dashboard - RE CRM';
+            updateNavTooltips();
             populateFilters();
             renderPulseFeed();
             if (dashboardState.managerialData) renderManagerialKPIs(dashboardState.managerialData);
@@ -1735,54 +1743,127 @@
                     </table>
                 `;
             } else if (dashboardState.drillLevel === 'OPPORTUNITIES') {
-                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : 'Agent';
-                if (titleEl) titleEl.textContent = isAr ? `🎯 الصفقات والفرص البيعية للوسيط: ${aName}` : `🎯 Opportunities & Deals for ${aName}`;
-                const opps = drill.opportunities || [];
-                if (counterEl) counterEl.textContent = `${opps.length} ${isAr ? 'فرص' : 'Opportunities'}`;
+                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info.user_name || 'Agent');
+                if (titleEl) titleEl.textContent = isAr ? `🎯 الصفقات والطلبات العقارية للوسيط: ${aName}` : `🎯 Deals & Leads for ${aName}`;
+                
+                // Sort newest first
+                const opps = [...(drill.opportunities || [])].sort((a, b) => {
+                    const dateA = new Date(a.created_at || 0).getTime();
+                    const dateB = new Date(b.created_at || 0).getTime();
+                    return dateB - dateA;
+                });
+
+                if (counterEl) counterEl.textContent = `${opps.length} ${isAr ? 'عنصر (صفقات وطلبات)' : 'Items (Deals & Leads)'}`;
 
                 if (opps.length === 0) {
-                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لا توجد فرص بيعية نشطة مسندة' : 'No active opportunities found.'}</div>`;
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لا توجد صفقات أو طلبات مسندة حالياً' : 'No active deals or leads found.'}</div>`;
                     return;
                 }
+
+                const STAGE_LABELS_AR = {
+                    'NEW': 'جديد (غير متصل)',
+                    'ASSIGNED': 'مسند للوسيط',
+                    'CONTACTED': 'تم الاتصال الأولي',
+                    'QUALIFIED': 'مؤهل',
+                    'PROSPECTING': 'استكشاف',
+                    'DISCOVERY': 'تحديد المتطلبات',
+                    'NEEDS_ANALYSIS': 'تحليل الاحتياج',
+                    'VIEWING': 'معاينة ميدانية',
+                    'PROPOSAL': 'تقديم عرض',
+                    'OFFER': 'تقديم عرض مالي',
+                    'NEGOTIATION': 'مفاوضات',
+                    'RESERVATION': 'حجز الوحدة',
+                    'CONTRACT': 'إعداد العقد',
+                    'CLOSING': 'إغلاق الصفقة',
+                    'WON': 'تم البيع بنجاح',
+                    'CLOSED_WON': 'صفقة ناجحة',
+                    'LOST': 'صفقة ملغاة',
+                    'CLOSED_LOST': 'خسارة',
+                    'DISQUALIFIED': 'غير مؤهل'
+                };
+
+                const INQUIRY_MAP = {
+                    'BUY': { ar: 'شراء', en: 'Buy', bg: '#ecfdf5', color: '#047857' },
+                    'RENT': { ar: 'إيجار', en: 'Rent', bg: '#eff6ff', color: '#1d4ed8' },
+                    'INVESTMENT': { ar: 'استثمار', en: 'Investment', bg: '#fdf4ff', color: '#86198f' }
+                };
 
                 container.innerHTML = `
                     <table class="dash-table">
                         <thead>
                             <tr>
+                                <th>${isAr ? 'النوع' : 'Type'}</th>
+                                <th>${isAr ? 'رقم الطلب' : 'Lead ID'}</th>
                                 <th>${isAr ? 'رقم الفرصة' : 'Opportunity ID'}</th>
                                 <th>${isAr ? 'العميل' : 'Customer'}</th>
-                                <th>${isAr ? 'المرحلة' : 'Stage'}</th>
-                                <th>${isAr ? 'القيمة المتوقعة' : 'Expected Value'}</th>
+                                <th>${isAr ? 'الغرض' : 'Inquiry'}</th>
+                                <th>${isAr ? 'المرحلة / الحالة' : 'Stage / Status'}</th>
+                                <th>${isAr ? 'الميزانية / القيمة' : 'Budget / Value'}</th>
                                 <th>${isAr ? 'العقار / الوحدة' : 'Property / Unit'}</th>
                                 <th>${isAr ? 'المسؤول' : 'Agent'}</th>
-                                <th>${isAr ? 'إجراء' : 'Link'}</th>
+                                <th>${isAr ? 'إجراءات ومسار الطلب' : 'Action & History'}</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${opps.map(op => {
+                                const isLead = (op.item_type === 'LEAD');
                                 let badgeBg = '#e2e8f0';
                                 let badgeColor = '#334155';
-                                if (op.stage.includes('WON') || op.stage.includes('CONTRACT')) { badgeBg = '#dcfce7'; badgeColor = '#15803d'; }
-                                else if (op.stage.includes('OFFER') || op.stage.includes('RESERVATION')) { badgeBg = '#fef3c7'; badgeColor = '#b45309'; }
-                                else if (op.stage.includes('VIEWING')) { badgeBg = '#e0f2fe'; badgeColor = '#0369a1'; }
+                                if (isLead) {
+                                    if (op.stage === 'NEW') { badgeBg = '#e0f2fe'; badgeColor = '#0369a1'; }
+                                    else if (op.stage === 'ASSIGNED') { badgeBg = '#e0e7ff'; badgeColor = '#3730a3'; }
+                                    else if (op.stage === 'CONTACTED') { badgeBg = '#fae8ff'; badgeColor = '#86198f'; }
+                                    else if (op.stage === 'QUALIFIED') { badgeBg = '#dcfce7'; badgeColor = '#15803d'; }
+                                } else {
+                                    if (op.stage.includes('WON') || op.stage.includes('CONTRACT')) { badgeBg = '#dcfce7'; badgeColor = '#15803d'; }
+                                    else if (op.stage.includes('OFFER') || op.stage.includes('RESERVATION')) { badgeBg = '#fef3c7'; badgeColor = '#b45309'; }
+                                    else if (op.stage.includes('VIEWING')) { badgeBg = '#e0f2fe'; badgeColor = '#0369a1'; }
+                                }
+
+                                const safeLeadId = op.lead_id || '';
+                                const safeOppId = op.opportunity_id || '';
+                                const stageText = isAr ? (STAGE_LABELS_AR[op.stage] || op.stage) : op.stage;
+                                const inq = op.inquiry_type ? (INQUIRY_MAP[op.inquiry_type] || { ar: op.inquiry_type, en: op.inquiry_type, bg: '#f1f5f9', color: '#475569' }) : null;
 
                                 return `
-                                    <tr>
-                                        <td><span class="id-badge">${op.opportunity_id}</span></td>
+                                    <tr class="workspace-deal-row" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this)" title="${isAr ? 'اضغط لعرض السجل التشغيلي وتاريخ مسار هذا الطلب أدناه' : 'Click to inspect 360° lead operational history below'}">
+                                        <td>
+                                            ${isLead 
+                                                ? `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:0.75em; padding:3px 7px; border-radius:4px;">🎯 ${isAr ? 'طلب عقاري' : 'Lead'}</span>`
+                                                : `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700; font-size:0.75em; padding:3px 7px; border-radius:4px;">💼 ${isAr ? 'فرصة بيعية' : 'Opportunity'}</span>`
+                                            }
+                                        </td>
+                                        <td>
+                                            ${op.lead_id ? `<span class="badge" style="background:#e0e7ff; color:#3730a3; font-weight:700; font-size:0.82em; padding:3px 8px; border-radius:4px;">${op.lead_id}</span>` : '<span style="color:var(--text-muted);">--</span>'}
+                                        </td>
+                                        <td>
+                                            ${op.opportunity_id ? `<span class="id-badge">${op.opportunity_id}</span>` : `<span style="color:var(--text-muted); font-size:0.78em; font-style:italic;">${isAr ? 'قيد التأهيل' : 'Qualification'}</span>`}
+                                        </td>
                                         <td>
                                             <strong>${op.customer_name || 'Customer'}</strong>
                                             ${op.customer_mobile ? `<div style="font-size:0.75em; color:var(--text-muted);">${op.customer_mobile}</div>` : ''}
                                         </td>
-                                        <td><span class="badge" style="background:${badgeBg}; color:${badgeColor}; font-weight:700; padding:2px 8px; border-radius:4px; font-size:0.75em;">${op.stage}</span></td>
+                                        <td>
+                                            ${inq ? `<span class="badge" style="background:${inq.bg}; color:${inq.color}; font-weight:700; font-size:0.75em; padding:2px 7px; border-radius:4px;">${isAr ? inq.ar : inq.en}</span>` : '<span style="color:var(--text-muted);">--</span>'}
+                                        </td>
+                                        <td><span class="badge" style="background:${badgeBg}; color:${badgeColor}; font-weight:700; padding:2px 8px; border-radius:4px; font-size:0.75em;">${stageText}</span></td>
                                         <td><strong>${Number(op.expected_value).toLocaleString()} SAR</strong></td>
                                         <td>
-                                            ${op.unit_number ? `<div><strong>Unit ${op.unit_number}</strong> <span style="font-size:0.75em; color:var(--text-muted);">(${op.building_name || op.project_name || 'Asset'})</span></div>` : '<span style="color:var(--text-muted);">Unassigned Unit</span>'}
+                                            ${op.unit_number 
+                                                ? `<div><strong>Unit ${op.unit_number}</strong> <span style="font-size:0.75em; color:var(--text-muted);">(${op.building_name || op.project_name || 'Asset'})</span></div>` 
+                                                : (op.project_name ? `<span>${op.project_name}</span>` : `<span style="color:var(--text-muted); font-size:0.8em;">${isAr ? 'غير محدد بعد' : 'Unassigned'}</span>`)}
                                         </td>
                                         <td>${op.agent_name || '--'}</td>
                                         <td>
-                                            <a href="sales.html" class="btn-drill" style="text-decoration:none; display:inline-block;">
-                                                ${isAr ? 'مسار البيع ➔' : 'Pipeline ➔'}
-                                            </a>
+                                            <div style="display:flex; gap:6px; align-items:center;" onclick="event.stopPropagation();">
+                                                <button type="button" class="btn-drill" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this.closest('tr'))" style="background:#0284c7; color:white; border:none; padding:4px 9px; font-size:0.78em; border-radius:4px; font-weight:700;">
+                                                    📜 ${isAr ? 'السجل 360°' : 'History'}
+                                                </button>
+                                                ${isLead 
+                                                    ? `<a href="leads.html" class="btn-drill" style="text-decoration:none; display:inline-block; font-size:0.78em; padding:4px 9px;">${isAr ? 'الطلبات ➔' : 'Leads ➔'}</a>`
+                                                    : `<a href="sales.html" class="btn-drill" style="text-decoration:none; display:inline-block; font-size:0.78em; padding:4px 9px;">${isAr ? 'مسار البيع ➔' : 'Pipeline ➔'}</a>`
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 `;
@@ -2348,11 +2429,24 @@
                 else if (item.type === 'RESERVATION') { icon = '🔒'; typeColor = '#0891b2'; typeLabel = isAr ? 'حجز' : 'Reservation'; }
                 else if (item.type === 'CONTRACT') { icon = '🤝'; typeColor = '#16a34a'; typeLabel = isAr ? 'عقد' : 'Contract'; }
 
-                const situationBadge = item.is_done !== undefined 
+                let situationBadge = item.is_done !== undefined 
                     ? (item.is_done 
                         ? `<span style="background:#dcfce7; color:#166534; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">✅ ${isAr ? 'منجز' : 'Done'}</span>` 
                         : `<span style="background:#fef3c7; color:#92400e; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">⏳ ${isAr ? 'قيد التنفيذ' : 'Pending'}</span>`)
                     : '';
+
+                if (item.type === 'RESERVATION') {
+                    const rSt = (item.status || '').toUpperCase();
+                    if (rSt === 'CONVERTED' || rSt === 'CONVERTED_TO_CONTRACT' || rSt === 'COMPLETED' || item.is_done) {
+                        situationBadge = `<span style="background:#dcfce7; color:#166534; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">✅ ${isAr ? 'منجز (محول لعقد)' : 'Done (Converted)'}</span>`;
+                    } else if (rSt === 'CONFIRMED') {
+                        situationBadge = `<span style="background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">🔒 ${isAr ? 'حجز مؤكد بالعربون' : 'Confirmed'}</span>`;
+                    } else if (rSt === 'ACTIVE') {
+                        situationBadge = `<span style="background:#fef3c7; color:#92400e; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">⏳ ${isAr ? 'قيد التنفيذ (حجز نشط)' : 'Active'}</span>`;
+                    } else if (rSt === 'CANCELLED' || rSt === 'EXPIRED') {
+                        situationBadge = `<span style="background:#fee2e2; color:#991b1b; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.75em;">❌ ${isAr ? 'ملغى / منتهي' : 'Cancelled'}</span>`;
+                    }
+                }
 
                 return `
                     <div style="display: flex; gap: 14px; position: relative; padding-bottom: 20px;">
@@ -2719,9 +2813,17 @@
                 const timeStr = r.reserved_at ? new Date(r.reserved_at).toLocaleString() : '--';
                 const ownerName = r.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
                 const ownerMobile = r.unit_owner_mobile ? `<div style="font-size: 0.78em; color: #64748b; direction: ltr; display: inline-block;">📞 ${r.unit_owner_mobile}</div>` : '';
-                const situationBadge = r.is_done
-                    ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'حجز نشط ومؤكد (Active)' : 'Active (Confirmed)'}</span>`
-                    : `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${r.status}</span>`;
+                let situationBadge = '';
+                const rSt = (r.status || '').toUpperCase();
+                if (rSt === 'CONVERTED' || rSt === 'CONVERTED_TO_CONTRACT' || rSt === 'COMPLETED' || r.is_done) {
+                    situationBadge = `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">✅ ${isAr ? 'تم تحويله لعقد (منجز)' : 'Converted to Contract (Done)'}</span>`;
+                } else if (rSt === 'CONFIRMED') {
+                    situationBadge = `<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">🔒 ${isAr ? 'حجز مؤكد بالعربون' : 'Confirmed (Active)'}</span>`;
+                } else if (rSt === 'ACTIVE') {
+                    situationBadge = `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">⏳ ${isAr ? 'حجز نشط (قيد التنفيذ)' : 'Active (In Progress)'}</span>`;
+                } else {
+                    situationBadge = `<span style="background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.8em;">❌ ${r.status}</span>`;
+                }
 
                 return `
                     <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.86em;">

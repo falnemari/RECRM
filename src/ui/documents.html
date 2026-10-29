@@ -190,23 +190,219 @@
         .btn-success { background: var(--success); color: white; }
         .btn-success:hover { background: #15803d; }
 
-        /* Tables */
-        .table-responsive {
+        /* View Switcher */
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .view-btn:hover {
+            color: #0f172a;
+        }
+        .view-btn.active {
             background: white;
-            border-radius: 8px;
-            overflow-x: auto;
+            color: #1e3a8a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        /* Modern Document Cards Grid */
+        .docs-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .doc-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .doc-card:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            transform: translateY(-2px);
+        }
+        .doc-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #cbd5e1;
+        }
+        .doc-card.card-tech::before { background: #2563eb; }
+        .doc-card.card-legal::before { background: #9333ea; }
+        .doc-card.card-fin::before { background: #eab308; }
+        .doc-card.card-offer::before { background: #ea580c; }
+        .doc-card.card-id::before { background: #10b981; }
+
+        .doc-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .doc-card-body {
+            flex: 1;
+            margin-bottom: 12px;
+        }
+        .doc-card-title {
+            font-size: 0.94rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .doc-card-notes {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            line-height: 1.35;
+        }
+        .doc-chips-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .doc-chip {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid #e2e8f0;
+        }
+        .doc-dates-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.76rem;
+            color: #64748b;
+            padding: 8px 0;
+            border-top: 1px dashed #e2e8f0;
+            border-bottom: 1px dashed #e2e8f0;
+            margin-bottom: 12px;
+        }
+        .doc-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-preview-main {
+            flex: 1;
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.15s ease;
+        }
+        .btn-preview-main:hover {
+            background: #1e40af;
+        }
+        .btn-icon-action {
+            background: white;
+            border: 1px solid var(--border);
+            color: #475569;
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 0;
+        }
+        .btn-icon-action:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        .btn-icon-action.danger:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+
+        /* Modern Full-Width Dense Table (Zero Horizontal Scrollbar) */
+        .dense-table-wrapper {
+            background: white;
+            border-radius: 10px;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            width: 100%;
+            margin-bottom: 20px;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
-        [dir="rtl"] table { text-align: right; }
-        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
-        tr:hover { background: #f8fafc; }
+        .dense-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.84rem;
+            text-align: right;
+        }
+        [dir="ltr"] .dense-table { text-align: left; }
+        .dense-table th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .dense-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            word-break: break-word;
+        }
+        .dense-table tr:hover {
+            background: #f8fafc;
+        }
+        .dense-table tr:last-child td {
+            border-bottom: none;
+        }
 
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, monospace;
-            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
+            font-size: 0.76rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
             border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
         }
 
@@ -259,6 +455,37 @@
             color: white;
             border-color: #1e3a8a;
             box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+        }
+
+        /* Pagination & Search Controls */
+        .pagination-container {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .page-btn {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 36px;
+            text-align: center;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .page-btn.active {
+            background: #1e3a8a;
+            color: white;
+            border-color: #1e3a8a;
+        }
+        .page-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
 
         /* Modals */
@@ -406,10 +633,14 @@
         <!-- Toolbar & Filters -->
         <div class="toolbar">
             <div class="filters">
-                <input type="text" id="doc-search" class="search-input" placeholder="Search file, customer, unit, contract..." onkeyup="filterDocuments()">
-                <select id="doc-type-filter" class="select-filter" onchange="loadDocuments()">
+                <div style="position: relative; display: inline-flex; align-items: center;">
+                    <input type="text" id="doc-search" class="search-input" placeholder="Search file, customer, unit, contract..." oninput="onSearchInput(this.value)" onkeyup="if(event.key==='Enter') loadDocuments(1)" style="padding-inline-end: 28px; width: 280px;">
+                    <button id="search-clear-btn" type="button" onclick="clearSearch()" style="position: absolute; inset-inline-end: 8px; background: none; border: none; color: #94a3b8; cursor: pointer; display: none; font-size: 14px; padding: 0; line-height: 1;">✕</button>
+                </div>
+                <select id="doc-type-filter" class="select-filter" onchange="loadDocuments(1)">
                     <option value="" data-i18n="opt_all_types">All Document Types</option>
                     <option value="DUE_DILIGENCE_REPORT">تقرير الفحص الفني والاستثماري (Due Diligence)</option>
+                    <option value="INVEST_COMPARATIVE_REPORT">تقرير المقارنة المالية والعوائد الاستثمارية للوحدات</option>
                     <option value="COUNTER_OFFER_LETTER">خطاب التفاوض وتعديل السعر (CapEx)</option>
                     <option value="COMMERCIAL_OFFER">خطاب عرض الاستحواذ / الشراء الرسمي</option>
                     <option value="BASELINE_FINANCIAL_SHEET">ورقة خط الأساس المالي والاستثماري</option>
@@ -432,38 +663,73 @@
                     <option value="PASSPORT">جواز السفر</option>
                     <option value="PROPERTY_PHOTO">مخطط / صورة عقار معتمد</option>
                 </select>
-                <select id="doc-status-filter" class="select-filter" onchange="loadDocuments()">
+                <select id="doc-status-filter" class="select-filter" onchange="loadDocuments(1)">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
                     <option value="ACTIVE" data-i18n="opt_active">Active</option>
                     <option value="ARCHIVED" data-i18n="opt_archived">Archived</option>
                 </select>
                 <label style="font-size: 0.9em; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                    <input type="checkbox" id="doc-expiring-only" onchange="loadDocuments()">
+                    <input type="checkbox" id="doc-expiring-only" onchange="loadDocuments(1)">
                     <span data-i18n="lbl_expiring_only">Expiring Soon Only</span>
                 </label>
+                <div style="display: flex; align-items: center; gap: 6px; margin-inline-start: 4px;">
+                    <span style="font-size: 0.85em; color: var(--text-muted); font-weight: 600;" data-i18n="lbl_page_size">عرض:</span>
+                    <select id="doc-page-size" class="select-filter" style="width: auto; min-width: 105px; font-weight: 600;" onchange="changePageSize()">
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                        <option value="500" selected>500 (الكل)</option>
+                    </select>
+                </div>
             </div>
-            <button class="btn" onclick="openUploadModal()" data-i18n="btn_upload">+ Upload / Attach Document</button>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div class="view-toggle-group" style="display: inline-flex; background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px; padding: 2px;">
+                    <button id="view-cards-btn" type="button" class="view-btn active" onclick="switchDocView('grid')" title="عرض البطاقات الذكية العصرية">
+                        🗂️ بطاقات
+                    </button>
+                    <button id="view-table-btn" type="button" class="view-btn" onclick="switchDocView('table')" title="عرض الجدول المدمج بدون تمرير أفقي">
+                        📋 جدول مدمج
+                    </button>
+                </div>
+                <button class="btn" onclick="openUploadModal()" data-i18n="btn_upload">+ Upload / Attach Document</button>
+            </div>
         </div>
 
-        <!-- Documents Table -->
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 100px;">Doc ID</th>
-                        <th data-i18n="th_file_name">Document File</th>
-                        <th data-i18n="th_doc_type">Type</th>
-                        <th data-i18n="th_linked_entity">Linked Entity</th>
-                        <th data-i18n="th_issue_date">Issued Date</th>
-                        <th data-i18n="th_expiry_date">Expiry Date</th>
-                        <th data-i18n="th_status">Status</th>
-                        <th data-i18n="th_actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="docs-tbody">
-                    <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading documents from vault...</td></tr>
-                </tbody>
-            </table>
+        <!-- Modern Dual Views Container (Zero Horizontal Scrollbar) -->
+        <div id="docs-view-container">
+            <!-- 1. Modern Cards Grid View (Default - Zero Horizontal Scroll) -->
+            <div id="docs-grid" class="docs-cards-grid">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 36px; color: var(--text-muted);">
+                    جاري تحميل الوثائق من الخزينة الآمنة...
+                </div>
+            </div>
+
+            <!-- 2. Modern Full-Width Dense Table (Zero Horizontal Scroll) -->
+            <div id="docs-table-wrapper" class="dense-table-wrapper" style="display: none;">
+                <table class="dense-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 34%;">المستند والتصنيف الرسمي</th>
+                            <th style="width: 25%;">الجهة المرتبطة (عميل / وحدة / معاملة)</th>
+                            <th style="width: 20%;">تاريخ الإصدار والصلاحية</th>
+                            <th style="width: 21%; text-align: center;">الإجراءات السريعة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="docs-tbody">
+                        <tr><td colspan="4" style="text-align: center; padding: 28px; color: var(--text-muted);">جاري تحميل الوثائق...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="pagination-wrapper" class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px 18px; background: white; border: 1px solid var(--border); border-radius: 8px; flex-wrap: wrap; gap: 12px;">
+            <div id="pagination-info" style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;">
+                عرض 0 من 0 وثيقة
+            </div>
+            <div id="pagination-buttons" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <!-- Dynamically populated buttons -->
+            </div>
         </div>
 
     </div>
@@ -566,22 +832,22 @@
     </div>
 
     <!-- Modal 3: Document Live HTML & Print Preview -->
-    <div id="modal-doc-preview" class="modal-overlay">
-        <div class="modal" style="max-width: 980px; width: 95%; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px;">
-            <div class="modal-header" style="background: #1e3a8a; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2em;">📄</span>
-                    <div>
-                        <h3 id="doc-preview-title" style="margin: 0; font-size: 1.05em; color: white;">معاينة المستند الرسمي</h3>
-                        <div id="doc-preview-meta" style="font-size: 0.75em; color: #93c5fd;">وثيقة رسمية معتمدة وموثقة رقمياً طبقاً للأنظمة العقارية السعودية</div>
+    <div id="modal-doc-preview" class="modal-overlay" onclick="if(event.target === this) closeModal('modal-doc-preview')">
+        <div class="modal" style="max-width: 1000px; width: 95%; height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+            <div class="modal-header" style="background: #1e3a8a; color: white; padding: 12px 20px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0; gap: 16px; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; overflow: hidden;">
+                    <span style="font-size: 1.3em; flex-shrink: 0;">📄</span>
+                    <div style="min-width: 0; overflow: hidden;">
+                        <h3 id="doc-preview-title" style="margin: 0; font-size: 1.05em; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">معاينة المستند الرسمي</h3>
+                        <div id="doc-preview-meta" style="font-size: 0.75em; color: #93c5fd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">وثيقة رسمية معتمدة وموثقة رقمياً طبقاً للأنظمة العقارية السعودية</div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button type="button" class="btn btn-sm" style="background: #2563eb; color: white; border: none; font-weight: bold;" onclick="printCurrentPreviewDoc()">🖨️ طباعة المستند</button>
-                    <button class="close-btn" style="color: white; font-size: 1.4em;" onclick="closeModal('modal-doc-preview')">&times;</button>
+                <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                    <button type="button" class="btn btn-sm" style="background: #2563eb; color: white; border: none; font-weight: bold; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" onclick="printCurrentPreviewDoc()">🖨️ طباعة المستند</button>
+                    <button type="button" class="close-btn" style="color: white; font-size: 1.4em; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" onclick="closeModal('modal-doc-preview')" title="إغلاق">&times;</button>
                 </div>
             </div>
-            <div style="flex: 1; position: relative; background: #e2e8f0;">
+            <div style="flex: 1; position: relative; background: #e2e8f0; height: calc(100% - 60px);">
                 <iframe id="doc-preview-iframe" style="width: 100%; height: 100%; border: none; background: white;" src="about:blank"></iframe>
             </div>
         </div>
@@ -629,6 +895,7 @@
                 opt_type_receipt: "Payment Receipt",
                 opt_type_photo: "Property Photo / Plan",
                 lbl_expiring_only: "Expiring Soon Only", btn_upload: "+ Upload / Attach Document",
+                lbl_page_size: "Show:",
                 th_file_name: "Document File", th_doc_type: "Type", th_linked_entity: "Linked Entity",
                 th_issue_date: "Issued Date", th_expiry_date: "Expiry Date", th_status: "Status", th_actions: "Actions",
                 modal_upload_title: "Upload / Attach Document",
@@ -668,6 +935,7 @@
                 opt_type_receipt: "سند قبض",
                 opt_type_photo: "مخطط / صورة عقار",
                 lbl_expiring_only: "المستندات المنتهية قريباً فقط", btn_upload: "+ إرفاق / رفع مستند جديد",
+                lbl_page_size: "عرض:",
                 th_file_name: "اسم الملف / الوثيقة", th_doc_type: "التصنيف", th_linked_entity: "الجهة المرتبطة",
                 th_issue_date: "تاريخ الإصدار", th_expiry_date: "تاريخ الانتهاء", th_status: "الحالة", th_actions: "الإجراءات",
                 modal_upload_title: "إرفاق وتوثيق مستند جديد",
@@ -714,6 +982,10 @@
                 }
             });
             document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+            const searchInput = document.getElementById('doc-search');
+            if (searchInput) {
+                searchInput.placeholder = lang === 'ar' ? 'بحث في اسم الملف، الصك، العميل، الوحدة، العقد...' : 'Search file, customer, unit, contract...';
+            }
             if (docsData && docsData.length) renderDocuments(docsData);
         }
 
@@ -737,56 +1009,72 @@
         }
 
         let currentDocCategory = 'ALL';
+        let currentPage = 1;
+        let currentPageSize = 500;
+        let totalDocumentsCount = 0;
+        let searchDebounceTimer = null;
+        let currentViewMode = localStorage.getItem('recrm_docs_view') || 'grid';
+
+        function switchDocView(mode) {
+            currentViewMode = mode;
+            localStorage.setItem('recrm_docs_view', mode);
+            const gridEl = document.getElementById('docs-grid');
+            const tableEl = document.getElementById('docs-table-wrapper');
+            const cardsBtn = document.getElementById('view-cards-btn');
+            const tableBtn = document.getElementById('view-table-btn');
+
+            if (mode === 'grid') {
+                if (gridEl) gridEl.style.display = 'grid';
+                if (tableEl) tableEl.style.display = 'none';
+                if (cardsBtn) cardsBtn.classList.add('active');
+                if (tableBtn) tableBtn.classList.remove('active');
+            } else {
+                if (gridEl) gridEl.style.display = 'none';
+                if (tableEl) tableEl.style.display = 'block';
+                if (cardsBtn) cardsBtn.classList.remove('active');
+                if (tableBtn) tableBtn.classList.add('active');
+            }
+        }
 
         function setDocCategory(cat, btn) {
             currentDocCategory = cat;
             document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
             if (btn) btn.classList.add('active');
-            applyCombinedFilters();
+            loadDocuments(1);
         }
 
-        function applyCombinedFilters() {
-            let filtered = [...docsData];
-            if (currentDocCategory === 'INSPECTION') {
-                filtered = filtered.filter(d => {
-                    const c = (d.document_type_code || '').toUpperCase();
-                    return c.includes('DILIGENCE') || c.includes('TAQEEM') || c.includes('BASELINE') || c.includes('SOIL') || c.includes('DEFECT');
-                });
-            } else if (currentDocCategory === 'OFFERS') {
-                filtered = filtered.filter(d => {
-                    const c = (d.document_type_code || '').toUpperCase();
-                    return c.includes('OFFER') || c.includes('COUNTER') || c.includes('RESERVATION');
-                });
-            } else if (currentDocCategory === 'CONTRACTS') {
-                filtered = filtered.filter(d => {
-                    const c = (d.document_type_code || '').toUpperCase();
-                    return c.includes('CONTRACT') || c.includes('LEASE') || c.includes('HANDOVER');
-                });
-            } else if (currentDocCategory === 'FINANCE') {
-                filtered = filtered.filter(d => {
-                    const c = (d.document_type_code || '').toUpperCase();
-                    return c.includes('INVOICE') || c.includes('RECEIPT') || c.includes('TAX') || c.includes('COMMISSION');
-                });
-            } else if (currentDocCategory === 'LEGAL') {
-                filtered = filtered.filter(d => {
-                    const c = (d.document_type_code || '').toUpperCase();
-                    return c.includes('DEED') || c.includes('ID') || c.includes('PASSPORT') || c.includes('LICENSE');
-                });
+        function onSearchInput(val) {
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (clearBtn) {
+                clearBtn.style.display = val && val.trim() ? 'block' : 'none';
             }
-            
-            const term = (document.getElementById('doc-search').value || '').toLowerCase().trim();
-            if (term) {
-                filtered = filtered.filter(d =>
-                    (d.file_name && d.file_name.toLowerCase().includes(term)) ||
-                    (d.customer_name && d.customer_name.toLowerCase().includes(term)) ||
-                    (d.unit_number && d.unit_number.toLowerCase().includes(term)) ||
-                    (d.contract_number && d.contract_number.toLowerCase().includes(term)) ||
-                    (d.lead_id && d.lead_id.toLowerCase().includes(term)) ||
-                    (d.opportunity_id && d.opportunity_id.toLowerCase().includes(term)) ||
-                    (d.notes && d.notes.toLowerCase().includes(term))
-                );
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                loadDocuments(1);
+            }, 300);
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('doc-search');
+            if (searchInput) {
+                searchInput.value = '';
             }
-            renderDocuments(filtered);
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (clearBtn) clearBtn.style.display = 'none';
+            loadDocuments(1);
+        }
+
+        function filterDocuments() {
+            onSearchInput(document.getElementById('doc-search')?.value || '');
+        }
+
+        function changePageSize() {
+            loadDocuments(1);
+        }
+
+        function goToPage(page) {
+            if (page < 1) return;
+            loadDocuments(page);
         }
 
         function openDocumentPreview(docId, fileName) {
@@ -807,84 +1095,267 @@
             window.open(`${API_BASE}/api/v1/documents/${docId}/html`, '_blank');
         }
 
-        async function loadDocuments() {
-            const type = document.getElementById('doc-type-filter').value;
-            const status = document.getElementById('doc-status-filter').value;
-            const expiringOnly = document.getElementById('doc-expiring-only').checked;
+        async function loadDocuments(page = 1) {
+            currentPage = page;
+            const type = document.getElementById('doc-type-filter')?.value || '';
+            const status = document.getElementById('doc-status-filter')?.value || '';
+            const expiringOnly = document.getElementById('doc-expiring-only')?.checked || false;
+            const pageSizeEl = document.getElementById('doc-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value, 10) : 500;
+            currentPageSize = pageSize;
+            const searchTerm = (document.getElementById('doc-search')?.value || '').trim();
 
-            let url = `${API_BASE}/api/v1/documents?page_size=100`;
-            if (type) url += `&document_type=${type}`;
-            if (status) url += `&status=${status}`;
+            let url = `${API_BASE}/api/v1/documents?page=${currentPage}&page_size=${currentPageSize}`;
+            if (type) url += `&document_type=${encodeURIComponent(type)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
             if (expiringOnly) url += `&is_expiring_soon=true`;
+            if (currentDocCategory && currentDocCategory !== 'ALL') {
+                url += `&category=${encodeURIComponent(currentDocCategory)}`;
+            }
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 docsData = json.data || [];
-                applyCombinedFilters();
+                totalDocumentsCount = (json.meta && json.meta.total !== undefined) ? json.meta.total : docsData.length;
+                renderDocuments(docsData);
+                renderPagination(json.meta || { page: currentPage, page_size: currentPageSize, total: totalDocumentsCount });
             } catch (err) {
                 console.error(err);
-                document.getElementById('docs-tbody').innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Failed to load documents.</td></tr>';
+                const gridEl = document.getElementById('docs-grid');
+                if (gridEl) gridEl.innerHTML = '<div style="grid-column: 1 / -1; color:red; text-align:center; padding: 24px;">Failed to load documents.</div>';
+                const tbody = document.getElementById('docs-tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Failed to load documents.</td></tr>';
             }
         }
 
-        function renderDocuments(items) {
-            const tbody = document.getElementById('docs-tbody');
-            if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px;">No documents found.</td></tr>';
+        function renderPagination(meta) {
+            const total = meta ? meta.total : totalDocumentsCount;
+            const page = meta ? meta.page : currentPage;
+            const pageSize = meta ? meta.page_size : currentPageSize;
+            const totalPages = Math.ceil(total / pageSize) || 1;
+
+            const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
+            const endIdx = Math.min(page * pageSize, total);
+
+            const infoEl = document.getElementById('pagination-info');
+            if (infoEl) {
+                if (currentLang === 'ar') {
+                    infoEl.innerHTML = `عرض <strong>${startIdx}</strong> إلى <strong>${endIdx}</strong> من إجمالي <strong>${total}</strong> وثيقة (صفحة ${page} من ${totalPages})`;
+                } else {
+                    infoEl.innerHTML = `Showing <strong>${startIdx}</strong> to <strong>${endIdx}</strong> of <strong>${total}</strong> documents (Page ${page} of ${totalPages})`;
+                }
+            }
+
+            const btnContainer = document.getElementById('pagination-buttons');
+            if (!btnContainer) return;
+
+            if (totalPages <= 1) {
+                btnContainer.innerHTML = '';
                 return;
             }
 
-            tbody.innerHTML = items.map(d => {
-                let linkedItems = [];
-                if (d.customer_name) linkedItems.push(`👤 ${d.customer_name}`);
-                if (d.unit_number) linkedItems.push(`🏠 وحدة ${d.unit_number}`);
-                if (d.lead_id) linkedItems.push(`📋 طلب #${d.lead_id}`);
-                if (d.opportunity_id) linkedItems.push(`💼 فرصة #${d.opportunity_id}`);
-                if (d.contract_number) linkedItems.push(`📄 عقد ${d.contract_number}`);
-                let linked = linkedItems.join(' | ') || (currentLang === 'ar' ? 'عام' : 'General');
+            let html = '';
+            const prevText = currentLang === 'ar' ? 'السابق' : 'Prev';
+            const nextText = currentLang === 'ar' ? 'التالي' : 'Next';
 
-                let tagCls = 'type-tag';
-                const code = (d.document_type_code || '').toUpperCase();
-                if (code.includes('DEED') || code.includes('CONTRACT') || code.includes('LEASE')) tagCls += ' legal';
-                else if (code.includes('ID') || code.includes('PASSPORT')) tagCls += ' id';
-                else if (code.includes('INVOICE') || code.includes('RECEIPT') || code.includes('TAX') || code.includes('COMMISSION')) tagCls += ' fin';
-                else if (code.includes('DILIGENCE') || code.includes('TAQEEM') || code.includes('BASELINE') || code.includes('SOIL') || code.includes('DEFECT')) tagCls += ' tech';
-                else if (code.includes('OFFER') || code.includes('COUNTER')) tagCls += ' offer';
+            html += `<button class="page-btn" onclick="goToPage(${page - 1})" ${page <= 1 ? 'disabled' : ''}>${prevText}</button>`;
 
-                let statusBadge = `<span class="badge badge-active">${currentLang === 'ar' ? 'ساري ومعتمد' : d.status}</span>`;
-                if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">${currentLang === 'ar' ? 'مؤرشف' : 'Archived'}</span>`;
-                else if (d.is_expired) statusBadge = `<span class="badge badge-expired">${currentLang === 'ar' ? 'منتهي' : 'Expired'}</span>`;
-                else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">${currentLang === 'ar' ? 'ينتهي قريباً' : 'Expiring Soon'}</span>`;
+            let startPage = Math.max(1, page - 2);
+            let endPage = Math.min(totalPages, page + 2);
 
-                return `
-                    <tr>
-                        <td><span class="id-badge">${d.document_id}</span></td>
-                        <td>
-                            <div style="font-weight:700; color:#0f172a;">📄 ${d.file_name}</div>
-                            ${d.notes ? `<div style="font-size:0.75em; color:var(--text-muted); margin-top:2px;">${d.notes}</div>` : ''}
-                        </td>
-                        <td><span class="${tagCls}">${d.document_type_name || code}</span></td>
-                        <td style="font-size:0.82em; color:#334155;">${linked}</td>
-                        <td>${d.issued_at || '--'}</td>
-                        <td style="${d.is_expired ? 'color:var(--danger); font-weight:700;' : ''}">${d.expires_at || (currentLang === 'ar' ? 'دائم / غير محدد' : 'Never')}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                <button class="btn btn-sm btn-primary" style="background:#1e3a8a; color:white; font-weight:bold;" onclick="openDocumentPreview('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">👁️ معاينة</button>
-                                <button class="btn btn-sm btn-outline" onclick="printDocument('${d.document_id}')">🖨️ طباعة</button>
-                                <button class="btn btn-sm btn-outline" onclick="downloadDocument('${d.document_id}')">⬇ تنزيل</button>
-                                <button class="btn btn-sm btn-outline" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">سجل الأمان</button>
-                                ${d.status === 'ACTIVE' ? `<button class="btn btn-sm btn-danger" onclick="archiveDoc('${d.document_id}')">أرشفة</button>` : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span style="padding: 0 4px; color: #94a3b8;">...</span>`;
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                html += `<button class="page-btn ${p === page ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span style="padding: 0 4px; color: #94a3b8;">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>${nextText}</button>`;
+
+            btnContainer.innerHTML = html;
         }
 
-        function filterDocuments() {
-            applyCombinedFilters();
+        function renderDocuments(items) {
+            const gridContainer = document.getElementById('docs-grid');
+            const tbody = document.getElementById('docs-tbody');
+
+            if (items.length === 0) {
+                const emptyMsg = currentLang === 'ar' ? 'لا توجد وثائق مطابقة لخيارات البحث أو الفلترة.' : 'No documents found matching the search criteria.';
+                if (gridContainer) {
+                    gridContainer.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 48px 24px; color: var(--text-muted); background: white; border-radius: 12px; border: 1px dashed var(--border);">📭 ${emptyMsg}</div>`;
+                }
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">📭 ${emptyMsg}</td></tr>`;
+                }
+                return;
+            }
+
+            // 1. Render Modern Cards Grid (Zero Horizontal Scrollbar)
+            if (gridContainer) {
+                gridContainer.innerHTML = items.map(d => {
+                    const code = (d.document_type_code || '').toUpperCase();
+                    let cardCategoryCls = 'card-legal';
+                    let tagCls = 'type-tag legal';
+                    let icon = '📄';
+
+                    if (code.includes('DILIGENCE') || code.includes('TAQEEM') || code.includes('BASELINE') || code.includes('SOIL') || code.includes('DEFECT') || code.includes('COMPARATIVE')) {
+                        cardCategoryCls = 'card-tech';
+                        tagCls = 'type-tag tech';
+                        icon = '🔍';
+                    } else if (code.includes('OFFER') || code.includes('COUNTER')) {
+                        cardCategoryCls = 'card-offer';
+                        tagCls = 'type-tag offer';
+                        icon = '💼';
+                    } else if (code.includes('INVOICE') || code.includes('RECEIPT') || code.includes('TAX') || code.includes('COMMISSION')) {
+                        cardCategoryCls = 'card-fin';
+                        tagCls = 'type-tag fin';
+                        icon = '💰';
+                    } else if (code.includes('ID') || code.includes('PASSPORT')) {
+                        cardCategoryCls = 'card-id';
+                        tagCls = 'type-tag id';
+                        icon = '🪪';
+                    } else if (code.includes('DEED')) {
+                        icon = '🏛️';
+                    } else if (code.includes('CONTRACT') || code.includes('LEASE')) {
+                        icon = '📑';
+                    }
+
+                    let statusBadge = `<span class="badge badge-active">${currentLang === 'ar' ? 'ساري ومعتمد' : d.status}</span>`;
+                    if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">${currentLang === 'ar' ? 'مؤرشف' : 'Archived'}</span>`;
+                    else if (d.is_expired) statusBadge = `<span class="badge badge-expired">${currentLang === 'ar' ? 'منتهي' : 'Expired'}</span>`;
+                    else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">${currentLang === 'ar' ? 'ينتهي قريباً' : 'Expiring Soon'}</span>`;
+
+                    let chipsHtml = [];
+                    if (d.customer_name) chipsHtml.push(`<span class="doc-chip" title="${currentLang === 'ar' ? 'العميل' : 'Customer'}">👤 ${d.customer_name}</span>`);
+                    if (d.unit_number) chipsHtml.push(`<span class="doc-chip" title="${currentLang === 'ar' ? 'الوحدة العقارية' : 'Unit'}">🏠 وحدة ${d.unit_number}</span>`);
+                    if (d.lead_id) chipsHtml.push(`<span class="doc-chip" title="${currentLang === 'ar' ? 'طلب العميل' : 'Lead'}">📋 طلب #${d.lead_id}</span>`);
+                    if (d.opportunity_id) chipsHtml.push(`<span class="doc-chip" title="${currentLang === 'ar' ? 'الفرصة البيعية' : 'Opportunity'}">💼 فرصة #${d.opportunity_id}</span>`);
+                    if (d.contract_number) chipsHtml.push(`<span class="doc-chip" title="${currentLang === 'ar' ? 'العقد' : 'Contract'}">📄 عقد ${d.contract_number}</span>`);
+                    if (chipsHtml.length === 0) chipsHtml.push(`<span class="doc-chip">📁 ${currentLang === 'ar' ? 'ملف عام' : 'General'}</span>`);
+
+                    return `
+                        <div class="doc-card ${cardCategoryCls}">
+                            <div>
+                                <div class="doc-card-header">
+                                    <span class="${tagCls}">${d.document_type_name || code}</span>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                        ${statusBadge}
+                                        <span class="id-badge">${d.document_id}</span>
+                                    </div>
+                                </div>
+                                <div class="doc-card-body">
+                                    <div class="doc-card-title" title="${d.file_name}">${icon} ${d.file_name}</div>
+                                    ${d.notes ? `<div class="doc-card-notes">${d.notes}</div>` : ''}
+                                    <div class="doc-chips-wrap">
+                                        ${chipsHtml.join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="doc-dates-row">
+                                    <div><span style="opacity:0.75;">${currentLang === 'ar' ? 'الإصدار:' : 'Issued:'}</span> <strong>${d.issued_at || '--'}</strong></div>
+                                    <div><span style="opacity:0.75;">${currentLang === 'ar' ? 'الصلاحية:' : 'Expiry:'}</span> <strong style="${d.is_expired ? 'color:var(--danger);' : ''}">${d.expires_at || (currentLang === 'ar' ? 'دائم / غير محدد' : 'Never')}</strong></div>
+                                </div>
+                                <div class="doc-card-actions">
+                                    <button type="button" class="btn-preview-main" onclick="openDocumentPreview('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">
+                                        👁️ ${currentLang === 'ar' ? 'معاينة المستند' : 'Preview'}
+                                    </button>
+                                    <button type="button" class="btn-icon-action" onclick="printDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">🖨️</button>
+                                    <button type="button" class="btn-icon-action" onclick="downloadDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'تنزيل' : 'Download'}">⬇</button>
+                                    <button type="button" class="btn-icon-action" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'سجل الأمان' : 'Audit'}">🛡️</button>
+                                    ${d.status === 'ACTIVE' ? `<button type="button" class="btn-icon-action danger" onclick="archiveDoc('${d.document_id}')" title="${currentLang === 'ar' ? 'أرشفة' : 'Archive'}">📦</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. Render Modern Full-Width Dense Table (Zero Horizontal Scrollbar)
+            if (tbody) {
+                tbody.innerHTML = items.map(d => {
+                    const code = (d.document_type_code || '').toUpperCase();
+                    let tagCls = 'type-tag';
+                    let icon = '📄';
+
+                    if (code.includes('DILIGENCE') || code.includes('TAQEEM') || code.includes('BASELINE') || code.includes('SOIL') || code.includes('DEFECT') || code.includes('COMPARATIVE')) {
+                        tagCls += ' tech'; icon = '🔍';
+                    } else if (code.includes('OFFER') || code.includes('COUNTER')) {
+                        tagCls += ' offer'; icon = '💼';
+                    } else if (code.includes('INVOICE') || code.includes('RECEIPT') || code.includes('TAX') || code.includes('COMMISSION')) {
+                        tagCls += ' fin'; icon = '💰';
+                    } else if (code.includes('ID') || code.includes('PASSPORT')) {
+                        tagCls += ' id'; icon = '🪪';
+                    } else {
+                        tagCls += ' legal';
+                    }
+
+                    let statusBadge = `<span class="badge badge-active">${currentLang === 'ar' ? 'ساري ومعتمد' : d.status}</span>`;
+                    if (d.status === 'ARCHIVED') statusBadge = `<span class="badge badge-archived">${currentLang === 'ar' ? 'مؤرشف' : 'Archived'}</span>`;
+                    else if (d.is_expired) statusBadge = `<span class="badge badge-expired">${currentLang === 'ar' ? 'منتهي' : 'Expired'}</span>`;
+                    else if (d.is_expiring_soon) statusBadge = `<span class="badge badge-expiring">${currentLang === 'ar' ? 'ينتهي قريباً' : 'Expiring Soon'}</span>`;
+
+                    let linkedChips = [];
+                    if (d.customer_name) linkedChips.push(`<span class="doc-chip">👤 ${d.customer_name}</span>`);
+                    if (d.unit_number) linkedChips.push(`<span class="doc-chip">🏠 وحدة ${d.unit_number}</span>`);
+                    if (d.lead_id) linkedChips.push(`<span class="doc-chip">📋 طلب #${d.lead_id}</span>`);
+                    if (d.contract_number) linkedChips.push(`<span class="doc-chip">📄 عقد ${d.contract_number}</span>`);
+                    let linkedHtml = linkedChips.join(' ') || `<span class="doc-chip">📁 ${currentLang === 'ar' ? 'عام' : 'General'}</span>`;
+
+                    return `
+                        <tr>
+                            <td>
+                                <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+                                    <span class="id-badge">${d.document_id}</span>
+                                    <span class="${tagCls}">${d.document_type_name || code}</span>
+                                </div>
+                                <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">
+                                    ${icon} ${d.file_name}
+                                </div>
+                                ${d.notes ? `<div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">${d.notes}</div>` : ''}
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    ${linkedHtml}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 0.8rem; margin-bottom: 4px;">
+                                    <span style="color: #64748b;">${currentLang === 'ar' ? 'إصدار:' : 'Issued:'}</span> ${d.issued_at || '--'}
+                                </div>
+                                <div style="font-size: 0.8rem; margin-bottom: 4px;">
+                                    <span style="color: #64748b;">${currentLang === 'ar' ? 'صلاحية:' : 'Expiry:'}</span> <span style="${d.is_expired ? 'color:var(--danger); font-weight:700;' : ''}">${d.expires_at || (currentLang === 'ar' ? 'دائم' : 'Never')}</span>
+                                </div>
+                                ${statusBadge}
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-sm btn-primary" style="background: #1e3a8a; color: white; font-weight: 700; padding: 5px 10px;" onclick="openDocumentPreview('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')">
+                                        👁️ ${currentLang === 'ar' ? 'معاينة' : 'Preview'}
+                                    </button>
+                                    <button type="button" class="btn-icon-action" onclick="printDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">🖨️</button>
+                                    <button type="button" class="btn-icon-action" onclick="downloadDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'تنزيل' : 'Download'}">⬇</button>
+                                    <button type="button" class="btn-icon-action" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'سجل الأمان' : 'Audit'}">🛡️</button>
+                                    ${d.status === 'ACTIVE' ? `<button type="button" class="btn-icon-action danger" onclick="archiveDoc('${d.document_id}')" title="${currentLang === 'ar' ? 'أرشفة' : 'Archive'}">📦</button>` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            switchDocView(currentViewMode);
         }
 
         async function downloadDocument(docId) {
@@ -953,8 +1424,25 @@
             }
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModal(id) { 
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'flex'; 
+        }
+        function closeModal(id) { 
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none'; 
+            if (id === 'modal-doc-preview') {
+                const iframe = document.getElementById('doc-preview-iframe');
+                if (iframe) iframe.src = 'about:blank';
+                window.currentPreviewDocId = null;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('modal-doc-preview');
+            }
+        });
 
         async function openUploadModal() {
             try {

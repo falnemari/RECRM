@@ -331,6 +331,13 @@
                 <option value="SOLD" data-i18n="opt_sold">SOLD</option>
                 <option value="RENTED" data-i18n="opt_rented">RENTED</option>
             </select>
+            <select id="purpose-select" onchange="fetchUnits()">
+                <option value="" data-i18n="opt_all_purposes">All Purposes</option>
+                <option value="SALE" data-i18n="opt_purpose_sale">For Sale Only</option>
+                <option value="RENT" data-i18n="opt_purpose_rent">For Rent Only</option>
+                <option value="INVESTMENT" data-i18n="opt_purpose_investment">For Investment & Acquisition</option>
+                <option value="ALL" data-i18n="opt_purpose_multi">Multi-Purpose (All)</option>
+            </select>
             <select id="bedrooms-select" onchange="fetchUnits()">
                 <option value="" data-i18n="opt_any_bedrooms">Any Bedrooms</option>
                 <option value="1" data-i18n="opt_bed_1">1 Bedroom</option>
@@ -539,12 +546,45 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label data-i18n="lbl_listing_purpose">Listing Purpose / Target Activity *</label>
+                        <select id="add-listing-purpose" required style="font-weight: 600;">
+                            <option value="ALL" data-i18n="opt_purpose_multi">🌐 Multi-Purpose / All (عام - متاح للجميع)</option>
+                            <option value="SALE" data-i18n="opt_purpose_sale">🏠 For Sale Only (مخصص للبيع فقط)</option>
+                            <option value="RENT" data-i18n="opt_purpose_rent">🔑 For Rent Only (مخصص للإيجار فقط)</option>
+                            <option value="INVESTMENT" data-i18n="opt_purpose_investment">💼 Investment & Acquisition (مخصص للاستثمار والاستحواذ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label data-i18n="lbl_asking_price">Sale Price (SAR)</label>
                         <input type="number" step="100" id="add-asking-price" placeholder="e.g. 450000">
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_rent_price">Rent Price (SAR/yr)</label>
                         <input type="number" step="100" id="add-rent-price" placeholder="e.g. 35000">
+                    </div>
+                </div>
+
+                <!-- Investment Specific Financial Baseline (For Investment / Multi-purpose units) -->
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-bottom:12px;">
+                    <div style="font-weight:700; font-size:0.82em; color:#166534; margin-bottom:6px;" data-i18n="sec_investment_baseline">
+                        💼 البيانات الاستثمارية والتشغيلية للأصل (اختياري / لحساب مؤشرات الاستثمار بدقة):
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_annual_opex">المصاريف التشغيلية السنوية (OPEX SAR)</label>
+                            <input type="number" step="100" id="add-annual-opex" placeholder="مثال: 12000" data-i18n-placeholder="placeholder_opex">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_vacancy_rate">نسبة الشغور المتوقعة (%)</label>
+                            <input type="number" step="0.5" id="add-annual-vacancy-rate" placeholder="مثال: 5.0" data-i18n-placeholder="placeholder_vacancy">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:4px;">
+                        <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_investment_notes">ملاحظات ومصدر التدفقات النقدية للأصل</label>
+                        <input type="text" id="add-investment-notes" placeholder="مثال: مؤجر بعقد سنوي موثق حتى 2027، أو كشف حساب المالك" data-i18n-placeholder="placeholder_inv_notes">
                     </div>
                 </div>
 
@@ -659,12 +699,45 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label data-i18n="lbl_listing_purpose">Listing Purpose / Target Activity *</label>
+                        <select id="edit-listing-purpose" required style="font-weight: 600;">
+                            <option value="ALL" data-i18n="opt_purpose_multi">🌐 Multi-Purpose / All (عام - متاح للجميع)</option>
+                            <option value="SALE" data-i18n="opt_purpose_sale">🏠 For Sale Only (مخصص للبيع فقط)</option>
+                            <option value="RENT" data-i18n="opt_purpose_rent">🔑 For Rent Only (مخصص للإيجار فقط)</option>
+                            <option value="INVESTMENT" data-i18n="opt_purpose_investment">💼 Investment & Acquisition (مخصص للاستثمار والاستحواذ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label data-i18n="lbl_asking_price">Sale Price (SAR)</label>
                         <input type="number" step="100" id="edit-asking-price">
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_rent_price">Rent Price (SAR/yr)</label>
                         <input type="number" step="100" id="edit-rent-price">
+                    </div>
+                </div>
+
+                <!-- Investment Specific Financial Baseline (Edit) -->
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-bottom:12px;">
+                    <div style="font-weight:700; font-size:0.82em; color:#166534; margin-bottom:6px;" data-i18n="sec_investment_baseline">
+                        💼 البيانات الاستثمارية والتشغيلية للأصل (اختياري / لحساب مؤشرات الاستثمار بدقة):
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_annual_opex">المصاريف التشغيلية السنوية (OPEX SAR)</label>
+                            <input type="number" step="100" id="edit-annual-opex" placeholder="مثال: 12000" data-i18n-placeholder="placeholder_opex">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_vacancy_rate">نسبة الشغور المتوقعة (%)</label>
+                            <input type="number" step="0.5" id="edit-annual-vacancy-rate" placeholder="مثال: 5.0" data-i18n-placeholder="placeholder_vacancy">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:4px;">
+                        <label style="font-size:0.8em; color:#166534;" data-i18n="lbl_investment_notes">ملاحظات ومصدر التدفقات النقدية للأصل</label>
+                        <input type="text" id="edit-investment-notes" placeholder="مثال: مؤجر بعقد سنوي موثق حتى 2027، أو كشف حساب المالك" data-i18n-placeholder="placeholder_inv_notes">
                     </div>
                 </div>
 
@@ -717,6 +790,10 @@
                         <span class="detail-val" id="det-type">--</span>
                     </div>
                     <div class="detail-item">
+                        <span class="detail-label" data-i18n="lbl_listing_purpose">Listing Purpose</span>
+                        <span class="detail-val" id="det-purpose">--</span>
+                    </div>
+                    <div class="detail-item">
                         <span class="detail-label" data-i18n="lbl_area_sqm">Area</span>
                         <span class="detail-val" id="det-area">--</span>
                     </div>
@@ -747,6 +824,14 @@
                     <div class="detail-item">
                         <span class="detail-label" data-i18n="lbl_assigned_agent">Assigned Agent</span>
                         <span class="detail-val" id="det-agent">--</span>
+                    </div>
+                    <div class="detail-item" id="det-invest-sec" style="grid-column: 1/-1; background:#f0fdf4; padding:8px 12px; border-radius:6px; border:1px solid #bbf7d0; margin-top:6px;">
+                        <div style="font-weight:700; color:#166534; font-size:0.85em; margin-bottom:4px;">💼 البيانات والمؤشرات الاستثمارية للأصل:</div>
+                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.85em;">
+                            <span>مصاريف التشغيل: <strong id="det-opex" style="color:#0f172a;">--</strong></span>
+                            <span>نسبة الشغور: <strong id="det-vac" style="color:#0f172a;">--</strong></span>
+                            <span>مصدر التدفقات: <strong id="det-notes" style="color:#475569;">--</strong></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -838,6 +923,12 @@
                 lbl_orientation: "Orientation / Direction",
                 lbl_asking_price: "Sale / Asking Price (SAR)",
                 lbl_rent_price: "Rent Price (SAR / Year)",
+                lbl_listing_purpose: "Listing Purpose / Activity",
+                opt_all_purposes: "All Purposes",
+                opt_purpose_multi: "Multi-Purpose (All Activities)",
+                opt_purpose_sale: "For Sale Only",
+                opt_purpose_rent: "For Rent Only",
+                opt_purpose_investment: "For Investment & Acquisition",
                 lbl_owner_customer: "Owner (Customer)",
                 lbl_assigned_agent: "Assigned Agent",
                 opt_direct_agency: "-- Direct / Agency (No specific owner) --",
@@ -887,6 +978,23 @@
                 opt_orient_nw: "NORTH_WEST",
                 opt_orient_se: "SOUTH_EAST",
                 opt_orient_sw: "SOUTH_WEST",
+                sec_investment_baseline: "💼 Operational & Investment Baseline (Optional / for ROI & Cap Rate metrics):",
+                lbl_annual_opex: "Annual Operating Expenses (OPEX SAR)",
+                lbl_vacancy_rate: "Expected Vacancy Rate (%)",
+                lbl_investment_notes: "Cashflow Source & Baseline Notes",
+                btn_quick_project: "+ New Project",
+                btn_quick_building: "+ New Building",
+                placeholder_opex: "e.g. 12000",
+                placeholder_vacancy: "e.g. 5.0",
+                placeholder_inv_notes: "e.g. Leased until 2027 with certified contract, or owner statements",
+                placeholder_unit_number: "e.g. U-101, APT-302, Plot-52",
+                placeholder_floor_no: "e.g. 2",
+                placeholder_area_sqm: "e.g. 125.5",
+                placeholder_bedrooms: "e.g. 3",
+                placeholder_bathrooms: "e.g. 2",
+                placeholder_parking: "e.g. 1",
+                placeholder_asking_price: "e.g. 450000",
+                placeholder_rent_price: "e.g. 35000",
                 banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
                 banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
@@ -948,6 +1056,12 @@
                 lbl_orientation: "الواجهة / الاتجاه",
                 lbl_asking_price: "سعر البيع المطلوب (ريال)",
                 lbl_rent_price: "قيمة الإيجار السنوي (ريال)",
+                lbl_listing_purpose: "غرض الوحدة / نوع الطرح العقاري",
+                opt_all_purposes: "جميع الأغراض",
+                opt_purpose_multi: "متعدد الأغراض (عام لكافة الأنشطة)",
+                opt_purpose_sale: "مخصص للبيع فقط",
+                opt_purpose_rent: "مخصص للإيجار فقط",
+                opt_purpose_investment: "مخصص للاستثمار والاستحواذ",
                 lbl_owner_customer: "المالك (العميل)",
                 lbl_assigned_agent: "الوسيط / الموظف المسند",
                 opt_direct_agency: "-- مباشر للمكتب (بدون مالك مسجل) --",
@@ -999,6 +1113,23 @@
                 opt_orient_nw: "شمالية غربية",
                 opt_orient_se: "جنوبية شرقية",
                 opt_orient_sw: "جنوبية غربية",
+                sec_investment_baseline: "💼 البيانات الاستثمارية والتشغيلية للأصل (اختياري / لحساب مؤشرات الاستثمار بدقة):",
+                lbl_annual_opex: "المصاريف التشغيلية السنوية (OPEX بالريال)",
+                lbl_vacancy_rate: "نسبة الشغور المتوقعة (%)",
+                lbl_investment_notes: "ملاحظات ومصدر التدفقات النقدية للأصل",
+                btn_quick_project: "+ مشروع جديد",
+                btn_quick_building: "+ مبنى جديد",
+                placeholder_opex: "مثال: 12000",
+                placeholder_vacancy: "مثال: 5.0",
+                placeholder_inv_notes: "مثال: مؤجر بعقد سنوي موثق حتى 2027، أو كشف حساب المالك",
+                placeholder_unit_number: "مثال: U-101، شقة 302، قطعة 52",
+                placeholder_floor_no: "مثال: 2",
+                placeholder_area_sqm: "مثال: 125.5",
+                placeholder_bedrooms: "مثال: 3",
+                placeholder_bathrooms: "مثال: 2",
+                placeholder_parking: "مثال: 1",
+                placeholder_asking_price: "مثال: 450000",
+                placeholder_rent_price: "مثال: 35000",
                 lang_label: "English"
             }
         };
@@ -1012,7 +1143,9 @@
             'Commercial': 'تجاري',
             'Office': 'مكتب',
             'Land': 'أرض',
-            'Residential': 'سكني'
+            'Residential': 'سكني',
+            'Floor': 'دور',
+            'FLOOR': 'دور'
         };
 
         const orientationMapAr = {
@@ -1117,6 +1250,21 @@
             return `<span class="property-badge badge-sold">${s}</span>`;
         }
 
+        function getPurposeBadge(purpose) {
+            const p = (purpose || 'ALL').toUpperCase();
+            const isAr = currentLang === 'ar';
+            if (p === 'SALE') {
+                return `<span class="property-badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-weight:700;">🏠 ${isAr ? 'للبيع' : 'Sale'}</span>`;
+            }
+            if (p === 'RENT') {
+                return `<span class="property-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; font-weight:700;">🔑 ${isAr ? 'للإيجار' : 'Rent'}</span>`;
+            }
+            if (p === 'INVESTMENT') {
+                return `<span class="property-badge" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe; font-weight:700;">💼 ${isAr ? 'استثمار' : 'Invest'}</span>`;
+            }
+            return `<span class="property-badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:700;">🌐 ${isAr ? 'عام' : 'All'}</span>`;
+        }
+
         let isInitialLoadDone = false;
 
         function renderUnits() {
@@ -1168,7 +1316,10 @@
                     <div class="property-card">
                         <div>
                             <div class="card-top">
-                                ${getBadge(u.status)}
+                                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                    ${getBadge(u.status)}
+                                    ${getPurposeBadge(u.listing_purpose)}
+                                </div>
                                 <div style="display: flex; align-items: center; gap: 4px;">
                                     <span class="id-badge">${u.unit_id}</span>
                                     <button class="btn-copy" onclick="copyId('${u.unit_id}')" title="Copy ID">📋</button>
@@ -1209,6 +1360,7 @@
             const prjId = document.getElementById('project-filter') ? document.getElementById('project-filter').value : '';
             const bldId = document.getElementById('building-filter').value;
             const status = document.getElementById('status-select').value;
+            const purpose = document.getElementById('purpose-select')?.value || '';
             const bedrooms = document.getElementById('bedrooms-select').value;
             const agId = document.getElementById('unit-agent-filter')?.value || '';
 
@@ -1234,6 +1386,7 @@
             if (prjId && !bldId) url += `&project_id=${encodeURIComponent(prjId)}`;
             if (bldId) url += `&building_id=${encodeURIComponent(bldId)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (purpose) url += `&listing_purpose=${encodeURIComponent(purpose)}`;
             if (bedrooms) url += `&bedrooms=${encodeURIComponent(bedrooms)}`;
             if (agId) url += `&assigned_user_id=${encodeURIComponent(agId)}`;
 
@@ -1345,6 +1498,7 @@
             updateBuildingFilterOptions('');
             document.getElementById('building-filter').value = '';
             document.getElementById('status-select').value = '';
+            if (document.getElementById('purpose-select')) document.getElementById('purpose-select').value = '';
             document.getElementById('bedrooms-select').value = '';
             fetchUnits(1);
         }
@@ -1795,8 +1949,12 @@
             document.getElementById('add-bathrooms').value = '';
             document.getElementById('add-parking').value = '';
             document.getElementById('add-orientation').value = '';
-            document.getElementById('add-asking-price').value = '';
-            document.getElementById('add-rent-price').value = '';
+            if (document.getElementById('add-listing-purpose')) document.getElementById('add-listing-purpose').value = 'ALL';
+            if (document.getElementById('add-asking-price')) document.getElementById('add-asking-price').value = '';
+            if (document.getElementById('add-rent-price')) document.getElementById('add-rent-price').value = '';
+            if (document.getElementById('add-annual-opex')) document.getElementById('add-annual-opex').value = '';
+            if (document.getElementById('add-annual-vacancy-rate')) document.getElementById('add-annual-vacancy-rate').value = '';
+            if (document.getElementById('add-investment-notes')) document.getElementById('add-investment-notes').value = '';
             document.getElementById('add-owner-id').value = '';
             document.getElementById('add-assigned-user').value = '';
             document.getElementById('add-unit-modal').style.display = 'flex';
@@ -1826,8 +1984,12 @@
                 bathrooms: document.getElementById('add-bathrooms').value ? parseInt(document.getElementById('add-bathrooms').value) : null,
                 parking_spaces: document.getElementById('add-parking').value ? parseInt(document.getElementById('add-parking').value) : null,
                 orientation: document.getElementById('add-orientation').value || null,
+                listing_purpose: document.getElementById('add-listing-purpose')?.value || 'ALL',
                 asking_price: document.getElementById('add-asking-price').value ? parseFloat(document.getElementById('add-asking-price').value) : null,
                 rent_price: document.getElementById('add-rent-price').value ? parseFloat(document.getElementById('add-rent-price').value) : null,
+                annual_operating_expenses: document.getElementById('add-annual-opex')?.value ? parseFloat(document.getElementById('add-annual-opex').value) : null,
+                annual_vacancy_rate: document.getElementById('add-annual-vacancy-rate')?.value ? parseFloat(document.getElementById('add-annual-vacancy-rate').value) : null,
+                investment_notes: document.getElementById('add-investment-notes')?.value?.trim() || null,
                 owner_customer_id: document.getElementById('add-owner-id').value || null,
                 assigned_user_id: document.getElementById('add-assigned-user').value || null
             };
@@ -1889,8 +2051,20 @@
                 document.getElementById('edit-bathrooms').value = u.bathrooms != null ? u.bathrooms : '';
                 document.getElementById('edit-parking').value = u.parking_spaces != null ? u.parking_spaces : '';
                 document.getElementById('edit-orientation').value = u.orientation || '';
+                if (document.getElementById('edit-listing-purpose')) {
+                    document.getElementById('edit-listing-purpose').value = u.listing_purpose || 'ALL';
+                }
                 document.getElementById('edit-asking-price').value = u.asking_price != null ? u.asking_price : '';
                 document.getElementById('edit-rent-price').value = u.rent_price != null ? u.rent_price : '';
+                if (document.getElementById('edit-annual-opex')) {
+                    document.getElementById('edit-annual-opex').value = u.annual_operating_expenses != null ? u.annual_operating_expenses : '';
+                }
+                if (document.getElementById('edit-annual-vacancy-rate')) {
+                    document.getElementById('edit-annual-vacancy-rate').value = u.annual_vacancy_rate != null ? u.annual_vacancy_rate : '';
+                }
+                if (document.getElementById('edit-investment-notes')) {
+                    document.getElementById('edit-investment-notes').value = u.investment_notes || '';
+                }
                 document.getElementById('edit-owner-id').value = u.owner_customer_id || '';
                 document.getElementById('edit-assigned-user').value = u.assigned_user_id || '';
 
@@ -1925,8 +2099,12 @@
                 bathrooms: document.getElementById('edit-bathrooms').value ? parseInt(document.getElementById('edit-bathrooms').value) : null,
                 parking_spaces: document.getElementById('edit-parking').value ? parseInt(document.getElementById('edit-parking').value) : null,
                 orientation: document.getElementById('edit-orientation').value || null,
+                listing_purpose: document.getElementById('edit-listing-purpose')?.value || 'ALL',
                 asking_price: document.getElementById('edit-asking-price').value ? parseFloat(document.getElementById('edit-asking-price').value) : null,
                 rent_price: document.getElementById('edit-rent-price').value ? parseFloat(document.getElementById('edit-rent-price').value) : null,
+                annual_operating_expenses: document.getElementById('edit-annual-opex')?.value ? parseFloat(document.getElementById('edit-annual-opex').value) : null,
+                annual_vacancy_rate: document.getElementById('edit-annual-vacancy-rate')?.value ? parseFloat(document.getElementById('edit-annual-vacancy-rate').value) : null,
+                investment_notes: document.getElementById('edit-investment-notes')?.value?.trim() || null,
                 owner_customer_id: document.getElementById('edit-owner-id').value || null,
                 assigned_user_id: document.getElementById('edit-assigned-user').value || null
             };
@@ -2023,6 +2201,14 @@
                     : (u.property_type_name_en || u.property_type_name || 'Apartment');
                 document.getElementById('det-type').textContent = pType;
 
+                const lp = (u.listing_purpose || 'ALL').toUpperCase();
+                let lpLabel = isAr ? '🌐 متعدد الأغراض (عام لكافة الأنشطة)' : '🌐 Multi-purpose (All)';
+                if (lp === 'SALE') lpLabel = isAr ? '🏠 مخصص للبيع فقط' : '🏠 For Sale Only';
+                else if (lp === 'RENT') lpLabel = isAr ? '🔑 مخصص للإيجار فقط' : '🔑 For Rent Only';
+                else if (lp === 'INVESTMENT') lpLabel = isAr ? '💼 مخصص للاستثمار والاستحواذ' : '💼 Investment & Acquisition';
+                const detPurp = document.getElementById('det-purpose');
+                if (detPurp) detPurp.textContent = lpLabel;
+
                 document.getElementById('det-area').textContent = u.area_sqm ? `${u.area_sqm} ${t.lbl_sqm}` : '--';
                 document.getElementById('det-floor').textContent = u.floor_no != null ? u.floor_no : '--';
                 document.getElementById('det-beds').textContent = u.bedrooms != null ? u.bedrooms : '--';
@@ -2035,6 +2221,13 @@
 
                 document.getElementById('det-owner').textContent = u.owner_name || t.lbl_direct_agency;
                 document.getElementById('det-agent').textContent = u.assigned_user_name || t.opt_unassigned;
+
+                const opexEl = document.getElementById('det-opex');
+                const vacEl = document.getElementById('det-vac');
+                const notesEl = document.getElementById('det-notes');
+                if (opexEl) opexEl.textContent = (u.annual_operating_expenses != null) ? `${Number(u.annual_operating_expenses).toLocaleString()} SAR/سنة` : '--';
+                if (vacEl) vacEl.textContent = (u.annual_vacancy_rate != null) ? `${u.annual_vacancy_rate}%` : '--';
+                if (notesEl) notesEl.textContent = u.investment_notes || '--';
 
                 document.getElementById('details-unit-modal').style.display = 'flex';
             } catch (err) {

@@ -76,11 +76,13 @@ class CalculationService:
         preferred_property_type_id: Optional[str] = None,
         unit_area_sqm: Optional[float] = None,
         required_area_min: Optional[float] = None,
+        inquiry_type: Optional[str] = None,
+        unit_listing_purpose: Optional[str] = None,
         allowed_statuses: Optional[List[str]] = None
     ) -> Tuple[bool, Dict[str, bool]]:
         """
         Rule 3 — Property eligibility:
-        Eligible = Available AND BudgetMatch AND LocationMatch AND RequirementsMatch
+        Eligible = Available AND BudgetMatch AND LocationMatch AND RequirementsMatch AND PurposeMatch
         A property qualifies only if all mandatory conditions are satisfied.
         """
         if allowed_statuses is None:
@@ -112,7 +114,20 @@ class CalculationService:
 
         requirements_match = bedrooms_match and property_type_match and area_match
 
-        is_eligible = available and budget_match and location_match and requirements_match
+        # 5. Listing purpose match check (BUY vs RENT vs INVESTMENT)
+        purpose_match = True
+        if inquiry_type and unit_listing_purpose:
+            inq = inquiry_type.strip().upper()
+            lp = unit_listing_purpose.strip().upper()
+            if lp not in ("ALL", "UNSPECIFIED", ""):
+                if inq in ("RENT", "LEASE"):
+                    purpose_match = (lp == "RENT")
+                elif inq in ("BUY", "PURCHASE", "SALE"):
+                    purpose_match = (lp == "SALE")
+                elif inq in ("INVESTMENT", "INVEST"):
+                    purpose_match = (lp in ("INVESTMENT", "SALE"))
+
+        is_eligible = available and budget_match and location_match and requirements_match and purpose_match
 
         criteria = {
             "available": available,
@@ -122,6 +137,7 @@ class CalculationService:
             "property_type_match": property_type_match,
             "area_match": area_match,
             "requirements_match": requirements_match,
+            "purpose_match": purpose_match,
         }
         return is_eligible, criteria
 

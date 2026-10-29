@@ -63,6 +63,7 @@ class TestConcurrencyControls(unittest.IsolatedAsyncioTestCase):
         await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id IN (SELECT opportunity_id FROM opportunities WHERE customer_id = $1)", self.test_customer_id)
         await self.conn.execute("DELETE FROM offers WHERE opportunity_id IN (SELECT opportunity_id FROM opportunities WHERE customer_id = $1)", self.test_customer_id)
         await self.conn.execute("DELETE FROM opportunities WHERE customer_id = $1", self.test_customer_id)
+        await self.conn.execute("DELETE FROM documents WHERE unit_id = $1 OR customer_id = $2", self.test_unit_id, self.test_customer_id)
         await self.conn.execute("DELETE FROM leads WHERE customer_id = $1", self.test_customer_id)
         await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", self.test_customer_id)
         await self.conn.execute("DELETE FROM units WHERE unit_id = $1", self.test_unit_id)

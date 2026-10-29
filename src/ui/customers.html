@@ -311,38 +311,38 @@
                     <div class="form-row" id="add-row-individual-name">
                         <div class="form-group">
                             <label data-i18n="form_first_name">First Name *</label>
-                            <input type="text" id="f-first-name" required placeholder="e.g. Mohammed">
+                            <input type="text" id="f-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_last_name">Last Name *</label>
-                            <input type="text" id="f-last-name" required placeholder="e.g. Al-Otaibi">
+                            <input type="text" id="f-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
                         </div>
                     </div>
 
                     <div class="form-group" id="add-row-company-name" style="display: none;">
                         <label data-i18n="form_company">Company Legal Name *</label>
-                        <input type="text" id="f-company-name" placeholder="e.g. Riyadh Real Estate Development Co.">
+                        <input type="text" id="f-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="form_mobile">Mobile Phone *</label>
-                            <input type="tel" id="f-mobile" required placeholder="+966 50 123 4567">
+                            <input type="tel" id="f-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_email">Email Address</label>
-                            <input type="email" id="f-email" placeholder="client@example.com">
+                            <input type="email" id="f-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="form_national_id">National ID / Iqama / CR</label>
-                            <input type="text" id="f-national-id" placeholder="10-digit National ID or 700 CR">
+                            <input type="text" id="f-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_nationality">Nationality</label>
-                            <input type="text" id="f-nationality" value="SA" maxlength="2" placeholder="SA">
+                            <input type="text" id="f-nationality" value="SA" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
                         </div>
                     </div>
 
@@ -388,38 +388,38 @@
                     <div class="form-row" id="edit-row-individual-name">
                         <div class="form-group">
                             <label data-i18n="form_first_name">First Name *</label>
-                            <input type="text" id="edit-first-name" required>
+                            <input type="text" id="edit-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_last_name">Last Name *</label>
-                            <input type="text" id="edit-last-name" required>
+                            <input type="text" id="edit-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
                         </div>
                     </div>
 
                     <div class="form-group" id="edit-row-company-name" style="display: none;">
                         <label data-i18n="form_company">Company Legal Name *</label>
-                        <input type="text" id="edit-company-name">
+                        <input type="text" id="edit-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="form_mobile">Mobile Phone *</label>
-                            <input type="tel" id="edit-mobile" required>
+                            <input type="tel" id="edit-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_email">Email Address</label>
-                            <input type="email" id="edit-email">
+                            <input type="email" id="edit-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="form_national_id">National ID / Iqama / CR</label>
-                            <input type="text" id="edit-national-id" placeholder="Update ID number">
+                            <input type="text" id="edit-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
                         </div>
                         <div class="form-group">
                             <label data-i18n="form_nationality">Nationality</label>
-                            <input type="text" id="edit-nationality" maxlength="2">
+                            <input type="text" id="edit-nationality" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
                         </div>
                     </div>
 
@@ -509,6 +509,13 @@
                 form_mobile: "Mobile Phone *", form_email: "Email Address", form_national_id: "National ID / Iqama / CR",
                 form_nationality: "Nationality Code (e.g. SA)", form_language: "Preferred Language", form_status: "Account Status",
                 btn_cancel: "Cancel", btn_save: "Save Customer Profile", btn_save_changes: "Save Changes",
+                placeholder_first_name: "e.g. Mohammed",
+                placeholder_last_name: "e.g. Al-Otaibi",
+                placeholder_company: "e.g. Riyadh Real Estate Development Co.",
+                placeholder_mobile: "+966 50 123 4567",
+                placeholder_email: "client@example.com",
+                placeholder_national_id: "10-digit National ID or 700 CR",
+                placeholder_nationality: "SA",
                 lang_label: "عربي"
             },
             ar: {
@@ -536,6 +543,13 @@
                 form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني", form_national_id: "الهوية الوطنية / الإقامة / السجل",
                 form_nationality: "رمز الجنسية (مثال: SA)", form_language: "اللغة المفضلة", form_status: "حالة الحساب",
                 btn_cancel: "إلغاء", btn_save: "حفظ ملف العميل", btn_save_changes: "حفظ التغييرات",
+                placeholder_first_name: "مثال: محمد",
+                placeholder_last_name: "مثال: العتيبي",
+                placeholder_company: "مثال: شركة الرياض للتطوير العقاري",
+                placeholder_mobile: "+966 50 123 4567",
+                placeholder_email: "client@example.com",
+                placeholder_national_id: "الهوية الوطنية 10 أرقام أو السجل 700",
+                placeholder_nationality: "SA",
                 lang_label: "English"
             }
         };
@@ -557,6 +571,12 @@
                 const key = el.getAttribute('data-i18n');
                 if (i18nData[currentLang] && i18nData[currentLang][key]) {
                     el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.placeholder = i18nData[currentLang][key];
                 }
             });
             const lbl = document.getElementById('lang-label');
@@ -681,9 +701,9 @@
                             <td><span class="badge ${statusClass}">${c.status}</span></td>
                             <td>
                                 <div style="display: flex; gap: 4px;">
-                                    <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ Edit</button>
-                                    <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 360</button>
-                                    <a href="tasks.html?customer_id=${encodeURIComponent(c.customer_id)}&action=new_activity" class="btn btn-sm" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; text-decoration:none;" title="Log activity or task for this customer">📝 Act</a>
+                                    <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                                    <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 ${currentLang === 'ar' ? 'سجل 360°' : '360°'}</button>
+                                    <a href="tasks.html?customer_id=${encodeURIComponent(c.customer_id)}&action=new_activity" class="btn btn-sm" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; text-decoration:none;" title="${currentLang === 'ar' ? 'تسجيل نشاط أو مهمة' : 'Log activity or task'}">📝 ${currentLang === 'ar' ? 'نشاط' : 'Act'}</a>
                                 </div>
                             </td>
                         </tr>

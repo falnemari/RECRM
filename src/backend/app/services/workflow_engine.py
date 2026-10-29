@@ -92,8 +92,8 @@ class WorkflowEngine:
             now_dt = datetime.now(timezone.utc)
             today_d = date.today()
             
-            active_u = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' LIMIT 1")
-            u_id = user_id or active_u or "user-27"
+            active_u = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id LIMIT 1")
+            u_id = user_id or active_u
             
             if existing_id:
                 await conn.execute(
@@ -726,6 +726,38 @@ class WorkflowEngine:
 
         assigned_user = current_task.get("assigned_user_id") or user_id
         eff_parent_id = parent_task_id or current_task.get("task_id")
+
+        # Smart role-based routing if the next task belongs to specialized finance or legal departments
+        next_tmpl_role = await conn.fetchval(
+            "SELECT owner_role FROM workflow_templates WHERE template_id = $1",
+            next_tmpl
+        )
+        if next_tmpl_role in ('ACCOUNTANT', 'FINANCE'):
+            fin_user = await conn.fetchval(
+                """
+                SELECT u.user_id FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code IN ('ACCOUNTANT', 'FINANCE')
+                ORDER BY u.created_at ASC
+                LIMIT 1
+                """
+            )
+            if fin_user:
+                assigned_user = fin_user
+        elif next_tmpl_role in ('LEGAL', 'CONTRACTS'):
+            legal_user = await conn.fetchval(
+                """
+                SELECT u.user_id FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code IN ('LEGAL', 'CONTRACTS')
+                ORDER BY u.created_at ASC
+                LIMIT 1
+                """
+            )
+            if legal_user:
+                assigned_user = legal_user
 
         next_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
@@ -1743,6 +1775,31 @@ class WorkflowEngine:
                 now_dt, parent_task_id
             )
 
+        # Automatically Archive Commercial Offer in Documents Vault
+        cust_name = f"{opp['first_name'] or ''} {opp['last_name'] or ''}".strip() or opp["company_name"]
+        await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code="COMMERCIAL_OFFER",
+            file_name=f"عرض_سعر_رسمي_للوحدة_{unit['unit_number']}_{offer_id}.pdf",
+            lead_id=opp["lead_id"],
+            opportunity_id=opportunity_id,
+            task_id=parent_task_id,
+            unit_id=unit_id,
+            customer_id=opp["customer_id"],
+            notes=f"عرض سعر رسمي معتمد للوحدة {unit['unit_number']} بمبلغ {offer_amount:,.2f} ريال",
+            metadata={
+                "offer_id": offer_id,
+                "offer_amount": offer_amount,
+                "asking_price": asking,
+                "discount_pct": discount_pct,
+                "unit_number": unit["unit_number"],
+                "customer_name": cust_name,
+                "valid_until": valid_until_dt.isoformat() if valid_until_dt else None,
+                "earnest_money": offer_amount * 0.05
+            },
+            user_id=agent_id
+        )
+
         return {
             "offer_id": offer_id,
             "opportunity_id": opportunity_id,
@@ -1948,6 +2005,41 @@ class WorkflowEngine:
                 "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
                 now_dt, parent_task_id
             )
+
+        # Automatically Archive Official Offer Decision Document in Documents Vault
+        cust_full = f"{offer['first_name'] or ''} {offer['last_name'] or ''}".strip() or offer["company_name"]
+        owner_name = await conn.fetchval(
+            """
+            SELECT COALESCE(c.first_name || ' ' || c.last_name, c.company_name)
+            FROM units u
+            JOIN customers c ON u.owner_customer_id = c.customer_id
+            WHERE u.unit_id = $1
+            """,
+            offer["unit_id"]
+        ) or "مالك العقار المعتمد"
+        await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code="OFFER_DECISION",
+            file_name=f"وثيقة_قرار_العرض_المالي_{offer['unit_number']}_{offer_id}.pdf",
+            lead_id=offer["lead_id"],
+            opportunity_id=offer["opportunity_id"],
+            task_id=parent_task_id,
+            unit_id=offer["unit_id"],
+            customer_id=offer["customer_id"],
+            notes=f"وثيقة ومحضر قرار العرض المالي ({norm_decision}) بمبلغ {float(offer['offer_amount']):,.2f} ريال",
+            metadata={
+                "offer_id": offer_id,
+                "decision": norm_decision,
+                "offer_amount": float(offer["offer_amount"]),
+                "asking_price": float(offer["asking_price"] or offer["offer_amount"]),
+                "unit_number": offer["unit_number"],
+                "customer_name": cust_full,
+                "owner_name": owner_name,
+                "counter_amount": counter_amount,
+                "decision_date": now_dt.isoformat()
+            },
+            user_id=agent_id
+        )
 
         return {
             "offer_id": offer_id,
@@ -2164,28 +2256,69 @@ class WorkflowEngine:
             """
         ) or "user-19"
 
+        # 8.b Ensure Contract Record exists in contracts table and Archive Lease Agreement in Documents Vault
+        linked_contract_id = await conn.fetchval(
+            "SELECT contract_id FROM contracts WHERE contract_number = $1 LIMIT 1",
+            contract_number
+        )
+        if not linked_contract_id:
+            linked_contract_id = await get_next_id(conn, "contracts", "con")
+            await conn.execute(
+                """
+                INSERT INTO contracts (
+                    contract_id, reservation_id, contract_number, contract_type,
+                    start_date, end_date, contract_value, signed_at, status
+                ) VALUES ($1, NULL, $2, 'RENT', $3, $4, $5, $6, 'ACTIVE')
+                """,
+                linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt
+            )
+
+        owner_name = await conn.fetchval(
+            """
+            SELECT COALESCE(c.first_name || ' ' || c.last_name, c.company_name)
+            FROM units u
+            JOIN customers c ON u.owner_customer_id = c.customer_id
+            WHERE u.unit_id = $1
+            """,
+            unit_id
+        ) or "المؤجر / مالك العقار"
+
+        await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code="LEASE",
+            file_name=f"عقد_إيجار_موحد_موثق_{contract_number}.pdf",
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            unit_id=unit_id,
+            customer_id=tenant_customer_id,
+            contract_id=linked_contract_id,
+            task_id=parent_task_id,
+            notes=f"عقد إيجار عقاري موحد موثق ومعتمد رسمياً وفق شبكة إيجار (عقد رقم {contract_number} بقيمة إيجارية {final_rent:,.2f} ريال سنوياً)",
+            metadata={
+                "contract_id": linked_contract_id,
+                "contract_number": contract_number,
+                "contract_amount": final_rent,
+                "rent_price": final_rent,
+                "inquiry_type": "RENT",
+                "unit_id": unit_id,
+                "unit_number": unit["unit_number"],
+                "customer_id": tenant_customer_id,
+                "customer_name": tenant_name,
+                "owner_name": owner_name,
+                "start_date": s_date.isoformat(),
+                "end_date": e_date.isoformat(),
+                "payment_frequency": payment_frequency or "ANNUAL",
+                "deposit_amount": final_deposit,
+                "signed_at": now_dt.isoformat()
+            }
+        )
+
         comm_agent_id = effective_user_id or (await conn.fetchval("SELECT assigned_user_id FROM units WHERE unit_id = $1", unit_id))
         existing_comm = await conn.fetchrow(
             "SELECT commission_id FROM commissions WHERE contract_id = $1 OR contract_id = $2",
             tenancy_id, contract_number
         )
         if not existing_comm and comm_agent_id:
-            linked_contract_id = await conn.fetchval(
-                "SELECT contract_id FROM contracts WHERE contract_number = $1 LIMIT 1",
-                contract_number
-            )
-            if not linked_contract_id:
-                linked_contract_id = await get_next_id(conn, "contracts", "con")
-                await conn.execute(
-                    """
-                    INSERT INTO contracts (
-                        contract_id, reservation_id, contract_number, contract_type,
-                        start_date, end_date, contract_value, signed_at, status
-                    ) VALUES ($1, NULL, $2, 'RENT', $3, $4, $5, $6, 'ACTIVE')
-                    """,
-                    linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt
-                )
-
             agent_profile = await conn.fetchrow("""
                 SELECT user_id, full_name, compensation_type, 
                        CAST(base_salary AS FLOAT) AS base_salary,
@@ -2234,14 +2367,14 @@ class WorkflowEngine:
                     parent_task_id=parent_task_id
                 )
 
-        # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING
+        # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING for Finance/Accountant
         monitoring_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
             template_id="TASK_RENT_COLLECTION_MONITORING",
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             customer_id=tenant_customer_id,
-            assigned_user_id=effective_user_id,
+            assigned_user_id=accountant_user_id,
             priority="NORMAL",
             parent_task_id=parent_task_id
         )
@@ -2435,6 +2568,46 @@ class WorkflowEngine:
                 "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
                 now_dt, parent_task_id
             )
+
+        # Automatically Archive Unit Reservation Form & Deposit Note in Documents Vault
+        cust_row = await conn.fetchrow("SELECT first_name, last_name, company_name FROM customers WHERE customer_id = $1", customer_id) if customer_id else None
+        cust_full_name = f"{cust_row['first_name'] or ''} {cust_row['last_name'] or ''}".strip() or (cust_row['company_name'] if cust_row else 'العميل')
+        
+        deal_amount = float(unit["asking_price"] or unit["rent_price"] or (deposit_amount / 0.05 if deposit_amount else 0.0))
+        if opportunity_id:
+            off_amt = await conn.fetchval(
+                "SELECT offer_amount FROM offers WHERE opportunity_id = $1 ORDER BY submitted_at DESC LIMIT 1",
+                opportunity_id
+            )
+            if off_amt:
+                deal_amount = float(off_amt)
+
+        inq_type = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", lead_id) if lead_id else "BUY"
+
+        await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code="RESERVATION",
+            file_name=f"سند_حجز_الوحدة_العقارية_{unit['unit_number']}_{res_number}.pdf",
+            lead_id=lead_id,
+            opportunity_id=opportunity_id,
+            task_id=parent_task_id,
+            unit_id=unit_id,
+            customer_id=customer_id,
+            notes=f"سند حجز وتثبيت الوحدة {unit['unit_number']} بموجب الحجز رقم {res_number} بمبلغ عربون {deposit_amount:,.2f} ريال",
+            metadata={
+                "reservation_id": res_id,
+                "reservation_number": res_number,
+                "deposit_amount": deposit_amount,
+                "offer_amount": deal_amount,
+                "asking_price": float(unit["asking_price"]) if unit.get("asking_price") else deal_amount,
+                "unit_number": unit["unit_number"],
+                "customer_name": cust_full_name,
+                "inquiry_type": inq_type or "BUY",
+                "expires_at": expires_at.isoformat() if expires_at else None,
+                "status": "ACTIVE"
+            },
+            user_id=user_id
+        )
 
         return {
             "reservation_id": res_id,
@@ -2635,6 +2808,32 @@ class WorkflowEngine:
             outcome="DRAFT_CREATED",
             notes=notes or f"تم إعداد مسودة العقد رقم {c_number} بقيمة {val:,.2f} ريال.",
             completed_at=now_dt
+        )
+
+        # Automatically Archive Contract Draft in Documents Vault
+        doc_code = "LEASE" if contract_type.upper() == "LEASE" else "SALE_CONTRACT"
+        doc_filename = f"مسودة_عقد_{res['unit_number']}_{c_number}.pdf"
+        await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code=doc_code,
+            file_name=doc_filename,
+            lead_id=res["lead_id"],
+            opportunity_id=res["opportunity_id"],
+            unit_id=res["unit_id"],
+            customer_id=res["customer_id"],
+            contract_id=contract_id,
+            task_id=parent_task_id,
+            notes=notes or f"مسودة عقد رسمي رقم {c_number} بقيمة {val:,.2f} ريال معدة للمراجعة القانونية والاعتماد الداخلي.",
+            metadata={
+                "contract_id": contract_id,
+                "contract_number": c_number,
+                "contract_amount": val,
+                "unit_id": res["unit_id"],
+                "unit_number": res["unit_number"],
+                "customer_id": res["customer_id"],
+                "contract_status": "DRAFT"
+            },
+            user_id=agent_id
         )
 
         legal_user_id = await conn.fetchval(
@@ -2880,6 +3079,48 @@ class WorkflowEngine:
                 completed_at=now_dt
             )
 
+            # Automatically Archive Official Signed Contract in Documents Vault
+            doc_code = "LEASE" if (c["contract_type"] or "").upper() == "LEASE" else "SALE_CONTRACT"
+            doc_file = f"عقد_بيع_نهائي_موثق_{c['contract_number']}.pdf" if doc_code == "SALE_CONTRACT" else f"عقد_إيجار_موحد_موثق_{c['contract_number']}.pdf"
+            await WorkflowEngine.archive_workflow_document(
+                conn=conn,
+                doc_type_code=doc_code,
+                file_name=doc_file,
+                lead_id=c["lead_id"],
+                opportunity_id=c["opportunity_id"],
+                unit_id=c["unit_id"],
+                customer_id=c["customer_id"],
+                contract_id=contract_id,
+                task_id=parent_task_id,
+                notes=f"عقد بيع وتمليك عقاري نهائي موثق ومعتمد رسمياً وفق معايير الهيئة العامة للعقار (عقد رقم {c['contract_number']} بقيمة {contract_val:,.2f} ريال)",
+                metadata={
+                    "contract_id": contract_id,
+                    "contract_number": c["contract_number"],
+                    "contract_amount": contract_val,
+                    "unit_id": c["unit_id"],
+                    "unit_number": c["unit_number"],
+                    "customer_id": c["customer_id"],
+                    "signed_at": now_dt.isoformat(),
+                    "contract_status": "SIGNED"
+                },
+                user_id=agent_id
+            )
+
+            # Automatically Generate Saudi Statutory Invoices (Brokerage + VAT & RETT) & Spawn TASK_COLLECT_SAUDI_FEES
+            try:
+                await WorkflowEngine.generate_saudi_fee_invoices(
+                    conn=conn,
+                    opportunity_id=c["opportunity_id"],
+                    lead_id=c["lead_id"],
+                    unit_id=c["unit_id"],
+                    contract_id=contract_id,
+                    transaction_type=c["contract_type"] or "SALE",
+                    deal_value=contract_val,
+                    user_id=user_id
+                )
+            except Exception as ex_fees:
+                logger.warning(f"Error auto-generating Saudi fee invoices during contract signing: {ex_fees}")
+
             finance_user_id = await conn.fetchval(
                 """
                 SELECT u.user_id 
@@ -2919,16 +3160,19 @@ class WorkflowEngine:
                     parent_task_id=parent_task_id
                 )
 
+            # Dedicated Property Management or Operations role if assigned; otherwise fallback to the deal's original sales agent!
+            deal_sales_agent = c.get("assigned_user_id") or agent_id
             pm_user_id = await conn.fetchval(
                 """
                 SELECT u.user_id 
                 FROM users u
                 JOIN user_roles ur ON u.user_id = ur.user_id
                 JOIN roles r ON ur.role_id = r.role_id
-                WHERE r.role_code IN ('PROPERTY_MANAGEMENT', 'OPERATIONS', 'SALES_AGENT')
+                WHERE r.role_code IN ('PROPERTY_MANAGEMENT', 'OPERATIONS')
+                ORDER BY u.created_at ASC
                 LIMIT 1
                 """
-            ) or agent_id
+            ) or deal_sales_agent
 
             db_handover = await WorkflowEngine.resolve_next_task_template(conn, "TASK_CONTRACT_SIGNATURE", outcome="SIGNED")
             handover_tmpl = db_handover or "TASK_CONTRACT_HANDOVER"
@@ -3574,10 +3818,11 @@ class WorkflowEngine:
         payer_name = inv.get("payer_name") or payer_type_ar
 
         # Record ACT_FEE_COLLECTED Activity
+        effective_user_id = user_id or (await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' LIMIT 1")) or "user-19"
         act = await WorkflowEngine.record_activity_from_template(
             conn=conn,
             template_id="ACT_FEE_COLLECTED",
-            user_id=user_id or inv["payer_customer_id"],
+            user_id=effective_user_id,
             customer_id=inv["payer_customer_id"],
             lead_id=inv["lead_id"],
             opportunity_id=inv["opportunity_id"],
@@ -4400,6 +4645,139 @@ class WorkflowEngine:
                 "business_transition": res
             }
 
+        if tmpl_id == "TASK_COMMISSION_SETTLEMENT":
+            v_data = viewing_data or {}
+            c_amt = v_data.get("commission_amount")
+            fal_no = v_data.get("fal_license_number")
+            iban = v_data.get("iban")
+            
+            comm_row = None
+            if task.get("opportunity_id"):
+                comm_row = await conn.fetchrow(
+                    """
+                    SELECT c.* FROM commissions c
+                    JOIN contracts con ON c.contract_id = con.contract_id
+                    JOIN reservations r ON con.reservation_id = r.reservation_id
+                    WHERE r.opportunity_id = $1
+                    ORDER BY c.commission_id DESC LIMIT 1
+                    """,
+                    task["opportunity_id"]
+                )
+            if not comm_row and task.get("lead_id"):
+                comm_row = await conn.fetchrow(
+                    """
+                    SELECT c.* FROM commissions c
+                    JOIN contracts con ON c.contract_id = con.contract_id
+                    JOIN reservations r ON con.reservation_id = r.reservation_id
+                    JOIN opportunities o ON r.opportunity_id = o.opportunity_id
+                    WHERE o.lead_id = $1
+                    ORDER BY c.commission_id DESC LIMIT 1
+                    """,
+                    task["lead_id"]
+                )
+            
+            amt_val = float(c_amt) if c_amt else (float(comm_row["amount"]) if comm_row and comm_row["amount"] else 6000.0)
+            comm_id = comm_row["commission_id"] if comm_row else "comm-settled"
+            
+            if comm_row:
+                new_st = "APPROVED" if (outcome or "").upper() in ("APPROVED", "COMPLETED", "PAID") else "REJECTED"
+                paid_time = now_dt if (outcome or "").upper() in ("APPROVED", "COMPLETED", "PAID") else None
+                await conn.execute(
+                    """
+                    UPDATE commissions
+                    SET status = $1, approved_at = COALESCE(approved_at, $2), paid_at = COALESCE(paid_at, $3),
+                        amount = COALESCE($4, amount)
+                    WHERE commission_id = $5
+                    """,
+                    new_st, now_dt, paid_time, amt_val, comm_row["commission_id"]
+                )
+            
+            # Archive official Commission Settlement Document
+            await WorkflowEngine.archive_workflow_document(
+                conn=conn,
+                doc_type_code="COMMISSION_SETTLEMENT",
+                file_name=f"سند_صرف_عمولة_وسيط_{comm_id}.pdf",
+                lead_id=task.get("lead_id"),
+                opportunity_id=task.get("opportunity_id"),
+                customer_id=task.get("customer_id"),
+                contract_id=comm_row["contract_id"] if comm_row else None,
+                task_id=task_id,
+                notes=f"سند اعتماد وصرف عمولة الوسيط المرخص فال بقيمة {amt_val:,.2f} ريال.",
+                metadata={
+                    "commission_id": comm_id,
+                    "contract_id": comm_row["contract_id"] if comm_row else None,
+                    "commission_amount": amt_val,
+                    "fal_license_number": fal_no or "1200018890",
+                    "iban": iban or "SA0380000000608010167519",
+                    "approved_at": now_dt.isoformat()
+                },
+                user_id=user_id
+            )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_FEE_COLLECTED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=task["lead_id"],
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome or "APPROVED",
+                notes=notes or f"تم تدقيق واعتماد وصرف عمولة الوسيط بمبلغ {amt_val:,.2f} ر.س.",
+                completed_at=now_dt
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {"commission_id": comm_id, "amount": amt_val, "status": "APPROVED"}
+            }
+
+        if tmpl_id == "TASK_COLLECT_SAUDI_FEES":
+            v_data = viewing_data or {}
+            inv_rows = await conn.fetch(
+                """
+                SELECT invoice_id FROM invoices
+                WHERE (
+                    ($1::text IS NOT NULL AND opportunity_id = $1) OR
+                    ($2::text IS NOT NULL AND lead_id = $2)
+                ) AND status != 'PAID' AND status != 'CANCELLED'
+                """,
+                task["opportunity_id"], task["lead_id"]
+            )
+            for inv_r in inv_rows:
+                await WorkflowEngine.collect_fee_invoice(
+                    conn=conn,
+                    invoice_id=inv_r["invoice_id"],
+                    payment_method="BANK_TRANSFER",
+                    payment_reference=v_data.get("sadad_number") or f"SADAD-{now_dt.strftime('%m%d%H%M')}",
+                    user_id=user_id,
+                    notes=notes or "تم التحقق وسداد الرسوم النظامية وسعي الشركة بنجاح."
+                )
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_FEE_COLLECTED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=task["lead_id"],
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome or "FEES_COLLECTED",
+                notes=notes or "تم تحصيل وتدقيق الرسوم والضرائب النظامية وسعي الشركة بالكامل.",
+                completed_at=now_dt
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {"status": "FEES_COLLECTED"}
+            }
+
         # Rental Pipeline Stage Handling: TASK_RENT_PREPARE_TENANCY
         if tmpl_id == "TASK_RENT_PREPARE_TENANCY":
             v_data = viewing_data or {}
@@ -4594,45 +4972,179 @@ class WorkflowEngine:
         # 2. TASK_INVEST_COMPARE_RETURNS
         if tmpl_id == "TASK_INVEST_COMPARE_RETURNS":
             v_data = viewing_data or {}
-            sel_unit_id = v_data.get("unit_id")
-            p_price = float(v_data.get("purchase_price") or 0.0)
-            m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
-            if m_rent == 0.0 and v_data.get("gross_annual_rent"):
-                m_rent = float(v_data["gross_annual_rent"]) / 12.0
-            vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
-            opex = float(v_data.get("annual_operating_expenses") or 0.0)
-            acq = float(v_data.get("acquisition_costs") or 0.0)
-            cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
-            cf = float(v_data.get("annual_pre_tax_cash_flow") or max(0.0, (m_rent * 12.0) - vac - opex))
+            raw_compared = v_data.get("compared_units") or []
+            from app.services.calculation_service import CalculationService
 
-            if sel_unit_id and p_price == 0.0:
-                u_row = await conn.fetchrow("SELECT asking_price, rent_price FROM units WHERE unit_id = $1", sel_unit_id)
-                if u_row:
-                    p_price = float(u_row["asking_price"] or 0.0)
-                    if m_rent == 0.0:
-                        m_rent = float(u_row["rent_price"] or (p_price * 0.08 / 12.0))
+            processed_units = []
+            if not raw_compared:
+                # Single-unit fallback for backward compatibility
+                sel_unit_id = v_data.get("unit_id")
+                p_price = float(v_data.get("purchase_price") or 0.0)
+                m_rent = float(v_data.get("monthly_rent_forecast") or 0.0)
+                if m_rent == 0.0 and v_data.get("gross_annual_rent"):
+                    m_rent = float(v_data["gross_annual_rent"]) / 12.0
+                vac = float(v_data.get("annual_vacancy_allowance") or 0.0)
+                opex = float(v_data.get("annual_operating_expenses") or 0.0)
+                acq = float(v_data.get("acquisition_costs") or 0.0)
+                cash_inv = float(v_data.get("cash_invested") or (p_price if p_price > 0 else 1.0))
+
+                u_num = v_data.get("unit_number")
+                pt_name = "وحدة استثمارية"
+                area_val = ""
+                if sel_unit_id:
+                    u_row = await conn.fetchrow(
+                        """
+                        SELECT u.unit_number, u.asking_price, u.rent_price, pt.name_ar as pt_name, u.area_sqm
+                        FROM units u
+                        LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+                        WHERE u.unit_id = $1
+                        """,
+                        sel_unit_id
+                    )
+                    if u_row:
+                        if not u_num:
+                            u_num = u_row["unit_number"] or sel_unit_id
+                        pt_name = u_row["pt_name"] or "وحدة استثمارية"
+                        area_val = str(u_row["area_sqm"] or "")
+                        if p_price == 0.0:
+                            p_price = float(u_row["asking_price"] or 0.0)
+                            if m_rent == 0.0:
+                                m_rent = float(u_row["rent_price"] or (p_price * 0.08 / 12.0))
+
+                if p_price == 0.0:
+                    if lead_id:
+                        p_price = float(await conn.fetchval("SELECT budget_max FROM leads WHERE lead_id = $1", lead_id) or 0.0)
+                    if p_price == 0.0 and task.get("opportunity_id"):
+                        p_price = float(await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"]) or 0.0)
                     if cash_inv <= 1.0 and p_price > 0:
                         cash_inv = p_price
-                    if cf == 0.0:
-                        cf = max(0.0, (m_rent * 12.0) - vac - opex)
+                    if m_rent == 0.0 and p_price > 0:
+                        m_rent = (p_price * 0.08) / 12.0
+                    if opex == 0.0 and m_rent > 0:
+                        opex = (m_rent * 12.0) * 0.10
+                    if vac == 0.0 and m_rent > 0:
+                        vac = (m_rent * 12.0) * 0.05
 
-            if p_price == 0.0:
-                if lead_id:
-                    p_price = float(await conn.fetchval("SELECT budget_max FROM leads WHERE lead_id = $1", lead_id) or 0.0)
-                if p_price == 0.0 and task.get("opportunity_id"):
-                    p_price = float(await conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", task["opportunity_id"]) or 0.0)
-                if cash_inv <= 1.0 and p_price > 0:
-                    cash_inv = p_price
-                if m_rent == 0.0 and p_price > 0:
-                    m_rent = (p_price * 0.08) / 12.0
-                if opex == 0.0 and m_rent > 0:
-                    opex = (m_rent * 12.0) * 0.10
-                if vac == 0.0 and m_rent > 0:
-                    vac = (m_rent * 12.0) * 0.05
-                if cf == 0.0:
-                    cf = max(0.0, (m_rent * 12.0) - vac - opex)
+                cf = float(v_data.get("annual_pre_tax_cash_flow") or max(0.0, (m_rent * 12.0) - vac - opex))
+                rm = CalculationService.calculate_rental_metrics(
+                    monthly_rent=m_rent,
+                    purchase_price=p_price,
+                    annual_vacancy_allowance=vac,
+                    annual_operating_expenses=opex,
+                    acquisition_costs=acq
+                )
+                ir = CalculationService.calculate_investment_returns(
+                    purchase_price=p_price,
+                    cash_invested=cash_inv,
+                    annual_pre_tax_cash_flow=cf
+                )
+                processed_units.append({
+                    "unit_id": sel_unit_id,
+                    "unit_number": u_num or sel_unit_id or "وحدة استثمارية",
+                    "property_type": pt_name,
+                    "area_sqm": area_val,
+                    "purchase_price": p_price,
+                    "gross_annual_rent": m_rent * 12.0,
+                    "monthly_rent_forecast": m_rent,
+                    "annual_vacancy_allowance": vac,
+                    "annual_operating_expenses": opex,
+                    "acquisition_costs": acq,
+                    "cash_invested": cash_inv,
+                    "net_operating_income": rm["net_operating_income"],
+                    "cap_rate": rm["net_operating_yield_percent"],
+                    "gross_yield_percent": rm["gross_yield_percent"],
+                    "cash_on_cash_return_percent": ir["cash_on_cash_return_percent"],
+                    "payback_years": round(p_price / rm["net_operating_income"], 1) if rm["net_operating_income"] > 0 else 0.0,
+                    "is_primary": True
+                })
+            else:
+                for cu in raw_compared:
+                    uid = cu.get("unit_id")
+                    pp = float(cu.get("purchase_price") or 0.0)
+                    mr = float(cu.get("monthly_rent_forecast") or 0.0)
+                    if mr == 0.0 and cu.get("gross_annual_rent"):
+                        mr = float(cu.get("gross_annual_rent")) / 12.0
 
-            from app.services.calculation_service import CalculationService
+                    u_num = cu.get("unit_number")
+                    pt_name = cu.get("property_type")
+                    area_val = str(cu.get("area_sqm") or "")
+
+                    if uid:
+                        u_row = await conn.fetchrow(
+                            """
+                            SELECT u.unit_number, u.asking_price, u.rent_price, u.annual_operating_expenses, u.annual_vacancy_rate, u.investment_notes, pt.name_ar as pt_name, u.area_sqm
+                            FROM units u
+                            LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+                            WHERE u.unit_id = $1
+                            """,
+                            uid
+                        )
+                        if u_row:
+                            if not u_num:
+                                u_num = u_row["unit_number"] or uid
+                            if not pt_name:
+                                pt_name = u_row["pt_name"] or "وحدة استثمارية"
+                            if not area_val:
+                                area_val = str(u_row["area_sqm"] or "")
+                            if pp == 0.0 and u_row["asking_price"]:
+                                pp = float(u_row["asking_price"])
+                            if mr == 0.0 and u_row["rent_price"]:
+                                mr = float(u_row["rent_price"]) / 12.0
+
+                    vac = float(cu.get("annual_vacancy_allowance") or 0.0)
+                    opex = float(cu.get("annual_operating_expenses") or 0.0)
+                    acq = float(cu.get("acquisition_costs") or 0.0)
+                    cash = float(cu.get("cash_invested") or (pp + acq if pp > 0 else 1.0))
+                    cf = max(0.0, (mr * 12.0) - vac - opex)
+
+                    rm = CalculationService.calculate_rental_metrics(
+                        monthly_rent=mr,
+                        purchase_price=pp,
+                        annual_vacancy_allowance=vac,
+                        annual_operating_expenses=opex,
+                        acquisition_costs=acq
+                    )
+                    ir = CalculationService.calculate_investment_returns(
+                        purchase_price=pp,
+                        cash_invested=cash,
+                        annual_pre_tax_cash_flow=cf
+                    )
+
+                    is_prim = bool(cu.get("is_primary", False))
+                    processed_units.append({
+                        "unit_id": uid,
+                        "unit_number": u_num or uid or "وحدة استثمارية",
+                        "property_type": pt_name or "وحدة استثمارية",
+                        "area_sqm": area_val,
+                        "purchase_price": pp,
+                        "gross_annual_rent": mr * 12.0,
+                        "monthly_rent_forecast": mr,
+                        "annual_vacancy_allowance": vac,
+                        "annual_operating_expenses": opex,
+                        "acquisition_costs": acq,
+                        "cash_invested": cash,
+                        "net_operating_income": rm["net_operating_income"],
+                        "cap_rate": rm["net_operating_yield_percent"],
+                        "gross_yield_percent": rm["gross_yield_percent"],
+                        "cash_on_cash_return_percent": ir["cash_on_cash_return_percent"],
+                        "payback_years": round(pp / rm["net_operating_income"], 1) if rm["net_operating_income"] > 0 else 0.0,
+                        "is_primary": is_prim
+                    })
+
+            # Guarantee that at least one unit is primary
+            has_primary = any(u["is_primary"] for u in processed_units)
+            if not has_primary and processed_units:
+                processed_units[0]["is_primary"] = True
+
+            primary_u = next((u for u in processed_units if u["is_primary"]), processed_units[0])
+            sel_unit_id = primary_u["unit_id"]
+            p_price = primary_u["purchase_price"]
+            m_rent = primary_u["monthly_rent_forecast"]
+            vac = primary_u["annual_vacancy_allowance"]
+            opex = primary_u["annual_operating_expenses"]
+            acq = primary_u["acquisition_costs"]
+            cash_inv = primary_u["cash_invested"]
+
             rental_metrics = CalculationService.calculate_rental_metrics(
                 monthly_rent=m_rent,
                 purchase_price=p_price,
@@ -4643,36 +5155,115 @@ class WorkflowEngine:
             invest_returns = CalculationService.calculate_investment_returns(
                 purchase_price=p_price,
                 cash_invested=cash_inv,
-                annual_pre_tax_cash_flow=cf
+                annual_pre_tax_cash_flow=max(0.0, (m_rent * 12.0) - vac - opex)
             )
 
-            if sel_unit_id and task["opportunity_id"]:
-                await conn.execute(
-                    """
-                    INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
-                    VALUES ($1, $2, TRUE, $3)
-                    ON CONFLICT (opportunity_id, unit_id) DO UPDATE SET is_primary = TRUE, offered_price = EXCLUDED.offered_price
-                    """,
-                    task["opportunity_id"], sel_unit_id, p_price
-                )
-                await conn.execute(
-                    "UPDATE opportunity_units SET is_primary = FALSE WHERE opportunity_id = $1 AND unit_id != $2",
-                    task["opportunity_id"], sel_unit_id
-                )
+            # Persist all shortlisted/compared candidate units in opportunity_units
+            if task.get("opportunity_id"):
+                for pu in processed_units:
+                    if pu["unit_id"]:
+                        await conn.execute(
+                            """
+                            INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary, offered_price)
+                            VALUES ($1, $2, $3, $4)
+                            ON CONFLICT (opportunity_id, unit_id) DO UPDATE 
+                            SET is_primary = EXCLUDED.is_primary, offered_price = EXCLUDED.offered_price
+                            """,
+                            task["opportunity_id"], pu["unit_id"], pu["is_primary"], pu["purchase_price"]
+                        )
+
+                # Set is_primary = FALSE for any other units not selected
+                all_uids = [pu["unit_id"] for pu in processed_units if pu["unit_id"]]
+                if all_uids:
+                    await conn.execute(
+                        "UPDATE opportunity_units SET is_primary = FALSE WHERE opportunity_id = $1 AND unit_id != ALL($2::text[])",
+                        task["opportunity_id"], all_uids
+                    )
+
                 await conn.execute(
                     "UPDATE opportunities SET expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2",
                     p_price, task["opportunity_id"]
                 )
 
+            if lead_id and sel_unit_id:
+                await conn.execute("UPDATE leads SET unit_id = $1, updated_at = NOW() WHERE lead_id = $2", sel_unit_id, lead_id)
+
+            # Fetch customer & advisor information for official report document
+            cust_row = None
+            if task.get("customer_id"):
+                cust_row = await conn.fetchrow(
+                    "SELECT first_name, last_name, mobile, email FROM customers WHERE customer_id = $1",
+                    task["customer_id"]
+                )
+            cust_name = f"{cust_row['first_name'] or ''} {cust_row['last_name'] or ''}".strip() if cust_row else "المستثمر المستهدف"
+            cust_mobile = cust_row["mobile"] if cust_row else "--"
+
+            u_user = await conn.fetchrow("SELECT full_name, email FROM users WHERE user_id = $1", user_id)
+            advisor_name = u_user["full_name"] if u_user else "مستشار الاستثمار العقاري"
+
+            is_single = (len(processed_units) == 1)
+            doc_title = (
+                f"دراسة الجدوى والعوائد الاستثمارية للأصل ({primary_u.get('unit_number') or sel_unit_id})"
+                if is_single else
+                "تقرير المفاضلة والتحليل المالي المقارن للوحدات الاستثمارية المرشحة"
+            )
+            file_prefix = "دراسة_الجدوى_والعوائد_الاستثمارية" if is_single else "تقرير_المقارنة_المالية_والعوائد_الاستثمارية"
+            report_notes = (
+                f"دراسة الجدوى والعوائد الاستثمارية للأصل العقاري ({primary_u.get('unit_number') or sel_unit_id})"
+                if is_single else
+                f"تقرير المفاضلة والمقارنة المالية لعدد ({len(processed_units)}) وحدات مرشحة للاستثمار"
+            )
+
+            rec_notes = v_data.get("recommendation_notes") or notes or (
+                (
+                    f"تمت دراسة الجدوى والعوائد الاستثمارية للأصل ({primary_u.get('unit_number') or sel_unit_id}): "
+                    f"سعر الاستحواذ: {p_price:,.2f} ريال | معدل الرسملة الصافي (Cap Rate): {rental_metrics['net_operating_yield_percent']}% | "
+                    f"صافي الدخل التشغيلي السنوي (NOI): {rental_metrics['net_operating_income']:,.2f} ريال. يوصى باعتماد الأصل للمستثمر."
+                ) if is_single else (
+                    f"تمت دراسة ومقارنة العوائد الاستثمارية لعدد ({len(processed_units)}) وحدات مرشحة. "
+                    f"يوصى بالاستحواذ على الأصل ({primary_u.get('unit_number') or sel_unit_id}) "
+                    f"بسعر {p_price:,.2f} ر.س ومعدل رسملة صافي (Cap Rate) بنسبة {rental_metrics['net_operating_yield_percent']}%."
+                )
+            )
+
+            # Archive Official Comparative Investment / Feasibility Report Document
+            doc_meta = {
+                "doc_title": doc_title,
+                "doc_type": "INVEST_COMPARATIVE_REPORT",
+                "is_single_asset": is_single,
+                "customer_id": task["customer_id"],
+                "customer_name": cust_name,
+                "customer_mobile": cust_mobile,
+                "lead_id": lead_id,
+                "opportunity_id": task["opportunity_id"],
+                "task_id": task_id,
+                "advisor_name": advisor_name,
+                "comparison_date": now_dt.strftime("%Y-%m-%d"),
+                "primary_unit_id": sel_unit_id,
+                "primary_unit_number": primary_u.get("unit_number"),
+                "recommendation_notes": rec_notes,
+                "compared_units": processed_units,
+                "compliance_fal": "مرخص ومعتمد من الهيئة العامة للعقار - رخصة فال للوساطة والتسويق العقاري"
+            }
+
+            opp_ref = task.get("opportunity_id") or "OPP"
+            report_doc_id = await WorkflowEngine.archive_workflow_document(
+                conn=conn,
+                doc_type_code="INVEST_COMPARATIVE_REPORT",
+                file_name=f"{file_prefix}_{opp_ref}.pdf",
+                lead_id=lead_id,
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                unit_id=sel_unit_id,
+                customer_id=task["customer_id"],
+                notes=report_notes,
+                metadata=doc_meta,
+                user_id=user_id
+            )
+
             await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
 
-            comp_notes = notes or (
-                f"تمت دراسة ومقارنة العوائد الاستثمارية للوحدة ({sel_unit_id or 'المرشحة'}): "
-                f"سعر الشراء: {p_price:,.2f} ريال | العائد الإجمالي: {rental_metrics['gross_yield_percent']}% | "
-                f"عائد التشغيل الصافي: {rental_metrics['net_operating_yield_percent']}% | "
-                f"صافي الدخل التشغيلي (NOI): {rental_metrics['net_operating_income']:,.2f} ريال | "
-                f"العائد على النقد المستثمر (CoC): {invest_returns['cash_on_cash_return_percent']}%."
-            )
+            comp_notes = notes or rec_notes
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_INVEST_RETURNS_COMPARED",
@@ -4702,6 +5293,9 @@ class WorkflowEngine:
                 "activity": activity,
                 "business_transition": {
                     "type": "INVEST_RETURNS_COMPARED",
+                    "document_id": report_doc_id,
+                    "compared_units": processed_units,
+                    "primary_unit_id": sel_unit_id,
                     "metrics": rental_metrics,
                     "returns": invest_returns,
                     "next_task": next_task
@@ -4865,6 +5459,24 @@ class WorkflowEngine:
                 gross_yield, cap_rate, net_yield, cash_inv, coc_return
             )
 
+            insp_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", user_id)
+            cust_name = await conn.fetchval(
+                "SELECT COALESCE(first_name || ' ' || last_name, company_name) FROM customers WHERE customer_id = $1",
+                task["customer_id"]
+            )
+            u_info = await conn.fetchrow(
+                """
+                SELECT u.unit_number, u.area_sqm, b.name as building_name, COALESCE(p.name_ar, p.name_en) as project_name
+                FROM units u
+                LEFT JOIN buildings b ON u.building_id = b.building_id
+                LEFT JOIN projects p ON b.project_id = p.project_id
+                WHERE u.unit_id = $1
+                """,
+                target_unit_id
+            )
+            p_name = f"{u_info['project_name'] or ''} - {u_info['building_name'] or ''} - وحدة {u_info['unit_number'] or ''}".strip(" -") if u_info else "العقار الاستثماري"
+            norm_total_units = max(tot_inspected, occ_count)
+
             # 5.1 Automatically Archive Due Diligence Report to Documents Vault
             await WorkflowEngine.archive_workflow_document(
                 conn=conn,
@@ -4878,17 +5490,49 @@ class WorkflowEngine:
                 notes=f"تقرير الفحص الفني والاستثماري - CapEx المقدر: {est_capex:,.2f} ريال",
                 metadata={
                     "report_ref": report_id,
+                    "report_id": report_id,
+                    "inspector_name": insp_name or "م. الفاحص المعتمد",
+                    "customer_name": cust_name,
+                    "property_name": p_name,
+                    "unit_number": u_info["unit_number"] if u_info else None,
                     "structural_condition": struct_cond,
+                    "building_age_years": bld_age,
                     "saudi_building_code_compliant": sbc_compliant,
+                    "hvac_status": hvac_st,
+                    "elevators_status": elev_st,
+                    "roofing_and_insulation_status": roof_st,
+                    "plumbing_network_status": plumb_st,
+                    "electrical_network_status": elec_st,
+                    "fire_safety_compliance": fire_st,
+                    "technical_notes": tech_notes,
                     "estimated_capex_sar": est_capex,
                     "suggested_price_adjustment_sar": price_adj,
                     "recommendation": rec,
+                    "actual_occupancy_rate": actual_occ,
+                    "occupancy_rate": f"{actual_occ:.1f}%",
                     "occupied_units": occ_count,
-                    "total_units": tot_inspected,
+                    "total_units": norm_total_units,
+                    "rent_roll_verified": rent_roll_ver,
+                    "property_manager_interview_notes": pm_notes,
+                    "property_manager_notes": pm_notes,
+                    "commercial_viability_score": comm_score,
+                    "purchase_price": p_price,
+                    "asking_price": p_price,
+                    "gross_annual_rent": gross_annual_rent,
                     "gross_rent": gross_annual_rent,
+                    "annual_vacancy_allowance": vac_allowance,
+                    "vacancy_allowance": vac_allowance,
+                    "effective_gross_income": eff_gross_income,
+                    "annual_operating_expenses": opex,
+                    "operating_expenses": opex,
+                    "net_operating_income": noi,
                     "target_noi": noi,
+                    "total_investment_basis": tot_basis,
+                    "gross_yield_percent": gross_yield,
                     "cap_rate": cap_rate,
-                    "asking_price": p_price
+                    "net_yield_percent": net_yield,
+                    "cash_invested": cash_inv,
+                    "cash_on_cash_return_percent": coc_return
                 },
                 user_id=user_id
             )
@@ -6974,14 +7618,27 @@ class WorkflowEngine:
                 "user_name": "Sales Agent"
             })
         for r in res_list:
-            is_done = (r.get("status") in ("ACTIVE", "CONVERTED_TO_CONTRACT", "COMPLETED"))
+            r_st = (r.get("status") or "ACTIVE").upper()
+            is_done = (r_st in ("CONVERTED", "CONVERTED_TO_CONTRACT", "COMPLETED"))
             r_ts = r.get("reserved_at") or r.get("created_at")
+
+            st_labels_ar = {
+                "ACTIVE": "حجز نشط",
+                "CONFIRMED": "حجز مؤكد بالعربون",
+                "CONVERTED": "تم تحويله لعقد نهائي (منجز)",
+                "CONVERTED_TO_CONTRACT": "تم تحويله لعقد نهائي (منجز)",
+                "COMPLETED": "منجز ومكتمل",
+                "EXPIRED": "منتهي الصلاحية",
+                "CANCELLED": "ملغى"
+            }
+            status_desc_ar = st_labels_ar.get(r_st, r_st)
+
             timeline.append({
                 "type": "RESERVATION",
                 "id": r["reservation_id"],
                 "subject": f"حجز الوحدة #{r.get('unit_number') or '--'}",
-                "description": f"رقم الحجز: {r.get('reservation_number') or '--'}. العربون: {float(r['deposit_amount'] or 0):,.2f} ريال. الحالة: {r.get('status')}",
-                "status": r.get("status") or "ACTIVE",
+                "description": f"رقم الحجز: {r.get('reservation_number') or '--'} | العربون: {float(r['deposit_amount'] or 0):,.2f} ريال | الحالة: {status_desc_ar}",
+                "status": r_st,
                 "is_done": is_done,
                 "timestamp": r_ts.isoformat() if r_ts else None,
                 "user_name": "Operations"
@@ -7139,7 +7796,8 @@ class WorkflowEngine:
 
         formatted_reservations = []
         for r in res_list:
-            is_done = (r.get("status") in ("ACTIVE", "CONVERTED_TO_CONTRACT", "COMPLETED"))
+            r_st = (r.get("status") or "ACTIVE").upper()
+            is_done = (r_st in ("CONVERTED", "CONVERTED_TO_CONTRACT", "COMPLETED"))
             r_dt = r.get("reserved_at")
             formatted_reservations.append({
                 "reservation_id": r["reservation_id"],
@@ -7150,9 +7808,9 @@ class WorkflowEngine:
                 "unit_owner_mobile": r.get("unit_owner_mobile"),
                 "owner_customer_id": r.get("owner_customer_id"),
                 "deposit_amount": float(r["deposit_amount"]) if r.get("deposit_amount") is not None else 0.0,
-                "status": r.get("status") or "ACTIVE",
+                "status": r_st,
                 "is_done": is_done,
-                "situation": r.get("status") or "ACTIVE",
+                "situation": r_st,
                 "reserved_at": r_dt.isoformat() if r_dt else None,
                 "expires_at": r["expires_at"].isoformat() if r.get("expires_at") else None,
                 "date_time": r_dt.isoformat() if r_dt else None

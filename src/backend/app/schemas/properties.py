@@ -49,6 +49,10 @@ class UnitOut(BaseModel):
     property_type_name_ar: Optional[str] = None
     asking_price: Optional[float] = None
     rent_price: Optional[float] = None
+    annual_operating_expenses: Optional[float] = None
+    annual_vacancy_rate: Optional[float] = None
+    investment_notes: Optional[str] = None
+    listing_purpose: Optional[str] = "ALL"
     status: str
     owner_customer_id: Optional[str] = None
     owner_name: Optional[str] = None
@@ -71,6 +75,10 @@ class UnitCreateIn(BaseModel):
     orientation: Optional[str] = None
     asking_price: Optional[float] = None
     rent_price: Optional[float] = None
+    annual_operating_expenses: Optional[float] = None
+    annual_vacancy_rate: Optional[float] = None
+    investment_notes: Optional[str] = None
+    listing_purpose: Optional[str] = "ALL"
     status: Optional[str] = "AVAILABLE"
     owner_customer_id: Optional[str] = None
     assigned_user_id: Optional[str] = None
@@ -88,6 +96,10 @@ class UnitUpdateIn(BaseModel):
     orientation: Optional[str] = None
     asking_price: Optional[float] = None
     rent_price: Optional[float] = None
+    annual_operating_expenses: Optional[float] = None
+    annual_vacancy_rate: Optional[float] = None
+    investment_notes: Optional[str] = None
+    listing_purpose: Optional[str] = None
     status: Optional[str] = None
     owner_customer_id: Optional[str] = None
     assigned_user_id: Optional[str] = None

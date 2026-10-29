@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 780" width="100%" height="100%" style="background-color: #090d16; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl;">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="downArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#090d16" rx="16"/>
+
+  <text x="425" y="45" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">خارطة طريق المرحلة الثانية: إدارة الأملاك والمرافق (Property Management)</text>
+  <text x="425" y="75" fill="#94a3b8" font-size="13" text-anchor="middle">RECRM Comprehensive Real Estate Operating System</text>
+
+  <!-- Connectors -->
+  <line x1="425" y1="180" x2="425" y2="210" stroke="#10b981" stroke-width="3" marker-end="url(#downArrow)"/>
+  <line x1="425" y1="290" x2="425" y2="320" stroke="#10b981" stroke-width="3" marker-end="url(#downArrow)"/>
+  <line x1="425" y1="400" x2="425" y2="430" stroke="#10b981" stroke-width="3" marker-end="url(#downArrow)"/>
+  <line x1="425" y1="510" x2="425" y2="540" stroke="#10b981" stroke-width="3" marker-end="url(#downArrow)"/>
+  <line x1="425" y1="620" x2="425" y2="650" stroke="#10b981" stroke-width="3" marker-end="url(#downArrow)"/>
+
+  <!-- Card 1 -->
+  <g transform="translate(175, 100)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#38bdf8" stroke-width="2"/>
+    <text x="250" y="32" fill="#38bdf8" font-size="15" font-weight="bold" text-anchor="middle">1. عقود إدارة الأملاك (Management Agreements)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">توثيق عقود الملاك • تحديد نسبة أتعاب الإدارة والتحصيل • صلاحيات الإشراف</text>
+  </g>
+
+  <!-- Card 2 -->
+  <g transform="translate(175, 210)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#818cf8" stroke-width="2"/>
+    <text x="250" y="32" fill="#818cf8" font-size="15" font-weight="bold" text-anchor="middle">2. إدارة الوحدات والمستأجرين (Tenant Management)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">تسجيل ملف المستأجر • مطابقة الهوية • عقود الإيجار الموحدة • تسليم الوحدات</text>
+  </g>
+
+  <!-- Card 3 -->
+  <g transform="translate(175, 320)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#34d399" stroke-width="2"/>
+    <text x="250" y="32" fill="#34d399" font-size="15" font-weight="bold" text-anchor="middle">3. جدولة وتحصيل الإيجارات (Rent Collection &amp; Billing)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">فواتير إيجارية دورية • سندات قبض إلكترونية • متابعة المتعثرات وتنبيهات السداد</text>
+  </g>
+
+  <!-- Card 4 -->
+  <g transform="translate(175, 430)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#fbbf24" stroke-width="2"/>
+    <text x="250" y="32" fill="#fbbf24" font-size="15" font-weight="bold" text-anchor="middle">4. إدارة الصيانة والتشغيل (Facility &amp; Maintenance)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">تذاكر الصيانة الدورية والطارئة • أوامر العمل للمقاولين • خصم التكاليف آلياً</text>
+  </g>
+
+  <!-- Card 5 -->
+  <g transform="translate(175, 540)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#f472b6" stroke-width="2"/>
+    <text x="250" y="32" fill="#f472b6" font-size="15" font-weight="bold" text-anchor="middle">5. الحسابات وتوزيع الأرباح للملاك (Owner Statements)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">كشوف حساب دورية (المحصل - الصيانة - عمولة الإدارة = صافي المحول للمالك)</text>
+  </g>
+
+  <!-- Card 6 -->
+  <g transform="translate(175, 650)" filter="url(#cardShadow)">
+    <rect width="500" height="80" rx="10" fill="url(#cardGrad)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="250" y="32" fill="#a78bfa" font-size="15" font-weight="bold" text-anchor="middle">6. إدارة الشواغر والتجديد التلقائي (Vacancies &amp; Renewals)</text>
+    <text x="250" y="58" fill="#e2e8f0" font-size="12" text-anchor="middle">تنبيهات قرب انتهاء العقود • تجديد الإيجارات • إعادة طرح الوحدات الشاغرة فوراً</text>
+  </g>
+</svg>

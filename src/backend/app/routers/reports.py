@@ -1,4 +1,5 @@
 from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException, Header
 import asyncpg
 from app.database import get_db
@@ -109,10 +110,11 @@ async def get_funnel_dashboard(
         if user_scope == "OWN":
             scope = "OWN"
             user_id = x_user_id
-        elif user_scope == "BRANCH" and scope == "GLOBAL":
+        elif user_scope == "BRANCH":
             scope = "BRANCH"
-            if not branch_id:
-                branch_id = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            user_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if user_branch:
+                branch_id = user_branch
     target_user_ids: Optional[List[str]] = None
     target_branch_id: Optional[str] = branch_id
     branch_name: Optional[str] = None
@@ -363,7 +365,7 @@ async def get_funnel_dashboard(
         for r in agent_rows
     ]
 
-    # 5. Drill-down: Top / Active Opportunities (linked to customer & unit)
+    # 5. Drill-down: Top / Active Opportunities & Assigned Leads
     opp_where = "1=1"
     opp_params = []
     if target_user_ids is not None:
@@ -375,12 +377,15 @@ async def get_funnel_dashboard(
 
     opp_rows = await conn.fetch(f"""
         SELECT 
-            o.opportunity_id, o.customer_id, o.expected_value, o.stage, o.created_at,
+            o.opportunity_id, o.lead_id, o.customer_id, o.expected_value, o.stage, o.created_at,
             COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name,
             c.mobile AS customer_mobile,
             u.full_name AS agent_name,
-            un.unit_id, un.unit_number, b.name AS building_name, p.name_en AS project_name
+            un.unit_id, un.unit_number, b.name AS building_name, p.name_en AS project_name,
+            l.inquiry_type,
+            'OPPORTUNITY' AS item_type
         FROM opportunities o
+        LEFT JOIN leads l ON o.lead_id = l.lead_id
         LEFT JOIN customers c ON o.customer_id = c.customer_id
         LEFT JOIN users u ON o.assigned_user_id = u.user_id
         LEFT JOIN opportunity_units ou ON o.opportunity_id = ou.opportunity_id
@@ -389,12 +394,60 @@ async def get_funnel_dashboard(
         LEFT JOIN projects p ON b.project_id = p.project_id
         WHERE {opp_where}
         ORDER BY o.created_at DESC
-        LIMIT 25
+        LIMIT 50
     """, *opp_params)
+
+    # Also fetch active / unconverted leads assigned in scope
+    lead_drill_where = "1=1"
+    lead_drill_params = []
+    if target_user_ids is not None:
+        if scope == "BRANCH" and target_branch_id:
+            lead_drill_where = "(l.branch_id = $2 OR l.assigned_user_id = ANY($1))"
+            lead_drill_params = [target_user_ids, target_branch_id]
+        else:
+            lead_drill_where = "l.assigned_user_id = ANY($1)"
+            lead_drill_params = [target_user_ids]
+    elif target_branch_id:
+        lead_drill_where = "l.branch_id = $1"
+        lead_drill_params = [target_branch_id]
+
+    lead_rows = await conn.fetch(f"""
+        SELECT 
+            NULL AS opportunity_id,
+            l.lead_id,
+            l.customer_id,
+            COALESCE(l.budget_max, l.budget_min, 0) AS expected_value,
+            l.status AS stage,
+            l.created_at,
+            COALESCE(NULLIF(TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')), ''), c.company_name, 'Customer') AS customer_name,
+            c.mobile AS customer_mobile,
+            u.full_name AS agent_name,
+            l.unit_id,
+            un.unit_number,
+            b.name AS building_name,
+            COALESCE(pt.name_ar, pt.name_en) AS project_name,
+            l.inquiry_type,
+            'LEAD' AS item_type
+        FROM leads l
+        LEFT JOIN customers c ON l.customer_id = c.customer_id
+        LEFT JOIN users u ON l.assigned_user_id = u.user_id
+        LEFT JOIN units un ON l.unit_id = un.unit_id
+        LEFT JOIN buildings b ON un.building_id = b.building_id
+        LEFT JOIN property_types pt ON l.preferred_property_type_id = pt.property_type_id
+        WHERE NOT EXISTS (SELECT 1 FROM opportunities o WHERE o.lead_id = l.lead_id)
+          AND {lead_drill_where}
+        ORDER BY l.created_at DESC
+        LIMIT 50
+    """, *lead_drill_params)
+
+    combined_rows = list(opp_rows) + list(lead_rows)
+    combined_rows.sort(key=lambda r: r["created_at"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    combined_rows = combined_rows[:60]
 
     opps_data = [
         OpportunityFunnelItem(
             opportunity_id=r["opportunity_id"],
+            lead_id=r["lead_id"],
             customer_id=r["customer_id"],
             customer_name=r["customer_name"],
             customer_mobile=r["customer_mobile"],
@@ -405,9 +458,11 @@ async def get_funnel_dashboard(
             unit_number=r["unit_number"],
             building_name=r["building_name"],
             project_name=r["project_name"],
+            inquiry_type=r["inquiry_type"],
+            item_type=r["item_type"],
             created_at=r["created_at"].isoformat() if r["created_at"] else None
         )
-        for r in opp_rows
+        for r in combined_rows
     ]
 
     # 6. Live Pulse Stream: Unified Activities, Tasks, Communications, Lead Updates

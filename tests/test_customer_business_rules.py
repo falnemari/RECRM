@@ -59,6 +59,7 @@ class TestCustomerBusinessRulesGoldenAcceptance(unittest.IsolatedAsyncioTestCase
         self.unit_invest_id = "unit-golden-invest-01"
 
         for uid in (self.unit_rent_id, self.unit_buy_id, self.unit_invest_id):
+            await self.conn.execute("DELETE FROM documents WHERE unit_id = $1", uid)
             await self.conn.execute("DELETE FROM units WHERE unit_id = $1", uid)
 
         await self.conn.execute(
@@ -92,6 +93,7 @@ class TestCustomerBusinessRulesGoldenAcceptance(unittest.IsolatedAsyncioTestCase
         await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", self.cust_id)
 
         for uid in (self.unit_rent_id, self.unit_buy_id, self.unit_invest_id):
+            await self.conn.execute("DELETE FROM documents WHERE unit_id = $1", uid)
             await self.conn.execute("DELETE FROM units WHERE unit_id = $1", uid)
 
         await self.conn.close()

@@ -238,13 +238,15 @@ class TestWorkflowStage3(unittest.IsolatedAsyncioTestCase):
             )
 
             # Complete report task with INTERESTED
+            unit_price = await self.conn.fetchval("SELECT asking_price FROM units WHERE unit_id = $1", self.unit_id) or 2500000.0
+            test_offer = min(2050000.0, float(unit_price) * 0.95)
             res = await WorkflowEngine.complete_task_with_outcome(
                 conn=self.conn,
                 task_id=rep_task["task_id"],
                 user_id=self.agent_id,
                 outcome="INTERESTED",
-                notes="العميل أبدى رغبة قوية بالشراء واقترح تقديم عرض بقيمة 2.05 مليون ريال",
-                viewing_data={"offer_amount": 2050000}
+                notes=f"العميل أبدى رغبة قوية بالشراء واقترح تقديم عرض بقيمة {test_offer:,.0f} ريال",
+                viewing_data={"offer_amount": test_offer}
             )
 
             self.assertEqual(res["status"], "COMPLETED")

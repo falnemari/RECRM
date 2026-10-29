@@ -102,6 +102,20 @@ class TestRBACAndScoping(unittest.TestCase):
         self.assertEqual(lead_data["assigned_user_id"], "user-27")
         self.assertEqual(lead_data["customer_id"], "customer-21")
 
+        # Cleanup created test lead and its spawned tasks/activities so tests leave zero database clutter
+        created_lead_id = lead_data["lead_id"]
+        import asyncio, asyncpg
+        from app.config import settings
+        async def _cleanup():
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            await conn.execute("DELETE FROM tasks WHERE lead_id = $1", created_lead_id)
+            await conn.execute("DELETE FROM activities WHERE lead_id = $1", created_lead_id)
+            await conn.execute("DELETE FROM lead_events WHERE lead_id = $1", created_lead_id)
+            await conn.execute("DELETE FROM lead_units WHERE lead_id = $1", created_lead_id)
+            await conn.execute("DELETE FROM leads WHERE lead_id = $1", created_lead_id)
+            await conn.close()
+        asyncio.run(_cleanup())
+
     def test_accountant_user19_can_query_tasks_and_see_task_3796(self):
         # user-19 (Demo Agent 26, Accountant) has earnest deposit followup task-3796
         res = self.client.get("/api/v1/tasks?assigned_user_id=user-19", headers={"X-User-ID": "user-19"})

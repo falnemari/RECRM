@@ -710,6 +710,364 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
         await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id IN ($1, $2)", rental_opp_id, invest_opp_id)
         await self.conn.execute("DELETE FROM leads WHERE lead_id IN ($1, $2)", rental_lead_id, invest_lead_id)
 
+    async def test_09_multi_unit_investment_comparison_and_document_generation(self):
+        """
+        9. Multi-unit (2 to 3 properties) investment returns comparison:
+           - Evaluates 3 candidate units side-by-side with NOI, Cap Rate, Gross Yield, and CoC.
+           - Sets designated primary recommended unit in opportunity_units.
+           - Generates and archives official INVEST_COMPARATIVE_REPORT document.
+           - Verifies printable HTML rendering with REGA compliance and benchmark matrix.
+        """
+        lead_id = "lead-test-multi-compare-09"
+        opp_id = "opp-test-multi-compare-09"
+        unit_c_id = "unit-invest-test-c"
+        bld_id = await self.conn.fetchval("SELECT building_id FROM buildings LIMIT 1") or "bld-1"
+        pt_id = await self.conn.fetchval("SELECT property_type_id FROM property_types LIMIT 1") or "APT"
+
+        # Create Unit C
+        await self.conn.execute(
+            """
+            INSERT INTO units (
+                unit_id, building_id, unit_number, property_type_id, status, asking_price, rent_price, area_sqm, created_at, updated_at
+            ) VALUES ($1, $2, 'INV-103', $3, 'AVAILABLE', 1500000.0, 135000.0, 320.0, NOW(), NOW())
+            ON CONFLICT (unit_id) DO UPDATE SET status = 'AVAILABLE', asking_price = 1500000.0, rent_price = 135000.0
+            """,
+            unit_c_id, bld_id, pt_id
+        )
+
+        await self.conn.execute(
+            """
+            INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, status, priority, inquiry_type, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 'HIGH', 'INVESTMENT', NOW(), NOW())
+            """,
+            lead_id, self.org_id, self.test_customer_id, self.agent_id
+        )
+        await self.conn.execute(
+            """
+            INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 1200000, NOW(), NOW())
+            """,
+            opp_id, lead_id, self.test_customer_id, self.agent_id
+        )
+
+        task, _ = await WorkflowEngine.spawn_task_from_template(
+            conn=self.conn,
+            template_id="TASK_INVEST_COMPARE_RETURNS",
+            lead_id=lead_id,
+            opportunity_id=opp_id,
+            customer_id=self.test_customer_id,
+            assigned_user_id=self.agent_id
+        )
+
+        compared_payload = [
+            {
+                "unit_id": self.unit_a_id,
+                "unit_number": "INV-101",
+                "property_type": "شقة استثمارية 1",
+                "area_sqm": "220",
+                "purchase_price": 1000000.0,
+                "gross_annual_rent": 85000.0,
+                "annual_vacancy_allowance": 4250.0,
+                "annual_operating_expenses": 8500.0,
+                "acquisition_costs": 25000.0,
+                "cash_invested": 1000000.0,
+                "is_primary": False
+            },
+            {
+                "unit_id": self.unit_b_id,
+                "unit_number": "INV-102",
+                "property_type": "شقة استثمارية 2",
+                "area_sqm": "260",
+                "purchase_price": 1200000.0,
+                "gross_annual_rent": 120000.0,
+                "annual_vacancy_allowance": 6000.0,
+                "annual_operating_expenses": 12000.0,
+                "acquisition_costs": 30000.0,
+                "cash_invested": 1200000.0,
+                "is_primary": True  # Top recommended
+            },
+            {
+                "unit_id": unit_c_id,
+                "unit_number": "INV-103",
+                "property_type": "شقة استثمارية 3",
+                "area_sqm": "320",
+                "purchase_price": 1500000.0,
+                "gross_annual_rent": 135000.0,
+                "annual_vacancy_allowance": 6750.0,
+                "annual_operating_expenses": 13500.0,
+                "acquisition_costs": 37500.0,
+                "cash_invested": 1500000.0,
+                "is_primary": False
+            }
+        ]
+
+        res = await WorkflowEngine.complete_task_with_outcome(
+            conn=self.conn,
+            task_id=task["task_id"],
+            user_id=self.agent_id,
+            outcome="RETURNS_COMPARED",
+            notes="تمت مقارنة 3 وحدات استثمارية والتوصية بالوحدة INV-102 لتحقيقها أعلى عائد تشغيلي صافي.",
+            viewing_data={
+                "compared_units": compared_payload,
+                "recommendation_notes": "نوصي بالاستحواذ على الأصل INV-102 لتحقيقه عائد Cap Rate متميز واستقراراً نقدياً للمستثمر."
+            }
+        )
+
+        self.assertEqual(res["status"], "COMPLETED")
+        self.assertEqual(res["business_transition"]["type"], "INVEST_RETURNS_COMPARED")
+        self.assertEqual(len(res["business_transition"]["compared_units"]), 3)
+        self.assertEqual(res["business_transition"]["primary_unit_id"], self.unit_b_id)
+        
+        doc_id = res["business_transition"]["document_id"]
+        self.assertIsNotNone(doc_id)
+
+        # Verify all 3 units inserted into opportunity_units with proper is_primary flags
+        opp_units = await self.conn.fetch(
+            "SELECT unit_id, is_primary, offered_price FROM opportunity_units WHERE opportunity_id = $1 ORDER BY unit_id",
+            opp_id
+        )
+        self.assertEqual(len(opp_units), 3)
+        unit_b_record = next(u for u in opp_units if u["unit_id"] == self.unit_b_id)
+        unit_a_record = next(u for u in opp_units if u["unit_id"] == self.unit_a_id)
+        unit_c_record = next(u for u in opp_units if u["unit_id"] == unit_c_id)
+
+        self.assertTrue(unit_b_record["is_primary"])
+        self.assertFalse(unit_a_record["is_primary"])
+        self.assertFalse(unit_c_record["is_primary"])
+        self.assertEqual(float(unit_b_record["offered_price"]), 1200000.0)
+
+        # Verify document archived in documents table
+        doc_row = await self.conn.fetchrow(
+            """
+            SELECT d.*, dt.code as document_type_code, dt.name as document_type_name
+            FROM documents d
+            LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+            WHERE d.document_id = $1
+            """,
+            doc_id
+        )
+        self.assertIsNotNone(doc_row)
+        self.assertEqual(doc_row["document_type_code"], "INVEST_COMPARATIVE_REPORT")
+
+        # Test official HTML rendering
+        from app.services.document_templates import render_document_html
+        html_out = render_document_html(dict(doc_row))
+        self.assertIn("تقرير المفاضلة والتحليل المالي المقارن للوحدات الاستثمارية", html_out)
+        self.assertIn("INV-101", html_out)
+        self.assertIn("INV-102", html_out)
+        self.assertIn("INV-103", html_out)
+        self.assertIn("الخيار الموصى به للاستحواذ", html_out)
+        self.assertIn("Cap Rate", html_out)
+
+        # Cleanup
+        await self.conn.execute("DELETE FROM documents WHERE document_id = $1", doc_id)
+        await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+        await self.conn.execute("DELETE FROM units WHERE unit_id = $1", unit_c_id)
+
+    async def test_10_single_unit_feasibility_and_fast_track_offer(self):
+        """
+        10. Single unit feasibility & Fast-Track direct acquisition offer:
+           - Handles single available investment unit (no multi-asset blocking).
+           - Generates single-asset feasibility study document.
+           - Outcome 'FAST_TRACK_OFFER' advances directly to TASK_INVEST_PREPARE_ACQUISITION_OFFER
+             bypassing Due Diligence site inspection when asset is under warranty or pre-inspected.
+        """
+        lead_id = "lead-test-single-fast-10"
+        opp_id = "opp-test-single-fast-10"
+
+        await self.conn.execute(
+            """
+            INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, status, priority, inquiry_type, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 'HIGH', 'INVESTMENT', NOW(), NOW())
+            """,
+            lead_id, self.org_id, self.test_customer_id, self.agent_id
+        )
+        await self.conn.execute(
+            """
+            INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 1000000, NOW(), NOW())
+            """,
+            opp_id, lead_id, self.test_customer_id, self.agent_id
+        )
+
+        task, _ = await WorkflowEngine.spawn_task_from_template(
+            conn=self.conn,
+            template_id="TASK_INVEST_COMPARE_RETURNS",
+            lead_id=lead_id,
+            opportunity_id=opp_id,
+            customer_id=self.test_customer_id,
+            assigned_user_id=self.agent_id
+        )
+
+        # Single unit payload
+        single_payload = [
+            {
+                "unit_id": self.unit_a_id,
+                "unit_number": "INV-101",
+                "property_type": "مكتب استثماري مميز",
+                "area_sqm": "180",
+                "purchase_price": 950000.0,
+                "gross_annual_rent": 90000.0,
+                "annual_vacancy_allowance": 4500.0,
+                "annual_operating_expenses": 7500.0,
+                "acquisition_costs": 23750.0,
+                "cash_invested": 950000.0,
+                "is_primary": True
+            }
+        ]
+
+        res = await WorkflowEngine.complete_task_with_outcome(
+            conn=self.conn,
+            task_id=task["task_id"],
+            user_id=self.agent_id,
+            outcome="FAST_TRACK_OFFER",
+            notes="الوحدة جديدة بضمان المطور وتم استكمال دراسة الجدوى وتخطي الفحص الميداني مباشرة لتقديم عرض الاستحواذ.",
+            viewing_data={
+                "compared_units": single_payload,
+                "recommendation_notes": "دراسة جدوى استثمارية لأصل منفرد واعد بعائد صافي يتجاوز 8%."
+            }
+        )
+
+        self.assertEqual(res["status"], "COMPLETED")
+        self.assertEqual(res["business_transition"]["type"], "INVEST_RETURNS_COMPARED")
+        self.assertEqual(len(res["business_transition"]["compared_units"]), 1)
+        self.assertEqual(res["business_transition"]["primary_unit_id"], self.unit_a_id)
+
+        # Verify fast-track next task is TASK_INVEST_PREPARE_ACQUISITION_OFFER
+        next_task = res["business_transition"]["next_task"]
+        self.assertIsNotNone(next_task)
+        self.assertEqual(next_task["template_id"], "TASK_INVEST_PREPARE_ACQUISITION_OFFER")
+
+        # Verify document title and rendering
+        doc_id = res["business_transition"]["document_id"]
+        doc_row = await self.conn.fetchrow(
+            """
+            SELECT d.*, dt.code as document_type_code, dt.name as document_type_name
+            FROM documents d
+            LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+            WHERE d.document_id = $1
+            """,
+            doc_id
+        )
+        self.assertIsNotNone(doc_row)
+        import json
+        doc_meta = json.loads(doc_row["metadata"]) if isinstance(doc_row["metadata"], str) else (doc_row["metadata"] or {})
+        self.assertIn("دراسة الجدوى والعوائد الاستثمارية للأصل", doc_meta.get("doc_title", ""))
+
+        from app.services.document_templates import render_document_html
+        html_out = render_document_html(dict(doc_row))
+        self.assertIn("دراسة الجدوى والعوائد الاستثمارية للأصل العقاري", html_out)
+        self.assertIn("INV-101", html_out)
+        self.assertIn("الأصل المعتمد للاستحواذ", html_out)
+        self.assertIn("Approved Investment Asset", html_out)
+
+        # Cleanup
+        await self.conn.execute("DELETE FROM documents WHERE document_id = $1", doc_id)
+        await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+
+    async def test_11_compare_returns_with_100_percent_vacancy_new_building(self):
+        """
+        11. Verifies 100% vacancy scenario for brand new buildings:
+            - Gross rent entered (pro-forma potential), vacancy = 100% of gross rent.
+            - NOI is negative (carrying cost = -OPEX) without crashing.
+            - Document renders properly and displays 'قيد التسكين (شغور)'.
+        """
+        lead_id = "lead-test-invest-11"
+        opp_id = "opp-test-invest-11"
+        await self.conn.execute(
+            """
+            INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, status, priority, inquiry_type, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 'HIGH', 'INVESTMENT', NOW(), NOW())
+            """,
+            lead_id, self.org_id, self.test_customer_id, self.agent_id
+        )
+        await self.conn.execute(
+            """
+            INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, 'QUALIFIED', 2000000, NOW(), NOW())
+            """,
+            opp_id, lead_id, self.test_customer_id, self.agent_id
+        )
+
+        comp_task, _ = await WorkflowEngine.spawn_task_from_template(
+            conn=self.conn,
+            template_id="TASK_INVEST_COMPARE_RETURNS",
+            lead_id=lead_id,
+            opportunity_id=opp_id,
+            customer_id=self.test_customer_id,
+            assigned_user_id=self.agent_id
+        )
+
+        vacant_payload = [{
+            "unit_id": self.unit_a_id,
+            "unit_number": "NEW-BLD-01",
+            "property_type": "مبنى تجاري جديد",
+            "area_sqm": "850",
+            "purchase_price": 2000000.0,
+            "gross_annual_rent": 180000.0,
+            "monthly_rent_forecast": 15000.0,
+            "annual_vacancy_allowance": 180000.0, # 100% vacancy during lease-up
+            "annual_operating_expenses": 12000.0, # Carrying OPEX
+            "acquisition_costs": 150000.0,
+            "cash_invested": 2150000.0,
+            "net_operating_income": -12000.0,
+            "cap_rate": -0.56,
+            "gross_yield_percent": 9.0,
+            "cash_on_cash_return_percent": 0.0,
+            "payback_years": 0.0,
+            "investment_notes": "مبنى جديد بالكامل - مرحلة التسكين والاستئجار الأولى.",
+            "is_primary": True
+        }]
+
+        res = await WorkflowEngine.complete_task_with_outcome(
+            conn=self.conn,
+            task_id=comp_task["task_id"],
+            user_id=self.agent_id,
+            outcome="RETURNS_COMPARED",
+            viewing_data={
+                "unit_id": self.unit_a_id,
+                "compared_units": vacant_payload,
+                "recommendation_notes": "مبنى جديد واعد بعائد تشغيلي مستهدف 8.4% بعد اكتمال التسكين."
+            }
+        )
+
+        self.assertEqual(res["status"], "COMPLETED")
+        self.assertEqual(res["business_transition"]["type"], "INVEST_RETURNS_COMPARED")
+
+        # Verify document generated and rendered with lease-up status
+        doc_id = res["business_transition"]["document_id"]
+        doc_row = await self.conn.fetchrow(
+            """
+            SELECT d.*, dt.code as document_type_code, dt.name as document_type_name
+            FROM documents d
+            LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+            WHERE d.document_id = $1
+            """,
+            doc_id
+        )
+        self.assertIsNotNone(doc_row)
+
+        from app.services.document_templates import render_document_html
+        html_out = render_document_html(dict(doc_row))
+        self.assertIn("NEW-BLD-01", html_out)
+        self.assertIn("قيد التسكين (شغور)", html_out)
+
+        # Cleanup
+        await self.conn.execute("DELETE FROM documents WHERE document_id = $1", doc_id)
+        await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+
 
 if __name__ == "__main__":
     unittest.main()

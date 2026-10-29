@@ -764,18 +764,18 @@
                     <div style="margin-bottom: 16px;">
                         <span style="font-size: 0.8em; color: var(--text-muted); display: block; margin-bottom: 6px;" data-i18n="quick_transition">Quick Transition:</span>
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <button type="button" class="btn-sm" onclick="setDetailStage('QUALIFIED')">1. Qualification</button>
-                            <button type="button" class="btn-sm" onclick="setDetailStage('VIEWING')">2. Viewing</button>
-                            <button type="button" class="btn-sm" onclick="setDetailStage('NEGOTIATION')">3. Negotiation</button>
-                            <button type="button" class="btn-sm" style="background: #dcfce7; color: #166534;" onclick="setDetailStage('WON')">🏆 Won</button>
-                            <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b;" onclick="setDetailStage('LOST')">❌ Lost</button>
+                            <button type="button" class="btn-sm" onclick="setDetailStage('QUALIFIED')" data-i18n="opt_stage_1">1. Qualification</button>
+                            <button type="button" class="btn-sm" onclick="setDetailStage('VIEWING')" data-i18n="opt_stage_2">2. Viewing</button>
+                            <button type="button" class="btn-sm" onclick="setDetailStage('NEGOTIATION')" data-i18n="opt_stage_3">3. Negotiation</button>
+                            <button type="button" class="btn-sm" style="background: #dcfce7; color: #166534;" onclick="setDetailStage('WON')" data-i18n="opt_stage_4">🏆 Won</button>
+                            <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b;" onclick="setDetailStage('LOST')" data-i18n="opt_stage_5">❌ Lost</button>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="lbl_expected_val">Expected Deal Value (SAR)</label>
-                            <input type="number" id="opp-detail-val" step="5000">
+                            <input type="number" id="opp-detail-val" step="5000" placeholder="e.g. 850000" data-i18n-placeholder="placeholder_opp_val">
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_close_date">Expected Close Date</label>
@@ -786,7 +786,7 @@
                     <div class="form-group">
                         <label data-i18n="lbl_opp_agent">Assigned Sales Agent</label>
                         <select id="opp-detail-agent">
-                            <option value="">-- Unassigned --</option>
+                            <option value="" data-i18n="opt_unassigned">-- Unassigned --</option>
                         </select>
                     </div>
                 </div>
@@ -905,34 +905,34 @@
                         <div class="form-group">
                             <label data-i18n="lbl_opp_agent">Assigned Agent</label>
                             <select id="new-opp-agent" onchange="onNewOppAgentChange()">
-                                <option value="">-- All / Unassigned --</option>
+                                <option value="" data-i18n="opt_all_unassigned_agent">-- All / Unassigned --</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_select_customer">Customer *</label>
                             <select id="new-opp-customer" required onchange="onNewOppCustomerChange()">
-                                <option value="">Select Customer *</option>
+                                <option value="" data-i18n="opt_select_customer">Select Customer *</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_related_lead">Related Lead / Inquiry</label>
                         <select id="new-opp-lead" onchange="onNewOppLeadChange()">
-                            <option value="">-- Select Related Lead (Optional) --</option>
+                            <option value="" data-i18n="opt_select_lead_optional">-- Select Related Lead (Optional) --</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="lbl_opp_stage">Initial Stage</label>
                             <select id="new-opp-stage">
-                                <option value="QUALIFIED">1. Qualification</option>
-                                <option value="VIEWING">2. Viewing</option>
-                                <option value="NEGOTIATION">3. Offer / Negotiation</option>
+                                <option value="QUALIFIED" data-i18n="opt_stage_1">1. Qualification</option>
+                                <option value="VIEWING" data-i18n="opt_stage_2">2. Viewing</option>
+                                <option value="NEGOTIATION" data-i18n="opt_stage_3">3. Offer / Negotiation</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_expected_val">Expected Deal Value (SAR)</label>
-                            <input type="number" id="new-opp-val" step="5000" placeholder="e.g. 850000">
+                            <input type="number" id="new-opp-val" step="5000" placeholder="e.g. 850000" data-i18n-placeholder="placeholder_opp_val">
                         </div>
                     </div>
                     <div class="form-group">
@@ -1054,6 +1054,11 @@
                 btn_save_changes: "Save Changes",
                 btn_cancel: "Cancel",
                 btn_create_opp: "Create Opportunity",
+                opt_all_unassigned_agent: "-- All / Unassigned --",
+                opt_select_customer: "Select Customer *",
+                opt_select_lead_optional: "-- Select Related Lead (Optional) --",
+                opt_unassigned: "-- Unassigned --",
+                placeholder_opp_val: "e.g. 850000",
                 loading: "Loading data...",
                 nav_brand: "Al-Nemari Real Estate Services",
                 font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
@@ -1161,6 +1166,11 @@
                 btn_save_changes: "حفظ التعديلات",
                 btn_cancel: "إلغاء",
                 btn_create_opp: "إنشاء الفرصة",
+                opt_all_unassigned_agent: "-- الجميع / غير مسند --",
+                opt_select_customer: "اختيار العميل *",
+                opt_select_lead_optional: "-- اختيار الطلب المرتبط (اختياري) --",
+                opt_unassigned: "-- غير مسند --",
+                placeholder_opp_val: "مثال: 850000",
                 loading: "جاري التحميل...",
                 lang_label: "English"
             }
@@ -1183,6 +1193,12 @@
                 const key = el.getAttribute('data-i18n');
                 if (i18nData[currentLang] && i18nData[currentLang][key]) {
                     el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.placeholder = i18nData[currentLang][key];
                 }
             });
             const lbl = document.getElementById('lang-label');

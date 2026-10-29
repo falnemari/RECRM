@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" width="100%" height="100%" style="background-color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl;">
+  <defs>
+    <linearGradient id="boxGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Connections -->
+  <line x1="230" y1="120" x2="195" y2="120" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="120" x2="395" y2="120" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="630" y1="120" x2="595" y2="120" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="830" y1="120" x2="795" y2="120" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="1030" y1="120" x2="995" y2="120" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 1 -->
+  <g transform="translate(1000, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#38bdf8" stroke-width="2"/>
+    <text x="85" y="45" fill="#38bdf8" font-size="14" font-weight="bold" text-anchor="middle">1. مسارات العمل الثلاثة</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">البيع • الإيجار • الاستثمار</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">دورة متكاملة للوساطة</text>
+  </g>
+
+  <!-- Step 2 -->
+  <g transform="translate(800, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#818cf8" stroke-width="2"/>
+    <text x="85" y="45" fill="#818cf8" font-size="14" font-weight="bold" text-anchor="middle">2. محرك سير العمل</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">تتابع مدار بـ next_task</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">إدراج المهام الحية للمسار</text>
+  </g>
+
+  <!-- Step 3 -->
+  <g transform="translate(600, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#34d399" stroke-width="2"/>
+    <text x="85" y="45" fill="#34d399" font-size="14" font-weight="bold" text-anchor="middle">3. الفحص الاستثماري</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">فحص نافٍ للجهالة (Due Diligence)</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">حساب CapEx و NOI و العائد</text>
+  </g>
+
+  <!-- Step 4 -->
+  <g transform="translate(400, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#fbbf24" stroke-width="2"/>
+    <text x="85" y="45" fill="#fbbf24" font-size="14" font-weight="bold" text-anchor="middle">4. خزينة الوثائق الذكية</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">Document Vault &amp; PDF</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">دعم اتخاذ القرار بالمهام</text>
+  </g>
+
+  <!-- Step 5 -->
+  <g transform="translate(200, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#f472b6" stroke-width="2"/>
+    <text x="85" y="45" fill="#f472b6" font-size="14" font-weight="bold" text-anchor="middle">5. إدارة العقارات</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">فك ارتباط الأراضي بالمباني</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">حوكمة تحويل الوحدة لمباعة</text>
+  </g>
+
+  <!-- Step 6 -->
+  <g transform="translate(10, 50)" filter="url(#shadow)">
+    <rect width="170" height="140" rx="10" fill="url(#boxGrad1)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="85" y="45" fill="#a78bfa" font-size="14" font-weight="bold" text-anchor="middle">6. حوكمة العمولات</text>
+    <text x="85" y="75" fill="#f8fafc" font-size="12" text-anchor="middle">عزل RETT والضريبة المضافة</text>
+    <text x="85" y="100" fill="#94a3b8" font-size="11" text-anchor="middle">إسناد المهام للوسيط الأصلي</text>
+  </g>
+</svg>

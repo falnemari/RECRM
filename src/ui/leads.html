@@ -351,15 +351,15 @@
                                 </select>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                <input type="text" id="srch-first-name" placeholder="First Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-last-name" placeholder="Last Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-company-name" placeholder="Company Name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-first-name" placeholder="First Name" data-i18n-placeholder="placeholder_first_name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-last-name" placeholder="Last Name" data-i18n-placeholder="placeholder_last_name" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-company-name" placeholder="Company Name" data-i18n-placeholder="placeholder_company" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                                <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-email" placeholder="Email Address" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-cust-id" placeholder="Customer ID" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
-                                <input type="text" id="srch-national-id" placeholder="National ID / CR" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-mobile" placeholder="Mobile (+966...)" data-i18n-placeholder="placeholder_mobile" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-email" placeholder="Email Address" data-i18n-placeholder="placeholder_email" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-cust-id" placeholder="Customer ID" data-i18n-placeholder="placeholder_cust_id" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
+                                <input type="text" id="srch-national-id" placeholder="National ID / CR" data-i18n-placeholder="placeholder_national_id" onkeypress="if(event.key==='Enter'){event.preventDefault();performCustomerSearch();}">
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                                 <div style="display: flex; gap: 8px;">
@@ -446,22 +446,22 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="lbl_budget_min">Budget Min (SAR)</label>
-                            <input type="number" id="lead-budget-min" placeholder="e.g. 500000" min="0" step="1000">
+                            <input type="number" id="lead-budget-min" placeholder="e.g. 500000" data-i18n-placeholder="placeholder_budget_min" min="0" step="1000">
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_budget_max">Budget Max (SAR)</label>
-                            <input type="number" id="lead-budget-max" placeholder="e.g. 1500000" min="0" step="1000">
+                            <input type="number" id="lead-budget-max" placeholder="e.g. 1500000" data-i18n-placeholder="placeholder_budget_max" min="0" step="1000">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group" id="lead-bedrooms-group">
                             <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
-                            <input type="number" id="lead-bedrooms" placeholder="e.g. 3" min="0">
+                            <input type="number" id="lead-bedrooms" placeholder="e.g. 3" data-i18n-placeholder="placeholder_bedrooms" min="0">
                         </div>
                         <div class="form-group" id="lead-area-group">
                             <label data-i18n="lbl_area_min">Min Area (sqm)</label>
-                            <input type="number" id="lead-area-min" placeholder="e.g. 500" min="0">
+                            <input type="number" id="lead-area-min" placeholder="e.g. 500" data-i18n-placeholder="placeholder_area" min="0">
                         </div>
                     </div>
                     <div id="lead-land-hint" style="display:none; margin-top:-8px; margin-bottom:12px; font-size:0.84em; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; padding:6px 12px; border-radius:6px; font-weight:600;"></div>
@@ -562,13 +562,13 @@
                                 📍 <span data-i18n="btn_situation">مسار المعاملة</span>
                             </button>
                             <button type="button" class="btn btn-sm" onclick="logViewingFromLeadModal()" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Schedule a property viewing for this lead">
-                                👁️ + Viewing
+                                👁️ <span data-i18n="btn_add_viewing">+ Viewing</span>
                             </button>
                             <button type="button" class="btn btn-sm" onclick="logActivityFromLeadModal()" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Log a call, WhatsApp, viewing or note">
-                                📝 + Activity
+                                📝 <span data-i18n="btn_add_activity">+ Activity</span>
                             </button>
                             <button type="button" class="btn btn-sm" onclick="logCommFromLeadModal()" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; cursor: pointer; font-weight: 600; padding: 4px 9px; border-radius: 4px;" title="Log communication / message">
-                                💬 + Message
+                                💬 <span data-i18n="btn_add_message">+ Message</span>
                             </button>
                         </div>
                     </div>
@@ -577,20 +577,20 @@
                         <div class="form-group">
                             <label data-i18n="col_status">Status *</label>
                             <select id="edit-lead-status" required>
-                                <option value="NEW">NEW</option>
-                                <option value="CONTACTED">CONTACTED</option>
-                                <option value="QUALIFIED">QUALIFIED</option>
-                                <option value="CONVERTED">CONVERTED</option>
-                                <option value="LOST">LOST</option>
+                                <option value="NEW" data-i18n="opt_status_new">NEW</option>
+                                <option value="CONTACTED" data-i18n="opt_status_contacted">CONTACTED</option>
+                                <option value="QUALIFIED" data-i18n="opt_status_qualified">QUALIFIED</option>
+                                <option value="CONVERTED" data-i18n="opt_status_converted">CONVERTED</option>
+                                <option value="LOST" data-i18n="opt_status_lost">LOST</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_priority">Priority *</label>
                             <select id="edit-lead-priority" required>
-                                <option value="HIGH">HIGH</option>
-                                <option value="MEDIUM">MEDIUM</option>
-                                <option value="NORMAL">NORMAL</option>
-                                <option value="LOW">LOW</option>
+                                <option value="HIGH" data-i18n="opt_pri_high">HIGH</option>
+                                <option value="MEDIUM" data-i18n="opt_pri_med">MEDIUM</option>
+                                <option value="NORMAL" data-i18n="opt_pri_norm">NORMAL</option>
+                                <option value="LOW" data-i18n="opt_pri_low">LOW</option>
                             </select>
                         </div>
                     </div>
@@ -599,10 +599,10 @@
                         <div class="form-group">
                             <label data-i18n="lbl_inquiry_type">Inquiry Type</label>
                             <select id="edit-lead-inquiry">
-                                <option value="BUY">BUY</option>
-                                <option value="RENT">RENT</option>
-                                <option value="SALE">SALE</option>
-                                <option value="INVESTMENT">INVESTMENT</option>
+                                <option value="BUY" data-i18n="opt_inq_buy">BUY</option>
+                                <option value="RENT" data-i18n="opt_inq_rent">RENT</option>
+                                <option value="SALE" data-i18n="opt_inq_sale">SALE</option>
+                                <option value="INVESTMENT" data-i18n="opt_inq_inv">INVESTMENT</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -612,9 +612,9 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label data-i18n="col_agent">Assigned Agent</label>
+                            <label data-i18n="lbl_assigned_agent">Assign to Agent</label>
                             <select id="edit-lead-assigned">
-                                <option value="">-- Unassigned --</option>
+                                <option value="" data-i18n="opt_unassigned_route">-- Unassigned (Auto-route to Branch Manager) --</option>
                             </select>
                             <small id="edit-lead-assigned-hint" style="color: var(--text-muted); font-size: 0.78em; display: block; margin-top: 3px;" data-i18n="hint_city_agents">
                                 Select preferred city to filter branch agents only
@@ -626,13 +626,13 @@
                         <div class="form-group">
                             <label data-i18n="lbl_lead_source">Lead Channel / Source</label>
                             <select id="edit-lead-source">
-                                <option value="">-- Direct / Walk-in --</option>
+                                <option value="" data-i18n="opt_direct_walkin">-- Direct / Walk-in --</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_pref_prop_type">Preferred Property Type</label>
                             <select id="edit-lead-prop-type" onchange="onLeadPropTypeChange('edit')">
-                                <option value="">-- Any Property Type --</option>
+                                <option value="" data-i18n="opt_any_prop_type">-- Any Property Type --</option>
                             </select>
                         </div>
                     </div>
@@ -640,22 +640,22 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label data-i18n="lbl_budget_min">Budget Min (SAR)</label>
-                            <input type="number" id="edit-lead-budget-min" step="1000">
+                            <input type="number" id="edit-lead-budget-min" placeholder="e.g. 500000" data-i18n-placeholder="placeholder_budget_min" min="0" step="1000">
                         </div>
                         <div class="form-group">
                             <label data-i18n="lbl_budget_max">Budget Max (SAR)</label>
-                            <input type="number" id="edit-lead-budget-max" step="1000">
+                            <input type="number" id="edit-lead-budget-max" placeholder="e.g. 1500000" data-i18n-placeholder="placeholder_budget_max" min="0" step="1000">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group" id="edit-lead-bedrooms-group">
                             <label data-i18n="lbl_bedrooms">Min Bedrooms</label>
-                            <input type="number" id="edit-lead-bedrooms" min="0">
+                            <input type="number" id="edit-lead-bedrooms" placeholder="e.g. 3" data-i18n-placeholder="placeholder_bedrooms" min="0">
                         </div>
                         <div class="form-group" id="edit-lead-area-group">
                             <label data-i18n="lbl_area_min">Min Area (sqm)</label>
-                            <input type="number" id="edit-lead-area-min" min="0">
+                            <input type="number" id="edit-lead-area-min" placeholder="e.g. 500" data-i18n-placeholder="placeholder_area" min="0">
                         </div>
                     </div>
                     <div id="edit-lead-land-hint" style="display:none; margin-top:-8px; margin-bottom:12px; font-size:0.84em; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; padding:6px 12px; border-radius:6px; font-weight:600;"></div>
@@ -699,24 +699,24 @@
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_type">Property Type</label>
                                 <select id="lead-unit-filter-type" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
-                                    <option value="">-- All Types --</option>
+                                    <option value="" data-i18n="opt_any_prop_type">-- All Types --</option>
                                 </select>
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_beds">Bedrooms (Min)</label>
                                 <select id="lead-unit-filter-beds" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
-                                    <option value="">-- Any Beds --</option>
-                                    <option value="0">Studio (0)</option>
-                                    <option value="1">1+ Bed</option>
-                                    <option value="2">2+ Beds</option>
-                                    <option value="3">3+ Beds</option>
-                                    <option value="4">4+ Beds</option>
-                                    <option value="5">5+ Beds</option>
+                                    <option value="" data-i18n="opt_beds_any">-- Any Beds --</option>
+                                    <option value="0" data-i18n="opt_beds_0">Studio (0)</option>
+                                    <option value="1" data-i18n="opt_beds_1">1+ Bed</option>
+                                    <option value="2" data-i18n="opt_beds_2">2+ Beds</option>
+                                    <option value="3" data-i18n="opt_beds_3">3+ Beds</option>
+                                    <option value="4" data-i18n="opt_beds_4">4+ Beds</option>
+                                    <option value="5" data-i18n="opt_beds_5">5+ Beds</option>
                                 </select>
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_maxprice">Max Price (SAR)</label>
-                                <input type="number" id="lead-unit-filter-maxprice" placeholder="e.g. 750000" oninput="filterLeadUnitsList()" onkeydown="if(event.key==='Enter'){event.preventDefault(); filterLeadUnitsList();}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                <input type="number" id="lead-unit-filter-maxprice" placeholder="e.g. 750000" data-i18n-placeholder="placeholder_budget_max" oninput="filterLeadUnitsList()" onkeydown="if(event.key==='Enter'){event.preventDefault(); filterLeadUnitsList();}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
                             </div>
                         </div>
 
@@ -740,7 +740,7 @@
                                     <span id="lead-unit-match-count" style="font-size: 0.76em; color: #0284c7; font-weight: 600;">0 matching units</span>
                                 </div>
                                 <select id="edit-lead-matching-units-select" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85em; background: white;">
-                                    <option value="">-- Select a unit --</option>
+                                    <option value="" data-i18n="opt_select_unit_default">-- Select a unit --</option>
                                 </select>
                             </div>
                             <button type="button" class="btn btn-sm" onclick="addSelectedUnitToLead()" style="background: #16a34a; color: white; border: none; font-weight: 600; padding: 7px 14px; border-radius: 6px; cursor: pointer; height: 35px;">
@@ -959,6 +959,36 @@
                 btn_remove_unit: "Unlink",
                 unit_unassigned_msg: "No unit assigned to this lead. (Optional)",
                 unit_assigned_msg: "Assigned Unit:",
+                opt_status_new: "NEW",
+                opt_status_contacted: "CONTACTED",
+                opt_status_qualified: "QUALIFIED",
+                opt_status_converted: "CONVERTED",
+                opt_status_lost: "LOST",
+                btn_add_viewing: "+ Viewing",
+                btn_add_activity: "+ Activity",
+                btn_add_message: "+ Message",
+                opt_any_prop_type: "-- Any Property Type --",
+                opt_direct_walkin: "-- Direct / Walk-in --",
+                opt_unassigned_route: "-- Unassigned (Auto-route to Branch Manager) --",
+                opt_select_unit_default: "-- Select a unit --",
+                opt_beds_any: "-- Any Beds --",
+                opt_beds_0: "Studio (0)",
+                opt_beds_1: "1+ Bed",
+                opt_beds_2: "2+ Beds",
+                opt_beds_3: "3+ Beds",
+                opt_beds_4: "4+ Beds",
+                opt_beds_5: "5+ Beds",
+                placeholder_first_name: "First Name",
+                placeholder_last_name: "Last Name",
+                placeholder_company: "Company Name",
+                placeholder_mobile: "Mobile (+966...)",
+                placeholder_email: "Email Address",
+                placeholder_cust_id: "Customer ID",
+                placeholder_national_id: "National ID / CR",
+                placeholder_budget_min: "e.g. 500000",
+                placeholder_budget_max: "e.g. 1500000",
+                placeholder_bedrooms: "e.g. 3",
+                placeholder_area: "e.g. 500",
                 nav_brand: "Al-Nemari Real Estate Services",
                 font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
                 banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
@@ -1039,6 +1069,36 @@
                 btn_remove_unit: "إلغاء الربط",
                 unit_unassigned_msg: "لم يتم تعيين وحدة عقارية لهذا الطلب حتى الآن (اختياري).",
                 unit_assigned_msg: "الوحدة العقارية المعينة:",
+                opt_status_new: "جديد (NEW)",
+                opt_status_contacted: "تم الاتصال الأولي (CONTACTED)",
+                opt_status_qualified: "مؤهل (QUALIFIED)",
+                opt_status_converted: "محول لفرصة / عقد (CONVERTED)",
+                opt_status_lost: "ملغى / خاسر (LOST)",
+                btn_add_viewing: "+ معاينة",
+                btn_add_activity: "+ نشاط",
+                btn_add_message: "+ رسالة",
+                opt_any_prop_type: "-- أي نوع عقار --",
+                opt_direct_walkin: "-- مباشر / زيارة --",
+                opt_unassigned_route: "-- بدون وسيط (توجيه تلقائي لمدير الفرع) --",
+                opt_select_unit_default: "-- اختر وحدة لإضافتها للقائمة --",
+                opt_beds_any: "-- أي عدد غرف --",
+                opt_beds_0: "استوديو (0)",
+                opt_beds_1: "+1 غرف",
+                opt_beds_2: "+2 غرف",
+                opt_beds_3: "+3 غرف",
+                opt_beds_4: "+4 غرف",
+                opt_beds_5: "+5 غرف",
+                placeholder_first_name: "الاسم الأول",
+                placeholder_last_name: "اسم العائلة",
+                placeholder_company: "اسم الشركة",
+                placeholder_mobile: "رقم الجوال (+966...)",
+                placeholder_email: "البريد الإلكتروني",
+                placeholder_cust_id: "رقم العميل",
+                placeholder_national_id: "الهوية الوطنية / السجل",
+                placeholder_budget_min: "مثال: 500000",
+                placeholder_budget_max: "مثال: 1500000",
+                placeholder_bedrooms: "مثال: 3",
+                placeholder_area: "مثال: 500",
                 lang_label: "English"
             }
         };
@@ -1058,6 +1118,12 @@
                 const key = el.getAttribute('data-i18n');
                 if (i18nData[currentLang] && i18nData[currentLang][key]) {
                     el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.placeholder = i18nData[currentLang][key];
                 }
             });
             const lbl = document.getElementById('lang-label');
@@ -1349,29 +1415,46 @@
 
             const unassignedLabel = isAr 
                 ? (cityId ? '-- بدون وسيط (توجيه تلقائي لمدير الفرع) --' : '-- غير مسند (توجيه تلقائي لمدير الفرع) --')
-                : (cityId ? '-- Unassigned (Auto-route to Branch Manager) --' : '-- Unassigned (Auto-route to Branch Manager) --');
+                : '-- Unassigned (Auto-route to Branch Manager) --';
 
             let html = `<option value="">${unassignedLabel}</option>`;
+
+            let assignedUserNotInFilter = null;
+            if (selectedAgentId && !filteredUsers.some(u => u.user_id === selectedAgentId)) {
+                assignedUserNotInFilter = refUsers.find(u => u.user_id === selectedAgentId);
+            }
+
+            if (assignedUserNotInFilter) {
+                const brText = assignedUserNotInFilter.branch_name ? ` - ${assignedUserNotInFilter.branch_name}` : '';
+                const tag = isAr ? ' (مسند حالياً / فرع آخر)' : ' (Assigned / Other Branch)';
+                html += `<option value="${assignedUserNotInFilter.user_id}">👤 ${assignedUserNotInFilter.full_name} (${assignedUserNotInFilter.employee_no || 'Agent'}${brText}${tag})</option>`;
+            }
 
             if (filteredUsers.length > 0) {
                 html += filteredUsers.map(u => {
                     const brText = u.branch_name ? ` - ${u.branch_name}` : '';
                     return `<option value="${u.user_id}">👤 ${u.full_name} (${u.employee_no || 'Agent'}${brText})</option>`;
                 }).join('');
-            } else if (cityId) {
+            } else if (cityId && !assignedUserNotInFilter) {
                 html += `<option value="" disabled>${isAr ? '(لا يوجد وسطاء مسجلين في هذا الفرع)' : '(No agents registered in this branch)'}</option>`;
             }
 
             agentSelect.innerHTML = html;
 
-            if (selectedAgentId && filteredUsers.some(u => u.user_id === selectedAgentId)) {
+            if (selectedAgentId && (filteredUsers.some(u => u.user_id === selectedAgentId) || assignedUserNotInFilter)) {
                 agentSelect.value = selectedAgentId;
             } else {
                 agentSelect.value = '';
             }
 
             if (hintEl) {
-                if (cityId && cityObj) {
+                if (assignedUserNotInFilter && cityObj) {
+                    const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
+                    hintEl.textContent = isAr 
+                        ? `ℹ️ الوسيط المسند حالياً (${assignedUserNotInFilter.full_name}) يتبع (${assignedUserNotInFilter.branch_name || 'فرع آخر'}) بينما المدينة المفضلة هي (${cityName}). تم الاحتفاظ بإسناده بنجاح.`
+                        : `ℹ️ Currently assigned agent (${assignedUserNotInFilter.full_name}) belongs to (${assignedUserNotInFilter.branch_name || 'Other Branch'}) while preferred city is (${cityName}). Assignment preserved.`;
+                    hintEl.style.color = '#0284c7';
+                } else if (cityId && cityObj) {
                     const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
                     hintEl.textContent = isAr 
                         ? `✓ تم حصر القائمة على وسطاء (${cityName}): ${filteredUsers.length} وسيط متاح`
@@ -1408,28 +1491,48 @@
                 filteredUsers = refUsers;
             }
 
-            const unassignedLabel = isAr ? '-- غير مسند --' : '-- Unassigned --';
+            const unassignedLabel = isAr 
+                ? (cityId ? '-- بدون وسيط (توجيه تلقائي لمدير الفرع) --' : '-- غير مسند (توجيه تلقائي لمدير الفرع) --') 
+                : '-- Unassigned (Auto-route to Branch Manager) --';
             let html = `<option value="">${unassignedLabel}</option>`;
+
+            // Check if there is an assigned agent not matching the filtered city
+            let assignedUserNotInFilter = null;
+            if (selectedAgentId && !filteredUsers.some(u => u.user_id === selectedAgentId)) {
+                assignedUserNotInFilter = refUsers.find(u => u.user_id === selectedAgentId);
+            }
+
+            if (assignedUserNotInFilter) {
+                const brText = assignedUserNotInFilter.branch_name ? ` - ${assignedUserNotInFilter.branch_name}` : '';
+                const tag = isAr ? ' (مسند حالياً / فرع آخر)' : ' (Assigned / Other Branch)';
+                html += `<option value="${assignedUserNotInFilter.user_id}">👤 ${assignedUserNotInFilter.full_name} (${assignedUserNotInFilter.employee_no || 'Agent'}${brText}${tag})</option>`;
+            }
 
             if (filteredUsers.length > 0) {
                 html += filteredUsers.map(u => {
                     const brText = u.branch_name ? ` - ${u.branch_name}` : '';
                     return `<option value="${u.user_id}">👤 ${u.full_name} (${u.employee_no || 'Agent'}${brText})</option>`;
                 }).join('');
-            } else if (cityId) {
+            } else if (cityId && !assignedUserNotInFilter) {
                 html += `<option value="" disabled>${isAr ? '(لا يوجد وسطاء مسجلين في هذا الفرع)' : '(No agents registered in this branch)'}</option>`;
             }
 
             agentSelect.innerHTML = html;
 
-            if (selectedAgentId && filteredUsers.some(u => u.user_id === selectedAgentId)) {
+            if (selectedAgentId && (filteredUsers.some(u => u.user_id === selectedAgentId) || assignedUserNotInFilter)) {
                 agentSelect.value = selectedAgentId;
             } else {
                 agentSelect.value = '';
             }
 
             if (hintEl) {
-                if (cityId && cityObj) {
+                if (assignedUserNotInFilter && cityObj) {
+                    const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
+                    hintEl.textContent = isAr 
+                        ? `ℹ️ الوسيط المسند حالياً (${assignedUserNotInFilter.full_name}) يتبع (${assignedUserNotInFilter.branch_name || 'فرع آخر'}) بينما المدينة المفضلة للطلب هي (${cityName}). تم الاحتفاظ بإسناده بنجاح.`
+                        : `ℹ️ Currently assigned agent (${assignedUserNotInFilter.full_name}) belongs to (${assignedUserNotInFilter.branch_name || 'Other Branch'}) while preferred city is (${cityName}). Assignment preserved.`;
+                    hintEl.style.color = '#0284c7';
+                } else if (cityId && cityObj) {
                     const cityName = isAr ? (cityObj.name_ar || cityObj.name_en) : (cityObj.name_en || cityObj.name_ar);
                     hintEl.textContent = isAr 
                         ? `✓ تم حصر القائمة على وسطاء (${cityName}): ${filteredUsers.length} وسيط متاح`
@@ -2436,10 +2539,13 @@
 
             currentEditingLead = lead;
 
+            const isAr = currentLang === 'ar';
             document.getElementById('edit-lead-id').value = lead.lead_id;
             document.getElementById('edit-lead-id-display').textContent = lead.lead_id;
             document.getElementById('edit-lead-cust-name').textContent = lead.customer_name || 'N/A';
-            document.getElementById('edit-lead-cust-info').textContent = `Mobile: ${lead.customer_mobile || '--'} | Email: ${lead.customer_email || '--'} | Cust ID: ${lead.customer_id || '--'}`;
+            document.getElementById('edit-lead-cust-info').textContent = isAr 
+                ? `الجوال: ${lead.customer_mobile || '--'} | البريد: ${lead.customer_email || '--'} | رقم العميل: ${lead.customer_id || '--'}`
+                : `Mobile: ${lead.customer_mobile || '--'} | Email: ${lead.customer_email || '--'} | Cust ID: ${lead.customer_id || '--'}`;
 
             document.getElementById('edit-lead-status').value = lead.status || 'NEW';
             document.getElementById('edit-lead-priority').value = lead.priority || 'MEDIUM';
@@ -2502,6 +2608,19 @@
                 filterMaxPrice.value = lead.budget_max;
             }
             filterLeadUnitsList();
+
+            document.querySelectorAll('#edit-lead-modal [data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.textContent = i18nData[currentLang][key];
+                }
+            });
+            document.querySelectorAll('#edit-lead-modal [data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18nData[currentLang] && i18nData[currentLang][key]) {
+                    el.placeholder = i18nData[currentLang][key];
+                }
+            });
 
             document.getElementById('edit-lead-modal').style.display = 'flex';
         }

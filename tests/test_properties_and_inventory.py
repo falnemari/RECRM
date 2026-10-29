@@ -121,3 +121,155 @@ class TestPropertiesAndInventory(unittest.IsolatedAsyncioTestCase):
             finally:
                 await conn.close()
 
+    async def test_03_unit_listing_purpose_and_eligibility(self):
+        """
+        Verify units can be classified by listing_purpose (SALE, RENT, INVESTMENT, ALL),
+        filtered by API query, and strictly matched with customer inquiry_type.
+        """
+        from app.services.calculation_service import CalculationService
+
+        with TestClient(app) as client:
+            # 1. Create a project
+            proj_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع اختبار أغراض الوحدات",
+                "name_en": "Listing Purpose Test Project",
+                "status": "ACTIVE"
+            })
+            self.assertEqual(proj_res.status_code, 201)
+            project_id = proj_res.json()["data"]["project_id"]
+
+            # 2. Create SALE unit
+            sale_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "unit_number": "PURPOSE-SALE-01",
+                "asking_price": 950000.0,
+                "listing_purpose": "SALE",
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(sale_res.status_code, 201)
+            sale_unit = sale_res.json()["data"]
+            self.assertEqual(sale_unit["listing_purpose"], "SALE")
+
+            # 3. Create RENT unit
+            rent_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "unit_number": "PURPOSE-RENT-01",
+                "rent_price": 45000.0,
+                "listing_purpose": "RENT",
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(rent_res.status_code, 201)
+            rent_unit = rent_res.json()["data"]
+            self.assertEqual(rent_unit["listing_purpose"], "RENT")
+
+            # 4. Filter by listing_purpose = RENT
+            get_rent = client.get(f"/api/v1/units?project_id={project_id}&listing_purpose=RENT")
+            self.assertEqual(get_rent.status_code, 200)
+            rent_items = get_rent.json()["data"]
+            self.assertTrue(any(u["unit_id"] == rent_unit["unit_id"] for u in rent_items))
+            self.assertFalse(any(u["unit_id"] == sale_unit["unit_id"] for u in rent_items), "SALE unit must not appear in RENT filter")
+
+            # 5. Filter by listing_purpose = SALE
+            get_sale = client.get(f"/api/v1/units?project_id={project_id}&listing_purpose=SALE")
+            self.assertEqual(get_sale.status_code, 200)
+            sale_items = get_sale.json()["data"]
+            self.assertTrue(any(u["unit_id"] == sale_unit["unit_id"] for u in sale_items))
+            self.assertFalse(any(u["unit_id"] == rent_unit["unit_id"] for u in sale_items), "RENT unit must not appear in SALE filter")
+
+            # 6. Test CalculationService eligibility
+            # Rental lead testing a SALE unit -> Must be INELIGIBLE
+            is_ok_sale_for_rent, _ = CalculationService.check_property_eligibility(
+                unit_status="AVAILABLE",
+                property_amount=45000.0,
+                budget_max=50000.0,
+                inquiry_type="RENT",
+                unit_listing_purpose="SALE"
+            )
+            self.assertFalse(is_ok_sale_for_rent, "Sale unit must not be eligible for a RENT lead")
+
+            # Rental lead testing a RENT unit -> Must be ELIGIBLE
+            is_ok_rent_for_rent, _ = CalculationService.check_property_eligibility(
+                unit_status="AVAILABLE",
+                property_amount=45000.0,
+                budget_max=50000.0,
+                inquiry_type="RENT",
+                unit_listing_purpose="RENT"
+            )
+            self.assertTrue(is_ok_rent_for_rent, "Rent unit must be eligible for a RENT lead")
+
+            # Buyer lead testing a RENT unit -> Must be INELIGIBLE
+            is_ok_rent_for_buy, _ = CalculationService.check_property_eligibility(
+                unit_status="AVAILABLE",
+                property_amount=950000.0,
+                budget_max=1000000.0,
+                inquiry_type="BUY",
+                unit_listing_purpose="RENT"
+            )
+            self.assertFalse(is_ok_rent_for_buy, "Rent unit must not be eligible for a BUY lead")
+
+            # Cleanup
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                await conn.execute("DELETE FROM units WHERE unit_id IN ($1, $2)", sale_unit["unit_id"], rent_unit["unit_id"])
+                await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
+            finally:
+                await conn.close()
+
+    async def test_04_investment_unit_metrics_and_persistence(self):
+        """
+        Verify real estate unit created or updated with investment parameters
+        (annual_operating_expenses, annual_vacancy_rate, investment_notes)
+        persists accurately and returns in API responses without artificial defaults.
+        """
+        with TestClient(app) as client:
+            proj_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع أبراج الاستثمار",
+                "name_en": "Investment Towers Project",
+                "status": "ACTIVE"
+            })
+            self.assertEqual(proj_res.status_code, 201)
+            project_id = proj_res.json()["data"]["project_id"]
+
+            unit_payload = {
+                "project_id": project_id,
+                "unit_number": "INV-OFFICE-801",
+                "property_type_id": "property_type-10",
+                "area_sqm": 280.0,
+                "asking_price": 2500000.0,
+                "rent_price": 220000.0,
+                "annual_operating_expenses": 25000.0,
+                "annual_vacancy_rate": 5.0,
+                "investment_notes": "مؤجر بعقد سنوي موثق حتى 2028 - تدفقات نقدية مستقرة",
+                "listing_purpose": "INVESTMENT",
+                "status": "AVAILABLE"
+            }
+            res = client.post("/api/v1/units", json=unit_payload)
+            self.assertEqual(res.status_code, 201, f"Failed to create investment unit: {res.text}")
+            u_data = res.json()["data"]
+            unit_id = u_data["unit_id"]
+
+            self.assertEqual(u_data["asking_price"], 2500000.0)
+            self.assertEqual(u_data["rent_price"], 220000.0)
+            self.assertEqual(u_data["annual_operating_expenses"], 25000.0)
+            self.assertEqual(u_data["annual_vacancy_rate"], 5.0)
+            self.assertEqual(u_data["investment_notes"], "مؤجر بعقد سنوي موثق حتى 2028 - تدفقات نقدية مستقرة")
+
+            # Update unit via PUT
+            update_payload = {
+                "annual_operating_expenses": 28000.0,
+                "annual_vacancy_rate": 4.0
+            }
+            put_res = client.put(f"/api/v1/units/{unit_id}", json=update_payload)
+            self.assertEqual(put_res.status_code, 200)
+            upd_data = put_res.json()["data"]
+            self.assertEqual(upd_data["annual_operating_expenses"], 28000.0)
+            self.assertEqual(upd_data["annual_vacancy_rate"], 4.0)
+
+            # Cleanup
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                await conn.execute("DELETE FROM units WHERE unit_id = $1", unit_id)
+                await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
+            finally:
+                await conn.close()
+

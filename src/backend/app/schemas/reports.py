@@ -73,7 +73,8 @@ class AgentFunnelItem(BaseModel):
     sales_value: float
 
 class OpportunityFunnelItem(BaseModel):
-    opportunity_id: str
+    opportunity_id: Optional[str] = None
+    lead_id: Optional[str] = None
     customer_id: Optional[str] = None
     customer_name: Optional[str] = None
     customer_mobile: Optional[str] = None
@@ -84,6 +85,8 @@ class OpportunityFunnelItem(BaseModel):
     unit_number: Optional[str] = None
     building_name: Optional[str] = None
     project_name: Optional[str] = None
+    inquiry_type: Optional[str] = None
+    item_type: Optional[str] = "OPPORTUNITY"
     created_at: Any = None
 
 class LivePulseEvent(BaseModel):

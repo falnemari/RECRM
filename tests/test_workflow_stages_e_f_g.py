@@ -518,6 +518,11 @@ class TestWorkflowStagesEFG(unittest.IsolatedAsyncioTestCase):
             gross_brokerage = float(comm.get("gross_brokerage_amount") or comm["amount"])
             self.assertEqual(gross_brokerage, 900000.0 * 0.025)
 
+            # Settle generated statutory fee invoices so that handover gating is satisfied
+            fee_invoices = await self.conn.fetch("SELECT invoice_id FROM invoices WHERE opportunity_id = $1", opp_id)
+            for inv in fee_invoices:
+                await WorkflowEngine.collect_fee_invoice(self.conn, inv["invoice_id"], payment_method="BANK_TRANSFER", user_id=self.agent_id)
+
             # Step 4: Finalize Handover & Deal Closure
             close_res = await WorkflowEngine.advance_contract_lifecycle(
                 conn=self.conn,

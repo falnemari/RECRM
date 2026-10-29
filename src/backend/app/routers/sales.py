@@ -585,6 +585,8 @@ async def list_reservations(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
+    opportunity_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
     search: Optional[str] = Query(None),
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -596,6 +598,16 @@ async def list_reservations(
     if status_filter:
         conditions.append(f"r.status = ${p_idx}")
         params.append(status_filter.upper())
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"r.opportunity_id = ${p_idx}")
+        params.append(opportunity_id)
+        p_idx += 1
+
+    if lead_id:
+        conditions.append(f"opp.lead_id = ${p_idx}")
+        params.append(lead_id)
         p_idx += 1
 
     if search:
@@ -617,6 +629,7 @@ async def list_reservations(
         FROM reservations r
         LEFT JOIN units u ON r.unit_id = u.unit_id
         LEFT JOIN customers c ON r.customer_id = c.customer_id
+        LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
         WHERE {where_clause}
     """
     total = await conn.fetchval(count_query, *params)

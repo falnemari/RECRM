@@ -33,6 +33,10 @@ UNIT_SELECT_QUERY = """
         pt.name_ar AS property_type_name_ar,
         CAST(u.asking_price AS FLOAT) AS asking_price,
         CAST(u.rent_price AS FLOAT) AS rent_price,
+        CAST(u.annual_operating_expenses AS FLOAT) AS annual_operating_expenses,
+        CAST(u.annual_vacancy_rate AS FLOAT) AS annual_vacancy_rate,
+        u.investment_notes,
+        COALESCE(u.listing_purpose, 'ALL') AS listing_purpose,
         u.status,
         u.owner_customer_id,
         COALESCE(oc.first_name || ' ' || oc.last_name, oc.company_name) AS owner_name,
@@ -147,6 +151,7 @@ async def list_units(
     bedrooms: Optional[int] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
+    listing_purpose: Optional[str] = None,
     assigned_user_id: Optional[str] = None,
     search: Optional[str] = None,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
@@ -202,6 +207,13 @@ async def list_units(
         conditions.append(f"(u.asking_price <= ${p_idx} OR u.rent_price <= ${p_idx})")
         params.append(max_price)
         p_idx += 1
+
+    if listing_purpose:
+        lp_val = listing_purpose.strip().upper()
+        if lp_val != "ALL":
+            conditions.append(f"(u.listing_purpose = ${p_idx} OR u.listing_purpose = 'ALL' OR u.listing_purpose IS NULL)")
+            params.append(lp_val)
+            p_idx += 1
 
     if search:
         conditions.append(f"(u.unit_number ILIKE ${p_idx} OR COALESCE(p_direct.name_en, p_bld.name_en) ILIKE ${p_idx} OR COALESCE(p_direct.name_ar, p_bld.name_ar) ILIKE ${p_idx} OR u.unit_id ILIKE ${p_idx})")
@@ -389,20 +401,24 @@ async def create_unit(
 
     unit_id = await get_next_id(conn, "units", "unit")
     st = (payload.status or "AVAILABLE").upper()
+    lp = (payload.listing_purpose or "ALL").upper()
 
     await conn.execute("""
         INSERT INTO units (
             unit_id, project_id, building_id, unit_number, property_type_id, floor_no,
             area_sqm, bedrooms, bathrooms, parking_spaces, orientation,
-            asking_price, rent_price, status, owner_customer_id, assigned_user_id
+            asking_price, rent_price, annual_operating_expenses, annual_vacancy_rate, investment_notes,
+            listing_purpose, status, owner_customer_id, assigned_user_id
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
-            $12, $13, $14, $15, $16
+            $12, $13, $14, $15, $16,
+            $17, $18, $19, $20
         )
     """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no,
          payload.area_sqm, payload.bedrooms, payload.bathrooms, payload.parking_spaces, payload.orientation,
-         payload.asking_price, payload.rent_price, st, payload.owner_customer_id, payload.assigned_user_id
+         payload.asking_price, payload.rent_price, payload.annual_operating_expenses, payload.annual_vacancy_rate, payload.investment_notes,
+         lp, st, payload.owner_customer_id, payload.assigned_user_id
     )
 
     row = await conn.fetchrow(f"{UNIT_SELECT_QUERY} WHERE u.unit_id = $1", unit_id)
@@ -479,6 +495,10 @@ async def update_unit(
         "orientation": payload.orientation,
         "asking_price": payload.asking_price,
         "rent_price": payload.rent_price,
+        "annual_operating_expenses": payload.annual_operating_expenses,
+        "annual_vacancy_rate": payload.annual_vacancy_rate,
+        "investment_notes": payload.investment_notes,
+        "listing_purpose": payload.listing_purpose.upper() if payload.listing_purpose else None,
         "status": payload.status.upper() if payload.status else None,
         "owner_customer_id": payload.owner_customer_id,
         "assigned_user_id": payload.assigned_user_id,
