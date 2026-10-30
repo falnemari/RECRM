@@ -59,6 +59,11 @@ class TestRentalWorkflow(unittest.IsolatedAsyncioTestCase):
         # Reset test unit status to AVAILABLE if modified
         if hasattr(self, "test_unit_id"):
             await self.conn.execute("UPDATE units SET status = 'AVAILABLE' WHERE unit_id = $1", self.test_unit_id)
+            await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE unit_id = $1)", self.test_unit_id)
+            await self.conn.execute("DELETE FROM documents WHERE unit_id = $1", self.test_unit_id)
+        if hasattr(self, "test_customer_id"):
+            await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE customer_id = $1)", self.test_customer_id)
+            await self.conn.execute("DELETE FROM documents WHERE customer_id = $1", self.test_customer_id)
         await self.conn.close()
 
     async def test_01_rental_lead_creation_and_first_contact(self):

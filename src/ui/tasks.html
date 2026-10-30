@@ -1462,6 +1462,94 @@
                     </div>
                 </div>
 
+                <!-- Investment Financial Validation & Due Diligence Audit (Shown for TASK_INVEST_VALIDATE_FINANCIALS) -->
+                <div id="comp-invest-financials-fields" style="display: none; background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 0.95em; color: #9a3412; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>💼 <span>تدقيق والتحقق من عقود الإيجار والافتراضات المالية ومصروفات التشغيل:</span></span>
+                        <span style="font-size: 0.78em; background: #ffedd5; color: #c2410c; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Financial Due Diligence Audit</span>
+                    </div>
+                    <div style="font-size: 0.82em; color: #64748b; margin-bottom: 12px; line-height: 1.4;">
+                        تحقق من صحة الفرضيات الاستثمارية ومطابقة عقود الإيجار الموثقة (منصة إيجار)، سجلات التحصيل البنكية، وفواتير التشغيل والصيانة (OPEX) لإقرار صافي الدخل التشغيلي (NOI):
+                    </div>
+
+                    <!-- 3-Pillar Verification Checklist -->
+                    <div style="background: white; border: 1px solid #fed7aa; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 0.86em; color: #0f172a; margin-bottom: 8px;">📋 معايير الفحص والتدقيق الإلزامية قبل الإقرار المالي:</div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.84em;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chk-audit-leases" checked style="margin-top: 3px;">
+                                <div>
+                                    <strong style="color: #1e3a8a;">1. تدقيق عقود الإيجار الموثقة (منصة إيجار):</strong>
+                                    <div style="color: #475569; font-size: 0.9em;">التأكد من سريان العقود ومددها، شروط الإخلاء والزيادة السنوية، وخلو العقار من أي نزاعات قضائية في ناجز.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chk-audit-collections" checked style="margin-top: 3px;">
+                                <div>
+                                    <strong style="color: #15803d;">2. مطابقة سجلات التحصيل الفعلي (Collections & Arrears):</strong>
+                                    <div style="color: #475569; font-size: 0.9em;">مطابقة المبالغ المحصلة فعلياً بالحساب البنكي الرسمي للعقار والتأكد من انعدام التعثرات وسداد الودائع.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chk-audit-opex" checked style="margin-top: 3px;">
+                                <div>
+                                    <strong style="color: #c2410c;">3. فحص مصروفات التشغيل OPEX وفواتير الخدمات:</strong>
+                                    <div style="color: #475569; font-size: 0.9em;">فحص فواتير الكهرباء والمياه، عقود صيانة المصاعد والسلامة، ورسوم إدارة الأملاك والنظافة.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Financial Projections Inputs -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#0f172a;">إجمالي الدخل الإيجاري السنوي المحقق (SAR) *</label>
+                            <input type="number" id="comp-audit-gross-rent" class="search-input" style="width:100%; font-weight:700;" oninput="recalcAuditMetrics()">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#b45309;">مخصص الشغور والتعثر السنوي (SAR)</label>
+                            <input type="number" id="comp-audit-vac" class="search-input" style="width:100%;" oninput="recalcAuditMetrics()">
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 8px;">
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#c2410c;">مصاريف التشغيل السنوية المعتمدة OPEX (SAR) *</label>
+                            <input type="number" id="comp-audit-opex" class="search-input" style="width:100%; font-weight:700;" oninput="recalcAuditMetrics()">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8em; font-weight:700; color:#15803d;">صافي الدخل التشغيلي السنوي المعتمد NOI (SAR)</label>
+                            <input type="number" id="comp-audit-noi" class="search-input" style="width:100%; font-weight:800; color:#15803d; background:#f0fdf4;" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Summary KPI Box -->
+                    <div style="margin-top: 10px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <span style="font-size:0.8em; color:#166534;">صافي العائد الاستثماري المحقق (Net Yield): </span>
+                            <strong id="comp-audit-net-yield" style="font-size:1.05em; color:#15803d;">0.0%</strong>
+                        </div>
+                        <div>
+                            <span style="font-size:0.8em; color:#166534;">نسبة مصاريف التشغيل إلى الإيراد (OPEX Ratio): </span>
+                            <strong id="comp-audit-opex-ratio" style="font-size:1.05em; color:#0369a1;">0.0%</strong>
+                        </div>
+                    </div>
+
+                    <!-- Parallel Sub-tasks Generator Trigger -->
+                    <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <strong style="font-size:0.84em; color:#334155;">🔀 تفريع مهام الفحص الميداني المتوازي للمختصين:</strong>
+                            <div style="font-size:0.78em; color:#64748b;">توليد 3 مهام فرعية متوازية لفرق (القانونية، المحاسبة، والتشغيل) محددة بـ SLA مع استلام نتائجهم تلقائياً.</div>
+                        </div>
+                        <button type="button" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:0.78em; font-weight:700; padding:5px 12px;" onclick="spawnParallelAuditTasks()">
+                            + تفريع المهام المتوازية
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Investment Baseline Establishment Form (Shown for TASK_INVEST_BASELINE_PERFORMANCE) -->
                 <div id="comp-invest-baseline-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
                     <div style="font-weight: 700; font-size: 0.92em; color: #166534; margin-bottom: 8px;">📊 توثيق واعتماد خط الأساس الاستثماري للأصل:</div>
@@ -3197,6 +3285,7 @@
             const investObjFields = document.getElementById('comp-invest-objectives-fields');
             const investRetFields = document.getElementById('comp-invest-returns-fields');
             const assignFields = document.getElementById('comp-lead-assign-fields');
+            const auditFinancialsFields = document.getElementById('comp-invest-financials-fields');
             if (qualFields) qualFields.style.display = 'none';
             if (cbFields) cbFields.style.display = 'none';
             if (matchFields) matchFields.style.display = 'none';
@@ -3208,6 +3297,7 @@
             if (investObjFields) investObjFields.style.display = 'none';
             if (investRetFields) investRetFields.style.display = 'none';
             if (assignFields) assignFields.style.display = 'none';
+            if (auditFinancialsFields) auditFinancialsFields.style.display = 'none';
 
             // Set default callback datetime to tomorrow 11:00 AM
             const cbInput = document.getElementById('comp-callback-datetime');
@@ -3730,12 +3820,62 @@
                     }
                 }
             } else if (templateId === 'TASK_INVEST_VALIDATE_FINANCIALS') {
+                const auditFields = document.getElementById('comp-invest-financials-fields');
+                if (auditFields) auditFields.style.display = 'block';
+
+                let grossRent = 600000;
+                let vac = 48000;
+                let opex = 60000;
+                let purchasePrice = 12000000;
+
+                if (t && t.opportunity_id) {
+                    try {
+                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
+                            .then(r => r.json())
+                            .then(j => {
+                                if (j.data && j.data.length > 0) {
+                                    const rep = j.data[0];
+                                    if (rep.gross_annual_rent_sar) grossRent = parseFloat(rep.gross_annual_rent_sar);
+                                    if (rep.vacancy_allowance_sar != null) vac = parseFloat(rep.vacancy_allowance_sar);
+                                    if (rep.operating_expenses_opex_sar) opex = parseFloat(rep.operating_expenses_opex_sar);
+                                    if (rep.purchase_price_sar) purchasePrice = parseFloat(rep.purchase_price_sar);
+                                }
+                                const grEl = document.getElementById('comp-audit-gross-rent');
+                                const vacEl = document.getElementById('comp-audit-vac');
+                                const opexEl = document.getElementById('comp-audit-opex');
+                                if (grEl) grEl.value = grossRent;
+                                if (vacEl) vacEl.value = vac;
+                                if (opexEl) opexEl.value = opex;
+                                window.currentAuditPurchasePrice = purchasePrice;
+                                recalcAuditMetrics();
+                            }).catch(() => {
+                                const grEl = document.getElementById('comp-audit-gross-rent');
+                                const vacEl = document.getElementById('comp-audit-vac');
+                                const opexEl = document.getElementById('comp-audit-opex');
+                                if (grEl) grEl.value = grossRent;
+                                if (vacEl) vacEl.value = vac;
+                                if (opexEl) opexEl.value = opex;
+                                window.currentAuditPurchasePrice = purchasePrice;
+                                recalcAuditMetrics();
+                            });
+                    } catch (_) {}
+                } else {
+                    const grEl = document.getElementById('comp-audit-gross-rent');
+                    const vacEl = document.getElementById('comp-audit-vac');
+                    const opexEl = document.getElementById('comp-audit-opex');
+                    if (grEl) grEl.value = grossRent;
+                    if (vacEl) vacEl.value = vac;
+                    if (opexEl) opexEl.value = opex;
+                    window.currentAuditPurchasePrice = purchasePrice;
+                    recalcAuditMetrics();
+                }
+
                 container.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
                         <input type="radio" name="comp_outcome" value="VALIDATED" checked>
                         <div>
                             <strong style="color:#166534;">${isAr ? '✓ اعتماد وتدقيق الفرضيات المالية والاستثمارية' : '✓ Financial Projections Validated'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد تكاليف الشغور والتشغيل وتوليد مهمة إعداد عرض الاستحواذ' : 'Validate vacancy & OPEX, spawn acquisition offer preparation task'}</div>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد تكاليف الشغور والتشغيل وصافي الدخل وإصدار الموافقة المالية الرسمية' : 'Validate vacancy, OPEX, NOI and issue formal financial approval'}</div>
                         </div>
                     </label>
                 `;
@@ -5663,6 +5803,29 @@
                 if (rsn) payload.review_reason = rsn;
             }
 
+            if (templateId === 'TASK_INVEST_VALIDATE_FINANCIALS') {
+                const gRent = document.getElementById('comp-audit-gross-rent')?.value;
+                const vac = document.getElementById('comp-audit-vac')?.value;
+                const opex = document.getElementById('comp-audit-opex')?.value;
+                const noi = document.getElementById('comp-audit-noi')?.value;
+                const chkLeases = document.getElementById('chk-audit-leases')?.checked;
+                const chkCollections = document.getElementById('chk-audit-collections')?.checked;
+                const chkOpex = document.getElementById('chk-audit-opex')?.checked;
+
+                if (gRent) payload.gross_annual_rent = parseFloat(gRent);
+                if (vac) payload.annual_vacancy_allowance = parseFloat(vac);
+                if (opex) payload.annual_operating_expenses = parseFloat(opex);
+                if (noi) payload.net_operating_income = parseFloat(noi);
+
+                const auditDetails = [
+                    chkLeases ? '✓ تم تدقيق سريان عقود الإيجار (منصة إيجار) وخلوها من النزاعات' : '⚠️ عقود الإيجار بحاجة لاستكمال',
+                    chkCollections ? '✓ تمت مطابقة سجلات التحصيل الفعلي بنكياً' : '⚠️ التحصيل الفعلي غير مكتمل',
+                    chkOpex ? '✓ تم فحص وتدقيق فواتير التشغيل والصيانة OPEX' : '⚠️ فواتير OPEX بحاجة لمراجعة'
+                ].join(' | ');
+
+                payload.notes = (payload.notes ? payload.notes + '\n\n' : '') + `[معايير التدقيق المالي المعتمدة]: ${auditDetails}`;
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/complete`, {
                     method: 'POST',
@@ -5753,6 +5916,92 @@
         }
 
         // --- Live Investment DD & Monitoring Calculations ---
+        function recalcAuditMetrics() {
+            const gRent = parseFloat(document.getElementById('comp-audit-gross-rent')?.value || '0');
+            const vac = parseFloat(document.getElementById('comp-audit-vac')?.value || '0');
+            const opex = parseFloat(document.getElementById('comp-audit-opex')?.value || '0');
+            const noi = Math.max(0, gRent - vac - opex);
+            
+            const noiEl = document.getElementById('comp-audit-noi');
+            if (noiEl) noiEl.value = Math.round(noi);
+
+            const pPrice = window.currentAuditPurchasePrice || 12000000;
+            const netYield = pPrice > 0 ? (noi / pPrice) * 100 : 0;
+            const opexRatio = gRent > 0 ? (opex / gRent) * 100 : 0;
+
+            const yieldEl = document.getElementById('comp-audit-net-yield');
+            if (yieldEl) yieldEl.textContent = `${netYield.toFixed(2)}%`;
+
+            const opexRatioEl = document.getElementById('comp-audit-opex-ratio');
+            if (opexRatioEl) opexRatioEl.textContent = `${opexRatio.toFixed(1)}%`;
+        }
+
+        async function spawnParallelAuditTasks() {
+            const isAr = currentLang === 'ar';
+            const t = window.currentExecutingTask;
+            const opp = window.currentExecutingOpp;
+            const lead = window.currentExecutingLead;
+
+            const oppId = (t && t.opportunity_id) || (opp && opp.opportunity_id) || null;
+            const leadId = (t && t.lead_id) || (lead && lead.lead_id) || null;
+            const custId = (t && t.customer_id) || (opp && opp.customer_id) || (lead && lead.customer_id) || null;
+            const taskId = t ? t.task_id : null;
+
+            const confirmMsg = isAr 
+                ? 'هل ترغب في توليد 3 مهام فحص وتدقيق متوازية لفرق العمل المختصة؟\n\n1. الشؤون القانونية: تدقيق عقود الإيجار ونظام إيجار ومخاطر الإخلاء.\n2. الحسابات المالية: مطابقة التحصيل البنكي الفعلي وفحص التعثرات.\n3. إدارة الأملاك والمرافق: فحص فواتير ومصروفات التشغيل OPEX وصيانة المصاعد.'
+                : 'Do you want to spawn 3 parallel audit tasks for specialized teams (Legal, Accounting, Facilities)?';
+
+            if (!confirm(confirmMsg)) return;
+
+            const subTasks = [
+                {
+                    title: isAr ? 'الاستثمار — تدقيق عقود الإيجار الموثقة وشروط الإخلاء والنزاعات' : 'Investment — Legal Lease Contracts & Eviction Audit',
+                    template_id: 'TASK_INVEST_VALIDATE_FINANCIALS',
+                    priority: 'HIGH',
+                    hours: 24
+                },
+                {
+                    title: isAr ? 'الاستثمار — المطابقة المحاسبية لسجلات التحصيل والتدفقات النقدية' : 'Investment — Financial Rent Roll & Bank Reconciliation',
+                    template_id: 'TASK_INVEST_VALIDATE_FINANCIALS',
+                    priority: 'HIGH',
+                    hours: 24
+                },
+                {
+                    title: isAr ? 'الاستثمار — فحص فواتير مصاريف التشغيل OPEX وعقود الصيانة' : 'Investment — Utility Invoices & OPEX Audit',
+                    template_id: 'TASK_INVEST_VALIDATE_FINANCIALS',
+                    priority: 'HIGH',
+                    hours: 48
+                }
+            ];
+
+            let createdCount = 0;
+            for (const st of subTasks) {
+                const dueDt = new Date(Date.now() + st.hours * 3600 * 1000).toISOString();
+                try {
+                    await apiRequest(`${API_BASE}/api/v1/tasks`, 'POST', {
+                        title: st.title,
+                        template_id: st.template_id,
+                        priority: st.priority,
+                        due_at: dueDt,
+                        opportunity_id: oppId,
+                        lead_id: leadId,
+                        customer_id: custId,
+                        parent_task_id: taskId,
+                        status: 'OPEN'
+                    });
+                    createdCount++;
+                } catch (e) {
+                    console.error('Failed to spawn subtask:', e);
+                }
+            }
+
+            alert(isAr
+                ? `✓ تم بنجاح تفريع عدد (${createdCount}) مهام متوازية متخصصة ومربوطة بنفس الصفقة!\n\nيمكن للمختصين إنجازها، وتظهر نتائجهم ومرفقاتهم مباشرة في هذا التقرير.`
+                : `✓ Successfully spawned ${createdCount} parallel audit sub-tasks!`);
+            
+            loadTasks();
+        }
+
         function onOccCountChange() {
             const occEl = document.getElementById('comp-invest-occ-count');
             const totEl = document.getElementById('comp-invest-tot-units');

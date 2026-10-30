@@ -133,12 +133,34 @@ async def list_documents(
         p_idx += 1
 
     if lead_id:
-        conditions.append(f"(d.lead_id = ${p_idx} OR opp.lead_id = ${p_idx})")
+        conditions.append(f"""(
+            d.lead_id = ${p_idx} OR 
+            opp.lead_id = ${p_idx} OR
+            d.unit_id IN (
+                SELECT unit_id FROM lead_units WHERE lead_id = ${p_idx}
+                UNION
+                SELECT unit_id FROM leads WHERE lead_id = ${p_idx} AND unit_id IS NOT NULL
+                UNION
+                SELECT ou.unit_id FROM opportunity_units ou JOIN opportunities o ON ou.opportunity_id = o.opportunity_id WHERE o.lead_id = ${p_idx}
+                UNION
+                SELECT idr.unit_id FROM investment_due_diligence_reports idr JOIN opportunities o ON idr.opportunity_id = o.opportunity_id WHERE o.lead_id = ${p_idx}
+            ) OR
+            d.task_id IN (SELECT task_id FROM tasks WHERE lead_id = ${p_idx})
+        )""")
         params.append(lead_id)
         p_idx += 1
 
     if opportunity_id:
-        conditions.append(f"d.opportunity_id = ${p_idx}")
+        conditions.append(f"""(
+            d.opportunity_id = ${p_idx} OR
+            d.unit_id IN (
+                SELECT unit_id FROM opportunity_units WHERE opportunity_id = ${p_idx}
+                UNION
+                SELECT unit_id FROM investment_due_diligence_reports WHERE opportunity_id = ${p_idx}
+            ) OR
+            d.lead_id IN (SELECT lead_id FROM opportunities WHERE opportunity_id = ${p_idx}) OR
+            d.task_id IN (SELECT task_id FROM tasks WHERE opportunity_id = ${p_idx})
+        )""")
         params.append(opportunity_id)
         p_idx += 1
 
@@ -1203,4 +1225,24 @@ async def archive_document(
         )
 
     return ResponseEnvelope(data={"document_id": str(document_id), "status": "ARCHIVED"})
+
+
+@router.delete("/documents/{document_id}", response_model=ResponseEnvelope[dict])
+async def delete_document(
+    document_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """Permanently delete a document and its access log records."""
+    doc = await conn.fetchrow("SELECT document_id FROM documents WHERE document_id = $1", document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="المستند غير موجود")
+
+    async with conn.transaction():
+        await conn.execute("DELETE FROM document_access_log WHERE document_id = $1", document_id)
+        await conn.execute("DELETE FROM documents WHERE document_id = $1", document_id)
+
+    return ResponseEnvelope(
+        data={"deleted": True, "document_id": document_id},
+        message="تم حذف المستند بنجاح"
+    )
 

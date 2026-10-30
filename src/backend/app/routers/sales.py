@@ -601,12 +601,18 @@ async def list_reservations(
         p_idx += 1
 
     if opportunity_id:
-        conditions.append(f"r.opportunity_id = ${p_idx}")
+        conditions.append(f"""(
+            r.opportunity_id = ${p_idx} OR
+            r.unit_id IN (SELECT unit_id FROM opportunity_units WHERE opportunity_id = ${p_idx})
+        )""")
         params.append(opportunity_id)
         p_idx += 1
 
     if lead_id:
-        conditions.append(f"opp.lead_id = ${p_idx}")
+        conditions.append(f"""(
+            opp.lead_id = ${p_idx} OR
+            r.unit_id IN (SELECT unit_id FROM lead_units WHERE lead_id = ${p_idx} UNION SELECT unit_id FROM leads WHERE lead_id = ${p_idx} AND unit_id IS NOT NULL)
+        )""")
         params.append(lead_id)
         p_idx += 1
 

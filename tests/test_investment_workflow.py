@@ -68,8 +68,8 @@ class TestInvestmentWorkflow(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         # Cleanup test entities
         await self.conn.execute("UPDATE units SET owner_customer_id = NULL WHERE owner_customer_id = $1", self.test_customer_id)
-        await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE customer_id = $1)", self.test_customer_id)
-        await self.conn.execute("DELETE FROM documents WHERE customer_id = $1", self.test_customer_id)
+        await self.conn.execute("DELETE FROM document_access_log WHERE document_id IN (SELECT document_id FROM documents WHERE customer_id = $1 OR unit_id IN ($2, $3))", self.test_customer_id, self.unit_a_id, self.unit_b_id)
+        await self.conn.execute("DELETE FROM documents WHERE customer_id = $1 OR unit_id IN ($2, $3)", self.test_customer_id, self.unit_a_id, self.unit_b_id)
         await self.conn.execute("DELETE FROM reservations WHERE customer_id = $1", self.test_customer_id)
         await self.conn.execute("DELETE FROM communications WHERE customer_id = $1 OR lead_id IN (SELECT lead_id FROM leads WHERE customer_id = $1)", self.test_customer_id)
         await self.conn.execute("DELETE FROM tasks WHERE customer_id = $1", self.test_customer_id)
