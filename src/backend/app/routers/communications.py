@@ -1,6 +1,7 @@
 from typing import Optional, List
 from uuid import uuid4
 from datetime import datetime, timezone
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
 from app.database import get_db, get_next_id
@@ -8,11 +9,14 @@ from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvel
 from app.routers.auth import check_user_scope_override, resolve_user_data_scope, resolve_data_scope_filter
 from app.schemas.communications import (
     TasksSummaryOut,
-    TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn,
+    TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn, TaskCancelIn,
     ActivityOut, ActivityCreateIn,
-    CommunicationOut, CommunicationCreateIn
+    CommunicationOut, CommunicationCreateIn,
+    InternalPingCreateIn, InternalPingOut, InternalPingsInboxOut, InternalPingsSummary, CleanupExpiredPingsOut
 )
 from app.services.workflow_engine import WorkflowEngine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Tasks & Communications"])
 
@@ -557,6 +561,44 @@ async def reopen_task_endpoint(
     return ResponseEnvelope(data=result)
 
 
+@router.post("/tasks/{task_id}/cancel", response_model=ResponseEnvelope[dict])
+async def cancel_task_endpoint(
+    task_id: str,
+    payload: Optional[TaskCancelIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Cancel Task Endpoint:
+    Cancels a task, logs ACT_TASK_CANCELLED, and optionally cascades to cancel the parent deal.
+    """
+    user_id = x_user_id or "user-51"
+    reason = payload.reason if payload else "CANCELLED_BY_USER"
+    notes = payload.notes if payload else None
+    cascade = bool(payload and (payload.cascade_cancel_opportunity or payload.cancel_opportunity))
+
+    async with conn.transaction():
+        try:
+            result = await WorkflowEngine.cancel_task(
+                conn=conn,
+                task_id=task_id,
+                user_id=user_id,
+                reason=reason,
+                notes=notes,
+                cancel_opportunity=cascade
+            )
+        except ValueError as e:
+            msg = str(e)
+            if "not found" in msg.lower() or "غير موجودة" in msg:
+                raise HTTPException(status_code=404, detail=msg)
+            raise HTTPException(status_code=400, detail=msg)
+        except Exception as e:
+            logger.error(f"Error cancelling task {task_id}: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to cancel task: {str(e)}")
+
+    return ResponseEnvelope(data=result)
+
+
 # ---------------------------------------------------------
 # Activities
 # ---------------------------------------------------------
@@ -912,4 +954,445 @@ async def create_communication(payload: CommunicationCreateIn, conn: asyncpg.Con
         delivery_status=payload.delivery_status or "SENT"
     )
     return ResponseEnvelope(data=out)
+
+
+# =========================================================================
+# INTERNAL TASK REMINDER PINGS & NON-DESTRUCTIVE CONTEXTUAL MESSAGING
+# =========================================================================
+
+@router.post("/internal-pings", response_model=ResponseEnvelope[InternalPingOut], status_code=status.HTTP_201_CREATED)
+async def create_internal_ping(
+    payload: InternalPingCreateIn,
+    x_user_id: Optional[str] = Header("user-51", alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    sender_id = x_user_id or "user-51"
+    sender_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", sender_id) or sender_id
+
+    # Resolve recipient if not provided
+    recipient_id = payload.recipient_user_id
+    recipient_name = None
+
+    if recipient_id:
+        recipient_name = await conn.fetchval("SELECT full_name FROM users WHERE user_id = $1", recipient_id)
+    else:
+        # Auto-resolve by recipient_role
+        role_code = payload.recipient_role.upper()
+        if role_code in ("DIRECT_MANAGER", "SALES_MANAGER", "BRANCH_MANAGER"):
+            sender_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", sender_id)
+            if sender_branch:
+                row = await conn.fetchrow("""
+                    SELECT u.user_id, u.full_name FROM users u
+                    JOIN user_roles ur ON u.user_id = ur.user_id
+                    JOIN roles r ON ur.role_id = r.role_id
+                    WHERE u.branch_id = $1 AND r.role_code IN ('SALES_MANAGER', 'BRANCH_MANAGER', 'SYS_ADMIN')
+                    LIMIT 1
+                """, sender_branch)
+                if row:
+                    recipient_id = row["user_id"]
+                    recipient_name = row["full_name"]
+        elif role_code == "ACCOUNTANT":
+            sender_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", sender_id)
+            if sender_branch:
+                row = await conn.fetchrow("""
+                    SELECT u.user_id, u.full_name FROM users u
+                    JOIN user_roles ur ON u.user_id = ur.user_id
+                    JOIN roles r ON ur.role_id = r.role_id
+                    WHERE r.role_code = 'ACCOUNTANT' AND u.branch_id = $1
+                    LIMIT 1
+                """, sender_branch)
+                if row:
+                    recipient_id = row["user_id"]
+                    recipient_name = row["full_name"]
+            if not recipient_id:
+                row = await conn.fetchrow("""
+                    SELECT u.user_id, u.full_name FROM users u
+                    JOIN user_roles ur ON u.user_id = ur.user_id
+                    JOIN roles r ON ur.role_id = r.role_id
+                    WHERE r.role_code = 'ACCOUNTANT'
+                    LIMIT 1
+                """)
+                if row:
+                    recipient_id = row["user_id"]
+                    recipient_name = row["full_name"]
+        elif role_code in ("ASSIGNED_AGENT", "AGENT"):
+            # Try matching assignedUser from snapshot if present
+            assigned_name = payload.context_snapshot.get("assignedUser") if isinstance(payload.context_snapshot, dict) else None
+            if assigned_name and assigned_name != "--":
+                row = await conn.fetchrow("SELECT user_id, full_name FROM users WHERE full_name ILIKE $1 LIMIT 1", f"%{assigned_name}%")
+                if row:
+                    recipient_id = row["user_id"]
+                    recipient_name = row["full_name"]
+            # Or look up context_id in reservations -> opportunities
+            if not recipient_id and payload.context_id:
+                cid = payload.context_id
+                if cid.startswith("res-") or payload.context_type in ("RESERVATION", "RESERVATION_DEPOSIT"):
+                    row = await conn.fetchrow("""
+                        SELECT u.user_id, u.full_name 
+                        FROM reservations r
+                        JOIN opportunities o ON r.opportunity_id = o.opportunity_id
+                        JOIN users u ON o.assigned_user_id = u.user_id
+                        WHERE r.reservation_id = $1
+                    """, cid)
+                    if row:
+                        recipient_id = row["user_id"]
+                        recipient_name = row["full_name"]
+                elif cid.startswith("lead-") or payload.context_type == "LEAD":
+                    row = await conn.fetchrow("""
+                        SELECT u.user_id, u.full_name
+                        FROM leads l
+                        JOIN users u ON l.assigned_agent_id = u.user_id
+                        WHERE l.lead_id = $1
+                    """, cid)
+                    if row:
+                        recipient_id = row["user_id"]
+                        recipient_name = row["full_name"]
+                elif cid.startswith("opp-") or payload.context_type == "OPPORTUNITY":
+                    row = await conn.fetchrow("""
+                        SELECT u.user_id, u.full_name
+                        FROM opportunities o
+                        JOIN users u ON o.assigned_user_id = u.user_id
+                        WHERE o.opportunity_id = $1
+                    """, cid)
+                    if row:
+                        recipient_id = row["user_id"]
+                        recipient_name = row["full_name"]
+        elif role_code == "PROPERTY_MANAGER":
+            row = await conn.fetchrow("""
+                SELECT u.user_id, u.full_name FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code = 'PROPERTY_MANAGER'
+                LIMIT 1
+            """)
+            if row:
+                recipient_id = row["user_id"]
+                recipient_name = row["full_name"]
+        elif role_code in ("GENERAL_MANAGER", "SYS_ADMIN"):
+            row = await conn.fetchrow("""
+                SELECT u.user_id, u.full_name FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code = 'SYS_ADMIN'
+                LIMIT 1
+            """)
+            if row:
+                recipient_id = row["user_id"]
+                recipient_name = row["full_name"]
+        
+        # Fallback to general manager if still unresolved
+        if not recipient_id:
+            row = await conn.fetchrow("""
+                SELECT u.user_id, u.full_name FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code = 'SYS_ADMIN'
+                LIMIT 1
+            """)
+            if row:
+                recipient_id = row["user_id"]
+                recipient_name = row["full_name"]
+
+    now = datetime.now(timezone.utc)
+    ping_id = f"PNG-{now.strftime('%Y%m%d')}-{uuid4().hex[:6].upper()}"
+    archived_at = now if payload.is_archived else None
+
+    import json
+    snapshot_json = json.dumps(payload.context_snapshot)
+
+    await conn.execute("""
+        INSERT INTO internal_task_pings (
+            ping_id, sender_user_id, sender_name, recipient_role,
+            recipient_user_id, recipient_name, context_type, context_id,
+            context_snapshot, message_text, urgency_level, is_read,
+            is_archived, archived_at, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, FALSE, $12, $13, $14)
+    """, ping_id, sender_id, sender_name, payload.recipient_role,
+        recipient_id, recipient_name, payload.context_type.upper(),
+        payload.context_id, snapshot_json, payload.message_text,
+        payload.urgency_level.upper(), payload.is_archived, archived_at, now)
+
+    out = InternalPingOut(
+        ping_id=ping_id,
+        sender_user_id=sender_id,
+        sender_name=sender_name,
+        recipient_role=payload.recipient_role,
+        recipient_user_id=recipient_id,
+        recipient_name=recipient_name,
+        context_type=payload.context_type.upper(),
+        context_id=payload.context_id,
+        context_snapshot=payload.context_snapshot,
+        message_text=payload.message_text,
+        urgency_level=payload.urgency_level.upper(),
+        is_read=False,
+        is_archived=payload.is_archived,
+        archived_at=archived_at,
+        created_at=now
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.get("/internal-pings/inbox", response_model=ResponseEnvelope[InternalPingsInboxOut])
+async def get_internal_pings_inbox(
+    filter_type: Optional[str] = Query("ALL", description="ALL, UNREAD, ARCHIVED, SENT"),
+    limit: int = Query(50, ge=1, le=200),
+    x_user_id: Optional[str] = Header("user-51", alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    uid = x_user_id or "user-51"
+
+    # Base counts for user
+    total_count = await conn.fetchval("""
+        SELECT COUNT(*) FROM internal_task_pings
+        WHERE recipient_user_id = $1 OR sender_user_id = $1
+    """, uid) or 0
+
+    unread_count = await conn.fetchval("""
+        SELECT COUNT(*) FROM internal_task_pings
+        WHERE recipient_user_id = $1 AND is_read = FALSE
+    """, uid) or 0
+
+    archived_count = await conn.fetchval("""
+        SELECT COUNT(*) FROM internal_task_pings
+        WHERE (recipient_user_id = $1 OR sender_user_id = $1) AND is_archived = TRUE
+    """, uid) or 0
+
+    import json
+    ft = (filter_type or "ALL").upper()
+    where_clause = ""
+    params = [uid]
+
+    if ft == "UNREAD":
+        where_clause = "WHERE recipient_user_id = $1 AND is_read = FALSE"
+    elif ft == "ARCHIVED":
+        where_clause = "WHERE (recipient_user_id = $1 OR sender_user_id = $1) AND is_archived = TRUE"
+    elif ft == "SENT":
+        where_clause = "WHERE sender_user_id = $1"
+    else:  # ALL
+        where_clause = "WHERE recipient_user_id = $1 OR sender_user_id = $1"
+
+    query = f"""
+        SELECT ping_id, sender_user_id, sender_name, recipient_role,
+               recipient_user_id, recipient_name, context_type, context_id,
+               context_snapshot, message_text, urgency_level, is_read,
+               read_at, is_archived, archived_at, created_at
+        FROM internal_task_pings
+        {where_clause}
+        ORDER BY created_at DESC
+        LIMIT {limit}
+    """
+    rows = await conn.fetch(query, *params)
+    pings = []
+    for r in rows:
+        snapshot = r["context_snapshot"]
+        if isinstance(snapshot, str):
+            try:
+                snapshot = json.loads(snapshot)
+            except Exception:
+                snapshot = {}
+        elif not isinstance(snapshot, dict):
+            snapshot = {}
+
+        pings.append(InternalPingOut(
+            ping_id=r["ping_id"],
+            sender_user_id=r["sender_user_id"],
+            sender_name=r["sender_name"],
+            recipient_role=r["recipient_role"],
+            recipient_user_id=r["recipient_user_id"],
+            recipient_name=r["recipient_name"],
+            context_type=r["context_type"],
+            context_id=r["context_id"],
+            context_snapshot=snapshot,
+            message_text=r["message_text"],
+            urgency_level=r["urgency_level"],
+            is_read=r["is_read"],
+            read_at=r["read_at"],
+            is_archived=r["is_archived"],
+            archived_at=r["archived_at"],
+            created_at=r["created_at"]
+        ))
+
+    out = InternalPingsInboxOut(
+        pings=pings,
+        summary=InternalPingsSummary(
+            total_count=total_count,
+            unread_count=unread_count,
+            archived_count=archived_count
+        )
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.patch("/internal-pings/{ping_id}/read", response_model=ResponseEnvelope[InternalPingOut])
+async def toggle_ping_read(
+    ping_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    row = await conn.fetchrow("SELECT * FROM internal_task_pings WHERE ping_id = $1", ping_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Ping not found")
+
+    new_state = not row["is_read"]
+    now = datetime.now(timezone.utc) if new_state else None
+    await conn.execute("""
+        UPDATE internal_task_pings
+        SET is_read = $1, read_at = $2
+        WHERE ping_id = $3
+    """, new_state, now, ping_id)
+
+    updated = await conn.fetchrow("SELECT * FROM internal_task_pings WHERE ping_id = $1", ping_id)
+    import json
+    snapshot = updated["context_snapshot"]
+    if isinstance(snapshot, str):
+        try:
+            snapshot = json.loads(snapshot)
+        except Exception:
+            snapshot = {}
+    elif not isinstance(snapshot, dict):
+        snapshot = {}
+
+    out = InternalPingOut(
+        ping_id=updated["ping_id"],
+        sender_user_id=updated["sender_user_id"],
+        sender_name=updated["sender_name"],
+        recipient_role=updated["recipient_role"],
+        recipient_user_id=updated["recipient_user_id"],
+        recipient_name=updated["recipient_name"],
+        context_type=updated["context_type"],
+        context_id=updated["context_id"],
+        context_snapshot=snapshot,
+        message_text=updated["message_text"],
+        urgency_level=updated["urgency_level"],
+        is_read=updated["is_read"],
+        read_at=updated["read_at"],
+        is_archived=updated["is_archived"],
+        archived_at=updated["archived_at"],
+        created_at=updated["created_at"]
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.patch("/internal-pings/{ping_id}/archive", response_model=ResponseEnvelope[InternalPingOut])
+async def toggle_ping_archive(
+    ping_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    row = await conn.fetchrow("SELECT * FROM internal_task_pings WHERE ping_id = $1", ping_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Ping not found")
+
+    new_state = not row["is_archived"]
+    now = datetime.now(timezone.utc) if new_state else None
+    await conn.execute("""
+        UPDATE internal_task_pings
+        SET is_archived = $1, archived_at = $2
+        WHERE ping_id = $3
+    """, new_state, now, ping_id)
+
+    updated = await conn.fetchrow("SELECT * FROM internal_task_pings WHERE ping_id = $1", ping_id)
+    import json
+    snapshot = updated["context_snapshot"]
+    if isinstance(snapshot, str):
+        try:
+            snapshot = json.loads(snapshot)
+        except Exception:
+            snapshot = {}
+    elif not isinstance(snapshot, dict):
+        snapshot = {}
+
+    out = InternalPingOut(
+        ping_id=updated["ping_id"],
+        sender_user_id=updated["sender_user_id"],
+        sender_name=updated["sender_name"],
+        recipient_role=updated["recipient_role"],
+        recipient_user_id=updated["recipient_user_id"],
+        recipient_name=updated["recipient_name"],
+        context_type=updated["context_type"],
+        context_id=updated["context_id"],
+        context_snapshot=snapshot,
+        message_text=updated["message_text"],
+        urgency_level=updated["urgency_level"],
+        is_read=updated["is_read"],
+        read_at=updated["read_at"],
+        is_archived=updated["is_archived"],
+        archived_at=updated["archived_at"],
+        created_at=updated["created_at"]
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.post("/internal-pings/cleanup-expired", response_model=ResponseEnvelope[CleanupExpiredPingsOut])
+async def cleanup_expired_pings(
+    retention_days: int = Query(90, ge=7, le=365, description="Days to retain read, non-archived transient pings"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    # Purge read, non-archived pings older than retention_days
+    res = await conn.execute(f"""
+        DELETE FROM internal_task_pings
+        WHERE is_read = TRUE
+          AND is_archived = FALSE
+          AND created_at < NOW() - INTERVAL '{retention_days} days'
+    """)
+    purged_count = int(res.split(" ")[-1]) if res and "DELETE" in res else 0
+
+    retained_proofs_count = await conn.fetchval("""
+        SELECT COUNT(*) FROM internal_task_pings WHERE is_archived = TRUE
+    """) or 0
+
+    out = CleanupExpiredPingsOut(
+        purged_count=purged_count,
+        retained_proofs_count=retained_proofs_count,
+        message=f"Cleaned up {purged_count} transient pings older than {retention_days} days. {retained_proofs_count} documented proofs retained indefinitely."
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.get("/internal-pings/row-thread", response_model=ResponseEnvelope[list[InternalPingOut]])
+async def get_row_pings_thread(
+    context_type: str = Query(..., description="Operational category e.g. TASK, RENT_COLLECTION"),
+    context_id: str = Query(..., description="Row ID e.g. TSK-102"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    import json
+    rows = await conn.fetch("""
+        SELECT ping_id, sender_user_id, sender_name, recipient_role,
+               recipient_user_id, recipient_name, context_type, context_id,
+               context_snapshot, message_text, urgency_level, is_read,
+               read_at, is_archived, archived_at, created_at
+        FROM internal_task_pings
+        WHERE UPPER(context_type) = UPPER($1) AND UPPER(context_id) = UPPER($2)
+        ORDER BY created_at ASC
+    """, context_type, context_id)
+
+    pings = []
+    for r in rows:
+        snapshot = r["context_snapshot"]
+        if isinstance(snapshot, str):
+            try:
+                snapshot = json.loads(snapshot)
+            except Exception:
+                snapshot = {}
+        elif not isinstance(snapshot, dict):
+            snapshot = {}
+
+        pings.append(InternalPingOut(
+            ping_id=r["ping_id"],
+            sender_user_id=r["sender_user_id"],
+            sender_name=r["sender_name"],
+            recipient_role=r["recipient_role"],
+            recipient_user_id=r["recipient_user_id"],
+            recipient_name=r["recipient_name"],
+            context_type=r["context_type"],
+            context_id=r["context_id"],
+            context_snapshot=snapshot,
+            message_text=r["message_text"],
+            urgency_level=r["urgency_level"],
+            is_read=r["is_read"],
+            read_at=r["read_at"],
+            is_archived=r["is_archived"],
+            archived_at=r["archived_at"],
+            created_at=r["created_at"]
+        ))
+    return ResponseEnvelope(data=pings)
+
 

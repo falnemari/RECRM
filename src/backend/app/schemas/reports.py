@@ -110,3 +110,99 @@ class MultiTierDashboardOut(BaseModel):
     drilldown: DrilldownData
     live_pulse: List[LivePulseEvent]
 
+# =====================================================================
+# AGENDA CALENDAR SCHEMAS (مفكرة الكاليندر والتقويم التشغيلي)
+# =====================================================================
+class AgendaCalendarItem(BaseModel):
+    event_id: str
+    event_type: str  # 'TASK', 'VIEWING', 'RESERVATION', 'RENT_COLLECTION', 'MAINTENANCE', 'CAMPAIGN'
+    event_type_label_ar: str
+    event_type_label_en: str
+    title: str
+    event_date: Any
+    end_date: Optional[Any] = None
+    lead_id: Optional[str] = None
+    task_id: Optional[str] = None
+    viewing_id: Optional[str] = None
+    reservation_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    ticket_id: Optional[str] = None
+    work_order_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    unit_number: Optional[str] = None
+    customer_name: Optional[str] = None
+    assigned_user_id: Optional[str] = None
+    assigned_user_name: Optional[str] = None
+    branch_name: Optional[str] = None
+    priority: Optional[str] = None
+    status: str
+    status_label_ar: str
+    badge_color: str
+    amount: Optional[float] = None
+
+class AgendaCalendarSummary(BaseModel):
+    total_events: int = 0
+    tasks_count: int = 0
+    viewings_count: int = 0
+    reservations_count: int = 0
+    collections_count: int = 0
+    maintenance_count: int = 0
+    campaigns_count: int = 0
+    overdue_count: int = 0
+    today_count: int = 0
+    upcoming_count: int = 0
+
+class AgendaCalendarResponse(BaseModel):
+    summary: AgendaCalendarSummary
+    scope_info: ScopeInfo
+    events: List[AgendaCalendarItem]
+
+# =====================================================================
+# FINANCIAL SCHEDULE SCHEMAS (مفكرة وجدول المبالغ والتحصيلات)
+# =====================================================================
+class FinancialScheduleItem(BaseModel):
+    item_id: str
+    category: str  # 'DEALS_LEADS', 'PROPERTY_MANAGEMENT', 'MARKETING'
+    category_label_ar: str
+    item_type_code: str  # 'RESERVATION_DEPOSIT', 'INVOICE', 'RENT_COLLECTION', 'MAINTENANCE_ORDER', 'CAMPAIGN_BUDGET'
+    item_type: Optional[str] = None  # Alias for item_type_code for frontend compatibility
+    item_type_label_ar: str
+    item_type_label_en: str
+    title: str
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    ticket_id: Optional[str] = None
+    work_order_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    unit_number: Optional[str] = None
+    customer_name: Optional[str] = None
+    amount: float
+    amount_paid: float
+    amount_remaining: float
+    collection_status: str  # 'COLLECTED', 'PENDING', 'OVERDUE', 'CANCELLED'
+    collection_status_ar: str
+    badge_color: str
+    due_date: Optional[Any] = None
+    collected_at: Optional[Any] = None
+    assigned_user_id: Optional[str] = None
+    assigned_user_name: Optional[str] = None
+    branch_name: Optional[str] = None
+    days_overdue: Optional[int] = 0
+
+class FinancialScheduleSummary(BaseModel):
+    total_dues_amount: float = 0.0
+    total_collected_amount: float = 0.0
+    total_pending_amount: float = 0.0
+    total_overdue_amount: float = 0.0
+    collection_rate_percent: float = 0.0
+    deals_leads_count: int = 0
+    property_management_count: int = 0
+    marketing_count: int = 0
+    total_items: int = 0
+
+class FinancialScheduleResponse(BaseModel):
+    summary: FinancialScheduleSummary
+    scope_info: ScopeInfo
+    items: List[FinancialScheduleItem]
+
+

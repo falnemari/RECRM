@@ -425,6 +425,16 @@
                 <div class="kpi-value" id="kpi-rental-variance" style="color: #7c3aed;">--%</div>
                 <div class="kpi-sub" id="kpi-rental-variance-sub" data-i18n="kpi_rental_variance_sub">Actual vs. Forecast (Eq 7.5)</div>
             </div>
+            <div class="kpi-card" style="border-top: 3px solid #0284c7;">
+                <div class="kpi-title">نسبة الإشغال المدارة</div>
+                <div class="kpi-value" id="kpi-occupancy" style="color: #0284c7;">--%</div>
+                <div class="kpi-sub">Occupancy Rate of Managed Units</div>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #10b981;">
+                <div class="kpi-title">عوائد الملاك الموزعة</div>
+                <div class="kpi-value" id="kpi-distributions" style="color: #10b981;">-- SAR</div>
+                <div class="kpi-sub">Total Paid Owner Yield Distributions</div>
+            </div>
         </div>
 
         <!-- Tab Navigation -->
@@ -434,6 +444,7 @@
             <button class="tab-btn" onclick="switchTab('rent')" data-i18n="tab_rent">Rent Collections</button>
             <button class="tab-btn" onclick="switchTab('vendors')" data-i18n="tab_vendors">Service Vendors</button>
             <button class="tab-btn" onclick="switchTab('pm_contracts')" data-i18n="tab_pm_contracts">Owner PM Contracts</button>
+            <button class="tab-btn" onclick="switchTab('distributions')">💰 توزيعات عوائد الملاك / Owner Yields</button>
         </div>
 
         <!-- ============================================================== -->
@@ -506,6 +517,11 @@
                 <button class="btn" onclick="openNewTicketModal()" data-i18n="btn_new_ticket">+ Open Maintenance Ticket</button>
             </div>
 
+            <div id="ticket-filter-banner" style="display:none; background:#eff6ff; border:1.5px solid #93c5fd; border-radius:8px; padding:10px 16px; margin-bottom:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div id="ticket-filter-banner-text" style="color:#1e40af; font-size:0.9em; font-weight:700;"></div>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearTicketSearch()" style="background:white; color:#1e40af; border-color:#93c5fd; padding:3px 10px; font-size:0.82em; font-weight:700;">✕ إلغاء التصفية وعرض الكل</button>
+            </div>
+
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -534,6 +550,7 @@
         <div id="pane-rent" class="tab-pane">
             <div class="toolbar">
                 <div class="filters">
+                    <input type="text" id="rent-search" class="search-input" placeholder="Search contract, tenant, unit..." onkeyup="filterRentCollections()">
                     <select id="rent-status" class="select-filter" onchange="loadRentCollections()">
                         <option value="" data-i18n="opt_all_status">All Statuses</option>
                         <option value="DUE" data-i18n="opt_due">Due</option>
@@ -545,6 +562,11 @@
                         <span data-i18n="lbl_overdue_only">Show Overdue Only</span>
                     </label>
                 </div>
+            </div>
+
+            <div id="rent-filter-banner" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:10px 16px; margin-bottom:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div id="rent-filter-banner-text" style="color:#166534; font-size:0.9em; font-weight:700;"></div>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearRentSearch()" style="background:white; color:#166534; border-color:#86efac; padding:3px 10px; font-size:0.82em; font-weight:700;">✕ إلغاء التصفية وعرض الكل</button>
             </div>
 
             <div class="table-responsive">
@@ -630,6 +652,45 @@
             </div>
         </div>
 
+        <!-- ============================================================== -->
+        <!-- TAB 6: Owner Yield Distributions & Statements -->
+        <!-- ============================================================== -->
+        <div id="pane-distributions" class="tab-pane">
+            <div class="toolbar">
+                <div class="filters">
+                    <select id="dist-status" class="select-filter" onchange="loadOwnerDistributions()">
+                        <option value="">جميع الحالات / All Statuses</option>
+                        <option value="DRAFT">مسودة / Draft</option>
+                        <option value="APPROVED">معتمد للصرف / Approved</option>
+                        <option value="PAID">تم التحويل والصرف / Paid</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="openNewDistributionModal()" style="background: #10b981;">+ احتساب وتوزيع عائد جديد / Calculate Yield Distribution</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رقم السجل</th>
+                            <th>عقد الإدارة</th>
+                            <th>مالك العقار</th>
+                            <th>فترة الاستحقاق</th>
+                            <th>الإيجارات المحصلة</th>
+                            <th>أتعاب الإدارة</th>
+                            <th>مصاريف الصيانة</th>
+                            <th>صافي العائد للمالك</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dist-tbody">
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">جاري تحميل توزيعات العوائد...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <!-- ============================================================== -->
@@ -664,6 +725,19 @@
                     <div class="form-group">
                         <label data-i18n="lbl_end_date">End Date *</label>
                         <input type="date" id="t-end" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم عقد إيجار الموحد (شبكة إيجار) / Ejar Contract No</label>
+                        <input type="text" id="t-ejar-no" placeholder="EJAR-12345678">
+                    </div>
+                    <div class="form-group">
+                        <label>نوع عقد الإيجار / Contract Type</label>
+                        <select id="t-contract-type">
+                            <option value="RESIDENTIAL">سكني / Residential</option>
+                            <option value="COMMERCIAL">تجاري / Commercial</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -805,8 +879,26 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="lbl_quoted_amount">Quoted Cost (SAR)</label>
-                    <input type="number" id="wo-quote" step="50" min="0" placeholder="e.g. 500">
+                    <label>تحمل التكلفة المالية / Cost Bearer *</label>
+                    <select id="wo-cost-bearer" required>
+                        <option value="OWNER" selected>على مالك العقار (يخصم من كشف الحساب) / On Owner</option>
+                        <option value="TENANT">على المستأجر (سوء استخدام أو استهلاكي) / On Tenant</option>
+                        <option value="WARRANTY">ضمان إنشائي أو مقاول / Warranty</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_quoted_amount">Quoted Cost (SAR)</label>
+                        <input type="number" id="wo-quote" step="50" min="0" placeholder="e.g. 500" oninput="updateWOVatPreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الفاتورة / المرجع</label>
+                        <input type="text" id="wo-invoice-ref" placeholder="INV-2026-001">
+                    </div>
+                </div>
+                <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: 0.85em; display: flex; justify-content: space-between;">
+                    <span>ضريبة القيمة المضافة (15%): <strong id="wo-vat-amount">0.00 SAR</strong></span>
+                    <span>الإجمالي شامل الضريبة: <strong id="wo-total-amount" style="color: #0f172a;">0.00 SAR</strong></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-wo')" data-i18n="btn_cancel">Cancel</button>
@@ -913,6 +1005,94 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-pmc')" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn" data-i18n="btn_save_pmc">Create PM Contract</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 8. Modal: New Owner Yield Distribution -->
+    <div id="modal-dist" class="modal-overlay">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3>احتساب وتوزيع عائد دوري للمالك / Calculate Owner Yield</h3>
+                <button class="close-btn" onclick="closeModal('modal-dist')">&times;</button>
+            </div>
+            <form id="dist-form" onsubmit="handleCreateDistribution(event)">
+                <div class="form-group">
+                    <label>اختر عقد إدارة الأملاك / PM Contract *</label>
+                    <select id="dist-contract" required onchange="previewDistributionCalculation()">
+                        <option value="">جاري تحميل العقود...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>بداية الفترة / Period Start *</label>
+                        <input type="date" id="dist-start" required onchange="previewDistributionCalculation()">
+                    </div>
+                    <div class="form-group">
+                        <label>نهاية الفترة / Period End *</label>
+                        <input type="date" id="dist-end" required onchange="previewDistributionCalculation()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>خصومات إضافية / Other Deductions (SAR)</label>
+                    <input type="number" id="dist-other-ded" step="50" min="0" value="0" oninput="previewDistributionCalculation()">
+                </div>
+
+                <!-- Live Preview Card -->
+                <div id="dist-preview-card" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #475569;">📊 المعاينة المحاسبية التلقائية للعائد:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.88em;">
+                        <div>إجمالي الإيجارات المحصلة: <strong id="prev-gross" style="color: #10b981;">0.00 SAR</strong></div>
+                        <div>أتعاب الإدارة: <strong id="prev-fee" style="color: #ef4444;">0.00 SAR</strong></div>
+                        <div>مصاريف الصيانة المعتمدة: <strong id="prev-maint" style="color: #ef4444;">0.00 SAR</strong></div>
+                        <div>صافي العائد للمالك: <strong id="prev-net" style="color: #0f172a; font-size: 1.1em;">0.00 SAR</strong></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>ملاحظات محاسبية / Notes</label>
+                    <input type="text" id="dist-notes" placeholder="ملاحظات توثيقية خاصة بدورية الصرف">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-dist')">إلغاء</button>
+                    <button type="submit" class="btn" style="background: #10b981;">اعتماد وإنشاء مسودة التوزيع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 9. Modal: Record Payout -->
+    <div id="modal-payout" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>تسجيل الحوالة البنكية وصرف العائد للمالك</h3>
+                <button class="close-btn" onclick="closeModal('modal-payout')">&times;</button>
+            </div>
+            <form id="payout-form" onsubmit="handleRecordPayout(event)">
+                <input type="hidden" id="payout-dist-id">
+                <div class="form-group">
+                    <label>رقم الحوالة البنكية / المرجع *</label>
+                    <input type="text" id="payout-ref" placeholder="SAR-TRF-20261031-01" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>البنك المحول إليه</label>
+                        <input type="text" id="payout-bank" placeholder="مصرف الراجحي / البنك الأهلي">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الآيبان IBAN</label>
+                        <input type="text" id="payout-iban" placeholder="SA0380000000000000000000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات التحويل</label>
+                    <input type="text" id="payout-notes" placeholder="تم إيداع العائد الصافي في حساب المالك">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-payout')">إلغاء</button>
+                    <button type="submit" class="btn" style="background: #10b981;">تأكيد الصرف وتوثيق الحوالة</button>
                 </div>
             </form>
         </div>
@@ -1114,6 +1294,7 @@
             else if (tabId === 'rent') loadRentCollections();
             else if (tabId === 'vendors') loadVendors();
             else if (tabId === 'pm_contracts') loadPMContracts();
+            else if (tabId === 'distributions') loadOwnerDistributions();
             loadSummary();
         }
 
@@ -1128,6 +1309,12 @@
                 document.getElementById('kpi-rent').textContent = Number(d.total_active_rent_amount || 0).toLocaleString() + ' SAR';
                 document.getElementById('kpi-tickets').textContent = d.open_maintenance_tickets;
                 document.getElementById('kpi-overdue').textContent = d.overdue_rent_collections;
+                if (document.getElementById('kpi-occupancy')) {
+                    document.getElementById('kpi-occupancy').textContent = (d.occupancy_rate || 0) + '%';
+                }
+                if (document.getElementById('kpi-distributions')) {
+                    document.getElementById('kpi-distributions').textContent = Number(d.total_yield_distributed || 0).toLocaleString() + ' SAR';
+                }
 
                 // Also fetch managerial rental variance (Eq 7.5)
                 const kpiRes = await fetch(`${API_BASE}/api/v1/reports/managerial-kpis`);
@@ -1261,39 +1448,75 @@
         }
 
         // --- Tab 2: Maintenance Tickets ---
-        async function loadTickets() {
-            const status = document.getElementById('ticket-status').value;
-            const priority = document.getElementById('ticket-priority').value;
-            const category = document.getElementById('ticket-category').value;
+        let activeTicketHighlight = '';
+
+        async function loadTickets(searchOverride = null) {
+            const status = document.getElementById('ticket-status')?.value || '';
+            const priority = document.getElementById('ticket-priority')?.value || '';
+            const category = document.getElementById('ticket-category')?.value || '';
+            const searchInput = document.getElementById('ticket-search');
+            const searchVal = (searchOverride !== null) ? searchOverride : (searchInput ? searchInput.value.trim() : '');
+            if (searchOverride !== null && searchInput) searchInput.value = searchOverride;
+
+            activeTicketHighlight = searchVal;
+
             let url = `${API_BASE}/api/v1/maintenance-tickets?page_size=50`;
-            if (status) url += `&status=${status}`;
-            if (priority) url += `&priority=${priority}`;
-            if (category) url += `&category=${category}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (priority) url += `&priority=${encodeURIComponent(priority)}`;
+            if (category) url += `&category=${encodeURIComponent(category)}`;
+            if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 ticketsData = json.data || [];
-                renderTickets(ticketsData);
+                renderTickets(ticketsData, searchVal);
             } catch (err) {
                 console.error(err);
                 document.getElementById('ticket-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load tickets.</td></tr>';
             }
         }
 
-        function renderTickets(items) {
+        function renderTickets(items, highlightTerm = '') {
             const tbody = document.getElementById('ticket-tbody');
+            const banner = document.getElementById('ticket-filter-banner');
+            const bannerText = document.getElementById('ticket-filter-banner-text');
+            const isAr = currentLang === 'ar';
+            const term = (highlightTerm || activeTicketHighlight || '').toLowerCase().trim();
+
+            if (term && banner && bannerText) {
+                banner.style.display = 'flex';
+                bannerText.innerHTML = isAr 
+                    ? `🎯 <strong>تم تخصيص وعرض بلاغ الصيانة المرتبط بالمعاملة (${term})</strong> - تم حجب باقي السجلات لتركيز العمل.`
+                    : `🎯 <strong>Displaying isolated maintenance ticket for (${term})</strong> - other items filtered out.`;
+            } else if (banner) {
+                banner.style.display = 'none';
+            }
+
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 24px;">No maintenance tickets found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 24px; color:#64748b;">${isAr ? 'لا توجد بلاغات صيانة مطابقة لمعايير البحث.' : 'No maintenance tickets found.'}</td></tr>`;
                 return;
             }
+
             tbody.innerHTML = items.map(t => {
                 const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
                 const sCls = t.status === 'CLOSED' ? 'badge-completed' : (t.status === 'IN_PROGRESS' ? 'badge-in_progress' : 'badge-open');
                 const openDate = new Date(t.opened_at).toLocaleDateString();
+                const isMatch = term && (
+                    (t.ticket_id && t.ticket_id.toLowerCase().includes(term)) ||
+                    (t.unit_number && t.unit_number.toLowerCase().includes(term)) ||
+                    (t.description && t.description.toLowerCase().includes(term))
+                );
+                const rowStyle = isMatch 
+                    ? 'background: #eff6ff; border-inline-start: 4px solid #2563eb; font-weight: 600;' 
+                    : '';
+                const matchBadge = isMatch 
+                    ? `<span class="badge" style="background:#2563eb; color:white; font-size:0.75em; margin-inline-start:4px;">🎯 ${isAr ? 'البلاغ المطلوب' : 'Target Ticket'}</span>` 
+                    : '';
+
                 return `
-                    <tr>
-                        <td><span class="id-badge">${t.ticket_id}</span></td>
+                    <tr id="ticket-row-${t.ticket_id}" style="${rowStyle}">
+                        <td><span class="id-badge">${t.ticket_id}</span>${matchBadge}</td>
                         <td>${t.unit_number ? 'Unit ' + t.unit_number : 'N/A'}</td>
                         <td>${t.reported_by_name || 'Tenant'}</td>
                         <td><strong>${t.category || 'GENERAL'}</strong></td>
@@ -1310,15 +1533,26 @@
                     </tr>
                 `;
             }).join('');
+
+            if (term) {
+                setTimeout(() => {
+                    const matchedEl = document.querySelector('tr[style*="border-inline-start"]');
+                    if (matchedEl) matchedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
         }
 
         function filterTickets() {
-            const term = document.getElementById('ticket-search').value.toLowerCase();
-            const filtered = ticketsData.filter(t =>
-                t.description.toLowerCase().includes(term) ||
-                (t.unit_number && t.unit_number.toLowerCase().includes(term))
-            );
-            renderTickets(filtered);
+            const term = (document.getElementById('ticket-search')?.value || '').trim();
+            activeTicketHighlight = term;
+            loadTickets(term);
+        }
+
+        function clearTicketSearch() {
+            const searchInput = document.getElementById('ticket-search');
+            if (searchInput) searchInput.value = '';
+            activeTicketHighlight = '';
+            loadTickets('');
         }
 
         async function closeTicketDirectly(ticketId) {
@@ -1341,38 +1575,75 @@
         }
 
         // --- Tab 3: Rent Collections ---
-        async function loadRentCollections() {
-            const status = document.getElementById('rent-status').value;
-            const overdue = document.getElementById('rent-overdue-only').checked;
+        let activeRentHighlight = '';
+
+        async function loadRentCollections(searchOverride = null) {
+            const status = document.getElementById('rent-status')?.value || '';
+            const overdue = document.getElementById('rent-overdue-only')?.checked || false;
+            const searchInput = document.getElementById('rent-search');
+            const searchVal = (searchOverride !== null) ? searchOverride : (searchInput ? searchInput.value.trim() : '');
+            if (searchOverride !== null && searchInput) searchInput.value = searchOverride;
+
+            activeRentHighlight = searchVal;
+
             let url = `${API_BASE}/api/v1/rent-collections?page_size=50`;
-            if (status) url += `&status=${status}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
             if (overdue) url += `&is_overdue=true`;
+            if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 rentData = json.data || [];
-                renderRentCollections(rentData);
+                renderRentCollections(rentData, searchVal);
             } catch (err) {
                 console.error(err);
                 document.getElementById('rent-tbody').innerHTML = '<tr><td colspan="9" style="color:red; text-align:center;">Failed to load rent collections.</td></tr>';
             }
         }
 
-        function renderRentCollections(items) {
+        function renderRentCollections(items, highlightTerm = '') {
             const tbody = document.getElementById('rent-tbody');
+            const banner = document.getElementById('rent-filter-banner');
+            const bannerText = document.getElementById('rent-filter-banner-text');
+            const isAr = currentLang === 'ar';
+            const term = (highlightTerm || activeRentHighlight || '').toLowerCase().trim();
+
+            if (term && banner && bannerText) {
+                banner.style.display = 'flex';
+                bannerText.innerHTML = isAr 
+                    ? `🎯 <strong>تم تخصيص وعرض دفعة الإيجار المرتبطة (${term})</strong> - تم حجب باقي الدفعات لتركيز العمل.`
+                    : `🎯 <strong>Displaying isolated rent collection for (${term})</strong> - other items filtered out.`;
+            } else if (banner) {
+                banner.style.display = 'none';
+            }
+
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 24px;">No rent collections found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 24px; color:#64748b;">${isAr ? 'لا توجد دفعات إيجار مطابقة لمعايير البحث.' : 'No rent collections found.'}</td></tr>`;
                 return;
             }
+
             tbody.innerHTML = items.map(r => {
                 const due = Number(r.amount_due || 0);
                 const paid = Number(r.amount_paid || 0);
                 const remaining = Math.max(0, due - paid);
                 const bCls = r.status === 'PAID' ? 'badge-paid' : (r.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
+                const isMatch = term && (
+                    (r.rent_collection_id && r.rent_collection_id.toLowerCase().includes(term)) ||
+                    (r.contract_number && r.contract_number.toLowerCase().includes(term)) ||
+                    (r.unit_number && r.unit_number.toLowerCase().includes(term)) ||
+                    (r.tenant_name && r.tenant_name.toLowerCase().includes(term))
+                );
+                const rowStyle = isMatch 
+                    ? 'background: #f0fdf4; border-inline-start: 4px solid #16a34a; font-weight: 600;' 
+                    : '';
+                const matchBadge = isMatch 
+                    ? `<span class="badge" style="background:#16a34a; color:white; font-size:0.75em; margin-inline-start:4px;">🎯 ${isAr ? 'الدفعة المطلوبة' : 'Target Rent'}</span>` 
+                    : '';
+
                 return `
-                    <tr>
-                        <td><strong>${r.contract_number || 'N/A'}</strong></td>
+                    <tr id="rent-row-${r.rent_collection_id}" style="${rowStyle}">
+                        <td><strong>${r.contract_number || 'N/A'}</strong>${matchBadge}</td>
                         <td>${r.unit_number ? 'Unit ' + r.unit_number : 'N/A'}</td>
                         <td><div class="cell-multiline" style="max-width: 180px;">${r.tenant_name || 'N/A'}</div></td>
                         <td>${r.due_date}</td>
@@ -1390,6 +1661,26 @@
                     </tr>
                 `;
             }).join('');
+
+            if (term) {
+                setTimeout(() => {
+                    const matchedEl = document.querySelector('tr[style*="border-inline-start"]');
+                    if (matchedEl) matchedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
+        }
+
+        function filterRentCollections() {
+            const term = (document.getElementById('rent-search')?.value || '').trim();
+            activeRentHighlight = term;
+            loadRentCollections(term);
+        }
+
+        function clearRentSearch() {
+            const searchInput = document.getElementById('rent-search');
+            if (searchInput) searchInput.value = '';
+            activeRentHighlight = '';
+            loadRentCollections('');
         }
 
         // --- Tab 4: Vendors ---
@@ -1577,6 +1868,8 @@
                 rent_amount: parseFloat(document.getElementById('t-rent').value),
                 deposit_amount: parseFloat(document.getElementById('t-deposit').value || 0),
                 payment_frequency: document.getElementById('t-freq').value,
+                ejar_contract_number: document.getElementById('t-ejar-no')?.value || null,
+                contract_type: document.getElementById('t-contract-type')?.value || 'RESIDENTIAL',
                 generate_installments: true,
                 installments_count: parseInt(document.getElementById('t-installments-count').value || 4)
             };
@@ -1718,11 +2011,23 @@
             }
         }
 
+        function updateWOVatPreview() {
+            const q = parseFloat(document.getElementById('wo-quote').value || 0);
+            const vat = q * 0.15;
+            const tot = q + vat;
+            const vatEl = document.getElementById('wo-vat-amount');
+            const totEl = document.getElementById('wo-total-amount');
+            if (vatEl) vatEl.textContent = vat.toFixed(2) + ' SAR';
+            if (totEl) totEl.textContent = tot.toFixed(2) + ' SAR';
+        }
+
         async function handleCreateWorkOrder(e) {
             e.preventDefault();
             const ticketId = document.getElementById('wo-ticket-id').value;
             const vendorId = document.getElementById('wo-vendor').value;
             const quote = parseFloat(document.getElementById('wo-quote').value || 0);
+            const costBearer = document.getElementById('wo-cost-bearer')?.value || 'OWNER';
+            const invRef = document.getElementById('wo-invoice-ref')?.value || null;
 
             try {
                 const res = await fetch(`${API_BASE}/api/v1/maintenance-tickets/${ticketId}/work-orders`, {
@@ -1731,14 +2036,18 @@
                     body: JSON.stringify({
                         ticket_id: ticketId,
                         vendor_id: vendorId,
+                        cost_bearer: costBearer,
                         quoted_amount: quote,
+                        vat_amount: quote * 0.15,
+                        total_amount: quote * 1.15,
+                        invoice_ref: invRef,
                         status: 'REQUESTED'
                     })
                 });
                 if (!res.ok) throw new Error('Work order creation failed');
                 closeModal('modal-wo');
                 loadTickets();
-                alert("Work order successfully dispatched to vendor!");
+                alert(currentLang === 'ar' ? 'تم إصدار وتكليف أمر العمل بنجاح!' : 'Work order successfully dispatched to vendor!');
             } catch (err) {
                 alert("Error: " + err.message);
             }
@@ -1846,18 +2155,252 @@
             }
         }
 
+        // --- Tab 6: Owner Yield Distributions ---
+        let distributionsData = [];
+
+        async function loadOwnerDistributions() {
+            const status = document.getElementById('dist-status')?.value;
+            const url = `${API_BASE}/api/v1/owner-distributions?page_size=50${status ? `&status=${status}` : ''}`;
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                distributionsData = json.data || [];
+                renderOwnerDistributions(distributionsData);
+            } catch (err) {
+                console.error("Failed to load distributions:", err);
+                document.getElementById('dist-tbody').innerHTML = '<tr><td colspan="10" style="color:red; text-align:center;">فشل تحميل سجلات توزيع العوائد.</td></tr>';
+            }
+        }
+
+        function renderOwnerDistributions(items) {
+            const tbody = document.getElementById('dist-tbody');
+            if (!tbody) return;
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--text-muted);">لا توجد توزيعات مسجلة حالياً. اضغط على "+ احتساب وتوزيع عائد جديد" للبدء.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(d => {
+                let badgeClass = 'badge-active';
+                let statusLabel = d.status;
+                if (d.status === 'DRAFT') {
+                    badgeClass = 'badge-expired';
+                    statusLabel = 'مسودة / Draft';
+                } else if (d.status === 'APPROVED') {
+                    badgeClass = 'badge-partial';
+                    statusLabel = 'معتمد للصرف / Approved';
+                } else if (d.status === 'PAID') {
+                    badgeClass = 'badge-paid';
+                    statusLabel = 'تم الصرف / Paid';
+                }
+
+                let actions = `
+                    <button class="btn btn-sm btn-outline" onclick="printOwnerStatement('${d.distribution_id}')" title="طباعة كشف الحساب">🖨️ كشف حساب</button>
+                `;
+
+                if (d.status === 'DRAFT') {
+                    actions += `
+                        <button class="btn btn-sm" style="background: #2563eb; color: white;" onclick="approveDistribution('${d.distribution_id}')">اعتماد</button>
+                    `;
+                } else if (d.status === 'APPROVED') {
+                    actions += `
+                        <button class="btn btn-sm" style="background: #10b981; color: white;" onclick="openPayoutModal('${d.distribution_id}')">صرف وحوالة</button>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${d.distribution_id}</strong></td>
+                        <td>${d.contract_number || d.management_contract_id}</td>
+                        <td><strong>${d.owner_name}</strong><br><small style="color: var(--text-muted);">${d.owner_mobile || ''}</small></td>
+                        <td><small>${d.period_start} إلى ${d.period_end}</small></td>
+                        <td style="color: #166534; font-weight: bold;">${Number(d.gross_rent_collected).toLocaleString()} SAR</td>
+                        <td style="color: #1e40af;">-${Number(d.management_fee_amount).toLocaleString()} SAR (${d.management_fee_rate}%)</td>
+                        <td style="color: #991b1b;">-${Number(d.maintenance_expenses_deducted).toLocaleString()} SAR</td>
+                        <td style="font-weight: bold; font-size: 1.05em; color: #0f172a;">${Number(d.net_yield_amount).toLocaleString()} SAR</td>
+                        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                        <td><div style="display: flex; gap: 5px;">${actions}</div></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openNewDistributionModal() {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/management-contracts?page_size=100&status=ACTIVE`);
+                const json = await res.json();
+                const contracts = json.data || [];
+                const sel = document.getElementById('dist-contract');
+                sel.innerHTML = '<option value="">-- اختر عقد إدارة الأملاك --</option>' +
+                    contracts.map(c => `<option value="${c.management_contract_id}">${c.contract_number} - ${c.owner_name} (${c.fee_rate}% ${c.fee_type})</option>`).join('');
+
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+                document.getElementById('dist-start').value = firstDay;
+                document.getElementById('dist-end').value = lastDay;
+                document.getElementById('dist-other-ded').value = 0;
+
+                openModal('modal-dist');
+            } catch (err) {
+                alert("Failed to load management contracts: " + err);
+            }
+        }
+
+        async function previewDistributionCalculation() {
+            const contractId = document.getElementById('dist-contract')?.value;
+            const start = document.getElementById('dist-start')?.value;
+            const end = document.getElementById('dist-end')?.value;
+            const other = parseFloat(document.getElementById('dist-other-ded')?.value || 0);
+
+            if (!contractId || !start || !end) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/owner-distributions/calculate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        management_contract_id: contractId,
+                        period_start: start,
+                        period_end: end,
+                        other_deductions: other
+                    })
+                });
+                if (!res.ok) return;
+                const json = await res.json();
+                const p = json.data;
+                document.getElementById('prev-gross').textContent = Number(p.gross_rent_collected).toLocaleString() + ' SAR';
+                document.getElementById('prev-fee').textContent = '-' + Number(p.management_fee_amount).toLocaleString() + ' SAR (' + p.management_fee_rate + '%)';
+                document.getElementById('prev-maint').textContent = '-' + Number(p.maintenance_expenses_deducted).toLocaleString() + ' SAR';
+                document.getElementById('prev-net').textContent = Number(p.net_yield_amount).toLocaleString() + ' SAR';
+            } catch (e) {
+                console.error("Preview failed:", e);
+            }
+        }
+
+        async function handleCreateDistribution(e) {
+            e.preventDefault();
+            const payload = {
+                management_contract_id: document.getElementById('dist-contract').value,
+                period_start: document.getElementById('dist-start').value,
+                period_end: document.getElementById('dist-end').value,
+                other_deductions: parseFloat(document.getElementById('dist-other-ded').value || 0),
+                notes: document.getElementById('dist-notes').value || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/owner-distributions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Calculation failed');
+                }
+                closeModal('modal-dist');
+                loadOwnerDistributions();
+                loadSummary();
+                alert("تم احتساب وإنشاء مسودة توزيع العائد بنجاح!");
+            } catch (err) {
+                alert("خطأ: " + err.message);
+            }
+        }
+
+        async function approveDistribution(distId) {
+            if (!confirm("هل أنت متأكد من اعتماد توزيع العائد وتجهيزه للصرف البنكي للمالك؟")) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/owner-distributions/${distId}/approve`, { method: 'POST' });
+                if (!res.ok) throw new Error("Approval failed");
+                loadOwnerDistributions();
+                loadSummary();
+                alert("تم اعتماد التوزيع بنجاح!");
+            } catch (err) {
+                alert("خطأ: " + err.message);
+            }
+        }
+
+        function openPayoutModal(distId) {
+            document.getElementById('payout-dist-id').value = distId;
+            document.getElementById('payout-ref').value = `TRF-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${distId.slice(-4)}`;
+            openModal('modal-payout');
+        }
+
+        async function handleRecordPayout(e) {
+            e.preventDefault();
+            const distId = document.getElementById('payout-dist-id').value;
+            const payload = {
+                payment_reference: document.getElementById('payout-ref').value,
+                bank_name: document.getElementById('payout-bank').value || null,
+                iban: document.getElementById('payout-iban').value || null,
+                notes: document.getElementById('payout-notes').value || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/owner-distributions/${distId}/record-payout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error("Payout recording failed");
+                closeModal('modal-payout');
+                loadOwnerDistributions();
+                loadSummary();
+                alert("تم توثيق صرف العائد والحوالة البنكية للمالك بنجاح!");
+            } catch (err) {
+                alert("خطأ: " + err.message);
+            }
+        }
+
+        function printOwnerStatement(distId) {
+            window.open(`${API_BASE}/api/v1/owner-distributions/${distId}/statement-html`, '_blank');
+        }
+
         // Init on load
         document.addEventListener('DOMContentLoaded', () => {
             initTypography();
             setLanguage(currentLang);
             loadSummary();
+
             const urlParams = new URLSearchParams(window.location.search);
-            const searchParam = urlParams.get('search');
-            if (searchParam) {
-                const sInput = document.getElementById('tenancy-search');
-                if (sInput) sInput.value = searchParam;
+            const tabParam = urlParams.get('tab');
+            const searchParam = urlParams.get('search') || urlParams.get('ticket_id') || urlParams.get('work_order_id') || urlParams.get('collection_id') || urlParams.get('unit_number');
+
+            if (tabParam) {
+                if (tabParam === 'maintenance' || tabParam === 'tickets' || tabParam === 'work_orders') {
+                    switchTab('maintenance');
+                    if (searchParam) {
+                        const mSearch = document.getElementById('ticket-search');
+                        if (mSearch) mSearch.value = searchParam;
+                        loadTickets(searchParam);
+                    }
+                } else if (tabParam === 'rent' || tabParam === 'collections') {
+                    switchTab('rent');
+                    if (searchParam) {
+                        const rSearch = document.getElementById('rent-search');
+                        if (rSearch) rSearch.value = searchParam;
+                        loadRentCollections(searchParam);
+                    }
+                } else if (tabParam === 'pm_contracts' || tabParam === 'contracts') {
+                    switchTab('pm_contracts');
+                } else if (tabParam === 'distributions' || tabParam === 'yields') {
+                    switchTab('distributions');
+                } else if (tabParam === 'vendors') {
+                    switchTab('vendors');
+                } else {
+                    switchTab('tenancies');
+                    if (searchParam) {
+                        const sInput = document.getElementById('tenancy-search');
+                        if (sInput) sInput.value = searchParam;
+                    }
+                }
+            } else {
+                if (searchParam) {
+                    const sInput = document.getElementById('tenancy-search');
+                    if (sInput) sInput.value = searchParam;
+                }
+                loadTenancies();
             }
-            loadTenancies();
         });
     </script>
     <script src="common.js"></script>

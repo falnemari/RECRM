@@ -1688,6 +1688,70 @@
         </div>
     </div>
 
+    <!-- Modal: Cancel Task Warning Confirmation -->
+    <div id="modal-cancel-task" class="modal-overlay" style="z-index: 1700;">
+        <div class="modal" style="max-width: 550px; border-top: 5px solid #dc2626;">
+            <div class="modal-header" style="border-bottom: 1px solid #fee2e2; padding-bottom: 12px;">
+                <h3 style="margin: 0; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
+                    <span>⚠️</span>
+                    <span id="cancel-task-header-title">تحذير تأكيدي: إلغاء المهمة</span>
+                </h3>
+                <button class="close-btn" onclick="closeModal('modal-cancel-task')">&times;</button>
+            </div>
+            <div style="padding: 16px 0;">
+                <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.88em; color: #991b1b; line-height: 1.6;">
+                    <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span>🛑</span> تنبيه بشأن إلغاء المهمة:
+                    </div>
+                    <div>
+                        هل أنت متأكد من إلغاء هذه المهمة؟ سيتم تغيير حالتها إلى <strong>ملغاة (CANCELLED)</strong>، وتوثيق سجل إلغاء رسمي <strong>ACT_TASK_CANCELLED</strong> في السجل الزمني للمعاملة متضمناً سبب وتبرير الإلغاء.
+                    </div>
+                </div>
+
+                <input type="hidden" id="cancel-task-id-val">
+                <input type="hidden" id="cancel-task-opp-id-val">
+
+                <div style="margin-bottom: 12px; font-size: 0.88em; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                    <div><strong>معرف المهمة:</strong> <span id="cancel-task-id-display" style="font-family: monospace; color: #0284c7;">--</span></div>
+                    <div style="margin-top: 4px;"><strong>مسمى المهمة:</strong> <span id="cancel-task-title-display" style="color: #1e293b; font-weight: 600;">--</span></div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight: 700; font-size: 0.88em; display: block; margin-bottom: 6px;">سبب الإلغاء (إلزامي) *</label>
+                    <select id="cancel-task-reason" class="select-filter" style="width: 100%; font-size: 0.9em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="CLIENT_REQUEST">بطلب أو رغبة من العميل (Client Request)</option>
+                        <option value="PROPERTY_UNAVAILABLE">عدم توفر الوحدات المناسبة (Property Unavailable)</option>
+                        <option value="CLIENT_UNRESPONSIVE">تعذر التواصل / عدم تجاوب العميل (No Response)</option>
+                        <option value="DUPLICATE_TASK">مهمة مكررة أو أنشئت بالخطأ (Duplicate / Accidental)</option>
+                        <option value="SUPERSEDED">استُبدلت بمسار أو مهمة أخرى (Superseded)</option>
+                        <option value="FINANCE_ISSUE">تعثر مالي أو تراجع عن التمويل (Financial Issue)</option>
+                        <option value="OTHER">سبب آخر (Other)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight: 700; font-size: 0.88em; display: block; margin-bottom: 6px;">توضيح وملاحظات إضافية:</label>
+                    <textarea id="cancel-task-notes" class="search-input" style="width: 100%; height: 75px; font-size: 0.88em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="أدخل تفاصيل ومبررات الإلغاء..."></textarea>
+                </div>
+
+                <div id="cancel-task-cascade-box" style="display: none; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 10px; margin-top: 10px;">
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.86em; color: #92400e; font-weight: 600;">
+                        <input type="checkbox" id="cancel-task-cascade-chk" style="margin-top: 3px;">
+                        <span>
+                            إلغاء مسار الصفقة المرتبطة (<span id="cancel-task-opp-label" style="font-family: monospace;">--</span>) بالكامل، وبدء إجراءات تصفية الحجوزات والالتزامات المالية نظاماً.
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-cancel-task')">تراجع</button>
+                <button type="button" id="btn-confirm-cancel-task" class="btn" style="background: #dc2626; color: white; font-weight: 700;" onclick="submitCancelTask()">
+                    ⚠️ تأكيد إلغاء المهمة
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================================== -->
     <!-- SCRIPT -->
     <!-- ============================================================== -->
@@ -2535,6 +2599,9 @@
                             ${isActionable ? `
                                 <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); completeTask('${t.task_id}', '${t.template_id || ''}')" style="font-size: 0.82em; padding: 5px 10px;">
                                     ${isAr ? '✓ إنجاز وتسجيل النتيجة' : '✓ Complete Task'}
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openCancelTaskModal('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}', '${t.opportunity_id || ''}')" style="font-size: 0.78em; padding: 4px 8px; border-color: #ef4444; color: #dc2626; font-weight: 700;" title="${isAr ? 'إلغاء المهمة مع رسالة تحذيرية وتأكيد' : 'Cancel task with warning confirmation'}">
+                                    🚫 ${isAr ? 'إلغاء' : 'Cancel'}
                                 </button>
                             ` : `
                                 <div style="display:flex; align-items:center; gap:8px;">
@@ -7110,6 +7177,76 @@
                 }
             } catch (err) {
                 alert("Error: " + err.message);
+            }
+        }
+
+        function openCancelTaskModal(taskId, title, oppId) {
+            const isAr = currentLang === 'ar';
+            document.getElementById('cancel-task-id-val').value = taskId;
+            document.getElementById('cancel-task-opp-id-val').value = oppId || '';
+            document.getElementById('cancel-task-id-display').textContent = taskId;
+            document.getElementById('cancel-task-title-display').textContent = title || taskId;
+            document.getElementById('cancel-task-notes').value = '';
+            document.getElementById('cancel-task-reason').value = 'CLIENT_REQUEST';
+
+            const cascadeBox = document.getElementById('cancel-task-cascade-box');
+            const cascadeChk = document.getElementById('cancel-task-cascade-chk');
+            if (oppId) {
+                cascadeBox.style.display = 'block';
+                cascadeChk.checked = false;
+                document.getElementById('cancel-task-opp-label').textContent = oppId;
+            } else {
+                cascadeBox.style.display = 'none';
+                cascadeChk.checked = false;
+            }
+
+            openModal('modal-cancel-task');
+        }
+
+        async function submitCancelTask() {
+            const taskId = document.getElementById('cancel-task-id-val').value;
+            const oppId = document.getElementById('cancel-task-opp-id-val').value;
+            const reason = document.getElementById('cancel-task-reason').value;
+            const notes = document.getElementById('cancel-task-notes').value;
+            const cascade = document.getElementById('cancel-task-cascade-chk')?.checked || false;
+            const btn = document.getElementById('btn-confirm-cancel-task');
+            const isAr = currentLang === 'ar';
+
+            if (!taskId) return;
+
+            btn.disabled = true;
+            btn.textContent = isAr ? '⏳ جاري الإلغاء...' : '⏳ Cancelling...';
+
+            try {
+                const uId = (window.getCurrentUserProfile ? window.getCurrentUserProfile()?.user_id : null) || localStorage.getItem('recrm_user_id') || 'user-51';
+                const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': uId
+                    },
+                    body: JSON.stringify({
+                        reason: reason,
+                        notes: notes,
+                        cascade_cancel_opportunity: cascade
+                    })
+                });
+
+                const json = await res.json();
+                if (!res.ok) {
+                    throw new Error(json.detail || 'Failed to cancel task');
+                }
+
+                closeModal('modal-cancel-task');
+                showToast(isAr ? '🚫 تم إلغاء المهمة وتوثيق نشاط الإلغاء بنجاح!' : '🚫 Task cancelled successfully!', 'success', 5000);
+                await loadTasks();
+                await loadSummary();
+                await loadActivities();
+            } catch (err) {
+                alert((isAr ? 'فشل إلغاء المهمة: ' : 'Failed to cancel task: ') + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = isAr ? '⚠️ تأكيد إلغاء المهمة' : '⚠️ Confirm Cancel Task';
             }
         }
 

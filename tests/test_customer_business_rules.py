@@ -84,6 +84,7 @@ class TestCustomerBusinessRulesGoldenAcceptance(unittest.IsolatedAsyncioTestCase
         await self.conn.execute("DELETE FROM reservations WHERE unit_id IN ($1, $2, $3)", self.unit_rent_id, self.unit_buy_id, self.unit_invest_id)
         await self.conn.execute("DELETE FROM unit_status_history WHERE unit_id IN ($1, $2, $3)", self.unit_rent_id, self.unit_buy_id, self.unit_invest_id)
         await self.conn.execute("DELETE FROM communications WHERE customer_id = $1 OR lead_id IN (SELECT lead_id FROM leads WHERE customer_id = $1)", self.cust_id)
+        await self.conn.execute("DELETE FROM documents WHERE customer_id = $1 OR unit_id IN ($2, $3, $4)", self.cust_id, self.unit_rent_id, self.unit_buy_id, self.unit_invest_id)
         await self.conn.execute("DELETE FROM tasks WHERE customer_id = $1", self.cust_id)
         await self.conn.execute("DELETE FROM activities WHERE customer_id = $1", self.cust_id)
         await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id IN (SELECT opportunity_id FROM opportunities WHERE customer_id = $1)", self.cust_id)

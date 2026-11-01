@@ -9,6 +9,11 @@ class ProjectOut(BaseModel):
     name_ar: str
     name_en: str
     city_name: Optional[str] = None
+    city_name_ar: Optional[str] = None
+    developer_customer_id: Optional[str] = None
+    developer_name: Optional[str] = None
+    buildings_count: Optional[int] = 0
+    units_count: Optional[int] = 0
     status: str
     start_date: Optional[date] = None
     completion_date: Optional[date] = None
@@ -38,6 +43,8 @@ class UnitOut(BaseModel):
     project_name_en: Optional[str] = None
     unit_number: str
     floor_no: Optional[int] = None
+    total_floors: Optional[int] = None
+    building_floors_count: Optional[int] = None
     area_sqm: Optional[float] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[int] = None
@@ -68,6 +75,7 @@ class UnitCreateIn(BaseModel):
     unit_number: str
     property_type_id: Optional[str] = None
     floor_no: Optional[int] = None
+    total_floors: Optional[int] = None
     area_sqm: Optional[float] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[int] = None
@@ -89,6 +97,7 @@ class UnitUpdateIn(BaseModel):
     unit_number: Optional[str] = None
     property_type_id: Optional[str] = None
     floor_no: Optional[int] = None
+    total_floors: Optional[int] = None
     area_sqm: Optional[float] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[int] = None
@@ -112,6 +121,7 @@ class BuildingOut(BaseModel):
     building_code: str
     building_name: Optional[str] = None
     floors_count: Optional[int] = None
+    units_count: Optional[int] = 0
 
 class UnitStatusUpdate(BaseModel):
     status: str

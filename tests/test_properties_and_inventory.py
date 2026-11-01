@@ -273,3 +273,216 @@ class TestPropertiesAndInventory(unittest.IsolatedAsyncioTestCase):
             finally:
                 await conn.close()
 
+    async def test_05_project_and_building_directories_and_counts(self):
+        """
+        Verify Projects Directory and Buildings Directory endpoints:
+        - GET /api/v1/projects supports search and returns accurate buildings_count and units_count.
+        - GET /api/v1/buildings supports search and returns accurate units_count.
+        """
+        with TestClient(app) as client:
+            # 1. Create Project
+            proj_payload = {
+                "name_ar": "مشروع دليل الأصول المتكامل",
+                "name_en": "Integrated Directory Assets Project",
+                "status": "ACTIVE"
+            }
+            res_p = client.post("/api/v1/projects", json=proj_payload)
+            self.assertEqual(res_p.status_code, 201)
+            project_id = res_p.json()["data"]["project_id"]
+
+            # 2. Create 2 Buildings under this project
+            bld1_payload = {
+                "project_id": project_id,
+                "building_code": "BLD-DIR-01",
+                "name": "عمارة الدليل الأولى",
+                "floors_count": 5
+            }
+            res_b1 = client.post("/api/v1/buildings", json=bld1_payload)
+            self.assertEqual(res_b1.status_code, 201)
+            bld1_id = res_b1.json()["data"]["building_id"]
+
+            bld2_payload = {
+                "project_id": project_id,
+                "building_code": "BLD-DIR-02",
+                "name": "عمارة الدليل الثانية",
+                "floors_count": 8
+            }
+            res_b2 = client.post("/api/v1/buildings", json=bld2_payload)
+            self.assertEqual(res_b2.status_code, 201)
+            bld2_id = res_b2.json()["data"]["building_id"]
+
+            # 3. Create 2 units in bld1, 1 unit in bld2
+            u1_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": bld1_id,
+                "unit_number": "DIR-U101",
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(u1_res.status_code, 201)
+            u1_id = u1_res.json()["data"]["unit_id"]
+
+            u2_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": bld1_id,
+                "unit_number": "DIR-U102",
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(u2_res.status_code, 201)
+            u2_id = u2_res.json()["data"]["unit_id"]
+
+            u3_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": bld2_id,
+                "unit_number": "DIR-U201",
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(u3_res.status_code, 201)
+            u3_id = u3_res.json()["data"]["unit_id"]
+
+            # 4. Test GET /api/v1/projects?search=...
+            p_search_res = client.get(f"/api/v1/projects?search=الأصول المتكامل")
+            self.assertEqual(p_search_res.status_code, 200)
+            p_list = p_search_res.json()["data"]
+            matched_p = next((p for p in p_list if p["project_id"] == project_id), None)
+            self.assertIsNotNone(matched_p, "Created project should be found in search")
+            self.assertEqual(matched_p["buildings_count"], 2, "Project should have 2 buildings")
+            self.assertEqual(matched_p["units_count"], 3, "Project should have 3 units")
+
+            # 5. Test GET /api/v1/buildings?search=...&project_id=...
+            b_list_res = client.get(f"/api/v1/buildings?project_id={project_id}")
+            self.assertEqual(b_list_res.status_code, 200)
+            b_list = b_list_res.json()["data"]
+            self.assertEqual(len(b_list), 2)
+
+            bld1_found = next((b for b in b_list if b["building_id"] == bld1_id), None)
+            self.assertIsNotNone(bld1_found)
+            self.assertEqual(bld1_found["units_count"], 2)
+
+            bld2_found = next((b for b in b_list if b["building_id"] == bld2_id), None)
+            self.assertIsNotNone(bld2_found)
+            self.assertEqual(bld2_found["units_count"], 1)
+
+            # 6. Building search by code
+            b_search_res = client.get(f"/api/v1/buildings?search=BLD-DIR-02")
+            self.assertEqual(b_search_res.status_code, 200)
+            b_search_data = b_search_res.json()["data"]
+            self.assertTrue(any(b["building_id"] == bld2_id for b in b_search_data))
+
+            # Cleanup
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                await conn.execute("DELETE FROM units WHERE unit_id IN ($1, $2, $3)", u1_id, u2_id, u3_id)
+                await conn.execute("DELETE FROM buildings WHERE building_id IN ($1, $2)", bld1_id, bld2_id)
+                await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
+            finally:
+                await conn.close()
+
+    async def test_06_floor_no_and_total_floors_classification_and_hierarchy(self):
+        """
+        Verify:
+        1. Buildings return the Project they belong to (project_id, project_name_ar, floors_count).
+        2. Units in buildings return the Building (building_id, building_name) and floor_no (رقم الطابق)
+           along with building_floors_count (عدد طوابق المبنى).
+        3. Standalone assets (Villas, Duplexes, Townhouses, Buildings, Hotels) accept and return total_floors (عدد الطوابق).
+        4. Units like Penthouses in buildings can record both floor_no and total_floors.
+        """
+        with TestClient(app) as client:
+            # 1. Create Project
+            p_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع تلال الرياض السكني",
+                "name_en": "Riyadh Hills Residential Project",
+                "status": "ACTIVE"
+            })
+            self.assertEqual(p_res.status_code, 201)
+            project_id = p_res.json()["data"]["project_id"]
+
+            # 2. Create Building under Project with floors_count = 12
+            b_res = client.post("/api/v1/buildings", json={
+                "project_id": project_id,
+                "building_code": "TWR-HILLS-01",
+                "name": "برج تلال النخبة",
+                "floors_count": 12
+            })
+            self.assertEqual(b_res.status_code, 201)
+            bld_data = b_res.json()["data"]
+            building_id = bld_data["building_id"]
+            self.assertEqual(bld_data["project_id"], project_id)
+            self.assertEqual(bld_data["project_name_ar"], "مشروع تلال الرياض السكني")
+            self.assertEqual(bld_data["floors_count"], 12)
+
+            # 3. Create Apartment in Building with floor_no = 4
+            apt_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": building_id,
+                "unit_number": "APT-402",
+                "property_type_id": "property_type-3",  # APARTMENTS / FLATS
+                "floor_no": 4,
+                "area_sqm": 160.0,
+                "asking_price": 850000.0,
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(apt_res.status_code, 201)
+            apt_data = apt_res.json()["data"]
+            apt_id = apt_data["unit_id"]
+            self.assertEqual(apt_data["building_id"], building_id)
+            self.assertEqual(apt_data["building_name"], "برج تلال النخبة")
+            self.assertEqual(apt_data["building_code"], "TWR-HILLS-01")
+            self.assertEqual(apt_data["project_id"], project_id)
+            self.assertEqual(apt_data["floor_no"], 4)
+            self.assertEqual(apt_data["building_floors_count"], 12)
+
+            # 4. Create Standalone Villa with total_floors = 3
+            villa_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": None,
+                "unit_number": "VILLA-HILLS-05",
+                "property_type_id": "property_type-8",  # VILLA
+                "total_floors": 3,
+                "area_sqm": 420.0,
+                "asking_price": 2800000.0,
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(villa_res.status_code, 201)
+            villa_data = villa_res.json()["data"]
+            villa_id = villa_data["unit_id"]
+            self.assertIsNone(villa_data["building_id"])
+            self.assertEqual(villa_data["project_id"], project_id)
+            self.assertEqual(villa_data["total_floors"], 3)
+
+            # 5. Create Penthouse in Building with both floor_no = 11 and total_floors = 2
+            pent_res = client.post("/api/v1/units", json={
+                "project_id": project_id,
+                "building_id": building_id,
+                "unit_number": "PENT-1101",
+                "property_type_id": "property_type-1",  # PENTHOUSE
+                "floor_no": 11,
+                "total_floors": 2,
+                "area_sqm": 350.0,
+                "asking_price": 1950000.0,
+                "status": "AVAILABLE"
+            })
+            self.assertEqual(pent_res.status_code, 201)
+            pent_data = pent_res.json()["data"]
+            pent_id = pent_data["unit_id"]
+            self.assertEqual(pent_data["building_id"], building_id)
+            self.assertEqual(pent_data["floor_no"], 11)
+            self.assertEqual(pent_data["total_floors"], 2)
+            self.assertEqual(pent_data["building_floors_count"], 12)
+
+            # 6. Test Updating total_floors on Villa
+            upd_res = client.put(f"/api/v1/units/{villa_id}", json={
+                "total_floors": 2
+            })
+            self.assertEqual(upd_res.status_code, 200)
+            self.assertEqual(upd_res.json()["data"]["total_floors"], 2)
+
+            # Cleanup
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                await conn.execute("DELETE FROM units WHERE unit_id IN ($1, $2, $3)", apt_id, villa_id, pent_id)
+                await conn.execute("DELETE FROM buildings WHERE building_id = $1", building_id)
+                await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
+            finally:
+                await conn.close()
+
+

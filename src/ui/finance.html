@@ -275,8 +275,19 @@
 
         <!-- TAB: UNIT RESERVATIONS & EARNEST DEPOSITS -->
         <div id="tab-reservations" style="display: none;">
+            <!-- Active Search / Filter Banner -->
+            <div id="res-filter-banner" style="display: none; margin-bottom: 14px; padding: 10px 16px; background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 8px; color: #1e40af; font-size: 0.9em; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2em;">🎯</span>
+                    <span>تم تصفية الحجوزات وعربين الحجز وفق السجل: <strong id="res-filter-banner-text" style="color: #1d4ed8; font-family: monospace; font-size: 1.05em;">--</strong></span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearReservationSearchFilter()" style="font-weight: 700; color: #1e40af; border-color: #93c5fd; background: white; cursor: pointer;">
+                    ✕ إلغاء التصفية وعرض كافة الحجوزات
+                </button>
+            </div>
+
             <div class="controls-bar">
-                <input type="text" id="res-search" placeholder="Search by reservation #, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="fetchReservations()">
+                <input type="text" id="res-search" placeholder="Search by reservation #, ID, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="fetchReservations()">
                 <select id="res-status" onchange="fetchReservations()">
                     <option value="" data-i18n="opt_all_statuses">All Statuses</option>
                     <option value="ACTIVE" data-i18n="opt_status_active">ACTIVE</option>
@@ -1012,7 +1023,7 @@
             }
         };
 
-        let currentLang = 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
 
         function setGlobalArabicFont(fontVal) {
             localStorage.setItem('recrm_ar_font', fontVal);
@@ -1474,13 +1485,32 @@
         let cachedReservations = [];
         let activeReservationInModal = null;
 
-        async function fetchReservations() {
-            const search = document.getElementById('res-search')?.value || '';
+        async function fetchReservations(searchOverride) {
+            const searchInput = document.getElementById('res-search');
+            let search = searchOverride !== undefined ? searchOverride : (searchInput?.value || '');
+            if (searchInput && searchOverride !== undefined) searchInput.value = searchOverride;
+
             const status = document.getElementById('res-status')?.value || '';
+            const urlParams = new URLSearchParams(window.location.search);
+            const resIdParam = urlParams.get('reservation_id');
 
             let url = `${API_BASE}/api/v1/reservations?page_size=50`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (resIdParam && !search) url += `&reservation_id=${encodeURIComponent(resIdParam)}`;
+
+            // Update banner
+            const banner = document.getElementById('res-filter-banner');
+            const bannerText = document.getElementById('res-filter-banner-text');
+            const activeFilter = search || resIdParam;
+            if (banner && bannerText) {
+                if (activeFilter) {
+                    banner.style.display = 'flex';
+                    bannerText.textContent = activeFilter;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
 
             try {
                 const res = await fetch(url);
@@ -1496,6 +1526,18 @@
 
                 const now = new Date();
                 tbody.innerHTML = cachedReservations.map(r => {
+                    const isMatch = Boolean(activeFilter && (
+                        (r.reservation_id && r.reservation_id.toLowerCase() === activeFilter.toLowerCase()) ||
+                        (r.reservation_id && r.reservation_id.toLowerCase().includes(activeFilter.toLowerCase())) ||
+                        (r.reservation_number && r.reservation_number.toLowerCase().includes(activeFilter.toLowerCase()))
+                    ));
+                    const rowStyle = isMatch 
+                        ? 'background: #eff6ff; border-inline-start: 4px solid #2563eb;' 
+                        : '';
+                    const matchBadge = isMatch 
+                        ? '<span class="badge" style="background:#2563eb; color:white; font-size:0.75em; padding:1px 6px; border-radius:4px; margin-inline-start:4px;">🎯 الحجز المطلوب</span>' 
+                        : '';
+
                     const exp = r.expires_at ? new Date(r.expires_at) : null;
                     let expBadge = '--';
                     if (r.status === 'CONVERTED') {
@@ -1541,8 +1583,14 @@
                     const ownerMobile = r.unit_owner_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${r.unit_owner_mobile}</div>` : '';
 
                     return `
-                        <tr>
-                            <td><span class="id-badge">${r.reservation_number}</span></td>
+                        <tr style="${rowStyle}" class="${isMatch ? 'highlighted-reservation-row' : ''}">
+                            <td>
+                                <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                                    <span class="id-badge">${r.reservation_number}</span>
+                                    ${matchBadge}
+                                </div>
+                                <div style="font-size: 0.76em; color: #64748b; font-family: monospace; font-weight: 700; margin-top: 2px;">${r.reservation_id}</div>
+                            </td>
                             <td>
                                 <strong>${r.customer_name || 'Prospect'}</strong>
                                 ${r.customer_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${r.customer_mobile}</div>` : ''}
@@ -1563,11 +1611,28 @@
                         </tr>
                     `;
                 }).join('');
+
+                setTimeout(() => {
+                    const row = document.querySelector('.highlighted-reservation-row');
+                    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
             } catch (e) {
                 console.error(e);
                 const tbody = document.getElementById('reservations-tbody');
                 if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
             }
+        }
+
+        function clearReservationSearchFilter() {
+            const input = document.getElementById('res-search');
+            if (input) input.value = '';
+            const banner = document.getElementById('res-filter-banner');
+            if (banner) banner.style.display = 'none';
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            url.searchParams.delete('reservation_id');
+            window.history.replaceState({}, '', url);
+            fetchReservations('');
         }
 
         function renderReservationDetailModal(r) {
@@ -2398,10 +2463,19 @@
                 if (searchInput) searchInput.value = searchParam;
             }
 
-            if (tabParam === 'reservations' || hash === '#reservations') {
+            if (tabParam === 'reservations' || hash === '#reservations' || urlParams.get('reservation_id')) {
+                const resFilter = searchParam || urlParams.get('reservation_id');
+                if (resFilter) {
+                    const resInput = document.getElementById('res-search');
+                    if (resInput) resInput.value = resFilter;
+                }
                 switchTab('reservations');
-            } else if (tabParam === 'payments' || hash === '#payments') {
-                switchTab('payments');
+            } else if (tabParam === 'invoices' || tabParam === 'payments' || hash === '#invoices' || hash === '#payments') {
+                if (searchParam) {
+                    const invInput = document.getElementById('invoice-search');
+                    if (invInput) invInput.value = searchParam;
+                }
+                switchTab(tabParam === 'invoices' ? 'invoices' : 'payments');
             } else if (tabParam === 'commissions' || hash === '#commissions') {
                 switchTab('commissions');
             } else {

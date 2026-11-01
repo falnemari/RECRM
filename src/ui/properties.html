@@ -224,6 +224,104 @@
         .detail-label { color: var(--text-muted); font-size: 0.85em; display: block; margin-bottom: 2px; }
         .detail-val { font-weight: 600; color: var(--text-main); word-break: break-word; }
 
+        /* Property Levels Navigation Tabs */
+        .prop-tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 22px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .prop-tab-btn {
+            background: #f1f5f9;
+            border: 1.5px solid var(--border);
+            color: #475569;
+            font-size: 0.92em;
+            font-weight: 700;
+            padding: 9px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        .prop-tab-btn:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+            border-color: #cbd5e1;
+        }
+        .prop-tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+        }
+        .prop-tab-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: inherit;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.82em;
+            font-weight: 800;
+        }
+        .prop-tab-btn:not(.active) .prop-tab-badge {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        /* Directory Cards & Tables */
+        .directory-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.88em;
+        }
+        .directory-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            padding: 12px 14px;
+            border-bottom: 1.5px solid var(--border);
+            text-align: start;
+            white-space: nowrap;
+        }
+        .directory-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .directory-table tr:hover td {
+            background: #f8fafc;
+        }
+        .directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .dir-card {
+            background: #ffffff;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .dir-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #cbd5e1;
+        }
+
         /* Toast */
         #toast {
             visibility: hidden; min-width: 260px; background-color: #0f172a; color: #fff;
@@ -309,62 +407,161 @@
             </div>
         </div>
 
-        <div class="controls-bar">
-            <input type="text" id="search-box" placeholder="Search by unit number, unit_id or project..." style="flex-grow: 1; min-width: 220px;" oninput="fetchUnits()" data-i18n-placeholder="search_placeholder">
-            <select id="project-filter" onchange="onProjectFilterChange()">
-                <option value="" data-i18n="opt_all_projects">All Projects</option>
-            </select>
-            <select id="building-filter" onchange="onBuildingFilterChange()">
-                <option value="" data-i18n="opt_all_buildings">All Buildings & Projects</option>
-            </select>
-            <select id="unit-agent-filter" onchange="fetchUnits()">
-                <option value="" data-i18n="opt_all_agents">All Agents</option>
-            </select>
-            <div id="unit-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
-                <span id="unit-agent-scope-text">Showing user data only</span>
-                <button type="button" onclick="clearUnitAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
-            </div>
-            <select id="status-select" onchange="fetchUnits()">
-                <option value="" data-i18n="opt_all_statuses">All Statuses</option>
-                <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
-                <option value="RESERVED" data-i18n="opt_reserved">RESERVED</option>
-                <option value="SOLD" data-i18n="opt_sold">SOLD</option>
-                <option value="RENTED" data-i18n="opt_rented">RENTED</option>
-            </select>
-            <select id="purpose-select" onchange="fetchUnits()">
-                <option value="" data-i18n="opt_all_purposes">All Purposes</option>
-                <option value="SALE" data-i18n="opt_purpose_sale">For Sale Only</option>
-                <option value="RENT" data-i18n="opt_purpose_rent">For Rent Only</option>
-                <option value="INVESTMENT" data-i18n="opt_purpose_investment">For Investment & Acquisition</option>
-                <option value="ALL" data-i18n="opt_purpose_multi">Multi-Purpose (All)</option>
-            </select>
-            <select id="bedrooms-select" onchange="fetchUnits()">
-                <option value="" data-i18n="opt_any_bedrooms">Any Bedrooms</option>
-                <option value="1" data-i18n="opt_bed_1">1 Bedroom</option>
-                <option value="2" data-i18n="opt_bed_2">2 Bedrooms</option>
-                <option value="3" data-i18n="opt_bed_3">3 Bedrooms</option>
-                <option value="4" data-i18n="opt_bed_4">4+ Bedrooms</option>
-            </select>
-            <button class="btn btn-sm" onclick="resetFilters()" data-i18n="btn_reset">Reset</button>
+        <!-- Property Levels Navigation Tabs -->
+        <div class="prop-tabs-nav" id="prop-levels-tabs">
+            <button type="button" class="prop-tab-btn active" id="tab-btn-units" onclick="switchPropertyTab('UNITS')">
+                <span>🚪</span>
+                <span data-i18n="tab_units">مخزون الوحدات العقارية</span>
+                <span class="prop-tab-badge" id="tab-count-units">0</span>
+            </button>
+            <button type="button" class="prop-tab-btn" id="tab-btn-projects" onclick="switchPropertyTab('PROJECTS')">
+                <span>🏗️</span>
+                <span data-i18n="tab_projects">دليل المشاريع المسجلة</span>
+                <span class="prop-tab-badge" id="tab-count-projects">0</span>
+            </button>
+            <button type="button" class="prop-tab-btn" id="tab-btn-buildings" onclick="switchPropertyTab('BUILDINGS')">
+                <span>🏢</span>
+                <span data-i18n="tab_buildings">دليل المباني والعمائر</span>
+                <span class="prop-tab-badge" id="tab-count-buildings">0</span>
+            </button>
         </div>
 
-        <div class="properties-grid" id="units-grid">
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px;" data-i18n="loading_inventory">Loading live property inventory from database...</div>
-        </div>
-
-        <div class="pagination-bar" id="units-pagination-bar" style="margin-top: 20px; border-radius: 8px; border: 1px solid var(--border);">
-            <div id="units-pagination-info">Showing 0 of 0 units</div>
-            <div class="pagination-controls">
-                <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Units per page:</label>
-                <select id="units-page-size" class="page-size-select" onchange="changeUnitsPageSize(this.value)">
-                    <option value="12">12</option>
-                    <option value="24" selected>24</option>
-                    <option value="48">48</option>
-                    <option value="96">96</option>
+        <!-- ================= TAB 1: UNITS INVENTORY PANEL ================= -->
+        <div id="panel-units">
+            <div class="controls-bar">
+                <input type="text" id="search-box" placeholder="Search by unit number, unit_id or project..." style="flex-grow: 1; min-width: 220px;" oninput="fetchUnits()" data-i18n-placeholder="search_placeholder">
+                <select id="project-filter" onchange="onProjectFilterChange()">
+                    <option value="" data-i18n="opt_all_projects">All Projects</option>
                 </select>
-                <button type="button" class="btn-page" id="units-btn-prev" onclick="prevUnitsPage()" disabled>◀</button>
-                <span class="page-num-display" id="units-page-display">Page 1 of 1</span>
-                <button type="button" class="btn-page" id="units-btn-next" onclick="nextUnitsPage()" disabled>▶</button>
+                <select id="building-filter" onchange="onBuildingFilterChange()">
+                    <option value="" data-i18n="opt_all_buildings">All Buildings & Projects</option>
+                </select>
+                <select id="unit-agent-filter" onchange="fetchUnits()">
+                    <option value="" data-i18n="opt_all_agents">All Agents</option>
+                </select>
+                <div id="unit-agent-scope-badge" style="display:none; font-size: 0.8em; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px; border: 1px solid #bae6fd;">
+                    <span id="unit-agent-scope-text">Showing user data only</span>
+                    <button type="button" onclick="clearUnitAgentScope()" title="Clear filter" style="background:none; border:none; color:#0369a1; cursor:pointer; font-weight:800; font-size:1.1em; line-height:1; padding:0 2px;">&times;</button>
+                </div>
+                <select id="status-select" onchange="fetchUnits()">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
+                    <option value="RESERVED" data-i18n="opt_reserved">RESERVED</option>
+                    <option value="SOLD" data-i18n="opt_sold">SOLD</option>
+                    <option value="RENTED" data-i18n="opt_rented">RENTED</option>
+                </select>
+                <select id="purpose-select" onchange="fetchUnits()">
+                    <option value="" data-i18n="opt_all_purposes">All Purposes</option>
+                    <option value="SALE" data-i18n="opt_purpose_sale">For Sale Only</option>
+                    <option value="RENT" data-i18n="opt_purpose_rent">For Rent Only</option>
+                    <option value="INVESTMENT" data-i18n="opt_purpose_investment">For Investment & Acquisition</option>
+                    <option value="ALL" data-i18n="opt_purpose_multi">Multi-Purpose (All)</option>
+                </select>
+                <select id="bedrooms-select" onchange="fetchUnits()">
+                    <option value="" data-i18n="opt_any_bedrooms">Any Bedrooms</option>
+                    <option value="1" data-i18n="opt_bed_1">1 Bedroom</option>
+                    <option value="2" data-i18n="opt_bed_2">2 Bedrooms</option>
+                    <option value="3" data-i18n="opt_bed_3">3 Bedrooms</option>
+                    <option value="4" data-i18n="opt_bed_4">4+ Bedrooms</option>
+                </select>
+                <button class="btn btn-sm" onclick="resetFilters()" data-i18n="btn_reset">Reset</button>
+            </div>
+
+            <div class="properties-grid" id="units-grid">
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px;" data-i18n="loading_inventory">Loading live property inventory from database...</div>
+            </div>
+
+            <div class="pagination-bar" id="units-pagination-bar" style="margin-top: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                <div id="units-pagination-info">Showing 0 of 0 units</div>
+                <div class="pagination-controls">
+                    <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Units per page:</label>
+                    <select id="units-page-size" class="page-size-select" onchange="changeUnitsPageSize(this.value)">
+                        <option value="12">12</option>
+                        <option value="24" selected>24</option>
+                        <option value="48">48</option>
+                        <option value="96">96</option>
+                    </select>
+                    <button type="button" class="btn-page" id="units-btn-prev" onclick="prevUnitsPage()" disabled>◀</button>
+                    <span class="page-num-display" id="units-page-display">Page 1 of 1</span>
+                    <button type="button" class="btn-page" id="units-btn-next" onclick="nextUnitsPage()" disabled>▶</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: PROJECTS DIRECTORY PANEL ================= -->
+        <div id="panel-projects" style="display: none;">
+            <!-- Advisory Anti-Duplication Banner -->
+            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.5em;">💡</span>
+                    <div>
+                        <strong style="color: #1e40af; font-size: 0.95em;" data-i18n="banner_projects_title">دليل المشاريع العقارية المعتمدة</strong>
+                        <p style="margin: 3px 0 0 0; color: #3b82f6; font-size: 0.85em;" data-i18n="banner_projects_sub">استعرض كافة بيانات المشاريع المسجلة بالكامل للتحقق المسبق وتلافي إدراج مشروع تم تسجيله مسبقاً.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary-sm" onclick="openAddProjectModal()" style="padding: 7px 14px; font-weight: 700;">
+                    <span>+</span> <span data-i18n="btn_add_project">+ Add Project</span>
+                </button>
+            </div>
+
+            <!-- Projects Controls & Filters -->
+            <div class="controls-bar" style="margin-bottom: 20px;">
+                <input type="text" id="proj-search-box" placeholder="بحث بالاسم، كود المشروع، المدينة، أو المطور..." style="flex-grow: 1; min-width: 240px;" oninput="fetchProjectsDirectory()">
+                <select id="proj-status-filter" onchange="fetchProjectsDirectory()">
+                    <option value="">جميع حالات المشاريع</option>
+                    <option value="ACTIVE">نشط (ACTIVE)</option>
+                    <option value="COMPLETED">مكتمل (COMPLETED)</option>
+                    <option value="UNDER_CONSTRUCTION">قيد الإنشاء (UNDER_CONSTRUCTION)</option>
+                    <option value="PLANNED">مخطط (PLANNED)</option>
+                </select>
+                <select id="proj-city-filter" onchange="fetchProjectsDirectory()">
+                    <option value="">جميع المدن</option>
+                </select>
+                <button type="button" class="btn btn-sm" onclick="resetProjectFilters()">إعادة ضبط</button>
+            </div>
+
+            <!-- Projects Grid / Cards Container -->
+            <div class="directory-grid" id="projects-container">
+                <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">جاري تحميل دليل المشاريع...</div>
+            </div>
+
+            <div class="pagination-bar" id="projects-pagination-bar" style="border-radius: 8px; border: 1px solid var(--border);">
+                <div id="projects-pagination-info">إجمالي المشاريع المسجلة: 0</div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: BUILDINGS DIRECTORY PANEL ================= -->
+        <div id="panel-buildings" style="display: none;">
+            <!-- Advisory Anti-Duplication Banner -->
+            <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.5em;">🏢</span>
+                    <div>
+                        <strong style="color: #166534; font-size: 0.95em;" data-i18n="banner_buildings_title">دليل العمائر والمباني المسجلة</strong>
+                        <p style="margin: 3px 0 0 0; color: #15803d; font-size: 0.85em;" data-i18n="banner_buildings_sub">فحص وتدقيق أكواد وأسماء المباني المسجلة في كل مشروع لتلافي تكرار تسجيل المبنى.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" onclick="openAddBuildingModal()" style="padding: 7px 14px; font-weight: 700;">
+                    <span>+</span> <span data-i18n="btn_add_building">+ Add Building</span>
+                </button>
+            </div>
+
+            <!-- Buildings Controls & Filters -->
+            <div class="controls-bar" style="margin-bottom: 20px;">
+                <input type="text" id="bld-search-box" placeholder="بحث بكود المبنى، اسم المبنى، أو اسم المشروع..." style="flex-grow: 1; min-width: 240px;" oninput="fetchBuildingsDirectory()">
+                <select id="bld-parent-filter" onchange="fetchBuildingsDirectory()">
+                    <option value="">جميع المشاريع</option>
+                </select>
+                <button type="button" class="btn btn-sm" onclick="resetBuildingFilters()">إعادة ضبط</button>
+            </div>
+
+            <!-- Buildings Grid / Cards Container -->
+            <div class="directory-grid" id="buildings-container">
+                <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">جاري تحميل دليل المباني والعمائر...</div>
+            </div>
+
+            <div class="pagination-bar" id="buildings-pagination-bar" style="border-radius: 8px; border: 1px solid var(--border);">
+                <div id="buildings-pagination-info">إجمالي المباني المسجلة: 0</div>
             </div>
         </div>
     </div>
@@ -380,12 +577,20 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_proj_name_ar">Project Name (Arabic) *</label>
-                        <input type="text" id="add-proj-name-ar" placeholder="e.g. Al Narges Towers" required>
+                        <input type="text" id="add-proj-name-ar" placeholder="e.g. Al Narges Towers" oninput="checkProjectDuplicationLive()" required>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_proj_name_en">Project Name (English) *</label>
-                        <input type="text" id="add-proj-name-en" placeholder="e.g. Narges Towers Project" required>
+                        <input type="text" id="add-proj-name-en" placeholder="e.g. Narges Towers Project" oninput="checkProjectDuplicationLive()" required>
                     </div>
+                </div>
+                <!-- Anti-Duplication Warning Container -->
+                <div id="add-proj-dup-alert" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; color: #92400e; font-size: 0.85em;">
+                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>⚠️</span>
+                        <span id="add-proj-dup-title">تنبيه لتلافي تكرار المشاريع:</span>
+                    </div>
+                    <div id="add-proj-dup-msg" style="margin-top: 4px; line-height: 1.5;"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -426,24 +631,32 @@
                             <label style="margin: 0;" data-i18n="lbl_project">Project *</label>
                             <button type="button" class="btn-sm" style="padding: 1px 6px; font-size: 0.75em;" onclick="openAddProjectModal()">+ New Project</button>
                         </div>
-                        <select id="add-bld-project-id" required>
+                        <select id="add-bld-project-id" onchange="checkBuildingDuplicationLive()" required>
                             <option value="" data-i18n="opt_select_project">-- Select Project --</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_building_code">Building Code *</label>
-                        <input type="text" id="add-bld-code" placeholder="e.g. BLD-A, TOWER-01" required>
+                        <input type="text" id="add-bld-code" placeholder="e.g. BLD-A, TOWER-01" oninput="checkBuildingDuplicationLive()" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="lbl_building_name">Building Name</label>
-                        <input type="text" id="add-bld-name" placeholder="e.g. Al Yasmin Tower">
+                        <input type="text" id="add-bld-name" placeholder="e.g. Al Yasmin Tower" oninput="checkBuildingDuplicationLive()">
                     </div>
                     <div class="form-group">
                         <label data-i18n="lbl_floors_count">Floors Count</label>
                         <input type="number" id="add-bld-floors" min="1" placeholder="e.g. 10">
                     </div>
+                </div>
+                <!-- Anti-Duplication Warning Container -->
+                <div id="add-bld-dup-alert" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; color: #92400e; font-size: 0.85em;">
+                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>⚠️</span>
+                        <span id="add-bld-dup-title">تنبيه لتلافي تكرار المباني:</span>
+                    </div>
+                    <div id="add-bld-dup-msg" style="margin-top: 4px; line-height: 1.5;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closeAddBuildingModal()" data-i18n="btn_cancel">Cancel</button>
@@ -486,14 +699,14 @@
                     </div>
                 </div>
 
-                <div class="form-row-3">
-                    <div class="form-group">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1.2;">
                         <label data-i18n="lbl_prop_type">Property Type</label>
                         <select id="add-property-type-id" onchange="onPropertyTypeChange('add')">
                             <option value="">-- General / Apartment --</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label data-i18n="lbl_unit_status">Status *</label>
                         <select id="add-status" required>
                             <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
@@ -502,9 +715,27 @@
                             <option value="RENTED" data-i18n="opt_rented">RENTED</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="lbl_floor_no">Floor Number</label>
+                </div>
+
+                <!-- Floors Specification (Floor No inside building vs Total Floors for whole asset) -->
+                <div class="form-row" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; gap: 14px;">
+                    <div class="form-group" id="grp-add-floor-no" style="margin-bottom: 0;">
+                        <label id="lbl-add-floor-no" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
+                            <span data-i18n="lbl_floor_no">Floor Number</span>
+                            <small id="sub-add-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
+                                (رقم الطابق عندما تنتمي الوحدة لمبنى)
+                            </small>
+                        </label>
                         <input type="number" id="add-floor-no" placeholder="e.g. 2">
+                    </div>
+                    <div class="form-group" id="grp-add-total-floors" style="margin-bottom: 0;">
+                        <label id="lbl-add-total-floors" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
+                            <span data-i18n="lbl_total_floors">Total Floors</span>
+                            <small id="sub-add-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
+                                (عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)
+                            </small>
+                        </label>
+                        <input type="number" id="add-total-floors" min="1" placeholder="e.g. 3">
                     </div>
                 </div>
 
@@ -641,12 +872,12 @@
                     </div>
                 </div>
 
-                <div class="form-row-3">
-                    <div class="form-group">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1.2;">
                         <label data-i18n="lbl_prop_type">Property Type</label>
                         <select id="edit-property-type-id" onchange="onPropertyTypeChange('edit')"></select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label data-i18n="lbl_unit_status">Status *</label>
                         <select id="edit-status" required>
                             <option value="AVAILABLE" data-i18n="opt_available">AVAILABLE</option>
@@ -655,9 +886,27 @@
                             <option value="RENTED" data-i18n="opt_rented">RENTED</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="lbl_floor_no">Floor Number</label>
-                        <input type="number" id="edit-floor-no">
+                </div>
+
+                <!-- Floors Specification (Floor No inside building vs Total Floors for whole asset) -->
+                <div class="form-row" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; gap: 14px;">
+                    <div class="form-group" id="grp-edit-floor-no" style="margin-bottom: 0;">
+                        <label id="lbl-edit-floor-no" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
+                            <span data-i18n="lbl_floor_no">Floor Number</span>
+                            <small id="sub-edit-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
+                                (رقم الطابق عندما تنتمي الوحدة لمبنى)
+                            </small>
+                        </label>
+                        <input type="number" id="edit-floor-no" placeholder="e.g. 2">
+                    </div>
+                    <div class="form-group" id="grp-edit-total-floors" style="margin-bottom: 0;">
+                        <label id="lbl-edit-total-floors" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
+                            <span data-i18n="lbl_total_floors">Total Floors</span>
+                            <small id="sub-edit-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
+                                (عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)
+                            </small>
+                        </label>
+                        <input type="number" id="edit-total-floors" min="1" placeholder="e.g. 3">
                     </div>
                 </div>
 
@@ -782,7 +1031,11 @@
                 
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <span class="detail-label" data-i18n="lbl_building">Building / Project</span>
+                        <span class="detail-label" id="det-lbl-project">🏗️ المشروع العقاري</span>
+                        <span class="detail-val" id="det-project">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label" id="det-lbl-building">🏛️ المبنى التابع له</span>
                         <span class="detail-val" id="det-building">--</span>
                     </div>
                     <div class="detail-item">
@@ -797,9 +1050,17 @@
                         <span class="detail-label" data-i18n="lbl_area_sqm">Area</span>
                         <span class="detail-val" id="det-area">--</span>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label" data-i18n="lbl_floor_no">Floor</span>
+                    <div class="detail-item" id="det-item-floor">
+                        <span class="detail-label" id="det-lbl-floor">📍 رقم الطابق (Floor No)</span>
                         <span class="detail-val" id="det-floor">--</span>
+                    </div>
+                    <div class="detail-item" id="det-item-total-floors">
+                        <span class="detail-label" id="det-lbl-total-floors">🏢 عدد طوابق العقار (Total Floors)</span>
+                        <span class="detail-val" id="det-total-floors">--</span>
+                    </div>
+                    <div class="detail-item" id="det-item-bld-floors">
+                        <span class="detail-label" id="det-lbl-bld-floors">🏛️ إجمالي طوابق المبنى</span>
+                        <span class="detail-val" id="det-building-floors">--</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label" data-i18n="lbl_bedrooms_count">Bedrooms</span>
@@ -854,7 +1115,7 @@
             return `${window.location.protocol}//${host}:8000`;
         })();
 
-        let currentLang = 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
         let cachedUnits = [];
         let cachedTotal = 0;
         let cachedBuildings = [];
@@ -892,6 +1153,13 @@
                 opt_bed_3: "3 Bedrooms",
                 opt_bed_4: "4+ Bedrooms",
                 btn_reset: "Reset",
+                tab_units: "Units Inventory",
+                tab_projects: "Projects Directory",
+                tab_buildings: "Buildings Directory",
+                banner_projects_title: "Verified Real Estate Projects Directory",
+                banner_projects_sub: "Explore all registered project records with full metadata to verify beforehand and avoid duplicate project entries.",
+                banner_buildings_title: "Registered Buildings & Towers Directory",
+                banner_buildings_sub: "Audit building codes and structures to verify building uniqueness within projects.",
                 btn_add_project: "+ Add Project",
                 btn_add_building: "+ Add Building",
                 btn_add_unit: "+ Add Unit",
@@ -916,6 +1184,8 @@
                 lbl_prop_type: "Property Type",
                 lbl_unit_status: "Status",
                 lbl_floor_no: "Floor Number",
+                lbl_total_floors: "Total Floors (Asset / Structure)",
+                lbl_building_floors: "Building Total Floors",
                 lbl_area_sqm: "Area (sqm)",
                 lbl_bedrooms_count: "Bedrooms",
                 lbl_bathrooms_count: "Bathrooms",
@@ -1025,6 +1295,13 @@
                 opt_bed_3: "3 غرف نوم",
                 opt_bed_4: "4 غرف نوم فأكثر",
                 btn_reset: "إعادة ضبط",
+                tab_units: "مخزون الوحدات العقارية",
+                tab_projects: "دليل المشاريع المسجلة",
+                tab_buildings: "دليل المباني والعمائر",
+                banner_projects_title: "دليل المشاريع العقارية المعتمدة",
+                banner_projects_sub: "استعراض كافة بيانات المشاريع المسجلة بالكامل للتحقق المسبق وتلافي إدراج مشروع تم تسجيله مسبقاً.",
+                banner_buildings_title: "دليل العمائر والمباني المسجلة",
+                banner_buildings_sub: "فحص وتدقيق أكواد وأسماء المباني المسجلة في كل مشروع لتلافي تكرار تسجيل المبنى.",
                 btn_add_project: "+ إضافة مشروع",
                 btn_add_building: "+ إضافة مبنى",
                 btn_add_unit: "+ إضافة وحدة عقارية",
@@ -1049,6 +1326,8 @@
                 lbl_prop_type: "نوع العقار",
                 lbl_unit_status: "الحالة",
                 lbl_floor_no: "رقم الطابق",
+                lbl_total_floors: "عدد طوابق العقار (فيلا / دوبلكس / تاون هاوس / عمارة / فندق)",
+                lbl_building_floors: "إجمالي طوابق المبنى",
                 lbl_area_sqm: "المساحة (م²)",
                 lbl_bedrooms_count: "غرف النوم",
                 lbl_bathrooms_count: "دورات المياه",
@@ -1210,6 +1489,13 @@
             // Re-render units and populate reference selectors
             renderUnits();
             populateSelectOptions();
+            if (typeof cachedProjectsDirectory !== 'undefined' && cachedProjectsDirectory.length > 0) {
+                renderProjectsDirectory(cachedProjectsDirectory);
+            }
+            if (typeof cachedBuildingsDirectory !== 'undefined' && cachedBuildingsDirectory.length > 0) {
+                renderBuildingsDirectory(cachedBuildingsDirectory);
+            }
+            updateTabBadges();
         }
 
         function toggleLanguage() {
@@ -1295,22 +1581,63 @@
                     price = `${Number(u.rent_price).toLocaleString()} ${t.lbl_sar_yr}`;
                 }
 
-                const projectName = currentLang === 'ar'
+                const isAr = currentLang === 'ar';
+                const projectName = isAr
                     ? (u.project_name_ar || u.project_name_en || 'مشروع عقاري')
                     : (u.project_name_en || u.project_name_ar || 'Building Project');
 
-                const unitTitle = `${t.lbl_unit} ${u.unit_number} - ${projectName}`;
+                const hasBuilding = Boolean(u.building_id || u.building_name || u.building_code);
+                const bldDisplay = u.building_name 
+                    ? `${u.building_name}${u.building_code ? ` (${u.building_code})` : ''}` 
+                    : (u.building_code || u.building_id || '');
 
-                let propTypeName = (currentLang === 'ar')
+                const unitTitle = `${t.lbl_unit} ${u.unit_number} - ${projectName}${hasBuilding ? ` - ${bldDisplay}` : ''}`;
+
+                let propTypeName = isAr
                     ? (u.property_type_name_ar || propTypeMapAr[u.property_type_name] || u.property_type_name || 'شقة')
                     : (u.property_type_name_en || u.property_type_name || 'Apartment');
 
                 let orientationText = u.orientation || '--';
-                if (currentLang === 'ar' && orientationMapAr[u.orientation]) {
+                if (isAr && orientationMapAr[u.orientation]) {
                     orientationText = orientationMapAr[u.orientation];
                 }
 
                 const owner = u.owner_name || t.lbl_direct_agency;
+
+                // Classification logic for Floor No vs Total Floors
+                const code = (u.property_type_name_en || '').toUpperCase();
+                const nameAr = u.property_type_name_ar || '';
+                const isMultiFloor = ['VILLA', 'DUPLEX', 'TOWNHOUSE', 'BUILDING', 'HOTELS AND HOSPITALITY'].some(c => code.includes(c) || nameAr.includes(c) || (u.property_type_id || '').includes(c));
+                const isPenthouse = code.includes('PENTHOUSE') || nameAr.includes('بنتهاوس');
+                const isLand = code.includes('LAND') || nameAr.includes('أرض');
+
+                let floorsDisplayHtml = '';
+                if (isLand) {
+                    floorsDisplayHtml = `<span>${isAr ? 'الطوابق' : 'Floors'}: <span style="color:var(--text-muted); font-size:0.85em;">${isAr ? 'أرض (بدون طوابق)' : 'Land (N/A)'}</span></span>`;
+                } else if (isPenthouse) {
+                    const fl = u.floor_no != null ? u.floor_no : '--';
+                    const tot = u.total_floors != null ? u.total_floors : null;
+                    floorsDisplayHtml = `<span>${isAr ? 'رقم الطابق' : 'Floor'}: <strong>${fl}</strong>${tot ? ` | ${isAr ? 'طوابق البنتهاوس' : 'Penthouse Floors'}: <strong>${tot}</strong>` : ''}</span>`;
+                } else if (isMultiFloor) {
+                    const tot = u.total_floors != null ? u.total_floors : (u.floor_no != null ? u.floor_no : '--');
+                    let assetTypeLabel = isAr ? 'عدد الطوابق' : 'Total Floors';
+                    if (nameAr.includes('فيلا') || code.includes('VILLA')) assetTypeLabel = isAr ? 'طوابق الفيلا' : 'Villa Floors';
+                    else if (nameAr.includes('دوبلكس') || code.includes('DUPLEX')) assetTypeLabel = isAr ? 'طوابق الدوبلكس' : 'Duplex Floors';
+                    else if (nameAr.includes('تاون') || code.includes('TOWNHOUSE')) assetTypeLabel = isAr ? 'طوابق التاون هاوس' : 'Townhouse Floors';
+                    else if (nameAr.includes('عمارة') || code.includes('BUILDING')) assetTypeLabel = isAr ? 'طوابق العمارة' : 'Building Floors';
+                    else if (nameAr.includes('فندق') || code.includes('HOTEL')) assetTypeLabel = isAr ? 'طوابق الفندق' : 'Hotel Floors';
+
+                    floorsDisplayHtml = `<span>${assetTypeLabel}: <strong>${tot}</strong> ${isAr ? 'طوابق/أدوار' : 'Floors'}</span>`;
+                } else {
+                    // Apartment / Office in building
+                    const fl = u.floor_no != null ? u.floor_no : '--';
+                    const bldFloors = u.building_floors_count;
+                    floorsDisplayHtml = `<span>${isAr ? 'رقم الطابق' : 'Floor'}: <strong>${fl}</strong>${bldFloors ? ` <span style="font-size:0.82em; color:var(--text-muted); font-weight:normal;">(${isAr ? `من أصل ${bldFloors} طوابق بالمبنى` : `of ${bldFloors} in bld`})</span>` : ''}</span>`;
+                }
+
+                const buildingBadgeHtml = hasBuilding
+                    ? `<span class="property-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-weight:700;">🏛️ ${bldDisplay}</span>`
+                    : `<span class="property-badge" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:600;">🏡 ${isAr ? 'عقار مستقل' : 'Standalone'}</span>`;
 
                 return `
                     <div class="property-card">
@@ -1319,6 +1646,7 @@
                                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                                     ${getBadge(u.status)}
                                     ${getPurposeBadge(u.listing_purpose)}
+                                    ${buildingBadgeHtml}
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 4px;">
                                     <span class="id-badge">${u.unit_id}</span>
@@ -1328,9 +1656,22 @@
                             <h3 class="property-title">${unitTitle}</h3>
                             <div class="property-price">${price}</div>
                             <div class="property-meta">
-                                <div>${t.lbl_type}: <strong>${propTypeName}</strong> | ${t.lbl_orientation}: <strong>${orientationText}</strong></div>
-                                <div>${t.lbl_area}: <strong>${u.area_sqm || '--'} ${t.lbl_sqm}</strong> | ${t.lbl_floor}: <strong>${u.floor_no != null ? u.floor_no : '--'}</strong></div>
-                                <div>${t.lbl_bedrooms}: <strong>${u.bedrooms != null ? u.bedrooms : '--'}</strong> | ${t.lbl_baths}: <strong>${u.bathrooms != null ? u.bathrooms : '--'}</strong></div>
+                                <div>
+                                    <span>🏗️ ${isAr ? 'المشروع' : 'Project'}: <strong>${projectName}</strong></span> | 
+                                    <span>${t.lbl_type}: <strong>${propTypeName}</strong></span>
+                                </div>
+                                <div>
+                                    <span>🏛️ ${isAr ? 'المبنى التابع له' : 'Building'}: <strong>${hasBuilding ? bldDisplay : (isAr ? 'عقار مستقل (بدون مبنى)' : 'Standalone (No Building)')}</strong></span>
+                                </div>
+                                <div>
+                                    <span>${t.lbl_area}: <strong>${u.area_sqm || '--'} ${t.lbl_sqm}</strong></span> | 
+                                    ${floorsDisplayHtml}
+                                </div>
+                                <div>
+                                    <span>${t.lbl_bedrooms}: <strong>${u.bedrooms != null ? u.bedrooms : '--'}</strong></span> | 
+                                    <span>${t.lbl_baths}: <strong>${u.bathrooms != null ? u.bathrooms : '--'}</strong></span> | 
+                                    <span>${t.lbl_orientation}: <strong>${orientationText}</strong></span>
+                                </div>
                                 <div>${t.lbl_owner}: <strong>${owner}</strong></div>
                             </div>
                         </div>
@@ -1395,6 +1736,7 @@
                 const json = await res.json();
                 cachedUnits = json.data || [];
                 cachedTotal = json.meta?.total || cachedUnits.length;
+                updateTabBadges();
                 isInitialLoadDone = true;
                 const totalPages = Math.max(1, Math.ceil(cachedTotal / unitsPageSize));
                 if (currentUnitsPage > totalPages) currentUnitsPage = totalPages;
@@ -1523,6 +1865,7 @@
                 if (custRes.ok) cachedCustomers = (await custRes.json()).data || [];
 
                 populateSelectOptions();
+                updateTabBadges();
             } catch (err) {
                 console.warn('Failed to load reference metadata:', err);
             }
@@ -1669,6 +2012,27 @@
                 editUsr.innerHTML = userOptions;
                 if (prevEditUsrVal) editUsr.value = prevEditUsrVal;
             }
+
+            // 6. City filter in Projects Directory
+            const projCityFilter = document.getElementById('proj-city-filter');
+            if (projCityFilter) {
+                const prevCity = projCityFilter.value;
+                projCityFilter.innerHTML = `<option value="">${isAr ? 'جميع المدن' : 'All Cities'}</option>` +
+                    cachedCities.map(c => `<option value="${c.city_id}">${isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar)}</option>`).join('');
+                if (prevCity) projCityFilter.value = prevCity;
+            }
+
+            // 7. Project filter in Buildings Directory
+            const bldPrjFilter = document.getElementById('bld-parent-filter');
+            if (bldPrjFilter) {
+                const prevBldPrj = bldPrjFilter.value;
+                bldPrjFilter.innerHTML = `<option value="">${isAr ? 'جميع المشاريع' : 'All Projects'}</option>` +
+                    cachedProjects.map(p => {
+                        const pName = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+                        return `<option value="${p.project_id}">${pName}</option>`;
+                    }).join('');
+                if (prevBldPrj) bldPrjFilter.value = prevBldPrj;
+            }
         }
 
         function onAddUnitProjectChange() {
@@ -1764,23 +2128,41 @@
             const ptId = ptSelect?.value || '';
             const ptObj = cachedPropertyTypes.find(pt => pt.property_type_id === ptId);
             const isAr = currentLang === 'ar';
-            const isLand = ptObj && (
-                (ptObj.name_ar && (ptObj.name_ar.includes('أرض') || ptObj.name_ar.includes('الأراضي'))) ||
-                (ptObj.name_en && ptObj.name_en.toUpperCase().includes('LAND'))
-            );
+            const code = (ptObj?.code || '').toUpperCase();
+            const nameAr = ptObj?.name_ar || '';
+            const nameEn = (ptObj?.name_en || '').toUpperCase();
+
+            const isLand = code.includes('LAND') || nameAr.includes('أرض') || nameEn.includes('LAND');
+            const isVilla = code === 'VILLA' || nameAr.includes('فيلا') || nameEn.includes('VILLA');
+            const isDuplex = code === 'DUPLEX' || nameAr.includes('دوبلكس') || nameEn.includes('DUPLEX');
+            const isTownhouse = code === 'TOWNHOUSE' || nameAr.includes('تاون هاوس') || nameEn.includes('TOWNHOUSE');
+            const isBuilding = code === 'BUILDING' || nameAr.includes('عمارة') || nameEn.includes('BUILDING');
+            const isHotel = code.includes('HOTEL') || nameAr.includes('فندق') || nameAr.includes('ضيافة') || nameEn.includes('HOSPITALITY');
+            const isPenthouse = code === 'PENTHOUSE' || nameAr.includes('بنتهاوس') || nameEn.includes('PENTHOUSE');
 
             const floorInput = document.getElementById(`${prefix}-floor-no`);
+            const totalFloorsInput = document.getElementById(`${prefix}-total-floors`);
             const bedsInput = document.getElementById(`${prefix}-bedrooms`);
             const bathsInput = document.getElementById(`${prefix}-bathrooms`);
             const bldSelect = document.getElementById(`${prefix}-building-id`);
 
+            const grpFloorNo = document.getElementById(`grp-${prefix}-floor-no`);
+            const grpTotalFloors = document.getElementById(`grp-${prefix}-total-floors`);
+            const subFloorNo = document.getElementById(`sub-${prefix}-floor-no`);
+            const subTotalFloors = document.getElementById(`sub-${prefix}-total-floors`);
+
+            if (grpFloorNo) grpFloorNo.style.opacity = '1';
+            if (grpTotalFloors) grpTotalFloors.style.opacity = '1';
+
             if (isLand) {
-                if (bldSelect) {
-                    bldSelect.value = '';
-                }
+                if (bldSelect) bldSelect.value = '';
                 if (floorInput) {
                     floorInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
                     if (prefix === 'add') floorInput.value = '';
+                }
+                if (totalFloorsInput) {
+                    totalFloorsInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
+                    if (prefix === 'add') totalFloorsInput.value = '';
                 }
                 if (bedsInput) {
                     bedsInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
@@ -1790,8 +2172,43 @@
                     bathsInput.placeholder = isAr ? 'غير مطلوب للأراضي' : 'N/A for land';
                     if (prefix === 'add') bathsInput.value = '';
                 }
+                if (grpFloorNo) grpFloorNo.style.opacity = '0.5';
+                if (grpTotalFloors) grpTotalFloors.style.opacity = '0.5';
+            } else if (isVilla || isDuplex || isTownhouse || isBuilding || isHotel) {
+                if (totalFloorsInput) {
+                    let placeholderText = 'e.g. 2';
+                    let subText = isAr ? 'عدد طوابق العقار الإجمالية' : 'Total Asset Floors';
+                    if (isVilla) { placeholderText = 'مثال: 2 أو 3'; subText = isAr ? 'عدد أدوار/طوابق الفيلا (مثال: دورين أو 3 أدوار)' : 'Villa Floors (e.g. 2 or 3)'; }
+                    else if (isDuplex) { placeholderText = 'مثال: 2'; subText = isAr ? 'عدد أدوار الدوبلكس (مثال: دورين)' : 'Duplex Floors (e.g. 2)'; }
+                    else if (isTownhouse) { placeholderText = 'مثال: 2 أو 3'; subText = isAr ? 'عدد أدوار التاون هاوس' : 'Townhouse Floors'; }
+                    else if (isBuilding) { placeholderText = 'مثال: 5 أو 10'; subText = isAr ? 'عدد طوابق العمارة الكاملة' : 'Building Floors'; }
+                    else if (isHotel) { placeholderText = 'مثال: 8 أو 12'; subText = isAr ? 'عدد طوابق الفندق / المنشأة' : 'Hotel Floors'; }
+                    
+                    totalFloorsInput.placeholder = placeholderText;
+                    if (subTotalFloors) subTotalFloors.textContent = subText;
+                }
+                if (floorInput) {
+                    floorInput.placeholder = isAr ? 'اختياري (أو رقم الدور الرئيسي)' : 'Optional';
+                    if (subFloorNo) subFloorNo.textContent = isAr ? '(اختياري للعقارات المستقلة)' : '(Optional for standalone)';
+                }
+            } else if (isPenthouse) {
+                if (floorInput) {
+                    floorInput.placeholder = isAr ? 'مثال: 12 (رقم الطابق بالمبنى)' : 'e.g. 12';
+                    if (subFloorNo) subFloorNo.textContent = isAr ? 'رقم الطابق الذي يبدأ منه البنتهاوس في المبنى' : 'Starting floor in building';
+                }
+                if (totalFloorsInput) {
+                    totalFloorsInput.placeholder = isAr ? 'مثال: 1 أو 2' : 'e.g. 1 or 2';
+                    if (subTotalFloors) subTotalFloors.textContent = isAr ? 'عدد طوابق البنتهاوس نفسه (دور واحد أو دوبلكس دورين)' : 'Penthouse internal floors (1 or 2)';
+                }
             } else {
-                if (floorInput) floorInput.placeholder = 'e.g. 2';
+                if (floorInput) {
+                    floorInput.placeholder = isAr ? 'مثال: 3' : 'e.g. 3';
+                    if (subFloorNo) subFloorNo.textContent = isAr ? 'رقم الطابق الذي تتواجد فيه الوحدة داخل المبنى' : 'Floor inside building';
+                }
+                if (totalFloorsInput) {
+                    totalFloorsInput.placeholder = isAr ? 'إجمالي طوابق المبنى إن رغبت' : 'e.g. 8';
+                    if (subTotalFloors) subTotalFloors.textContent = isAr ? 'إجمالي عدد طوابق المبنى التابع له' : 'Total floors of building';
+                }
                 if (bedsInput) bedsInput.placeholder = 'e.g. 3';
                 if (bathsInput) bathsInput.placeholder = 'e.g. 2';
             }
@@ -1819,12 +2236,435 @@
             }
         }
 
+        // ================= MULTI-LEVEL DIRECTORY & TABS MANAGEMENT =================
+        let currentActiveTab = 'UNITS';
+        let cachedProjectsDirectory = [];
+        let cachedBuildingsDirectory = [];
+
+        function updateTabBadges() {
+            const unitsBadge = document.getElementById('tab-count-units');
+            if (unitsBadge) unitsBadge.textContent = cachedTotal || 0;
+            const prjBadge = document.getElementById('tab-count-projects');
+            if (prjBadge) prjBadge.textContent = cachedProjects ? cachedProjects.length : 0;
+            const bldBadge = document.getElementById('tab-count-buildings');
+            if (bldBadge) bldBadge.textContent = cachedBuildings ? cachedBuildings.length : 0;
+        }
+
+        function switchPropertyTab(tabKey) {
+            currentActiveTab = tabKey;
+            const panels = {
+                'UNITS': document.getElementById('panel-units'),
+                'PROJECTS': document.getElementById('panel-projects'),
+                'BUILDINGS': document.getElementById('panel-buildings')
+            };
+            const buttons = {
+                'UNITS': document.getElementById('tab-btn-units'),
+                'PROJECTS': document.getElementById('tab-btn-projects'),
+                'BUILDINGS': document.getElementById('tab-btn-buildings')
+            };
+
+            Object.keys(panels).forEach(k => {
+                if (panels[k]) panels[k].style.display = (k === tabKey) ? 'block' : 'none';
+                if (buttons[k]) {
+                    if (k === tabKey) buttons[k].classList.add('active');
+                    else buttons[k].classList.remove('active');
+                }
+            });
+
+            if (tabKey === 'PROJECTS') {
+                fetchProjectsDirectory();
+            } else if (tabKey === 'BUILDINGS') {
+                fetchBuildingsDirectory();
+            }
+        }
+
+        // ================= PROJECTS DIRECTORY (TAB 2) =================
+        async function fetchProjectsDirectory() {
+            const search = document.getElementById('proj-search-box')?.value?.trim() || '';
+            const status = document.getElementById('proj-status-filter')?.value || '';
+            const cityId = document.getElementById('proj-city-filter')?.value || '';
+
+            let url = `${API_BASE}/api/v1/projects?page_size=100`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (cityId) url += `&city_id=${encodeURIComponent(cityId)}`;
+
+            const container = document.getElementById('projects-container');
+            if (container) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'جاري تحميل دليل المشاريع...' : 'Loading projects directory...'}</div>`;
+            }
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load projects');
+                const json = await res.json();
+                cachedProjectsDirectory = json.data || [];
+
+                const info = document.getElementById('projects-pagination-info');
+                if (info) {
+                    info.textContent = currentLang === 'ar'
+                        ? `إجمالي المشاريع المسجلة: ${cachedProjectsDirectory.length} مشروع`
+                        : `Total Registered Projects: ${cachedProjectsDirectory.length}`;
+                }
+                renderProjectsDirectory(cachedProjectsDirectory);
+            } catch (err) {
+                console.error('Error fetching projects:', err);
+                if (container) {
+                    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: red;">${currentLang === 'ar' ? 'تعذر تحميل المشاريع من الخادم.' : 'Failed to load projects.'}</div>`;
+                }
+            }
+        }
+
+        function resetProjectFilters() {
+            const sBox = document.getElementById('proj-search-box');
+            const stFilter = document.getElementById('proj-status-filter');
+            const ctFilter = document.getElementById('proj-city-filter');
+            if (sBox) sBox.value = '';
+            if (stFilter) stFilter.value = '';
+            if (ctFilter) ctFilter.value = '';
+            fetchProjectsDirectory();
+        }
+
+        function renderProjectsDirectory(projects) {
+            const container = document.getElementById('projects-container');
+            if (!container) return;
+            const isAr = currentLang === 'ar';
+
+            if (!projects || projects.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لم يتم العثور على أي مشاريع مطابقة للبحث.' : 'No projects found matching the criteria.'}</div>`;
+                return;
+            }
+
+            container.innerHTML = projects.map(p => {
+                const titlePrimary = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+                const titleSecondary = isAr ? p.name_en : p.name_ar;
+                const cityName = isAr ? (p.city_name_ar || p.city_name || '--') : (p.city_name || p.city_name_ar || '--');
+                const devName = p.developer_name || (isAr ? 'إدارة مباشرة / غير مسجل' : 'Direct / Not specified');
+
+                let statusBadge = '';
+                const st = (p.status || 'ACTIVE').toUpperCase();
+                if (st === 'ACTIVE') statusBadge = `<span class="property-badge badge-available">${isAr ? 'نشط / متاح' : 'Active'}</span>`;
+                else if (st === 'COMPLETED') statusBadge = `<span class="property-badge" style="background:#dbeafe; color:#1e40af; border:1px solid #93c5fd;">${isAr ? 'مكتمل' : 'Completed'}</span>`;
+                else if (st === 'UNDER_CONSTRUCTION') statusBadge = `<span class="property-badge badge-reserved">${isAr ? 'تحت الإنشاء' : 'Under Construction'}</span>`;
+                else statusBadge = `<span class="property-badge" style="background:#f3e8ff; color:#6b21a8; border:1px solid #d8b4fe;">${isAr ? 'مخطط مستقبلي' : 'Planned'}</span>`;
+
+                const bldCount = p.buildings_count != null ? p.buildings_count : 0;
+                const unitCount = p.units_count != null ? p.units_count : 0;
+
+                return `
+                    <div class="dir-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>${statusBadge}</div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="id-badge">${p.project_id}</span>
+                                    <button class="btn-copy" onclick="copyId('${p.project_id}')" title="Copy ID">📋</button>
+                                </div>
+                            </div>
+                            <h3 style="margin: 0 0 4px 0; font-size: 1.15em; color: var(--primary); font-weight: 700;">
+                                ${titlePrimary}
+                            </h3>
+                            ${titleSecondary ? `<div style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px;">${titleSecondary}</div>` : '<div style="margin-bottom: 12px;"></div>'}
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.88em; border: 1px solid #f1f5f9;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? '📍 المدينة:' : '📍 City:'}</span>
+                                    <strong>${cityName}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? '🏢 المطور العقاري:' : '🏢 Developer:'}</span>
+                                    <strong style="max-width: 180px; text-align: ${isAr ? 'left' : 'right'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${devName}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                    <span>${isAr ? 'المباني المسجلة:' : 'Buildings:'} <strong style="color: #0369a1;">${bldCount}</strong></span>
+                                    <span>${isAr ? 'إجمالي الوحدات:' : 'Total Units:'} <strong style="color: #166534;">${unitCount}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto;">
+                            <button type="button" class="btn btn-sm" onclick="filterUnitsByProject('${p.project_id}')" style="flex: 1; min-width: 125px; font-weight: 600;">
+                                🚪 ${isAr ? `الوحدات (${unitCount})` : `Units (${unitCount})`}
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="filterBuildingsByProject('${p.project_id}')" style="flex: 1; min-width: 125px; font-weight: 600; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                                🏢 ${isAr ? `المباني (${bldCount})` : `Buildings (${bldCount})`}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ================= BUILDINGS DIRECTORY (TAB 3) =================
+        async function fetchBuildingsDirectory() {
+            const search = document.getElementById('bld-search-box')?.value?.trim() || '';
+            const prjId = document.getElementById('bld-parent-filter')?.value || '';
+
+            let url = `${API_BASE}/api/v1/buildings?page_size=100`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (prjId) url += `&project_id=${encodeURIComponent(prjId)}`;
+
+            const container = document.getElementById('buildings-container');
+            if (container) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">${currentLang === 'ar' ? 'جاري تحميل دليل المباني والعمائر...' : 'Loading buildings directory...'}</div>`;
+            }
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load buildings');
+                const json = await res.json();
+                cachedBuildingsDirectory = json.data || [];
+
+                const info = document.getElementById('buildings-pagination-info');
+                if (info) {
+                    info.textContent = currentLang === 'ar'
+                        ? `إجمالي المباني والعمائر المسجلة: ${cachedBuildingsDirectory.length} مبنى`
+                        : `Total Registered Buildings: ${cachedBuildingsDirectory.length}`;
+                }
+                renderBuildingsDirectory(cachedBuildingsDirectory);
+            } catch (err) {
+                console.error('Error fetching buildings:', err);
+                if (container) {
+                    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: red;">${currentLang === 'ar' ? 'تعذر تحميل المباني من الخادم.' : 'Failed to load buildings.'}</div>`;
+                }
+            }
+        }
+
+        function resetBuildingFilters() {
+            const sBox = document.getElementById('bld-search-box');
+            const prjFilter = document.getElementById('bld-parent-filter');
+            if (sBox) sBox.value = '';
+            if (prjFilter) prjFilter.value = '';
+            fetchBuildingsDirectory();
+        }
+
+        function renderBuildingsDirectory(buildings) {
+            const container = document.getElementById('buildings-container');
+            if (!container) return;
+            const isAr = currentLang === 'ar';
+
+            if (!buildings || buildings.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">${isAr ? 'لم يتم العثور على أي مباني أو عمائر مطابقة للبحث.' : 'No buildings found matching the criteria.'}</div>`;
+                return;
+            }
+
+            container.innerHTML = buildings.map(b => {
+                const bldCode = b.building_code || '--';
+                const bldName = b.building_name || (isAr ? `مبنى ${bldCode}` : `Building ${bldCode}`);
+                const projectName = isAr 
+                    ? (b.project_name_ar || b.project_name_en || b.project_id || '--')
+                    : (b.project_name_en || b.project_name_ar || b.project_id || '--');
+                const floorsText = b.floors_count ? `${b.floors_count} ${isAr ? 'طوابق' : 'Floors'}` : (isAr ? 'غير محدد' : 'N/A');
+                const unitsCount = b.units_count != null ? b.units_count : 0;
+
+                return `
+                    <div class="dir-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                    <span class="property-badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-weight: 700;">
+                                        🏛️ ${bldCode}
+                                    </span>
+                                    <span class="property-badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-weight: 700;">
+                                        🏗️ ${projectName}
+                                    </span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="id-badge">${b.building_id}</span>
+                                    <button class="btn-copy" onclick="copyId('${b.building_id}')" title="Copy ID">📋</button>
+                                </div>
+                            </div>
+
+                            <h3 style="margin: 0 0 6px 0; font-size: 1.15em; color: var(--primary); font-weight: 700;">
+                                ${bldName}
+                            </h3>
+                            <div style="font-size: 0.86em; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span>🏗️</span>
+                                <span>${isAr ? 'المشروع المنتمي له:' : 'Parent Project:'} <strong>${projectName}</strong></span>
+                            </div>
+
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.88em; border: 1px solid #f1f5f9;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? 'كود المبنى:' : 'Building Code:'}</span>
+                                    <strong>${bldCode}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? 'عدد طوابق المبنى:' : 'Building Floors:'}</span>
+                                    <strong style="color: #0f172a;">🏢 ${floorsText}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                    <span style="color: var(--text-muted);">${isAr ? 'الوحدات المسجلة بالمبنى:' : 'Registered Units:'}</span>
+                                    <strong style="color: #166534; font-size: 1.05em;">🚪 ${unitsCount} ${isAr ? 'وحدة' : 'Units'}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-sm" onclick="filterUnitsByBuilding('${b.building_id}', '${b.project_id}')" style="flex: 1; min-width: 130px; font-weight: 600; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+                                🚪 ${isAr ? `وحدات المبنى (${unitsCount})` : `Building Units (${unitsCount})`}
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="filterUnitsByProject('${b.project_id}')" style="flex: 1; min-width: 130px; font-weight: 600; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                                🏗️ ${isAr ? 'كافة وحدات المشروع' : 'All Project Units'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ================= CROSS-FILTERING HELPERS =================
+        function filterUnitsByProject(projectId) {
+            switchPropertyTab('UNITS');
+            const prjFilter = document.getElementById('project-filter');
+            if (prjFilter) {
+                prjFilter.value = projectId;
+                updateBuildingFilterOptions(projectId);
+            }
+            const bldFilter = document.getElementById('building-filter');
+            if (bldFilter) bldFilter.value = '';
+            fetchUnits(1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterBuildingsByProject(projectId) {
+            switchPropertyTab('BUILDINGS');
+            const bldPrjFilter = document.getElementById('bld-parent-filter');
+            if (bldPrjFilter) {
+                bldPrjFilter.value = projectId;
+            }
+            fetchBuildingsDirectory();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterUnitsByBuilding(buildingId, projectId) {
+            switchPropertyTab('UNITS');
+            const prjFilter = document.getElementById('project-filter');
+            if (prjFilter && projectId) {
+                prjFilter.value = projectId;
+                updateBuildingFilterOptions(projectId);
+            }
+            const bldFilter = document.getElementById('building-filter');
+            if (bldFilter) {
+                bldFilter.value = buildingId;
+            }
+            fetchUnits(1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ================= ANTI-DUPLICATION DETECTION =================
+        function normalizeArabicText(str) {
+            if (!str) return '';
+            return str
+                .toLowerCase()
+                .trim()
+                .replace(/[أإآ]/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/ى/g, 'ي')
+                .replace(/[\u064B-\u065F]/g, '') // strip tashkeel
+                .replace(/[\s\-_]+/g, ' ');      // normalize spacing
+        }
+
+        function checkProjectDuplicationLive() {
+            const nameAr = document.getElementById('add-proj-name-ar')?.value?.trim() || '';
+            const nameEn = document.getElementById('add-proj-name-en')?.value?.trim() || '';
+            const alertBox = document.getElementById('add-proj-dup-alert');
+            const msgEl = document.getElementById('add-proj-dup-msg');
+            if (!alertBox || !msgEl) return;
+
+            if (nameAr.length < 2 && nameEn.length < 2) {
+                alertBox.style.display = 'none';
+                return;
+            }
+
+            const normAr = normalizeArabicText(nameAr);
+            const normEn = nameEn.toLowerCase();
+
+            const matches = (cachedProjects || []).filter(p => {
+                const pNormAr = normalizeArabicText(p.name_ar || '');
+                const pNormEn = (p.name_en || '').toLowerCase();
+                
+                const arExact = normAr.length >= 2 && pNormAr === normAr;
+                const arSimilar = normAr.length >= 3 && (pNormAr.includes(normAr) || normAr.includes(pNormAr));
+                
+                const enExact = normEn.length >= 2 && pNormEn === normEn;
+                const enSimilar = normEn.length >= 3 && (pNormEn.includes(normEn) || normEn.includes(pNormEn));
+
+                return arExact || arSimilar || enExact || enSimilar;
+            });
+
+            if (matches.length > 0) {
+                const isAr = currentLang === 'ar';
+                alertBox.style.display = 'block';
+                
+                const matchListHtml = matches.slice(0, 3).map(m => {
+                    const mName = isAr ? (m.name_ar || m.name_en) : (m.name_en || m.name_ar);
+                    const mCity = isAr ? (m.city_name_ar || m.city_name || '') : (m.city_name || '');
+                    return `• <strong>${mName}</strong> (${m.project_id}${mCity ? ' - ' + mCity : ''}) [${m.status || 'ACTIVE'}]`;
+                }).join('<br>');
+
+                msgEl.innerHTML = isAr 
+                    ? `⚠️ تم العثور على مشاريع مسجلة مشابهة أو مطابقة لمنع تكرار الإدراج:<br>${matchListHtml}<br><span style="font-size: 0.9em; color: #b45309;">يرجى التحقق لتجنب إنشاء سجل مكرر لنفس المشروع.</span>`
+                    : `⚠️ Found existing similar projects to avoid duplicate entry:<br>${matchListHtml}<br><span style="font-size: 0.9em; color: #b45309;">Please verify to avoid creating duplicate project entries.</span>`;
+            } else {
+                alertBox.style.display = 'none';
+            }
+        }
+
+        function checkBuildingDuplicationLive() {
+            const prjId = document.getElementById('add-bld-project-id')?.value || '';
+            const bldCode = document.getElementById('add-bld-code')?.value?.trim() || '';
+            const bldName = document.getElementById('add-bld-name')?.value?.trim() || '';
+            const alertBox = document.getElementById('add-bld-dup-alert');
+            const msgEl = document.getElementById('add-bld-dup-msg');
+            if (!alertBox || !msgEl) return;
+
+            if (bldCode.length < 1 && bldName.length < 2) {
+                alertBox.style.display = 'none';
+                return;
+            }
+
+            const normCode = bldCode.toUpperCase();
+            const normName = normalizeArabicText(bldName);
+
+            const matches = (cachedBuildings || []).filter(b => {
+                const bCode = (b.building_code || '').toUpperCase();
+                const bName = normalizeArabicText(b.building_name || '');
+                const sameProject = prjId ? (b.project_id === prjId) : false;
+
+                const codeMatch = normCode.length >= 1 && bCode === normCode;
+                const nameMatch = normName.length >= 2 && (bName === normName || (bName.length > 3 && bName.includes(normName)));
+
+                if (sameProject && (codeMatch || nameMatch)) return true;
+                if (!prjId && codeMatch) return true;
+                return false;
+            });
+
+            if (matches.length > 0) {
+                const isAr = currentLang === 'ar';
+                alertBox.style.display = 'block';
+
+                const matchListHtml = matches.slice(0, 3).map(m => {
+                    const mPrjName = isAr ? (m.project_name_ar || m.project_name_en) : (m.project_name_en || m.project_name_ar);
+                    const mName = m.building_name || m.building_code;
+                    return `• كود: <strong>${m.building_code}</strong> | الاسم: <strong>${mName}</strong> (مشروع: ${mPrjName || m.project_id})`;
+                }).join('<br>');
+
+                msgEl.innerHTML = isAr
+                    ? `⚠️ تم العثور على مبنى مسجل بهذا الكود أو الاسم لتلافي التكرار:<br>${matchListHtml}<br><span style="font-size: 0.9em; color: #b45309;">يرجى التأكد من عدم تكرار تسجيل المبنى لنفس المشروع.</span>`
+                    : `⚠️ Found matching building code or name to avoid duplication:<br>${matchListHtml}<br><span style="font-size: 0.9em; color: #b45309;">Please verify to avoid duplicate building entry.</span>`;
+            } else {
+                alertBox.style.display = 'none';
+            }
+        }
+
         // ================= PROJECT & BUILDING MODAL HANDLERS =================
         function openAddProjectModal() {
             document.getElementById('add-proj-name-ar').value = '';
             document.getElementById('add-proj-name-en').value = '';
             document.getElementById('add-proj-city').value = '';
             document.getElementById('add-proj-status').value = 'ACTIVE';
+            const alertBox = document.getElementById('add-proj-dup-alert');
+            if (alertBox) alertBox.style.display = 'none';
             document.getElementById('add-project-modal').style.display = 'flex';
         }
 
@@ -1870,15 +2710,23 @@
                 await loadReferenceData();
                 const bldPrjSelect = document.getElementById('add-bld-project-id');
                 if (bldPrjSelect) bldPrjSelect.value = newPrj.project_id;
+                if (currentActiveTab === 'PROJECTS') await fetchProjectsDirectory();
+                updateTabBadges();
             } catch (err) {
                 alert(err.message);
             }
         }
 
-        function openAddBuildingModal() {
+        function openAddBuildingModal(preselectedProjectId = '') {
             document.getElementById('add-bld-code').value = '';
             document.getElementById('add-bld-name').value = '';
             document.getElementById('add-bld-floors').value = '';
+            const prjSelect = document.getElementById('add-bld-project-id');
+            if (prjSelect && preselectedProjectId) {
+                prjSelect.value = preselectedProjectId;
+            }
+            const alertBox = document.getElementById('add-bld-dup-alert');
+            if (alertBox) alertBox.style.display = 'none';
             document.getElementById('add-building-modal').style.display = 'flex';
         }
 
@@ -1924,6 +2772,8 @@
                 await loadReferenceData();
                 const unitBldSelect = document.getElementById('add-building-id');
                 if (unitBldSelect) unitBldSelect.value = newBld.building_id;
+                if (currentActiveTab === 'BUILDINGS') await fetchBuildingsDirectory();
+                updateTabBadges();
             } catch (err) {
                 alert(err.message);
             }
@@ -1944,6 +2794,7 @@
             onPropertyTypeChange('add');
             document.getElementById('add-status').value = 'AVAILABLE';
             document.getElementById('add-floor-no').value = '';
+            document.getElementById('add-total-floors').value = '';
             document.getElementById('add-area-sqm').value = '';
             document.getElementById('add-bedrooms').value = '';
             document.getElementById('add-bathrooms').value = '';
@@ -1979,6 +2830,7 @@
                 property_type_id: document.getElementById('add-property-type-id').value || null,
                 status: document.getElementById('add-status').value,
                 floor_no: document.getElementById('add-floor-no').value ? parseInt(document.getElementById('add-floor-no').value) : null,
+                total_floors: document.getElementById('add-total-floors').value ? parseInt(document.getElementById('add-total-floors').value) : null,
                 area_sqm: document.getElementById('add-area-sqm').value ? parseFloat(document.getElementById('add-area-sqm').value) : null,
                 bedrooms: document.getElementById('add-bedrooms').value ? parseInt(document.getElementById('add-bedrooms').value) : null,
                 bathrooms: document.getElementById('add-bathrooms').value ? parseInt(document.getElementById('add-bathrooms').value) : null,
@@ -2046,6 +2898,7 @@
                 onPropertyTypeChange('edit');
                 document.getElementById('edit-status').value = u.status || 'AVAILABLE';
                 document.getElementById('edit-floor-no').value = u.floor_no != null ? u.floor_no : '';
+                document.getElementById('edit-total-floors').value = u.total_floors != null ? u.total_floors : '';
                 document.getElementById('edit-area-sqm').value = u.area_sqm != null ? u.area_sqm : '';
                 document.getElementById('edit-bedrooms').value = u.bedrooms != null ? u.bedrooms : '';
                 document.getElementById('edit-bathrooms').value = u.bathrooms != null ? u.bathrooms : '';
@@ -2094,6 +2947,7 @@
                 property_type_id: document.getElementById('edit-property-type-id').value || null,
                 status: document.getElementById('edit-status').value,
                 floor_no: document.getElementById('edit-floor-no').value ? parseInt(document.getElementById('edit-floor-no').value) : null,
+                total_floors: document.getElementById('edit-total-floors').value ? parseInt(document.getElementById('edit-total-floors').value) : null,
                 area_sqm: document.getElementById('edit-area-sqm').value ? parseFloat(document.getElementById('edit-area-sqm').value) : null,
                 bedrooms: document.getElementById('edit-bedrooms').value ? parseInt(document.getElementById('edit-bedrooms').value) : null,
                 bathrooms: document.getElementById('edit-bathrooms').value ? parseInt(document.getElementById('edit-bathrooms').value) : null,
@@ -2175,7 +3029,12 @@
                     ? (u.project_name_ar || u.project_name_en || 'مشروع عقاري')
                     : (u.project_name_en || u.project_name_ar || 'Building Project');
 
-                document.getElementById('det-unit-title').textContent = `${t.lbl_unit} ${u.unit_number} - ${projectName}`;
+                const hasBuilding = Boolean(u.building_id || u.building_name || u.building_code);
+                const bldDisplay = u.building_name 
+                    ? `${u.building_name}${u.building_code ? ` (${u.building_code})` : ''}` 
+                    : (u.building_code || u.building_id || '');
+
+                document.getElementById('det-unit-title').textContent = `${t.lbl_unit} ${u.unit_number} - ${projectName}${hasBuilding ? ` - ${bldDisplay}` : ''}`;
                 document.getElementById('det-unit-id').textContent = u.unit_id;
                 document.getElementById('det-status-badge').innerHTML = getBadge(u.status);
 
@@ -2190,10 +3049,12 @@
                 }
                 document.getElementById('det-price').textContent = price;
 
-                const bldName = u.building_name || u.building_code;
-                const bldText = bldName
-                    ? `[${projectName}] ${bldName}`
-                    : (u.building_id ? `[${projectName}] ${u.building_id}` : `[${projectName}] ${isAr ? 'عقار مستقل / أرض (بدون مبنى)' : 'Standalone / Land (No building)'}`);
+                const detProj = document.getElementById('det-project');
+                if (detProj) detProj.textContent = `${projectName} (${u.project_id || '--'})`;
+
+                const bldText = hasBuilding
+                    ? `${bldDisplay} [كود: ${u.building_code || '--'}]`
+                    : (isAr ? 'عقار مستقل / أرض (بدون مبنى)' : 'Standalone / Land (No building)');
                 document.getElementById('det-building').textContent = bldText;
                 
                 let pType = isAr 
@@ -2210,7 +3071,28 @@
                 if (detPurp) detPurp.textContent = lpLabel;
 
                 document.getElementById('det-area').textContent = u.area_sqm ? `${u.area_sqm} ${t.lbl_sqm}` : '--';
-                document.getElementById('det-floor').textContent = u.floor_no != null ? u.floor_no : '--';
+                
+                // Floor Number
+                document.getElementById('det-floor').textContent = u.floor_no != null 
+                    ? (hasBuilding && u.building_floors_count ? `${u.floor_no} (${isAr ? `من إجمالي ${u.building_floors_count} طوابق بالمبنى` : `of ${u.building_floors_count} in building`})` : u.floor_no)
+                    : (hasBuilding ? (isAr ? 'غير محدد' : '--') : (isAr ? 'غير مطلوب للعقار المستقل' : 'N/A (Standalone)'));
+
+                // Total Floors (Asset)
+                const detTotal = document.getElementById('det-total-floors');
+                if (detTotal) {
+                    detTotal.textContent = u.total_floors != null 
+                        ? `${u.total_floors} ${isAr ? 'طوابق/أدوار' : 'Floors'}` 
+                        : (isAr ? '--' : '--');
+                }
+
+                // Building Total Floors
+                const detBldFloors = document.getElementById('det-building-floors');
+                if (detBldFloors) {
+                    detBldFloors.textContent = hasBuilding && u.building_floors_count != null
+                        ? `${u.building_floors_count} ${isAr ? 'طوابق للمبنى' : 'Building Floors'}`
+                        : (isAr ? 'عقار مستقل (لا يوجد مبنى)' : 'N/A (No building)');
+                }
+
                 document.getElementById('det-beds').textContent = u.bedrooms != null ? u.bedrooms : '--';
                 document.getElementById('det-baths').textContent = u.bathrooms != null ? u.bathrooms : '--';
                 document.getElementById('det-parking').textContent = u.parking_spaces != null ? u.parking_spaces : '--';

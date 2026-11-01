@@ -742,7 +742,7 @@
             return `${window.location.protocol}//${host}:8000`;
         })();
 
-        let currentLang = 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
         let activeTab = 'branches';
 
         let cachedBranches = [];

@@ -489,6 +489,186 @@
             border-inline-start: 4px solid #16a34a !important;
         }
 
+        /* ================= OPERATIONAL CALENDAR & FINANCIAL AGENDAS ================= */
+        .agenda-box {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+        }
+        .agenda-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1.5px solid #f1f5f9;
+            padding-bottom: 14px;
+        }
+        .agenda-chip-btn {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .agenda-chip-btn:hover {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+        .agenda-chip-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        /* Calendar Grid */
+        .cal-grid-container {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .cal-grid-container th {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.8em;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 4px;
+            border: 1px solid var(--border);
+        }
+        .cal-day-cell {
+            height: 108px;
+            vertical-align: top;
+            padding: 6px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            transition: background 0.15s, border-color 0.15s;
+            cursor: pointer;
+            position: relative;
+        }
+        .cal-day-cell:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .cal-day-cell.other-month {
+            background: #fcfcfd;
+            color: #cbd5e1;
+            opacity: 0.55;
+        }
+        .cal-day-cell.today {
+            background: #f8faff;
+        }
+        .cal-day-cell.today .cal-day-number {
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 1px 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35);
+        }
+        .cal-day-cell.selected {
+            background: #f0fdf4 !important;
+            border: 2.5px solid #16a34a !important;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25) !important;
+            position: relative;
+            z-index: 2;
+        }
+        .cal-day-cell.today.selected .cal-day-number {
+            background: #16a34a;
+            color: #ffffff;
+        }
+        .cal-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .cal-day-number {
+            font-weight: 800;
+            font-size: 0.85em;
+            color: #1e293b;
+        }
+        .cal-day-count-badge {
+            font-size: 0.68em;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 1px 5px;
+            border-radius: 9999px;
+            font-weight: 700;
+        }
+        .cal-event-pill {
+            font-size: 0.72em;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-align: right;
+        }
+        [dir="ltr"] .cal-event-pill { text-align: left; }
+        .cal-event-pill:hover {
+            transform: scale(1.02);
+            filter: brightness(0.95);
+        }
+
+        /* Financial Ledger Styles */
+        .fin-ledger-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .fin-ledger-kpi {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            border-inline-start: 4px solid #3b82f6;
+        }
+        .fin-ledger-kpi.success { border-inline-start-color: #10b981; }
+        .fin-ledger-kpi.warning { border-inline-start-color: #f59e0b; }
+        .fin-ledger-kpi.danger { border-inline-start-color: #ef4444; }
+        .fin-ledger-kpi.purple { border-inline-start-color: #8b5cf6; }
+
+        .lead-interactive-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 0.8em;
+            padding: 2px 7px;
+            border-radius: 5px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            border: 1px solid #bfdbfe;
+        }
+        .lead-interactive-badge:hover {
+            background: #1d4ed8;
+            color: white;
+            border-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
         @media (max-width: 1024px) {
             .drilldown-split-grid {
                 grid-template-columns: 1fr !important;
@@ -553,9 +733,18 @@
                 <h1 data-i18n="title">Real Estate Operations Dashboard</h1>
                 <p style="margin: 4px 0 0 0; color: var(--text-muted);" data-i18n="subtitle">Live metrics synchronized with PostgreSQL (redb)</p>
             </div>
-            <div class="status-pill">
-                <span class="status-dot"></span>
-                <span id="db-status">PostgreSQL Connected</span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="openPingsInboxModal()" style="padding: 6px 14px; font-weight: 700; font-size: 0.85em; background: #faf5ff; border: 1.5px solid #d8b4fe; color: #7c3aed; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(124,58,237,0.08);" title="عرض رسائل التذكير الواردة">
+                    <span>🔔</span> <span data-i18n="btn_pings_inbox">رسائل التذكير</span>
+                    <span id="pings-unread-count" class="badge" style="background: #7c3aed; color: white; border-radius: 9999px; padding: 1px 7px; font-size: 0.8em; font-weight: 800;">0</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="loadDashboardData()" style="padding: 6px 14px; font-weight: 700; font-size: 0.85em; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);" title="تحديث شامل لكافة بيانات ومفكرات اللوحة">
+                    🔄 <span data-i18n="btn_refresh_all">تحديث شامل</span>
+                </button>
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    <span id="db-status">PostgreSQL Connected</span>
+                </div>
             </div>
         </div>
 
@@ -710,21 +899,40 @@
             </div>
         </div>
 
-        <!-- ================= DRILLDOWN EXPLORER & LIVE PULSE STREAM (SPLIT VIEW) ================= -->
-        <!-- ================= PERSONAL WORKSPACE & DEALS EXPLORER (FULL WIDTH) ================= -->
-        <div class="card-box workspace-full-box" style="background: white; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 32px; width: 100%; box-sizing: border-box;">
+        <!-- ================= PERSONAL WORKSPACE & DEALS EXPLORER (مساحة العمل الشخصية والفرص البيعية) ================= -->
+        <div class="card-box workspace-full-box" id="personal-workspace-section" style="background: white; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 28px; width: 100%; box-sizing: border-box;">
             <!-- Dynamic Interactive Breadcrumbs -->
             <div id="drill-breadcrumbs" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
                 <span class="breadcrumb-item current" id="bc-root">🌐 Global Overview</span>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <h3 id="drill-view-title" style="margin: 0; font-size: 1.2em; color: var(--text-main);">🏢 Branches Performance Breakdown</h3>
                     <span id="drill-counter-badge" class="badge" style="background: #e2e8f0; color: #334155; font-size: 0.82em; padding: 3px 10px; border-radius: 4px; font-weight: 700;">--</span>
+                    <!-- Quick Return & Navigation Actions for Managers -->
+                    <div id="drill-quick-back-actions" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;"></div>
                 </div>
                 <div style="font-size: 0.84em; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 6px; font-weight: 600;">
-                    <span id="workspace-action-hint">💡 اضغط على سطر أي صفقة أو فرصة بيعية لاستعراض سجلها ومسارها التشغيلي الشامل أدناه</span>
+                    <span id="workspace-action-hint">💡 اضغط على سطر أي صفقة أو فرصة بيعية لتصفية ومزامنة الجدولة التشغيلية والمالية ومسار الطلب أدناه</span>
+                </div>
+            </div>
+
+            <!-- Active Selected Deal Synchronization Banner -->
+            <div id="workspace-selected-deal-banner" style="display: none; margin-bottom: 14px; padding: 12px 18px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; color: #166534; font-size: 0.9em; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5em;">🎯</span>
+                    <div>
+                        <strong id="ws-selected-deal-title" style="font-size: 1.05em; color: #14532d;">الصفقة المحددة: --</strong>
+                        <div id="ws-selected-deal-sub" style="font-size: 0.85em; color: #15803d; margin-top: 2px;">
+                            تمت مزامنة وحصر مفكرة التقويم والجدولة التشغيلية، ومفكرة المبالغ، وسجل وتاريخ مسار الطلب أدناه وفق هذه الصفقة.
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" class="btn btn-sm" onclick="clearWorkspaceDealSelection()" style="background: white; border: 1.5px solid #86efac; color: #166534; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                        ✕ إلغاء التحديد وعرض كافة الصفقات
+                    </button>
                 </div>
             </div>
 
@@ -732,6 +940,263 @@
                 <!-- Dynamically rendered table: Branches -> Agents -> Opportunities -->
             </div>
         </div>
+
+        <!-- ================= OPERATIONAL CALENDAR & FINANCIAL AGENDAS (مفكرات العمليات والجدولة المالية) ================= -->
+        
+        <!-- 1. OPERATIONAL CALENDAR & SCHEDULES ORGANIZER (مفكرة التقويم والجدولة التشغيلية) -->
+        <div class="card-box agenda-box" id="agenda-calendar-section" style="background: white; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 28px;">
+            <!-- Header -->
+            <div class="agenda-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 14px; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 14px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25em; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <span>📅</span>
+                        <span id="title-agenda-cal">مفكرة التقويم والجدولة التشغيلية (المهام غير المنجزة والمحددة بمواعيد)</span>
+                        <span id="agenda-cal-count-badge" class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 0.8em; padding: 3px 8px; border-radius: 4px; font-weight: 700;">--</span>
+                    </h3>
+                    <small style="color: #64748b; font-size: 0.86em;" id="sub-agenda-cal">متابعة وجدولة المهام والمعاينات والحجوزات المعلقة وغير المنفذة والمحددة بمواعيد استحقاق مع إبراز رقم الطلب (Lead_id) والمعرف المباشر</small>
+                </div>
+                <!-- Controls and View Switchers -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <!-- Uncompleted Only Toggle -->
+                    <div style="display: inline-flex; background: #f8fafc; padding: 3px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <button type="button" id="btn-toggle-uncompleted" class="agenda-chip-btn active" onclick="toggleUncompletedOnly(true)" style="border: none; border-radius: 6px; padding: 5px 12px; font-size: 0.82em; font-weight: 700;">
+                            ⏳ <span id="lbl-toggle-uncompleted">غير منجزة بمواعيد</span>
+                        </button>
+                        <button type="button" id="btn-toggle-all" class="agenda-chip-btn" onclick="toggleUncompletedOnly(false)" style="border: none; border-radius: 6px; padding: 5px 12px; font-size: 0.82em; font-weight: 700;">
+                            📋 <span id="lbl-toggle-all">كافة السجلات</span>
+                        </button>
+                    </div>
+                    <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid var(--border);">
+                        <button type="button" id="btn-view-cal" class="agenda-chip-btn active" onclick="switchAgendaView('CALENDAR')" style="border: none; border-radius: 6px; padding: 5px 12px; font-size: 0.82em; font-weight: 700;">
+                            📅 <span id="lbl-view-cal">التقويم الشهري</span>
+                        </button>
+                        <button type="button" id="btn-view-timeline" class="agenda-chip-btn" onclick="switchAgendaView('TIMELINE')" style="border: none; border-radius: 6px; padding: 5px 12px; font-size: 0.82em; font-weight: 700;">
+                            📋 <span id="lbl-view-timeline">المفكرة الزمنية</span>
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="refreshAgendaData()" style="padding: 6px 12px; font-weight: 600; font-size: 0.82em;">
+                        🔄 <span id="lbl-refresh-agenda">تحديث</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Selected Deal Filter Banner for Agenda Calendar -->
+            <div id="agenda-deal-scope-banner" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.88em; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>🎯</span>
+                    <span>مواعيد ومهام مصفاة للطلب / الصفقة: <strong id="agenda-deal-scope-id" style="color:#1d4ed8;">--</strong> (<span id="agenda-deal-scope-name">--</span>)</span>
+                </div>
+                <button type="button" onclick="clearWorkspaceDealSelection()" style="background: white; border: 1px solid #93c5fd; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-size: 0.82em; cursor: pointer; font-weight: 700;">
+                    ✕ عرض كافة المواعيد والمهام
+                </button>
+            </div>
+
+            <!-- KPI & Event Type Filter Strip -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" id="agenda-type-chips">
+                    <button type="button" class="agenda-chip-btn active" data-type="ALL" onclick="filterAgendaEventType('ALL')">🌐 الكل (<span id="cnt-ag-all">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="TASK" onclick="filterAgendaEventType('TASK')">📋 المهام (<span id="cnt-ag-task">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="VIEWING" onclick="filterAgendaEventType('VIEWING')">👁️ المعاينات (<span id="cnt-ag-viewing">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="RESERVATION" onclick="filterAgendaEventType('RESERVATION')">🏷️ الحجوزات (<span id="cnt-ag-reservation">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="RENT_COLLECTION" onclick="filterAgendaEventType('RENT_COLLECTION')">💰 الإيجارات (<span id="cnt-ag-rent">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="MAINTENANCE" onclick="filterAgendaEventType('MAINTENANCE')">🔧 الصيانة (<span id="cnt-ag-maint">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-type="CAMPAIGN" onclick="filterAgendaEventType('CAMPAIGN')">📢 الحملات (<span id="cnt-ag-camp">0</span>)</button>
+                </div>
+                <!-- Status Pills -->
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82em;">
+                    <span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 700;">⚠️ متأخرة: <span id="cnt-ag-overdue">0</span></span>
+                    <span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-weight: 700;">⏳ اليوم: <span id="cnt-ag-today">0</span></span>
+                    <span style="background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 4px; font-weight: 700;">🕒 قادمة: <span id="cnt-ag-upcoming">0</span></span>
+                </div>
+            </div>
+
+            <!-- View 1: Calendar Grid View -->
+            <div id="agenda-calendar-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: #f8fafc; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="changeCalendarMonth(-1)" style="padding: 4px 10px;">❮ السابق</button>
+                        <h4 id="cal-month-title" style="margin: 0; font-size: 1.05em; color: var(--text-main); font-weight: 700;">--</h4>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="changeCalendarMonth(1)" style="padding: 4px 10px;">التالي ❯</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="resetCalendarToCurrentMonth()" style="padding: 4px 10px; font-weight: 600;">الشهر الحالي</button>
+                        <!-- Active Selected Day Filter Indicator & Reset Button -->
+                        <div id="cal-active-day-filter" style="display: none; align-items: center; gap: 6px; background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; padding: 3px 10px; border-radius: 6px; font-size: 0.82em; font-weight: 700;">
+                            <span>📅 اليوم المختار: <strong id="cal-active-day-text">--</strong></span>
+                            <button type="button" onclick="clearCalendarDayFilter()" style="background: white; border: 1px solid #86efac; color: #166534; border-radius: 4px; padding: 1px 7px; cursor: pointer; font-size: 0.82em; font-weight: 700;">✕ إلغاء التصفية</button>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.82em; color: #64748b;">
+                        <span>💡 اضغط على أي يوم لاختياره أو اضغط عليه مجدداً لإلغاء التحديد</span>
+                    </div>
+                </div>
+
+                <!-- Month Grid Table -->
+                <div style="overflow-x: auto;">
+                    <table class="cal-grid-container" id="cal-grid-table">
+                        <thead>
+                            <tr id="cal-grid-headers">
+                                <th>الأحد</th><th>الإثنين</th><th>الثلاثاء</th><th>الأربعاء</th><th>الخميس</th><th>الجمعة</th><th>السبت</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cal-grid-body">
+                            <!-- Populated dynamically with 5-6 weeks of days -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Selected Day Details Panel -->
+                <div id="cal-selected-day-panel" style="margin-top: 14px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px 18px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.2em;">📆</span>
+                            <strong id="cal-selected-day-label" style="color: #0f172a; font-size: 1em;">--</strong>
+                            <span id="cal-selected-day-badge" class="badge" style="background: #1e293b; color: white; padding: 2px 7px; border-radius: 4px; font-size: 0.76em;">0 أحداث</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" onclick="clearCalendarDayFilter()" style="background: white; border: 1.5px solid #94a3b8; color: #1e293b; padding: 4px 12px; border-radius: 6px; font-size: 0.82em; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                ✕ إلغاء تصفية اليوم وعرض كافة المواعيد
+                            </button>
+                            <button type="button" onclick="clearCalendarDayFilter()" style="background: none; border: none; font-size: 1.2em; cursor: pointer; color: #64748b;" title="إغلاق">✕</button>
+                        </div>
+                    </div>
+                    <div id="cal-selected-day-events" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Agenda Timeline List View (Hidden by default or toggled) -->
+            <div id="agenda-timeline-container" style="display: none;">
+                <div style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
+                    <table class="dash-table" id="agenda-timeline-table">
+                        <thead>
+                            <tr>
+                                <th>الموعد والتوقيت</th>
+                                <th>النوع</th>
+                                <th>رقم الطلب (Lead_id)</th>
+                                <th>المعرف المباشر (Task/Viewing/Res ID)</th>
+                                <th>الموضوع والعقار</th>
+                                <th>المسؤول والفرع</th>
+                                <th>الحالة</th>
+                                <th>المبلغ (SAR)</th>
+                                <th>إجراءات</th>
+                            </tr>
+                            </tr>
+                        </thead>
+                        <tbody id="agenda-timeline-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. FINANCIAL DUES & COLLECTIONS SCHEDULE / LEDGER (مفكرة المبالغ ومواعيد التحصيل) -->
+        <div class="card-box agenda-box" id="financial-schedule-section" style="background: white; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 28px;">
+            <!-- Header -->
+            <div class="agenda-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 14px; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 14px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25em; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <span>💰</span>
+                        <span id="title-fin-schedule">مفكرة المبالغ ومواعيد التحصيل (Financial Dues & Collections Ledger)</span>
+                        <span id="fin-schedule-count-badge" class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.8em; padding: 3px 8px; border-radius: 4px; font-weight: 700;">--</span>
+                    </h3>
+                    <small style="color: #64748b; font-size: 0.86em;" id="sub-fin-schedule">تخصيص المبالغ برقم الطلب والفرصة ومهام إدارة الأملاك والحملات الإعلانية ومؤشرات ومواعيد التحصيل</small>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="fin-search-input" oninput="filterFinancialLedgerRows()" placeholder="بحث برقم الطلب أو الفاتورة..." style="padding: 6px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.84em; width: 200px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="refreshFinancialData()" style="padding: 6px 12px; font-weight: 600; font-size: 0.82em;">
+                        🔄 <span id="lbl-refresh-fin">تحديث</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Financial Summary KPI Cards (5 Cards) -->
+            <div class="fin-ledger-kpi-grid">
+                <div class="fin-ledger-kpi" style="border-inline-start-color: #3b82f6;">
+                    <div style="font-size: 0.76em; color: #64748b; font-weight: 700; text-transform: uppercase;">💳 إجمالي المبالغ المجدولة</div>
+                    <div id="fin-kpi-total-dues" style="font-size: 1.45em; font-weight: 800; color: #0f172a; margin: 4px 0;">-- SAR</div>
+                    <div style="font-size: 0.74em; color: #64748b;"><span id="fin-kpi-total-count">0</span> بنداً مالياً معتمداً</div>
+                </div>
+                <div class="fin-ledger-kpi success" style="border-inline-start-color: #10b981;">
+                    <div style="font-size: 0.76em; color: #64748b; font-weight: 700; text-transform: uppercase;">🟢 المبالغ المحصلة فعلياً</div>
+                    <div id="fin-kpi-total-collected" style="font-size: 1.45em; font-weight: 800; color: #15803d; margin: 4px 0;">-- SAR</div>
+                    <div style="font-size: 0.74em; color: #15803d; font-weight: 600;">كفاءة التحصيل: <span id="fin-kpi-rate">--%</span></div>
+                </div>
+                <div class="fin-ledger-kpi warning" style="border-inline-start-color: #f59e0b;">
+                    <div style="font-size: 0.76em; color: #64748b; font-weight: 700; text-transform: uppercase;">🟡 المبالغ المعلقة / المستحقة</div>
+                    <div id="fin-kpi-total-pending" style="font-size: 1.45em; font-weight: 800; color: #b45309; margin: 4px 0;">-- SAR</div>
+                    <div style="font-size: 0.74em; color: #64748b;">قيد المتابعة والتحصيل</div>
+                </div>
+                <div class="fin-ledger-kpi danger" style="border-inline-start-color: #ef4444;">
+                    <div style="font-size: 0.76em; color: #64748b; font-weight: 700; text-transform: uppercase;">🔴 متأخرات عن موعد السداد</div>
+                    <div id="fin-kpi-total-overdue" style="font-size: 1.45em; font-weight: 800; color: #dc2626; margin: 4px 0;">-- SAR</div>
+                    <div style="font-size: 0.74em; color: #dc2626; font-weight: 600;">تتطلب اتخاذ إجراء فوري</div>
+                </div>
+                <div class="fin-ledger-kpi purple" style="border-inline-start-color: #8b5cf6;">
+                    <div style="font-size: 0.76em; color: #64748b; font-weight: 700; text-transform: uppercase;">🏷️ توزيع البنود حسب القطاع</div>
+                    <div style="font-size: 0.85em; font-weight: 700; color: #475569; margin: 4px 0;">
+                        <span>💼 <span id="fin-kpi-cnt-deals">0</span> صفقات</span> &bull; 
+                        <span>🔑 <span id="fin-kpi-cnt-prop">0</span> أملاك</span> &bull; 
+                        <span>📢 <span id="fin-kpi-cnt-mkt">0</span> تسويق</span>
+                    </div>
+                    <div style="font-size: 0.74em; color: #64748b;">تغطية شاملة لكل الأنشطة</div>
+                </div>
+            </div>
+
+            <!-- Active Selected Deal Filter Banner for Financial Schedule -->
+            <div id="fin-deal-scope-banner" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.88em; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>🎯</span>
+                    <span>مبالغ ومستحقات مصفاة للصفقة: <strong id="fin-deal-scope-id" style="color:#1d4ed8;">--</strong> (<span id="fin-deal-scope-name">--</span>)</span>
+                </div>
+                <button type="button" onclick="clearWorkspaceDealSelection()" style="background: white; border: 1px solid #93c5fd; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-size: 0.82em; cursor: pointer; font-weight: 700;">
+                    ✕ عرض كافة المبالغ والمستحقات
+                </button>
+            </div>
+
+            <!-- Filters Bar (Category & Collection Status) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                <!-- Category Tabs -->
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" id="fin-category-chips">
+                    <button type="button" class="agenda-chip-btn active" data-cat="ALL" onclick="filterFinancialCategory('ALL')">🏢 كافة البنود (<span id="fin-btn-all">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-cat="DEALS_LEADS" onclick="filterFinancialCategory('DEALS_LEADS')">💼 صفقات وطلبات البيع والشراء (<span id="fin-btn-deals">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-cat="PROPERTY_MANAGEMENT" onclick="filterFinancialCategory('PROPERTY_MANAGEMENT')">🔑 إدارة الأملاك والإيجارات (<span id="fin-btn-prop">0</span>)</button>
+                    <button type="button" class="agenda-chip-btn" data-cat="MARKETING" onclick="filterFinancialCategory('MARKETING')">📢 الحملات الإعلانية والتسويق (<span id="fin-btn-mkt">0</span>)</button>
+                </div>
+                <!-- Status Tabs -->
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" id="fin-status-chips">
+                    <button type="button" class="agenda-chip-btn active" data-st="ALL" onclick="filterFinancialStatus('ALL')">الكل</button>
+                    <button type="button" class="agenda-chip-btn" data-st="COLLECTED" onclick="filterFinancialStatus('COLLECTED')" style="color: #15803d;">🟢 محصلة</button>
+                    <button type="button" class="agenda-chip-btn" data-st="PENDING" onclick="filterFinancialStatus('PENDING')" style="color: #b45309;">🟡 معلقة / مستحقة</button>
+                    <button type="button" class="agenda-chip-btn" data-st="OVERDUE" onclick="filterFinancialStatus('OVERDUE')" style="color: #dc2626;">🔴 متأخرة</button>
+                </div>
+            </div>
+
+            <!-- Financial Table -->
+            <div style="overflow-x: auto; max-height: 520px; overflow-y: auto;">
+                <table class="dash-table" id="fin-schedule-table">
+                    <thead>
+                        <tr>
+                            <th>رقم التخصيص والمرجع</th>
+                            <th>البند والتصنيف المالي</th>
+                            <th>المبلغ الإجمالي (SAR)</th>
+                            <th>المحصل (SAR)</th>
+                            <th>المتبقي (SAR)</th>
+                            <th>مؤشر حالة التحصيل</th>
+                            <th>موعد الاستحقاق</th>
+                            <th>تاريخ التحصيل الفعلي</th>
+                            <th>المسؤول والفرع</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fin-schedule-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
 
         <!-- ================= LEAD OPERATIONAL HISTORY & 360° JOURNEY AUDIT ================= -->
         <div class="card-box" id="lead-history-section" style="background: white; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 32px;">
@@ -1123,35 +1588,167 @@
             });
         }
 
-        function onWorkspaceDealClick(leadId, oppId, rowEl) {
+        function onWorkspaceDealClick(leadId, oppId, rowEl, custName = '', expVal = '') {
             document.querySelectorAll('.workspace-deal-row').forEach(r => r.classList.remove('selected-deal-row'));
             if (rowEl) rowEl.classList.add('selected-deal-row');
 
-            if (leadId) {
-                const quickSelect = document.getElementById('lead-history-quick-select');
-                if (quickSelect) quickSelect.value = leadId;
-                const searchInput = document.getElementById('lead-history-search-input');
-                if (searchInput) searchInput.value = leadId;
+            const decodedCust = custName ? decodeURIComponent(custName) : '';
+            const decodedVal = expVal ? decodeURIComponent(expVal) : '';
 
-                loadLeadHistory(leadId);
+            applyDealFilterToSections(leadId, oppId, decodedCust, decodedVal);
+        }
+
+        function applyDealFilterToSections(leadId, oppId, customerName, dealAmount) {
+            dashboardState.selectedDeal = {
+                leadId: (leadId && leadId !== 'null' && leadId !== 'undefined' && leadId !== '') ? leadId : null,
+                oppId: (oppId && oppId !== 'null' && oppId !== 'undefined' && oppId !== '') ? oppId : null,
+                customerName: customerName || '',
+                expectedValue: dealAmount || ''
+            };
+
+            const isAr = currentLang === 'ar';
+            const effLeadId = dashboardState.selectedDeal.leadId;
+            const effOppId = dashboardState.selectedDeal.oppId;
+            const dealLabel = effLeadId ? (effOppId ? `${effLeadId} / ${effOppId}` : effLeadId) : (effOppId || '--');
+            const custDisplay = customerName || (isAr ? 'عميل مسجل' : 'Registered Customer');
+
+            // 1. Update Personal Workspace Active Selection Banner
+            const wsBanner = document.getElementById('workspace-selected-deal-banner');
+            const wsTitle = document.getElementById('ws-selected-deal-title');
+            if (wsBanner && wsTitle) {
+                wsTitle.innerHTML = isAr 
+                    ? `🎯 الصفقة المحددة: [${dealLabel}] - العميل: ${custDisplay} ${dealAmount ? `(القيمة: ${dealAmount})` : ''}`
+                    : `🎯 Selected Deal: [${dealLabel}] - Client: ${custDisplay} ${dealAmount ? `(Value: ${dealAmount})` : ''}`;
+                wsBanner.style.display = 'flex';
+            }
+
+            // 2. Filter Agenda Calendar
+            const agBanner = document.getElementById('agenda-deal-scope-banner');
+            const agScopeId = document.getElementById('agenda-deal-scope-id');
+            const agScopeName = document.getElementById('agenda-deal-scope-name');
+            if (agBanner && agScopeId && agScopeName) {
+                agScopeId.textContent = dealLabel;
+                agScopeName.textContent = custDisplay;
+                agBanner.style.display = 'flex';
+            }
+
+            // In-memory filter on existing calendar events if available
+            if (agendaState.rawEvents && agendaState.rawEvents.length > 0) {
+                agendaState.events = agendaState.rawEvents.filter(ev => {
+                    const mLead = effLeadId && ev.lead_id === effLeadId;
+                    const mOpp = effOppId && ev.opportunity_id === effOppId;
+                    return mLead || mOpp;
+                });
+                agendaState.summary = {
+                    total_events: agendaState.events.length,
+                    tasks_count: agendaState.events.filter(e => e.event_type === 'TASK').length,
+                    viewings_count: agendaState.events.filter(e => e.event_type === 'VIEWING').length,
+                    reservations_count: agendaState.events.filter(e => e.event_type === 'RESERVATION').length,
+                    collections_count: 0,
+                    maintenance_count: 0,
+                    campaigns_count: 0,
+                    overdue_count: agendaState.events.filter(e => (e.status_label_ar || '').includes('متأخر') || ['#ef4444', '#dc2626'].includes(e.badge_color)).length,
+                    today_count: agendaState.events.filter(e => (e.status_label_ar || '').includes('اليوم')).length,
+                    upcoming_count: agendaState.events.filter(e => ['مهمة قادمة', 'ساري ومؤقت', 'معاينة'].some(s => (e.status_label_ar || '').includes(s))).length
+                };
+                renderAgendaHeaderSummary();
+                renderAgendaView();
+            } else {
+                fetchAgendaCalendar();
+            }
+
+            // 3. Filter Financial Schedule
+            const finBanner = document.getElementById('fin-deal-scope-banner');
+            const finScopeId = document.getElementById('fin-deal-scope-id');
+            const finScopeName = document.getElementById('fin-deal-scope-name');
+            if (finBanner && finScopeId && finScopeName) {
+                finScopeId.textContent = dealLabel;
+                finScopeName.textContent = custDisplay;
+                finBanner.style.display = 'flex';
+            }
+
+            if (financialState.rawItems && financialState.rawItems.length > 0) {
+                financialState.items = financialState.rawItems.filter(it => {
+                    const mLead = effLeadId && it.lead_id === effLeadId;
+                    const mOpp = effOppId && it.opportunity_id === effOppId;
+                    return mLead || mOpp;
+                });
+
+                const totDues = financialState.items.reduce((acc, it) => acc + (it.amount || 0), 0);
+                const totPaid = financialState.items.reduce((acc, it) => acc + (it.amount_paid || 0), 0);
+                const totRem = financialState.items.reduce((acc, it) => acc + (it.amount_remaining || 0), 0);
+                const totOver = financialState.items.filter(it => it.collection_status === 'OVERDUE').reduce((acc, it) => acc + (it.amount_remaining || 0), 0);
+                const rate = totDues > 0 ? Math.round((totPaid / totDues) * 100) : 0;
+
+                financialState.summary = {
+                    total_items: financialState.items.length,
+                    total_dues_amount: totDues,
+                    total_collected_amount: totPaid,
+                    total_pending_amount: totRem,
+                    total_overdue_amount: totOver,
+                    collection_rate_percent: rate,
+                    deals_leads_count: financialState.items.length,
+                    property_management_count: 0,
+                    marketing_count: 0
+                };
+                renderFinancialSummary();
+                renderFinancialTable();
+            } else {
+                fetchFinancialSchedule();
+            }
+
+            // 4. Load Lead 360° Operational History
+            if (effLeadId) {
+                const quickSelect = document.getElementById('lead-history-quick-select');
+                if (quickSelect) quickSelect.value = effLeadId;
+                const searchInput = document.getElementById('lead-history-search-input');
+                if (searchInput) searchInput.value = effLeadId;
+                loadLeadHistory(effLeadId);
 
                 const histSection = document.getElementById('lead-history-section');
                 if (histSection) {
-                    histSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    histSection.style.boxShadow = '0 0 0 3px #0284c7';
+                    histSection.style.boxShadow = '0 0 0 3px #16a34a';
                     setTimeout(() => {
                         histSection.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
                     }, 2000);
                 }
-            } else {
-                const msg = currentLang === 'ar' 
-                    ? `الفرصة ${oppId} غير مرتبطة بمعرف طلب محدد مباشرة، يمكنك تتبع سجل العميل عبر مسار البيع` 
-                    : `Opportunity ${oppId} has no direct linked Lead ID.`;
-                alert(msg);
             }
         }
 
-        let currentLang = 'en';
+        function clearWorkspaceDealSelection() {
+            dashboardState.selectedDeal = null;
+            document.querySelectorAll('.workspace-deal-row').forEach(r => r.classList.remove('selected-deal-row'));
+
+            // Hide banners
+            const wsBanner = document.getElementById('workspace-selected-deal-banner');
+            if (wsBanner) wsBanner.style.display = 'none';
+            const agBanner = document.getElementById('agenda-deal-scope-banner');
+            if (agBanner) agBanner.style.display = 'none';
+            const finBanner = document.getElementById('fin-deal-scope-banner');
+            if (finBanner) finBanner.style.display = 'none';
+
+            // Restore Agenda Calendar
+            if (agendaState.rawEvents && agendaState.rawEvents.length > 0) {
+                agendaState.events = [...agendaState.rawEvents];
+                agendaState.summary = { ...agendaState.rawSummary };
+                renderAgendaHeaderSummary();
+                renderAgendaView();
+            } else {
+                fetchAgendaCalendar();
+            }
+
+            // Restore Financial Schedule
+            if (financialState.rawItems && financialState.rawItems.length > 0) {
+                financialState.items = [...financialState.rawItems];
+                financialState.summary = { ...financialState.rawSummary };
+                renderFinancialSummary();
+                renderFinancialTable();
+            } else {
+                fetchFinancialSchedule();
+            }
+        }
+
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
 
         function setGlobalArabicFont(fontVal) {
             localStorage.setItem('recrm_ar_font', fontVal);
@@ -1265,12 +1862,1125 @@
             drillLevel: 'BRANCHES',   // 'BRANCHES' | 'AGENTS' | 'OPPORTUNITIES'
             selectedBranch: null,     // { branch_id, name, branch_code }
             selectedAgent: null,      // { user_id, full_name }
+            selectedDeal: null,       // { leadId, oppId, customerName, expectedValue }
             pulseFilter: 'ALL',
             cachedData: null,
             managerialData: null,
             branchesList: [],
             agentsList: []
         };
+
+        // ================= OPERATIONAL CALENDAR & FINANCIAL AGENDAS LOGIC =================
+        const agendaState = {
+            events: [],
+            summary: {},
+            rawEvents: [],
+            rawSummary: {},
+            selectedType: 'ALL',
+            viewMode: 'CALENDAR',
+            currentDate: new Date(2026, 9, 1), // Baseline: October 2026
+            selectedDateStr: null,
+            uncompletedOnly: true // Default: strictly uncompleted & unexecuted tasks with deadlines
+        };
+
+        const financialState = {
+            items: [],
+            summary: {},
+            rawItems: [],
+            rawSummary: {},
+            selectedCategory: 'ALL',
+            selectedStatus: 'ALL',
+            searchTerm: ''
+        };
+
+        function toggleUncompletedOnly(val) {
+            agendaState.uncompletedOnly = val;
+            const btnUnc = document.getElementById('btn-toggle-uncompleted');
+            const btnAll = document.getElementById('btn-toggle-all');
+            if (btnUnc) btnUnc.classList.toggle('active', val);
+            if (btnAll) btnAll.classList.toggle('active', !val);
+            fetchAgendaCalendar();
+        }
+
+        async function fetchAgendaCalendar() {
+            try {
+                let url = `${API_BASE}/api/v1/reports/agenda-calendar?scope=${dashboardState.scope}&uncompleted_only=${agendaState.uncompletedOnly}`;
+                if (dashboardState.branchId) url += `&branch_id=${encodeURIComponent(dashboardState.branchId)}`;
+                if (dashboardState.userId) url += `&user_id=${encodeURIComponent(dashboardState.userId)}`;
+                if (agendaState.selectedType && agendaState.selectedType !== 'ALL') {
+                    url += `&event_type=${encodeURIComponent(agendaState.selectedType)}`;
+                }
+                if (dashboardState.selectedDeal) {
+                    if (dashboardState.selectedDeal.leadId) url += `&lead_id=${encodeURIComponent(dashboardState.selectedDeal.leadId)}`;
+                    if (dashboardState.selectedDeal.oppId) url += `&opportunity_id=${encodeURIComponent(dashboardState.selectedDeal.oppId)}`;
+                }
+
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+
+                const res = await fetch(url, { headers });
+                if (!res.ok) throw new Error('Failed to load agenda calendar');
+                const json = await res.json();
+
+                if (!dashboardState.selectedDeal) {
+                    agendaState.rawEvents = json.data.events || [];
+                    agendaState.rawSummary = json.data.summary || {};
+                }
+                agendaState.events = json.data.events || [];
+                agendaState.summary = json.data.summary || {};
+
+                renderAgendaHeaderSummary();
+                renderAgendaView();
+            } catch (err) {
+                console.warn('fetchAgendaCalendar error:', err);
+            }
+        }
+
+        function renderAgendaHeaderSummary() {
+            const isAr = currentLang === 'ar';
+            const s = agendaState.summary || {};
+            const badge = document.getElementById('agenda-cal-count-badge');
+            if (badge) badge.textContent = `${s.total_events || 0} ${isAr ? 'أحداث ومواعيد' : 'Events'}`;
+
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl('cnt-ag-all', s.total_events || 0);
+            setEl('cnt-ag-task', s.tasks_count || 0);
+            setEl('cnt-ag-viewing', s.viewings_count || 0);
+            setEl('cnt-ag-reservation', s.reservations_count || 0);
+            setEl('cnt-ag-rent', s.collections_count || 0);
+            setEl('cnt-ag-maint', s.maintenance_count || 0);
+            setEl('cnt-ag-camp', s.campaigns_count || 0);
+            setEl('cnt-ag-overdue', s.overdue_count || 0);
+            setEl('cnt-ag-today', s.today_count || 0);
+            setEl('cnt-ag-upcoming', s.upcoming_count || 0);
+        }
+
+        function switchAgendaView(mode) {
+            agendaState.viewMode = mode;
+            const btnCal = document.getElementById('btn-view-cal');
+            const btnTime = document.getElementById('btn-view-timeline');
+            const contCal = document.getElementById('agenda-calendar-container');
+            const contTime = document.getElementById('agenda-timeline-container');
+
+            if (mode === 'CALENDAR') {
+                if (btnCal) btnCal.classList.add('active');
+                if (btnTime) btnTime.classList.remove('active');
+                if (contCal) contCal.style.display = 'block';
+                if (contTime) contTime.style.display = 'none';
+                renderCalendarGrid();
+            } else {
+                if (btnCal) btnCal.classList.remove('active');
+                if (btnTime) btnTime.classList.add('active');
+                if (contCal) contCal.style.display = 'none';
+                if (contTime) contTime.style.display = 'block';
+                renderTimelineView();
+            }
+        }
+
+        function filterAgendaEventType(type) {
+            agendaState.selectedType = type;
+            document.querySelectorAll('#agenda-type-chips .agenda-chip-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-type') === type);
+            });
+            fetchAgendaCalendar();
+        }
+
+        function changeCalendarMonth(delta) {
+            agendaState.currentDate.setMonth(agendaState.currentDate.getMonth() + delta);
+            renderCalendarGrid();
+        }
+
+        function resetCalendarToCurrentMonth() {
+            agendaState.currentDate = new Date(2026, 9, 1); // Baseline date
+            renderCalendarGrid();
+        }
+
+        function renderAgendaView() {
+            if (agendaState.viewMode === 'CALENDAR') {
+                renderCalendarGrid();
+            } else {
+                renderTimelineView();
+            }
+        }
+
+        function renderCalendarGrid() {
+            const isAr = currentLang === 'ar';
+            const monthNamesAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+            const monthNamesEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            const year = agendaState.currentDate.getFullYear();
+            const month = agendaState.currentDate.getMonth();
+            const titleEl = document.getElementById('cal-month-title');
+            if (titleEl) {
+                titleEl.textContent = isAr ? `${monthNamesAr[month]} ${year}` : `${monthNamesEn[month]} ${year}`;
+            }
+
+            // Group events by YYYY-MM-DD
+            const eventsByDate = {};
+            agendaState.events.forEach(ev => {
+                if (!ev.event_date) return;
+                const dateKey = ev.event_date.substring(0, 10);
+                if (!eventsByDate[dateKey]) eventsByDate[dateKey] = [];
+                eventsByDate[dateKey].push(ev);
+            });
+
+            const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
+            const lastDayDate = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDate = new Date(year, month, 0).getDate();
+
+            const tbody = document.getElementById('cal-grid-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let currentDay = 1;
+            let nextMonthDay = 1;
+            let finished = false;
+
+            // Accurate local date representation
+            const realToday = new Date();
+            const realTodayStr = `${realToday.getFullYear()}-${String(realToday.getMonth() + 1).padStart(2, '0')}-${String(realToday.getDate()).padStart(2, '0')}`;
+            const baselineTodayStr = '2026-11-01'; // Baseline date matching operational test dataset
+
+            for (let week = 0; week < 6; week++) {
+                if (finished) break;
+                let tr = document.createElement('tr');
+
+                for (let dow = 0; dow < 7; dow++) {
+                    let td = document.createElement('td');
+                    td.className = 'cal-day-cell';
+
+                    let cellDateStr = '';
+                    let displayNum = 0;
+                    let isOtherMonth = false;
+
+                    if (week === 0 && dow < firstDayIndex) {
+                        // Previous month days
+                        displayNum = prevMonthLastDate - (firstDayIndex - dow - 1);
+                        const prevMonth = month === 0 ? 11 : month - 1;
+                        const prevYear = month === 0 ? year - 1 : year;
+                        cellDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(displayNum).padStart(2, '0')}`;
+                        td.classList.add('other-month');
+                        isOtherMonth = true;
+                    } else if (currentDay <= lastDayDate) {
+                        displayNum = currentDay;
+                        cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(displayNum).padStart(2, '0')}`;
+                        currentDay++;
+                    } else {
+                        displayNum = nextMonthDay;
+                        const nextMonth = month === 11 ? 0 : month + 1;
+                        const nextYear = month === 11 ? year + 1 : year;
+                        cellDateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(displayNum).padStart(2, '0')}`;
+                        td.classList.add('other-month');
+                        isOtherMonth = true;
+                        nextMonthDay++;
+                    }
+
+                    td.setAttribute('data-date', cellDateStr);
+
+                    if (cellDateStr === realTodayStr || cellDateStr === baselineTodayStr) {
+                        td.classList.add('today');
+                    }
+                    if (agendaState.selectedDateStr === cellDateStr) {
+                        td.classList.add('selected');
+                    }
+
+                    const dayEvents = eventsByDate[cellDateStr] || [];
+                    const countBadge = dayEvents.length > 0 ? `<span class="cal-day-count-badge">${dayEvents.length}</span>` : '';
+
+                    let eventsPillsHtml = '';
+                    const maxPills = 3;
+                    dayEvents.slice(0, maxPills).forEach(ev => {
+                        let icon = '📋';
+                        let pillBg = '#fef3c7';
+                        let pillText = '#92400e';
+                        if (ev.event_type === 'VIEWING') { icon = '👁️'; pillBg = '#e0f2fe'; pillText = '#0369a1'; }
+                        else if (ev.event_type === 'RESERVATION') { icon = '🏷️'; pillBg = '#fef3c7'; pillText = '#b45309'; }
+                        else if (ev.event_type === 'RENT_COLLECTION') { icon = '💰'; pillBg = '#ede9fe'; pillText = '#6d28d9'; }
+                        else if (ev.event_type === 'MAINTENANCE') { icon = '🔧'; pillBg = '#fed7aa'; pillText = '#c2410c'; }
+                        else if (ev.event_type === 'CAMPAIGN') { icon = '📢'; pillBg = '#fce7f3'; pillText = '#be185d'; }
+
+                        const idLabel = ev.lead_id ? `${ev.lead_id}` : (ev.task_id || ev.viewing_id || ev.reservation_id || '');
+                        eventsPillsHtml += `
+                            <div class="cal-event-pill" style="background:${pillBg}; color:${pillText};" title="${ev.title}">
+                                ${icon} <strong>${idLabel}</strong>: ${ev.title}
+                            </div>
+                        `;
+                    });
+
+                    if (dayEvents.length > maxPills) {
+                        eventsPillsHtml += `
+                            <div style="font-size:0.7em; color:#0284c7; font-weight:700; text-align:center;">
+                                +${dayEvents.length - maxPills} ${isAr ? 'إضافي...' : 'more...'}
+                            </div>
+                        `;
+                    }
+
+                    td.innerHTML = `
+                        <div class="cal-day-header">
+                            <span class="cal-day-number">${displayNum}</span>
+                            ${countBadge}
+                        </div>
+                        <div style="overflow:hidden; max-height:75px;">
+                            ${eventsPillsHtml}
+                        </div>
+                    `;
+
+                    td.onclick = function() { showCalendarDayDetails(cellDateStr, dayEvents, this); };
+                    tr.appendChild(td);
+                }
+
+                tbody.appendChild(tr);
+                if (currentDay > lastDayDate && nextMonthDay > 7) {
+                    finished = true;
+                }
+            }
+        }
+
+        function showCalendarDayDetails(dateStr, dayEvents, clickedCell) {
+            const panel = document.getElementById('cal-selected-day-panel');
+            const labelEl = document.getElementById('cal-selected-day-label');
+            const badgeEl = document.getElementById('cal-selected-day-badge');
+            const eventsEl = document.getElementById('cal-selected-day-events');
+            const filterPill = document.getElementById('cal-active-day-filter');
+            const filterPillText = document.getElementById('cal-active-day-text');
+            const isAr = currentLang === 'ar';
+
+            // Toggle selection OFF if clicking on the same day that is already selected
+            if (agendaState.selectedDateStr === dateStr) {
+                clearCalendarDayFilter();
+                return;
+            }
+
+            agendaState.selectedDateStr = dateStr;
+
+            // Move .selected indicator box accurately across calendar cells
+            document.querySelectorAll('.cal-day-cell.selected').forEach(c => c.classList.remove('selected'));
+            if (clickedCell) {
+                clickedCell.classList.add('selected');
+            } else {
+                const targetCell = document.querySelector(`.cal-day-cell[data-date="${dateStr}"]`);
+                if (targetCell) targetCell.classList.add('selected');
+            }
+
+            // Display active day filter badge in header toolbar
+            if (filterPill) filterPill.style.display = 'inline-flex';
+            if (filterPillText) filterPillText.textContent = dateStr;
+
+            if (!panel || !eventsEl) return;
+            panel.style.display = 'block';
+            if (labelEl) labelEl.textContent = isAr ? `مواعيد وأحداث يوم: ${dateStr}` : `Events for ${dateStr}`;
+            if (badgeEl) badgeEl.textContent = `${dayEvents.length} ${isAr ? 'أحداث' : 'events'}`;
+
+            if (dayEvents.length === 0) {
+                eventsEl.innerHTML = `<div style="color:#64748b; font-size:0.86em; text-align:center; padding:16px; background:white; border-radius:6px; border:1px dashed #cbd5e1;">${isAr ? 'لا توجد مواعيد أو مهام مسجلة لهذا اليوم.' : 'No events scheduled for this day.'}</div>`;
+                return;
+            }
+
+            eventsEl.innerHTML = dayEvents.map(ev => {
+                const leadBadge = ev.lead_id ? `<span class="lead-interactive-badge" onclick="event.stopPropagation(); selectLeadFromAgenda('${ev.lead_id}')" title="عرض مسار الطلب">👤 ${ev.lead_id}</span>` : '<span style="color:#94a3b8; font-size:0.8em;">--</span>';
+                const subId = ev.task_id || ev.viewing_id || ev.reservation_id || ev.event_id;
+                const timeStr = ev.event_date && ev.event_date.length > 10 ? ev.event_date.substring(11, 16) : '--:--';
+                const agent = ev.assigned_user_name || '--';
+                const branch = ev.branch_name ? `(${ev.branch_name})` : '';
+
+                // Serialized context for reminder modal
+                const rowCtx = JSON.stringify({
+                    rowId: subId || ev.event_id,
+                    title: ev.title || '',
+                    customer: ev.customer_name || (ev.lead_id ? `الطلب ${ev.lead_id}` : ''),
+                    amount: ev.amount ? `${Number(ev.amount).toLocaleString()} SAR` : '--',
+                    assignedUser: agent,
+                    category: ev.event_type || 'TASK'
+                }).replace(/"/g, '&quot;');
+
+                const evExtra = `{lead_id: '${ev.lead_id || ''}', opportunity_id: '${ev.opportunity_id || ''}', unit_number: '${ev.unit_number || ''}', ticket_id: '${ev.ticket_id || ''}', work_order_id: '${ev.work_order_id || ''}'}`;
+
+                return `
+                    <div style="background:white; border:1px solid var(--border); border-radius:6px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span style="font-size:0.82em; font-weight:700; color:#475569; background:#f1f5f9; padding:2px 8px; border-radius:4px;">🕒 ${timeStr}</span>
+                            <span class="badge" style="background:#f1f5f9; color:#1e293b; font-weight:700;">${ev.event_type_label_ar}</span>
+                            ${leadBadge}
+                            <span class="id-badge" style="background:#f1f5f9; font-weight:700; color:#0369a1; cursor:pointer;" onclick="event.stopPropagation(); navigateToEntityPage('${ev.event_type}', '${subId}', ${evExtra})" title="الانتقال إلى صفحة السجل">${subId}</span>
+                            <strong style="font-size:0.9em; color:#0f172a; cursor:pointer;" onclick="navigateToEntityPage('${ev.event_type}', '${subId}', ${evExtra})">${ev.title}</strong>
+                            ${ev.unit_number ? `<span style="font-size:0.8em; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; padding:1px 6px; border-radius:4px;">وحدة #${ev.unit_number}</span>` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.8em; color:#64748b;">👤 ${agent} ${branch}</span>
+                            <span class="badge" style="background:${ev.badge_color}15; color:${ev.badge_color}; border:1px solid ${ev.badge_color}40; font-weight:700; padding:2px 8px; border-radius:4px;">
+                                ${ev.status_label_ar}
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); navigateToEntityPage('${ev.event_type}', '${subId}', ${evExtra})" style="padding: 3px 8px; font-size: 0.78em; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="الانتقال إلى صفحة السجل المخصص">
+                                🔗 انتقال
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openTaskReminderModal(${rowCtx})" style="padding: 3px 8px; font-size: 0.78em; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; color: #7c3aed; border-color: #ddd6fe; background: #faf5ff;" title="إرسال تذكير داخلي بالعملية">
+                                💬 تذكير
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearCalendarDayFilter() {
+            agendaState.selectedDateStr = null;
+            document.querySelectorAll('.cal-day-cell.selected').forEach(c => c.classList.remove('selected'));
+            const filterPill = document.getElementById('cal-active-day-filter');
+            if (filterPill) filterPill.style.display = 'none';
+            const panel = document.getElementById('cal-selected-day-panel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        function closeCalendarDayPanel() {
+            clearCalendarDayFilter();
+        }
+
+        function renderTimelineView() {
+            const tbody = document.getElementById('agenda-timeline-body');
+            if (!tbody) return;
+            const isAr = currentLang === 'ar';
+
+            if (agendaState.events.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">${isAr ? 'لا توجد مواعيد أو مهام تشغيلية مطابقة للفلتر.' : 'No schedule items matching filters.'}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = agendaState.events.map(ev => {
+                const leadBadge = ev.lead_id ? `<span class="lead-interactive-badge" onclick="selectLeadFromAgenda('${ev.lead_id}')" title="${isAr ? 'الضغط لعرض مسار الطلب بالكامل' : 'Click to inspect lead journey'}">👤 ${ev.lead_id}</span>` : '<span style="color:#94a3b8;">--</span>';
+                const directId = ev.task_id || ev.viewing_id || ev.reservation_id || ev.event_id;
+                const evExtra = `{lead_id: '${ev.lead_id || ''}', opportunity_id: '${ev.opportunity_id || ''}', unit_number: '${ev.unit_number || ''}', ticket_id: '${ev.ticket_id || ''}', work_order_id: '${ev.work_order_id || ''}'}`;
+                const directBadge = `<span class="id-badge" style="font-weight:700; color:#0284c7; background:#e0f2fe; cursor:pointer;" onclick="navigateToEntityPage('${ev.event_type}', '${directId}', ${evExtra})" title="الانتقال إلى السجل">${directId}</span>`;
+                const dateDisplay = ev.event_date ? ev.event_date.replace('T', ' ').substring(0, 16) : '--';
+                const amountDisplay = ev.amount ? `<strong style="color:#047857;">${Number(ev.amount).toLocaleString()} SAR</strong>` : '<span style="color:#94a3b8;">--</span>';
+
+                // Serialized context for reminder modal
+                const rowCtx = JSON.stringify({
+                    rowId: directId || ev.event_id,
+                    title: ev.title || '',
+                    customer: ev.customer_name || (ev.lead_id ? `الطلب ${ev.lead_id}` : ''),
+                    amount: ev.amount ? `${Number(ev.amount).toLocaleString()} SAR` : '--',
+                    assignedUser: ev.assigned_user_name || '--',
+                    category: ev.event_type || 'TASK'
+                }).replace(/"/g, '&quot;');
+
+                return `
+                    <tr>
+                        <td>
+                            <strong style="color:#0f172a;">${dateDisplay}</strong>
+                        </td>
+                        <td>
+                            <span class="badge" style="background:#f1f5f9; color:#334155; font-weight:700;">${isAr ? ev.event_type_label_ar : ev.event_type_label_en}</span>
+                        </td>
+                        <td>${leadBadge}</td>
+                        <td>${directBadge}</td>
+                        <td>
+                            <div style="font-weight:600; color:#0f172a; cursor:pointer;" onclick="navigateToEntityPage('${ev.event_type}', '${directId}', ${evExtra})">${ev.title}</div>
+                            ${ev.customer_name ? `<small style="color:#64748b;">العميل: ${ev.customer_name}</small>` : ''}
+                            ${ev.unit_number ? `<span style="font-size:0.78em; color:#0284c7; margin-inline-start:6px;">وحدة #${ev.unit_number}</span>` : ''}
+                        </td>
+                        <td>
+                            <div>${ev.assigned_user_name || '--'}</div>
+                            <small style="color:#94a3b8;">${ev.branch_name || ''}</small>
+                        </td>
+                        <td>
+                            <span class="badge" style="background:${ev.badge_color}15; color:${ev.badge_color}; border:1px solid ${ev.badge_color}40; font-weight:700; padding:2px 8px; border-radius:4px;">
+                                ${ev.status_label_ar}
+                            </span>
+                        </td>
+                        <td>${amountDisplay}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="navigateToEntityPage('${ev.event_type}', '${directId}', {lead_id: '${ev.lead_id || ''}', opportunity_id: '${ev.opportunity_id || ''}', unit_number: '${ev.unit_number || ''}'})" style="padding: 2px 7px; font-size: 0.78em; font-weight: 700; white-space: nowrap;" title="فتح السجل">
+                                    🔗 فتح
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="openTaskReminderModal(${rowCtx})" style="padding: 2px 7px; font-size: 0.78em; font-weight: 700; white-space: nowrap; color: #7c3aed; border-color: #ddd6fe; background: #faf5ff;" title="إرسال تذكير داخلي بالعملية">
+                                    💬 تذكير
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ================= FINANCIAL SCHEDULE & COLLECTIONS LOGIC =================
+        async function fetchFinancialSchedule() {
+            try {
+                let url = `${API_BASE}/api/v1/reports/financial-schedule?scope=${dashboardState.scope}`;
+                if (dashboardState.branchId) url += `&branch_id=${encodeURIComponent(dashboardState.branchId)}`;
+                if (dashboardState.userId) url += `&user_id=${encodeURIComponent(dashboardState.userId)}`;
+                if (financialState.selectedCategory && financialState.selectedCategory !== 'ALL') {
+                    url += `&category=${encodeURIComponent(financialState.selectedCategory)}`;
+                }
+                if (financialState.selectedStatus && financialState.selectedStatus !== 'ALL') {
+                    url += `&collection_status=${encodeURIComponent(financialState.selectedStatus)}`;
+                }
+                if (dashboardState.selectedDeal) {
+                    if (dashboardState.selectedDeal.leadId) url += `&lead_id=${encodeURIComponent(dashboardState.selectedDeal.leadId)}`;
+                    if (dashboardState.selectedDeal.oppId) url += `&opportunity_id=${encodeURIComponent(dashboardState.selectedDeal.oppId)}`;
+                }
+
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+
+                const res = await fetch(url, { headers });
+                if (!res.ok) throw new Error('Failed to load financial schedule');
+                const json = await res.json();
+
+                if (!dashboardState.selectedDeal) {
+                    financialState.rawItems = json.data.items || [];
+                    financialState.rawSummary = json.data.summary || {};
+                }
+                financialState.items = json.data.items || [];
+                financialState.summary = json.data.summary || {};
+
+                renderFinancialSummary();
+                renderFinancialTable();
+            } catch (err) {
+                console.warn('fetchFinancialSchedule error:', err);
+            }
+        }
+
+        function renderFinancialSummary() {
+            const s = financialState.summary || {};
+            const isAr = currentLang === 'ar';
+
+            const badge = document.getElementById('fin-schedule-count-badge');
+            if (badge) badge.textContent = `${s.total_items || 0} ${isAr ? 'بند مالي' : 'Financial Items'}`;
+
+            const fmt = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+            setEl('fin-kpi-total-dues', `${fmt(s.total_dues_amount)} SAR`);
+            setEl('fin-kpi-total-collected', `${fmt(s.total_collected_amount)} SAR`);
+            setEl('fin-kpi-total-pending', `${fmt(s.total_pending_amount)} SAR`);
+            setEl('fin-kpi-total-overdue', `${fmt(s.total_overdue_amount)} SAR`);
+            setEl('fin-kpi-rate', `${s.collection_rate_percent || 0}%`);
+            setEl('fin-kpi-total-count', s.total_items || 0);
+
+            setEl('fin-kpi-cnt-deals', s.deals_leads_count || 0);
+            setEl('fin-kpi-cnt-prop', s.property_management_count || 0);
+            setEl('fin-kpi-cnt-mkt', s.marketing_count || 0);
+
+            setEl('fin-btn-all', s.total_items || 0);
+            setEl('fin-btn-deals', s.deals_leads_count || 0);
+            setEl('fin-btn-prop', s.property_management_count || 0);
+            setEl('fin-btn-mkt', s.marketing_count || 0);
+        }
+
+        function filterFinancialCategory(cat) {
+            financialState.selectedCategory = cat;
+            document.querySelectorAll('#fin-category-chips .agenda-chip-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
+            });
+            fetchFinancialSchedule();
+        }
+
+        function filterFinancialStatus(st) {
+            financialState.selectedStatus = st;
+            document.querySelectorAll('#fin-status-chips .agenda-chip-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-st') === st);
+            });
+            fetchFinancialSchedule();
+        }
+
+        function filterFinancialLedgerRows() {
+            const q = (document.getElementById('fin-search-input').value || '').trim().toLowerCase();
+            financialState.searchTerm = q;
+            renderFinancialTable();
+        }
+
+        function renderFinancialTable() {
+            const tbody = document.getElementById('fin-schedule-body');
+            if (!tbody) return;
+            const isAr = currentLang === 'ar';
+            const fmt = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            let list = [...(financialState.items || [])];
+
+            // Sort ascending by due_date: nearest due date first (earliest/overdue first, nulls at end)
+            list.sort((a, b) => {
+                const da = a.due_date ? a.due_date.substring(0, 10) : '9999-12-31';
+                const db = b.due_date ? b.due_date.substring(0, 10) : '9999-12-31';
+                return da.localeCompare(db);
+            });
+
+            if (financialState.searchTerm) {
+                const q = financialState.searchTerm;
+                list = list.filter(i => 
+                    (i.item_id && i.item_id.toLowerCase().includes(q)) ||
+                    (i.lead_id && i.lead_id.toLowerCase().includes(q)) ||
+                    (i.opportunity_id && i.opportunity_id.toLowerCase().includes(q)) ||
+                    (i.title && i.title.toLowerCase().includes(q)) ||
+                    (i.customer_name && i.customer_name.toLowerCase().includes(q)) ||
+                    (i.unit_number && i.unit_number.toLowerCase().includes(q))
+                );
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:#64748b;">${isAr ? 'لا توجد بنود مالية مطابقة للمعايير المحددة.' : 'No financial dues matching criteria.'}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => {
+                const leadBadge = item.lead_id ? `<span class="lead-interactive-badge" onclick="event.stopPropagation(); selectLeadFromAgenda('${item.lead_id}')" title="عرض مسار الطلب">👤 ${item.lead_id}</span>` : '';
+                const oppBadge = item.opportunity_id ? `<span class="id-badge" style="background:#ede9fe; color:#6d28d9; margin-inline-start:4px; cursor:pointer;" onclick="event.stopPropagation(); navigateToEntityPage('OPPORTUNITY', '${item.opportunity_id}', {lead_id: '${item.lead_id || ''}'})" title="فتح مسار الصفقة">${item.opportunity_id}</span>` : '';
+                const unitBadge = item.unit_number ? `<span style="font-size:0.78em; color:#0284c7; background:#e0f2fe; padding:2px 6px; border-radius:4px; margin-inline-start:4px;">وحدة #${item.unit_number}</span>` : '';
+                const itemTypeCode = item.item_type_code || item.item_type || '';
+                const itemExtra = `{lead_id: '${item.lead_id || ''}', opportunity_id: '${item.opportunity_id || ''}', unit_number: '${item.unit_number || ''}', ticket_id: '${item.ticket_id || ''}', work_order_id: '${item.work_order_id || ''}'}`;
+                const itemIdBadge = `<span class="id-badge" style="font-weight:700; cursor:pointer;" onclick="event.stopPropagation(); navigateToEntityPage('${itemTypeCode}', '${item.item_id}', ${itemExtra})" title="الانتقال إلى السجل">${item.item_id}</span>`;
+
+                const dueDateDisplay = item.due_date ? item.due_date.substring(0, 10) : '--';
+                const collDateDisplay = item.collected_at ? item.collected_at.replace('T', ' ').substring(0, 16) : '--';
+
+                // Serialized context for reminder modal
+                const rowCtx = JSON.stringify({
+                    rowId: item.item_id,
+                    title: item.title || '',
+                    customer: item.customer_name || (item.lead_id ? `الطلب ${item.lead_id}` : ''),
+                    amount: `${fmt(item.amount)} SAR`,
+                    assignedUser: item.assigned_user_name || '--',
+                    category: itemTypeCode || 'FINANCE'
+                }).replace(/"/g, '&quot;');
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                                ${leadBadge || itemIdBadge}
+                                ${oppBadge}
+                                ${unitBadge}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight:700; color:#0f172a; cursor:pointer;" onclick="navigateToEntityPage('${itemTypeCode}', '${item.item_id}', ${itemExtra})">${item.title}</div>
+                            <small style="color:#64748b;">${item.item_type_label_ar} &bull; <span style="color:#475569;">${item.category_label_ar}</span></small>
+                            ${item.customer_name ? `<div style="font-size:0.78em; color:#64748b;">العميل: ${item.customer_name}</div>` : ''}
+                        </td>
+                        <td>
+                            <strong style="color:#0f172a; font-size:1.02em;">${fmt(item.amount)} SAR</strong>
+                        </td>
+                        <td>
+                            <span style="color:#15803d; font-weight:700;">${fmt(item.amount_paid)} SAR</span>
+                        </td>
+                        <td>
+                            <span style="color:${item.amount_remaining > 0 ? '#dc2626' : '#64748b'}; font-weight:700;">${fmt(item.amount_remaining)} SAR</span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background:${item.badge_color}15; color:${item.badge_color}; border:1px solid ${item.badge_color}40; font-weight:700; padding:3px 8px; border-radius:4px;">
+                                ${item.collection_status_ar}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-weight:600; color:#334155;">${dueDateDisplay}</span>
+                        </td>
+                        <td>
+                            <span style="color:#15803d; font-weight:600;">${collDateDisplay}</span>
+                        </td>
+                        <td>
+                            <div>${item.assigned_user_name || '--'}</div>
+                            <small style="color:#94a3b8;">${item.branch_name || ''}</small>
+                        </td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="navigateToEntityPage('${itemTypeCode}', '${item.item_id}', ${itemExtra})" style="padding: 2px 7px; font-size: 0.78em; font-weight: 700; white-space: nowrap;" title="فتح السجل">
+                                    🔗 فتح
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="openTaskReminderModal(${rowCtx})" style="padding: 2px 7px; font-size: 0.78em; font-weight: 700; white-space: nowrap; color: #7c3aed; border-color: #ddd6fe; background: #faf5ff;" title="إرسال تذكير داخلي بالعملية">
+                                    💬 تذكير
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function navigateToEntityPage(entityType, entityId, extra = {}) {
+            if (!entityType && !entityId) return;
+            const isAr = currentLang === 'ar';
+            const profile = window.getCurrentUserProfile ? window.getCurrentUserProfile() : null;
+
+            let targetPage = '';
+            const params = new URLSearchParams();
+            let t = String(entityType || extra.item_type_code || extra.item_type || '').toUpperCase();
+            const idStr = String(entityId || '').toLowerCase();
+
+            // Intelligent Prefix Fallback Detection
+            if (!t || t === 'UNDEFINED' || t === 'NULL') {
+                if (idStr.startsWith('inv-') || idStr.startsWith('tax-')) t = 'INVOICE';
+                else if (idStr.startsWith('tick-') || idStr.startsWith('tic-')) t = 'MAINTENANCE';
+                else if (idStr.startsWith('wo-')) t = 'WORK_ORDER';
+                else if (idStr.startsWith('rent_collection-') || idStr.startsWith('col-') || idStr.startsWith('rc-')) t = 'RENT_COLLECTION';
+                else if (idStr.startsWith('camp-') || idStr.startsWith('cmp-')) t = 'CAMPAIGN';
+                else if (idStr.startsWith('opportunity-') || idStr.startsWith('opp-')) t = 'OPPORTUNITY';
+                else if (idStr.startsWith('lead-')) t = 'LEAD';
+                else if (idStr.startsWith('res-')) t = 'RESERVATION';
+                else if (idStr.startsWith('task-') || idStr.startsWith('tsk-')) t = 'TASK';
+            }
+
+            if (t === 'TASK') {
+                targetPage = 'tasks.html';
+                if (entityId) params.set('task_id', entityId);
+                if (extra.lead_id) params.set('lead_id', extra.lead_id);
+                if (extra.opportunity_id) params.set('opportunity_id', extra.opportunity_id);
+                if (entityId) params.set('search', entityId);
+            } else if (t === 'VIEWING') {
+                targetPage = 'sales.html';
+                params.set('tab', 'viewings');
+                if (extra.lead_id) params.set('lead_id', extra.lead_id);
+                if (entityId) params.set('search', entityId);
+            } else if (t === 'RESERVATION' || t === 'RESERVATION_DEPOSIT') {
+                if (window.canUserAccessPage && window.canUserAccessPage(profile, 'finance.html')) {
+                    targetPage = 'finance.html';
+                    params.set('tab', 'reservations');
+                    if (entityId) params.set('reservation_id', entityId);
+                    if (entityId) params.set('search', entityId);
+                } else {
+                    targetPage = 'sales.html';
+                    if (extra.opportunity_id) params.set('opportunity_id', extra.opportunity_id);
+                    if (extra.lead_id) params.set('lead_id', extra.lead_id);
+                    if (entityId) params.set('reservation_id', entityId);
+                    if (entityId) params.set('search', entityId);
+                }
+            } else if (t === 'RENT_COLLECTION') {
+                targetPage = 'management.html';
+                params.set('tab', 'rent');
+                if (entityId) params.set('collection_id', entityId);
+                if (extra.unit_number) params.set('unit_number', extra.unit_number);
+                if (entityId) params.set('search', entityId);
+            } else if (t === 'MAINTENANCE' || t === 'MAINTENANCE_ORDER' || t === 'WORK_ORDER' || t === 'WORK_ORDER_EXPENSE') {
+                targetPage = 'management.html';
+                params.set('tab', 'maintenance');
+                const tickId = extra.ticket_id || (idStr.startsWith('tick-') ? entityId : '');
+                const woId = extra.work_order_id || (idStr.startsWith('wo-') ? entityId : '');
+                if (tickId) params.set('ticket_id', tickId);
+                if (woId) params.set('work_order_id', woId);
+                if (extra.unit_number) params.set('unit_number', extra.unit_number);
+                if (entityId) params.set('search', entityId);
+            } else if (t === 'CAMPAIGN' || t === 'CAMPAIGN_BUDGET' || t === 'CAMPAIGN_EXPENSE') {
+                targetPage = 'campaigns.html';
+                if (entityId) params.set('campaign_id', entityId);
+                if (entityId) params.set('search', entityId);
+            } else if (t === 'TAX_INVOICE' || t === 'INVOICE') {
+                if (window.canUserAccessPage && window.canUserAccessPage(profile, 'finance.html')) {
+                    targetPage = 'finance.html';
+                    params.set('tab', 'invoices');
+                    if (entityId) params.set('search', entityId);
+                } else {
+                    targetPage = 'sales.html';
+                    if (extra.opportunity_id) params.set('opportunity_id', extra.opportunity_id);
+                    if (extra.lead_id) params.set('lead_id', extra.lead_id);
+                    if (entityId) params.set('search', entityId);
+                }
+            } else if (t === 'LEAD') {
+                targetPage = 'leads.html';
+                if (entityId) {
+                    params.set('lead_id', entityId);
+                    params.set('search', entityId);
+                }
+            } else if (t === 'OPPORTUNITY') {
+                targetPage = 'sales.html';
+                if (entityId) {
+                    params.set('opportunity_id', entityId);
+                    params.set('search', entityId);
+                }
+                if (extra.lead_id) params.set('lead_id', extra.lead_id);
+            } else {
+                targetPage = 'tasks.html';
+                if (entityId) params.set('search', entityId);
+            }
+
+            // Role-based permission verification
+            if (window.canUserAccessPage && !window.canUserAccessPage(profile, targetPage)) {
+                const pageMeta = window.PAGE_ACCESS_MAP ? window.PAGE_ACCESS_MAP[targetPage] : null;
+                const pageName = pageMeta ? (isAr ? pageMeta.nameAr : pageMeta.nameEn) : targetPage;
+                const alertMsg = isAr
+                    ? `⚠️ عفواً، ليس لديك صلاحية الوصول إلى صفحة (${pageName}) وفقاً لدور حسابك الحالي وصلاحياتك المسجلة في النظام.`
+                    : `⚠️ Access Denied: You do not have permission to access (${pageName}) under your current account role.`;
+                alert(alertMsg);
+                return;
+            }
+
+            const qs = params.toString();
+            const targetUrl = qs ? `${targetPage}?${qs}` : targetPage;
+            window.location.href = targetUrl;
+        }
+
+        // ================= INTERNAL TASK REMINDER MESSAGING (NON-DESTRUCTIVE CHAT) =================
+        let activeReminderRowContext = null;
+
+        function openTaskReminderModal(ctx) {
+            activeReminderRowContext = ctx || {};
+            const isAr = currentLang === 'ar';
+            const modal = document.getElementById('modal-internal-task-reminder');
+            if (!modal) return;
+
+            const rowIdEl = document.getElementById('rem-row-id-badge');
+            const rowTitleEl = document.getElementById('rem-row-title');
+            const rowCustEl = document.getElementById('rem-row-customer');
+            const rowAmtEl = document.getElementById('rem-row-amount');
+            const rowAgentEl = document.getElementById('rem-row-agent');
+
+            if (rowIdEl) rowIdEl.textContent = ctx.rowId || '--';
+            if (rowTitleEl) rowTitleEl.textContent = ctx.title || '--';
+            if (rowCustEl) rowCustEl.textContent = ctx.customer || '--';
+            if (rowAmtEl) rowAmtEl.textContent = ctx.amount || '--';
+            if (rowAgentEl) rowAgentEl.textContent = ctx.assignedUser || '--';
+
+            // Auto-select likely recipient based on category
+            const recipientSel = document.getElementById('rem-recipient-role');
+            if (recipientSel) {
+                if (ctx.category === 'RENT_COLLECTION' || (ctx.amount && ctx.amount !== '--')) {
+                    recipientSel.value = 'ACCOUNTANT';
+                } else if (ctx.category === 'MAINTENANCE') {
+                    recipientSel.value = 'PROPERTY_MANAGER';
+                } else {
+                    recipientSel.value = 'DIRECT_MANAGER';
+                }
+            }
+
+            // Update live recipient preview
+            updateReminderRecipientPreview();
+
+            // Set default message
+            const noteEl = document.getElementById('rem-message-text');
+            if (noteEl) {
+                noteEl.value = isAr 
+                    ? `تذكير بمتابعة وإنجاز السجل (${ctx.rowId}): ${ctx.title}` 
+                    : `Follow-up reminder for record (${ctx.rowId}): ${ctx.title}`;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function updateReminderRecipientPreview() {
+            const roleSel = document.getElementById('rem-recipient-role');
+            const previewEl = document.getElementById('rem-recipient-preview-text');
+            if (!roleSel || !previewEl) return;
+
+            const isAr = currentLang === 'ar';
+            const role = roleSel.value;
+            const ctx = activeReminderRowContext || {};
+
+            let targetName = '';
+            let targetNote = '';
+
+            if (role === 'ACCOUNTANT') {
+                targetName = 'Demo Agent 26';
+                targetNote = isAr ? 'المحاسب المالي المختص (الفرع الرئيسي)' : 'Specialized Accountant (Main Branch)';
+            } else if (role === 'ASSIGNED_AGENT') {
+                targetName = (ctx.assignedUser && ctx.assignedUser !== '--') ? ctx.assignedUser : (isAr ? 'الوسيط المسؤول عن السجل' : 'Assigned Broker');
+                targetNote = isAr ? 'الوسيط الميداني المسند إليه السجل' : 'Assigned Field Broker';
+            } else if (role === 'DIRECT_MANAGER') {
+                targetName = 'Tariq Al-Otaibi';
+                targetNote = isAr ? 'مدير المبيعات / المسؤول المباشر' : 'Sales Manager / Direct Manager';
+            } else if (role === 'PROPERTY_MANAGER') {
+                targetName = 'Demo Agent 16';
+                targetNote = isAr ? 'مدير إدارة الأملاك والتشغيل' : 'Property & Operations Manager';
+            } else if (role === 'BRANCH_MANAGER') {
+                targetName = isAr ? 'مدير الفرع التابع له السجل' : 'Branch Manager';
+                targetNote = isAr ? 'الإدارة التشغيلية للفرع' : 'Branch Leadership';
+            } else if (role === 'GENERAL_MANAGER') {
+                targetName = 'Fahad Kh. Alnemari';
+                targetNote = isAr ? 'المدير العام (SYS_ADMIN)' : 'General Manager (SYS_ADMIN)';
+            }
+
+            previewEl.innerHTML = `<strong>${isAr ? 'المستلم المحدد:' : 'Target Recipient:'}</strong> ${targetName} <span style="color:#64748b; font-weight:normal;">&bull; ${targetNote}</span>`;
+        }
+
+        function closeTaskReminderModal() {
+            const modal = document.getElementById('modal-internal-task-reminder');
+            if (modal) modal.style.display = 'none';
+            activeReminderRowContext = null;
+        }
+
+        function setReminderQuickTemplate(tplText) {
+            const noteEl = document.getElementById('rem-message-text');
+            if (!noteEl) return;
+            const prefix = activeReminderRowContext ? `[${activeReminderRowContext.rowId}] ` : '';
+            noteEl.value = `${prefix}${tplText}`;
+        }
+
+        async function sendInternalTaskReminder() {
+            const isAr = currentLang === 'ar';
+            const noteEl = document.getElementById('rem-message-text');
+            const recipientSel = document.getElementById('rem-recipient-role');
+            const urgencySel = document.getElementById('rem-urgency-level');
+
+            const message = (noteEl ? noteEl.value : '').trim();
+            if (!message) {
+                alert(isAr ? 'يرجى كتابة نص التذكير أو اختيار أحد النماذج السريعة.' : 'Please enter reminder text or select a quick template.');
+                return;
+            }
+
+            const recipientRole = recipientSel ? recipientSel.value : 'DIRECT_MANAGER';
+            const recipientLabel = recipientSel ? recipientSel.options[recipientSel.selectedIndex].text : '';
+            const urgency = urgencySel ? urgencySel.value : 'NORMAL';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+
+                const payload = {
+                    recipient_role: recipientRole,
+                    context_type: activeReminderRowContext?.category || 'TASK',
+                    context_id: String(activeReminderRowContext?.rowId || 'GENERAL'),
+                    context_snapshot: activeReminderRowContext || {},
+                    message_text: message,
+                    urgency_level: urgency,
+                    is_archived: false
+                };
+
+                const res = await fetch(`${API_BASE}/api/v1/internal-pings`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            } catch(e) {
+                console.warn('API sendInternalTaskReminder error:', e);
+            }
+
+            // Close modal & refresh badge
+            closeTaskReminderModal();
+            renderPingsBadge();
+
+            // Show confirmation
+            const toastMsg = isAr
+                ? `✅ تم إرسال التذكير الداخلي بنجاح إلى (${recipientLabel}) بخصوص السجل [${activeReminderRowContext?.rowId}].\n\n🔒 تأكيد: هذه مراسلة داخلية فورية (Chat Ping) ولم تُجرِ أي تعديل على حالة المهمة أو القيد المالي.`
+                : `✅ Internal reminder ping sent successfully to (${recipientLabel}) regarding [${activeReminderRowContext?.rowId}].\n\n🔒 Note: This is an internal chat ping and did not modify task or financial state.`;
+            alert(toastMsg);
+        }
+
+        // ================= PINGS INBOX (RECIPIENT PRESENTATION & ARCHIVE) =================
+        let pingsInboxActiveTab = 'ALL';
+
+        function initPingsData() {
+            renderPingsBadge();
+        }
+
+        async function renderPingsBadge() {
+            try {
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+                const res = await fetch(`${API_BASE}/api/v1/internal-pings/inbox?limit=1`, { headers });
+                if (res.ok) {
+                    const json = await res.json();
+                    const s = json.data?.summary || {};
+                    const badgeEl = document.getElementById('pings-unread-count');
+                    if (badgeEl) {
+                        badgeEl.textContent = s.unread_count || 0;
+                        badgeEl.style.display = (s.unread_count > 0) ? 'inline-block' : 'none';
+                    }
+                }
+            } catch (e) {
+                console.warn('renderPingsBadge error:', e);
+            }
+        }
+
+        function openPingsInboxModal() {
+            const modal = document.getElementById('modal-pings-inbox');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            filterPingsTab(pingsInboxActiveTab || 'ALL');
+        }
+
+        function closePingsInboxModal() {
+            const modal = document.getElementById('modal-pings-inbox');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function filterPingsTab(tab) {
+            pingsInboxActiveTab = tab;
+            const btnAll = document.getElementById('btn-pings-filter-all');
+            const btnUnread = document.getElementById('btn-pings-filter-unread');
+            const btnArchived = document.getElementById('btn-pings-filter-archived');
+
+            if (btnAll) btnAll.className = tab === 'ALL' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
+            if (btnUnread) btnUnread.className = tab === 'UNREAD' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
+            if (btnArchived) btnArchived.className = tab === 'ARCHIVED' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
+
+            renderPingsList();
+        }
+
+        async function renderPingsList() {
+            const isAr = currentLang === 'ar';
+            const container = document.getElementById('pings-inbox-list');
+            if (!container) return;
+            container.innerHTML = `<div style="text-align:center; padding:24px; color:#64748b;">${isAr ? 'جاري تحميل رسائل التذكير...' : 'Loading pings...'}</div>`;
+
+            let pings = [];
+            let summary = { total_count: 0, unread_count: 0, archived_count: 0 };
+
+            try {
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+                const res = await fetch(`${API_BASE}/api/v1/internal-pings/inbox?filter_type=${encodeURIComponent(pingsInboxActiveTab)}&limit=50`, { headers });
+                if (res.ok) {
+                    const json = await res.json();
+                    pings = json.data?.pings || [];
+                    summary = json.data?.summary || summary;
+                }
+            } catch (e) {
+                console.warn('renderPingsList API error:', e);
+            }
+
+            const cntAll = document.getElementById('cnt-inbox-all');
+            const cntUnread = document.getElementById('cnt-inbox-unread');
+            const cntArchived = document.getElementById('cnt-inbox-archived');
+            if (cntAll) cntAll.textContent = summary.total_count || pings.length;
+            if (cntUnread) cntUnread.textContent = summary.unread_count || 0;
+            if (cntArchived) cntArchived.textContent = summary.archived_count || 0;
+
+            if (pings.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:32px 16px; color:#64748b;">
+                        <span style="font-size:2em; display:block; margin-bottom:8px;">📭</span>
+                        <div style="font-weight:700;">${isAr ? 'لا توجد رسائل تذكير في هذا التصنيف حالياً.' : 'No reminder pings found in this view.'}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pings.map(p => {
+                const ctx = p.context_snapshot || {};
+                const urgencyBadge = p.urgency_level === 'CRITICAL' 
+                    ? '<span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:800;">🚨 طارئ</span>'
+                    : (p.urgency_level === 'URGENT' 
+                        ? '<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:800;">⚠️ هام</span>'
+                        : '<span class="badge" style="background:#f1f5f9; color:#475569; font-weight:700;">عادي</span>');
+
+                const timeStr = p.created_at ? new Date(p.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                const unreadDot = !p.is_read ? '<span style="display:inline-block; width:8px; height:8px; background:#7c3aed; border-radius:50%; margin-inline-end:6px;"></span>' : '';
+                const archiveActive = p.is_archived ? 'background:#fef9c3; color:#854d0e; border-color:#fde047;' : '';
+
+                return `
+                    <div style="background:${p.is_read ? '#ffffff' : '#f5f3ff'}; border:1.5px solid ${p.is_read ? '#e2e8f0' : '#ddd6fe'}; border-radius:8px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                ${unreadDot}
+                                <span style="font-size:0.82em; color:#64748b;">${isAr ? 'من:' : 'From:'}</span>
+                                <strong style="font-size:0.92em; color:#0f172a;">${p.sender_name || p.sender_user_id}</strong>
+                                <span style="color:#94a3b8; font-size:0.85em;">➔</span>
+                                <span style="font-size:0.82em; color:#64748b;">${isAr ? 'إلى:' : 'To:'}</span>
+                                <span style="font-size:0.82em; color:#1e40af; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:4px; font-weight:700;">
+                                    ${p.recipient_name || p.recipient_role || (isAr ? 'المستلم' : 'Recipient')}
+                                </span>
+                                <span class="id-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${p.context_id || '--'}</span>
+                                ${urgencyBadge}
+                            </div>
+                            <span style="font-size:0.78em; color:#64748b;">🕒 ${timeStr}</span>
+                        </div>
+
+                        <!-- Row Snapshot -->
+                        <div style="background:rgba(255,255,255,0.7); border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:0.82em; color:#334155;">
+                            <strong>${ctx.title || ''}</strong>
+                            ${ctx.customer ? ` &bull; العميل: <span style="color:#0f172a;">${ctx.customer}</span>` : ''}
+                            ${ctx.amount && ctx.amount !== '--' ? ` &bull; المبلغ: <strong style="color:#047857;">${ctx.amount}</strong>` : ''}
+                        </div>
+
+                        <!-- Message Text -->
+                        <div style="font-size:0.88em; color:#1e293b; margin-bottom:10px; line-height:1.5; font-weight:600;">
+                            💬 ${p.message_text}
+                        </div>
+
+                        <!-- Action Bar -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid #ede9fe; padding-top:8px;">
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="closePingsInboxModal(); navigateToEntityPage('${p.context_type || 'TASK'}', '${p.context_id}', {lead_id: '${ctx.lead_id || ''}'})" style="padding:2px 8px; font-size:0.78em; font-weight:700;">
+                                    🔗 فتح السجل
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="closePingsInboxModal(); openTaskReminderModal({rowId: '${p.context_id}', title: '${ctx.title}', customer: '${ctx.customer}', amount: '${ctx.amount}', assignedUser: '${p.sender_name || p.sender_user_id}'})" style="padding:2px 8px; font-size:0.78em; font-weight:700; color:#7c3aed; border-color:#ddd6fe;">
+                                    ↩️ رد
+                                </button>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="togglePingArchive('${p.ping_id}')" style="padding:2px 8px; font-size:0.78em; font-weight:700; ${archiveActive}" title="حفظ الرسالة كإثبات رسمي للمرسل/المستقبل يمنع حذفها">
+                                    ${p.is_archived ? '⭐ محفوظ كإثبات' : '☆ أرشفة كإثبات'}
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="markPingAsRead('${p.ping_id}')" style="padding:2px 8px; font-size:0.78em;">
+                                    ${p.is_read ? 'تحديد كغير مقروء' : '✔️ تم الاطلاع'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function markPingAsRead(pingId) {
+            try {
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+                await fetch(`${API_BASE}/api/v1/internal-pings/${encodeURIComponent(pingId)}/read`, {
+                    method: 'PATCH',
+                    headers: headers
+                });
+            } catch (e) {
+                console.warn('markPingAsRead error:', e);
+            }
+            renderPingsList();
+            renderPingsBadge();
+        }
+
+        async function markAllPingsAsRead() {
+            try {
+                const pings = await fetch(`${API_BASE}/api/v1/internal-pings/inbox?filter_type=UNREAD`, {
+                    headers: { 'X-User-ID': localStorage.getItem('recrm_user_id') || 'user-51' }
+                }).then(r => r.json()).then(j => j.data?.pings || []);
+
+                for (const p of pings) {
+                    await fetch(`${API_BASE}/api/v1/internal-pings/${encodeURIComponent(p.ping_id)}/read`, {
+                        method: 'PATCH',
+                        headers: { 'X-User-ID': localStorage.getItem('recrm_user_id') || 'user-51' }
+                    });
+                }
+            } catch (e) {
+                console.warn('markAllPingsAsRead error:', e);
+            }
+            renderPingsList();
+            renderPingsBadge();
+        }
+
+        async function togglePingArchive(pingId) {
+            try {
+                const headers = {};
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                headers['X-User-ID'] = activeUserId;
+                await fetch(`${API_BASE}/api/v1/internal-pings/${encodeURIComponent(pingId)}/archive`, {
+                    method: 'PATCH',
+                    headers: headers
+                });
+            } catch (e) {
+                console.warn('togglePingArchive error:', e);
+            }
+            renderPingsList();
+            renderPingsBadge();
+        }
+
+        function selectLeadFromAgenda(leadId) {
+            if (!leadId) return;
+            const input = document.getElementById('lead-history-search-input');
+            if (input) input.value = leadId;
+            loadLeadHistory(leadId);
+            const sec = document.getElementById('lead-history-section');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function refreshAgendaData() {
+            fetchAgendaCalendar();
+        }
+
+        function refreshFinancialData() {
+            fetchFinancialSchedule();
+        }
 
         async function fetchFunnelData() {
             try {
@@ -1291,8 +3001,12 @@
                 renderDrilldown();
                 renderPulseFeed();
 
-                // Concurrently refresh Article 7 Managerial KPIs
-                await fetchManagerialKPIs();
+                // Concurrently refresh Article 7 Managerial KPIs & Agendas
+                await Promise.all([
+                    fetchManagerialKPIs(),
+                    fetchAgendaCalendar(),
+                    fetchFinancialSchedule()
+                ]);
 
                 document.getElementById('db-status').textContent = 'PostgreSQL Connected';
                 const dot = document.querySelector('.status-dot');
@@ -1572,6 +3286,9 @@
 
         // ================= HIERARCHICAL DRILLDOWN NAVIGATION =================
         function drillToGlobal() {
+            if (typeof clearWorkspaceDealSelection === 'function') {
+                clearWorkspaceDealSelection();
+            }
             dashboardState.drillLevel = 'BRANCHES';
             dashboardState.selectedBranch = null;
             dashboardState.selectedAgent = null;
@@ -1587,26 +3304,54 @@
             if (aSel) aSel.value = '';
             fetchFunnelData();
         }
+        window.drillToGlobal = drillToGlobal;
 
         function drillToBranch(bId, bName, bCode) {
+            if (typeof clearWorkspaceDealSelection === 'function') {
+                clearWorkspaceDealSelection();
+            }
             dashboardState.branchId = bId;
-            dashboardState.selectedBranch = { branch_id: bId, name: bName, branch_code: bCode };
+            if ((!bName || !bCode) && dashboardState.branchesList && dashboardState.branchesList.length > 0) {
+                const found = dashboardState.branchesList.find(b => b.branch_id === bId);
+                if (found) {
+                    bName = bName || found.name;
+                    bCode = bCode || found.branch_code;
+                }
+            }
+            dashboardState.selectedBranch = { branch_id: bId, name: bName || 'Branch', branch_code: bCode || '' };
             dashboardState.drillLevel = 'AGENTS';
             dashboardState.selectedAgent = null;
+            dashboardState.userId = null;
             dashboardState.scope = 'BRANCH';
             document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
             const btn = document.getElementById('btn-scope-BRANCH');
             if (btn) btn.classList.add('active');
             const bSel = document.getElementById('dash-branch-select');
             if (bSel) bSel.value = bId;
+            const aSel = document.getElementById('dash-agent-select');
+            if (aSel) aSel.value = '';
             fetchFunnelData();
         }
+        window.drillToBranch = drillToBranch;
 
         function drillToAgent(uId, uName) {
+            if (typeof clearWorkspaceDealSelection === 'function') {
+                clearWorkspaceDealSelection();
+            }
             dashboardState.userId = uId;
             dashboardState.selectedAgent = { user_id: uId, full_name: uName };
             dashboardState.drillLevel = 'OPPORTUNITIES';
             dashboardState.scope = 'OWN';
+
+            // Preserve or lookup branch context if available
+            if (!dashboardState.branchId && dashboardState.agentsList && dashboardState.agentsList.length > 0) {
+                const ag = dashboardState.agentsList.find(a => a.user_id === uId);
+                if (ag && ag.branch_id) {
+                    dashboardState.branchId = ag.branch_id;
+                    dashboardState.selectedBranch = { branch_id: ag.branch_id, name: ag.branch_name || 'Branch' };
+                }
+            }
+
             document.querySelectorAll('.scope-pill-btn').forEach(btn => btn.classList.remove('active'));
             const btn = document.getElementById('btn-scope-OWN');
             if (btn) btn.classList.add('active');
@@ -1614,41 +3359,111 @@
             if (aSel) aSel.value = uId;
             fetchFunnelData();
         }
+        window.drillToAgent = drillToAgent;
+
+        function returnToBranchAgents() {
+            if (typeof clearWorkspaceDealSelection === 'function') {
+                clearWorkspaceDealSelection();
+            }
+            let bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : (dashboardState.cachedData && dashboardState.cachedData.scope_info ? dashboardState.cachedData.scope_info.branch_id : dashboardState.branchId);
+            let bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData && dashboardState.cachedData.scope_info ? dashboardState.cachedData.scope_info.branch_name : null);
+            let bCode = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_code : null;
+
+            if (!bId && dashboardState.selectedAgent && dashboardState.agentsList) {
+                const ag = dashboardState.agentsList.find(a => a.user_id === dashboardState.selectedAgent.user_id);
+                if (ag && ag.branch_id) {
+                    bId = ag.branch_id;
+                    bName = ag.branch_name;
+                }
+            }
+
+            if (bId) {
+                drillToBranch(bId, bName, bCode);
+            } else {
+                drillToGlobal();
+            }
+        }
+        window.returnToBranchAgents = returnToBranchAgents;
 
         function renderDrilldown() {
             const container = document.getElementById('drilldown-table-container');
             const bcContainer = document.getElementById('drill-breadcrumbs');
             const titleEl = document.getElementById('drill-view-title');
             const counterEl = document.getElementById('drill-counter-badge');
+            const backActionsEl = document.getElementById('drill-quick-back-actions');
             if (!container || !dashboardState.cachedData) return;
 
             const isAr = currentLang === 'ar';
             const drill = dashboardState.cachedData.drilldown;
 
-            // Render Breadcrumbs
+            // Render Hierarchical Interactive Breadcrumbs (Always intact across all scopes)
             let bcHtml = '';
-            if (dashboardState.scope === 'OWN') {
-                const aName = dashboardState.cachedData.scope_info.user_name || 'My Workspace';
-                const bName = dashboardState.cachedData.scope_info.branch_name;
-                bcHtml = `<span class="breadcrumb-item current">👤 ${isAr ? 'مساحة العمل الشخصية' : 'Personal Workspace'}: ${aName} ${bName ? '(' + bName + ')' : ''}</span>`;
-                dashboardState.drillLevel = 'OPPORTUNITIES';
+
+            // 1. Root / Global Level
+            if (dashboardState.drillLevel === 'BRANCHES' && !dashboardState.selectedBranch && !dashboardState.selectedAgent) {
+                bcHtml = `<span class="breadcrumb-item current" id="bc-root">🌐 ${isAr ? 'كافة المنظمة (الفروع)' : 'Global Overview (All Branches)'}</span>`;
             } else {
-                bcHtml = `<span class="breadcrumb-item ${dashboardState.drillLevel === 'BRANCHES' ? 'current' : ''}" onclick="drillToGlobal()">🌐 ${isAr ? 'المنظمة بالكامل' : 'Global Overview'}</span>`;
+                bcHtml = `<span class="breadcrumb-item" id="bc-root" onclick="drillToGlobal()" title="${isAr ? 'العودة لكافة فروع المنظمة' : 'Back to Global'}">🌐 ${isAr ? 'كافة المنظمة (الفروع)' : 'Global Overview (All Branches)'}</span>`;
+            }
 
-                if (dashboardState.selectedBranch || dashboardState.drillLevel === 'AGENTS' || dashboardState.drillLevel === 'OPPORTUNITIES') {
-                    const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info.branch_name || 'Selected Branch');
-                    const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : dashboardState.cachedData.scope_info.branch_id;
-                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item ${dashboardState.drillLevel === 'AGENTS' ? 'current' : ''}" onclick="drillToBranch('${bId}', '${bName}')">🏢 ${bName}</span>`;
-                }
+            // 2. Branch Level
+            const hasBranch = Boolean(dashboardState.selectedBranch || dashboardState.branchId || (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.branch_id));
+            if (hasBranch && (dashboardState.drillLevel === 'AGENTS' || dashboardState.drillLevel === 'OPPORTUNITIES' || dashboardState.selectedAgent)) {
+                const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.branch_name ? dashboardState.cachedData.scope_info.branch_name : (isAr ? 'الفرع' : 'Branch'));
+                const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.branch_id ? dashboardState.cachedData.scope_info.branch_id : dashboardState.branchId);
 
-                if (dashboardState.selectedAgent || dashboardState.drillLevel === 'OPPORTUNITIES') {
-                    const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info.user_name || 'Selected Agent');
-                    const aId = dashboardState.selectedAgent ? dashboardState.selectedAgent.user_id : dashboardState.cachedData.scope_info.user_id;
-                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">👤 ${aName}</span>`;
+                if (dashboardState.drillLevel === 'AGENTS') {
+                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">🏢 ${isAr ? 'الفرع: ' : 'Branch: '}${bName}</span>`;
+                } else {
+                    bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item" onclick="drillToBranch('${bId}', '${(bName || '').replace(/'/g, "\\'")}')" title="${isAr ? 'العودة لوسطاء الفرع' : 'Back to Branch Agents'}">🏢 ${isAr ? 'الفرع: ' : 'Branch: '}${bName}</span>`;
                 }
             }
 
+            // 3. Agent Level
+            if (dashboardState.drillLevel === 'OPPORTUNITIES' || dashboardState.selectedAgent) {
+                const aName = dashboardState.selectedAgent ? dashboardState.selectedAgent.full_name : (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.user_name ? dashboardState.cachedData.scope_info.user_name : (isAr ? 'الوسيط' : 'Agent'));
+                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current">👤 ${isAr ? 'الوسيط / الموظف: ' : 'Agent: '}${aName}</span>`;
+            }
+
+            // 4. Selected Deal Context (if any)
+            if (dashboardState.selectedDeal) {
+                const dealName = dashboardState.selectedDeal.customerName || (dashboardState.selectedDeal.leadId ? `الطلب ${dashboardState.selectedDeal.leadId}` : (isAr ? 'الصفقة المحددة' : 'Selected Deal'));
+                bcHtml += ` <span style="color: #94a3b8;">❯</span> <span class="breadcrumb-item current" style="color: #15803d; font-weight: 700;">🎯 ${dealName}</span>`;
+            }
+
             if (bcContainer) bcContainer.innerHTML = bcHtml;
+
+            // Render Quick Back Actions for Managers
+            if (backActionsEl) {
+                let backHtml = '';
+                if (dashboardState.drillLevel === 'OPPORTUNITIES') {
+                    // Agent view: provide direct buttons to return to branch agents, or return to global branches overview
+                    const bName = dashboardState.selectedBranch ? dashboardState.selectedBranch.name : (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.branch_name ? dashboardState.cachedData.scope_info.branch_name : null);
+                    const bId = dashboardState.selectedBranch ? dashboardState.selectedBranch.branch_id : (dashboardState.cachedData.scope_info && dashboardState.cachedData.scope_info.branch_id ? dashboardState.cachedData.scope_info.branch_id : dashboardState.branchId);
+
+                    if (bId) {
+                        const branchLabel = bName ? ` (${bName})` : '';
+                        backHtml += `
+                            <button type="button" class="btn btn-sm" onclick="returnToBranchAgents()" style="display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e40af; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer;" title="${isAr ? 'العودة لقائمة وسطاء الفرع' : 'Back to branch agents'}">
+                                ⬅️ 🏢 ${isAr ? `العودة لوسطاء الفرع${branchLabel}` : `Back to Branch${branchLabel}`}
+                            </button>
+                        `;
+                    }
+                    backHtml += `
+                        <button type="button" class="btn btn-sm" onclick="drillToGlobal()" style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; color: #334155; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer;" title="${isAr ? 'العودة لكافة فروع المنظمة' : 'Back to all branches'}">
+                            🌐 ${isAr ? 'العودة لكافة المنظمة (الفروع)' : 'Back to Global'}
+                        </button>
+                    `;
+                } else if (dashboardState.drillLevel === 'AGENTS') {
+                    // Branch view: provide direct button to return to global branches overview
+                    backHtml = `
+                        <button type="button" class="btn btn-sm" onclick="drillToGlobal()" style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; color: #334155; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer;" title="${isAr ? 'العودة لكافة فروع المنظمة' : 'Back to all branches'}">
+                            ⬅️ 🌐 ${isAr ? 'العودة لكافة المنظمة (الفروع)' : 'Back to All Branches'}
+                        </button>
+                    `;
+                }
+                backActionsEl.innerHTML = backHtml;
+            }
 
             // Render Views
             if (dashboardState.drillLevel === 'BRANCHES') {
@@ -1824,9 +3639,16 @@
                                 const safeOppId = op.opportunity_id || '';
                                 const stageText = isAr ? (STAGE_LABELS_AR[op.stage] || op.stage) : op.stage;
                                 const inq = op.inquiry_type ? (INQUIRY_MAP[op.inquiry_type] || { ar: op.inquiry_type, en: op.inquiry_type, bg: '#f1f5f9', color: '#475569' }) : null;
+                                const safeCust = encodeURIComponent(op.customer_name || '');
+                                const formattedVal = Number(op.expected_value || 0).toLocaleString() + ' SAR';
+                                const safeVal = encodeURIComponent(formattedVal);
+                                const isSelected = dashboardState.selectedDeal && (
+                                    (safeLeadId && dashboardState.selectedDeal.leadId === safeLeadId) ||
+                                    (safeOppId && dashboardState.selectedDeal.oppId === safeOppId)
+                                );
 
                                 return `
-                                    <tr class="workspace-deal-row" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this)" title="${isAr ? 'اضغط لعرض السجل التشغيلي وتاريخ مسار هذا الطلب أدناه' : 'Click to inspect 360° lead operational history below'}">
+                                    <tr class="workspace-deal-row ${isSelected ? 'selected-deal-row' : ''}" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this, '${safeCust}', '${safeVal}')" title="${isAr ? 'اضغط لتحديد الصفقة وتصفية المفكرات وتاريخ المسار 360°' : 'Click to select deal and filter agendas & 360° journey'}">
                                         <td>
                                             ${isLead 
                                                 ? `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:0.75em; padding:3px 7px; border-radius:4px;">🎯 ${isAr ? 'طلب عقاري' : 'Lead'}</span>`
@@ -1856,8 +3678,8 @@
                                         <td>${op.agent_name || '--'}</td>
                                         <td>
                                             <div style="display:flex; gap:6px; align-items:center;" onclick="event.stopPropagation();">
-                                                <button type="button" class="btn-drill" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this.closest('tr'))" style="background:#0284c7; color:white; border:none; padding:4px 9px; font-size:0.78em; border-radius:4px; font-weight:700;">
-                                                    📜 ${isAr ? 'السجل 360°' : 'History'}
+                                                <button type="button" class="btn-drill" onclick="onWorkspaceDealClick('${safeLeadId}', '${safeOppId}', this.closest('tr'), '${safeCust}', '${safeVal}')" style="background:#0284c7; color:white; border:none; padding:4px 9px; font-size:0.78em; border-radius:4px; font-weight:700;">
+                                                    🎯 ${isAr ? 'تحديد ومسار 360°' : 'Select & 360°'}
                                                 </button>
                                                 ${isLead 
                                                     ? `<a href="leads.html" class="btn-drill" style="text-decoration:none; display:inline-block; font-size:0.78em; padding:4px 9px;">${isAr ? 'الطلبات ➔' : 'Leads ➔'}</a>`
@@ -2887,25 +4709,31 @@
         }
 
         async function loadDashboardData() {
+            renderPingsBadge();
             await Promise.allSettled([
                 fetchFunnelData(),
+                fetchManagerialKPIs(),
+                fetchAgendaCalendar(),
+                fetchFinancialSchedule(),
                 initLeadHistory()
             ]);
+            renderPingsBadge();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             initTypographyAndLang();
+            initPingsData();
             loadDashboardData();
 
             // Auto-refresh when tab gains focus
             window.addEventListener('focus', () => {
-                fetchFunnelData();
+                loadDashboardData();
             });
 
             // Live periodic background pulse refresh every 30s
             setInterval(() => {
                 if (!document.hidden) {
-                    fetchFunnelData();
+                    loadDashboardData();
                 }
             }, 30000);
         });
@@ -3012,6 +4840,140 @@
             }
         }
     </script>
+
+    <!-- Dedicated Incoming Task Reminders (Pings Inbox) Modal -->
+    <div id="modal-pings-inbox" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+        <div style="background:white; border-radius:12px; width:95%; max-width:720px; max-height:88vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.25); border: 1.5px solid #cbd5e1;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); color:white; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.4em;">🔔</span>
+                    <div>
+                        <h3 style="margin:0; font-size:1.1em;">صندوق رسائل التذكير الداخلية (Task Reminders Inbox)</h3>
+                        <small style="color: #c7d2fe; font-size: 0.8em;">تنبيهات وتذكيرات مباشرة بين فريق العمل مرتبطة بالمهام والاستحقاقات التشغيلية والمالية</small>
+                    </div>
+                </div>
+                <button type="button" style="background:none; border:none; color:white; font-size:1.4em; cursor:pointer;" onclick="closePingsInboxModal()">&times;</button>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div style="padding:10px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn btn-sm" id="btn-pings-filter-all" onclick="filterPingsTab('ALL')" style="padding:3px 10px; font-size:0.8em; font-weight:700; background:#1e293b; color:white; border-radius:20px;">الكل (<span id="cnt-inbox-all">0</span>)</button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-pings-filter-unread" onclick="filterPingsTab('UNREAD')" style="padding:3px 10px; font-size:0.8em; font-weight:700; border-radius:20px;">غير مقروءة (<span id="cnt-inbox-unread">0</span>)</button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-pings-filter-archived" onclick="filterPingsTab('ARCHIVED')" style="padding:3px 10px; font-size:0.8em; font-weight:700; border-radius:20px;">⭐ المحفوظة كإثبات (<span id="cnt-inbox-archived">0</span>)</button>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline" onclick="markAllPingsAsRead()" style="padding:3px 10px; font-size:0.78em; color:#475569;">✔️ تحديد الكل كمقروء</button>
+            </div>
+
+            <!-- List Body -->
+            <div id="pings-inbox-list" style="padding:16px 20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px;">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:12px 18px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.8em; color:#64748b;">🔒 التذكيرات لا تؤثر على القيود المحاسبية أو مسارات الصفقات.</span>
+                <button type="button" class="btn btn-sm btn-outline" style="padding:6px 16px; font-weight:700;" onclick="closePingsInboxModal()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Internal Task Reminder (Chat Ping) Modal -->
+    <div id="modal-internal-task-reminder" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+        <div style="background:white; border-radius:12px; width:95%; max-width:620px; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.25); border: 1.5px solid #cbd5e1;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color:white; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="margin:0; font-size:1.05em; display:flex; align-items:center; gap:8px;">
+                        <span>💬</span> <span>إرسال تذكير داخلي بالعملية (Task Reminder Ping)</span>
+                    </h3>
+                    <small style="color: #94a3b8; font-size: 0.8em; margin-top: 3px; display: block;">مراسلة داخلية سريعة للتذكير بالإنجاز &bull; لا تؤثر نهائياً على حالة المهمة أو القيد المالي</small>
+                </div>
+                <button type="button" style="background:none; border:none; color:white; font-size:1.4em; cursor:pointer;" onclick="closeTaskReminderModal()">&times;</button>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:18px; overflow-y:auto; flex:1; display: flex; flex-direction: column; gap: 14px;">
+                <!-- Row Context Summary Card -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:0.8em; color:#64748b; font-weight:700;">بيانات السجل المراد التذكير به:</span>
+                        <span id="rem-row-id-badge" class="id-badge" style="background:#e0f2fe; color:#0369a1; font-weight:800; font-size:0.85em;">--</span>
+                    </div>
+                    <div id="rem-row-title" style="font-weight:700; color:#0f172a; font-size:0.95em; margin-bottom:4px;">--</div>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.82em; color:#475569; margin-top:6px;">
+                        <div>👤 <strong>العميل/الطلب:</strong> <span id="rem-row-customer">--</span></div>
+                        <div>💰 <strong>المبلغ:</strong> <span id="rem-row-amount" style="color:#047857; font-weight:700;">--</span></div>
+                        <div>💼 <strong>المسؤول الحالي:</strong> <span id="rem-row-agent">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Recipient Selection -->
+                <div>
+                    <label style="display:block; font-size:0.84em; font-weight:700; color:#1e293b; margin-bottom:5px;">
+                        🎯 توجيه التذكير إلى (المستلم):
+                    </label>
+                    <select id="rem-recipient-role" onchange="updateReminderRecipientPreview()" style="width:100%; padding:8px 10px; border-radius:6px; border:1.5px solid #cbd5e1; font-size:0.88em; background:white;">
+                        <option value="DIRECT_MANAGER">👔 المسؤول المباشر / مدير المبيعات (Direct Manager)</option>
+                        <option value="ACCOUNTANT">💰 المحاسب المالي المختص (Accountant)</option>
+                        <option value="PROPERTY_MANAGER">🔑 مدير إدارة الأملاك والتشغيل (Property Manager)</option>
+                        <option value="ASSIGNED_AGENT">💼 الوسيط / الموظف المسند إليه السجل (Assigned Broker)</option>
+                        <option value="BRANCH_MANAGER">🏢 مدير الفرع (Branch Manager)</option>
+                        <option value="GENERAL_MANAGER">🌐 المدير العام (General Manager)</option>
+                    </select>
+                    <!-- Real-Time Resolved Recipient Indicator -->
+                    <div id="rem-recipient-preview" style="font-size:0.82em; color:#1e40af; background:#eff6ff; border:1px solid #bfdbfe; padding:6px 12px; border-radius:6px; margin-top:6px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                        <span>👤</span> <span id="rem-recipient-preview-text">جاري تحديد المستلم...</span>
+                    </div>
+                </div>
+
+                <!-- Quick Template Chips -->
+                <div>
+                    <label style="display:block; font-size:0.8em; font-weight:700; color:#475569; margin-bottom:6px;">
+                        ⚡ نماذج تذكير سريعة (اضغط للإدراج الفوري):
+                    </label>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="setReminderQuickTemplate('تذكير بموعد استحقاق اليوم نأمل المتابعة العاجلة')" style="font-size:0.76em; padding:3px 8px; border-color:#cbd5e1; background:white;">⏳ استحقاق اليوم</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="setReminderQuickTemplate('المهمة متأخرة نرجو الإنجاز وتحديث حالة العميل')" style="font-size:0.76em; padding:3px 8px; border-color:#cbd5e1; background:white;">⚠️ مهمة متأخرة</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="setReminderQuickTemplate('يرجى التحقق من إشعار التحصيل وإصدار سند القبض')" style="font-size:0.76em; padding:3px 8px; border-color:#cbd5e1; background:white;">💰 متابعة التحصيل</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="setReminderQuickTemplate('يرجى تأكيد موعد المعاينة وتزويد العميل بالموقع')" style="font-size:0.76em; padding:3px 8px; border-color:#cbd5e1; background:white;">👁️ تأكيد المعاينة</button>
+                    </div>
+                </div>
+
+                <!-- Custom Message -->
+                <div>
+                    <label style="display:block; font-size:0.84em; font-weight:700; color:#1e293b; margin-bottom:5px;">
+                        📝 نص رسالة التذكير:
+                    </label>
+                    <textarea id="rem-message-text" rows="3" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:1.5px solid #cbd5e1; font-size:0.88em; font-family:inherit; resize:vertical;" placeholder="اكتب ملاحظة أو تنبيه للزميل..."></textarea>
+                </div>
+
+                <!-- Urgency & Privacy Note -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <label style="font-size:0.82em; font-weight:700; color:#475569;">درجة الأهمية:</label>
+                        <select id="rem-urgency-level" style="padding:4px 8px; border-radius:4px; border:1px solid #cbd5e1; font-size:0.82em; background:white;">
+                            <option value="NORMAL">عادي (Normal)</option>
+                            <option value="URGENT">⚠️ هام (Urgent)</option>
+                            <option value="CRITICAL">🚨 طارئ (Critical)</option>
+                        </select>
+                    </div>
+                    <div style="font-size:0.78em; color:#059669; font-weight:700; display:flex; align-items:center; gap:4px;">
+                        <span>🔒 محمي وغير مؤثر على قيود النظام</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div style="padding:12px 18px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer;" onclick="closeTaskReminderModal()">إلغاء</button>
+                <button type="button" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color:white; border:none; padding:7px 18px; border-radius:6px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(124,58,237,0.3);" onclick="sendInternalTaskReminder()">
+                    <span>🚀 إرسال التذكير الفوري</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Dedicated Standalone SOP Guide Modal for Lead 360 -->
     <div id="modal-lead-sop-help" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">

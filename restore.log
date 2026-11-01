@@ -1,0 +1,1528 @@
+SET
+SET
+SET
+psql:/home/nemro/pg_full_backup.sql:16: ERROR:  role "postgres" already exists
+ALTER ROLE
+You are now connected to database "template1" as user "postgres".
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+You are now connected to database "postgres" as user "postgres".
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+CREATE DATABASE
+ALTER DATABASE
+You are now connected to database "re_db" as user "postgres".
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+CREATE EXTENSION
+COMMENT
+CREATE EXTENSION
+COMMENT
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE SEQUENCE
+ALTER SEQUENCE
+SET
+SET
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+COPY 317
+COPY 8
+COPY 0
+COPY 5
+COPY 8
+COPY 24
+COPY 5
+COPY 10
+COPY 16
+COPY 41
+COPY 16
+COPY 27
+COPY 0
+COPY 10
+COPY 8
+COPY 2
+COPY 16
+COPY 0
+COPY 10
+COPY 3
+COPY 112
+COPY 6
+COPY 0
+COPY 8
+COPY 4
+COPY 3
+COPY 0
+COPY 4
+COPY 6
+COPY 10
+COPY 7
+COPY 1
+COPY 10
+COPY 18
+COPY 17
+COPY 0
+COPY 13
+COPY 12
+COPY 5
+COPY 69
+COPY 16
+COPY 196
+COPY 6
+COPY 106
+COPY 9
+COPY 51
+COPY 51
+COPY 4
+COPY 3
+COPY 47
+COPY 78
+ setval 
+--------
+   8415
+(1 row)
+
+ setval 
+--------
+      9
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      6
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    169
+(1 row)
+
+ setval 
+--------
+   1986
+(1 row)
+
+ setval 
+--------
+    166
+(1 row)
+
+ setval 
+--------
+   1223
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     34
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    109
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      9
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+    340
+(1 row)
+
+ setval 
+--------
+    673
+(1 row)
+
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+    328
+(1 row)
+
+ setval 
+--------
+     19
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    466
+(1 row)
+
+ setval 
+--------
+    520
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+  10743
+(1 row)
+
+ setval 
+--------
+    184
+(1 row)
+
+ setval 
+--------
+   1054
+(1 row)
+
+ setval 
+--------
+     10
+(1 row)
+
+ setval 
+--------
+     51
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+    425
+(1 row)
+
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+psql:/home/nemro/pg_full_backup.sql:5584: ERROR:  database "redb" already exists
+ALTER DATABASE
+You are now connected to database "redb" as user "postgres".
+SET
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+CREATE EXTENSION
+COMMENT
+CREATE EXTENSION
+COMMENT
+psql:/home/nemro/pg_full_backup.sql:5639: ERROR:  function "seed_uuid" already exists with same argument types
+ALTER FUNCTION
+psql:/home/nemro/pg_full_backup.sql:5653: ERROR:  relation "seq_activities_id" already exists
+ALTER SEQUENCE
+SET
+SET
+psql:/home/nemro/pg_full_backup.sql:5682: ERROR:  relation "activities" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5696: ERROR:  relation "seq_activity_types_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5709: ERROR:  relation "activity_types" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5723: ERROR:  relation "seq_audit_logs_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5744: ERROR:  relation "audit_logs" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5758: ERROR:  relation "seq_branches_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5776: ERROR:  relation "branches" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5790: ERROR:  relation "seq_buildings_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5805: ERROR:  relation "buildings" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5818: ERROR:  relation "campaign_leads" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5832: ERROR:  relation "seq_campaigns_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5850: ERROR:  relation "campaigns" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5864: ERROR:  relation "seq_cities_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5880: ERROR:  relation "cities" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5894: ERROR:  relation "seq_commissions_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5913: ERROR:  relation "commissions" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5927: ERROR:  relation "seq_communications_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5949: ERROR:  relation "communications" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5963: ERROR:  relation "seq_contracts_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:5982: ERROR:  relation "contracts" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:5996: ERROR:  relation "seq_customers_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6020: ERROR:  relation "customers" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6034: ERROR:  relation "seq_document_access_log_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6050: ERROR:  relation "document_access_log" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6064: ERROR:  relation "seq_document_types_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6078: ERROR:  relation "document_types" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6092: ERROR:  relation "seq_documents_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6117: ERROR:  relation "documents" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6131: ERROR:  relation "seq_lead_events_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6146: ERROR:  relation "lead_events" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6160: ERROR:  relation "seq_lead_notes_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6175: ERROR:  relation "lead_notes" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6189: ERROR:  relation "seq_lead_sources_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6203: ERROR:  relation "lead_sources" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6217: ERROR:  relation "lead_units" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6231: ERROR:  relation "seq_leads_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6263: ERROR:  relation "leads" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6277: ERROR:  relation "seq_listings_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6298: ERROR:  relation "listings" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6312: ERROR:  relation "seq_login_events_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6328: ERROR:  relation "login_events" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6342: ERROR:  relation "seq_loss_reasons_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6355: ERROR:  relation "loss_reasons" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6369: ERROR:  relation "seq_maintenance_tickets_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6390: ERROR:  relation "maintenance_tickets" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6404: ERROR:  relation "seq_maintenance_work_orders_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6422: ERROR:  relation "maintenance_work_orders" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6436: ERROR:  relation "managed_units" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6450: ERROR:  relation "seq_management_contracts_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6468: ERROR:  relation "management_contracts" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6482: ERROR:  relation "seq_offers_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6499: ERROR:  relation "offers" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6513: ERROR:  relation "seq_opportunities_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6533: ERROR:  relation "opportunities" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6547: ERROR:  relation "opportunity_units" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6561: ERROR:  relation "seq_organizations_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6582: ERROR:  relation "organizations" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6596: ERROR:  relation "seq_payments_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6616: ERROR:  relation "payments" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6630: ERROR:  relation "seq_permissions_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6643: ERROR:  relation "permissions" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6657: ERROR:  relation "seq_projects_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6676: ERROR:  relation "projects" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6690: ERROR:  relation "seq_property_media_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6707: ERROR:  relation "property_media" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6721: ERROR:  relation "seq_property_types_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6736: ERROR:  relation "property_types" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6750: ERROR:  relation "seq_rent_collections_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6768: ERROR:  relation "rent_collections" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6782: ERROR:  relation "seq_reservations_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6802: ERROR:  relation "reservations" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6814: ERROR:  relation "role_permissions" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6828: ERROR:  relation "seq_roles_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6843: ERROR:  relation "roles" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6857: ERROR:  relation "seq_tasks_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6871: ERROR:  relation "seq_tenancies_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6885: ERROR:  relation "seq_unit_status_history_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6899: ERROR:  relation "seq_units_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6913: ERROR:  relation "seq_users_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6927: ERROR:  relation "seq_vendors_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6941: ERROR:  relation "seq_viewings_id" already exists
+ALTER SEQUENCE
+psql:/home/nemro/pg_full_backup.sql:6967: ERROR:  relation "tasks" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:6987: ERROR:  relation "tenancies" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7004: ERROR:  relation "unit_status_history" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7033: ERROR:  relation "units" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7045: ERROR:  relation "user_roles" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7066: ERROR:  relation "users" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7083: ERROR:  relation "vendors" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7107: ERROR:  relation "viewings" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7129: ERROR:  relation "workflow_templates" already exists
+ALTER TABLE
+psql:/home/nemro/pg_full_backup.sql:7277: ERROR:  duplicate key value violates unique constraint "activities_pkey"
+DETAIL:  Key (activity_id)=(activity-125) already exists.
+CONTEXT:  COPY activities, line 1
+psql:/home/nemro/pg_full_backup.sql:7293: ERROR:  duplicate key value violates unique constraint "activity_types_pkey"
+DETAIL:  Key (activity_type_id)=(activity_type-2) already exists.
+CONTEXT:  COPY activity_types, line 1
+psql:/home/nemro/pg_full_backup.sql:7532: ERROR:  duplicate key value violates unique constraint "audit_logs_pkey"
+DETAIL:  Key (audit_log_id)=(audit_log-151) already exists.
+CONTEXT:  COPY audit_logs, line 1
+psql:/home/nemro/pg_full_backup.sql:7545: ERROR:  duplicate key value violates unique constraint "branches_pkey"
+DETAIL:  Key (branch_id)=(branch-3) already exists.
+CONTEXT:  COPY branches, line 1
+psql:/home/nemro/pg_full_backup.sql:7613: ERROR:  duplicate key value violates unique constraint "buildings_pkey"
+DETAIL:  Key (building_id)=(building-41) already exists.
+CONTEXT:  COPY buildings, line 1
+psql:/home/nemro/pg_full_backup.sql:7742: ERROR:  duplicate key value violates unique constraint "campaign_leads_pkey"
+DETAIL:  Key (campaign_id, lead_id)=(campaign-11, lead-123) already exists.
+CONTEXT:  COPY campaign_leads, line 1
+psql:/home/nemro/pg_full_backup.sql:7763: ERROR:  duplicate key value violates unique constraint "campaigns_pkey"
+DETAIL:  Key (campaign_id)=(campaign-4) already exists.
+CONTEXT:  COPY campaigns, line 1
+psql:/home/nemro/pg_full_backup.sql:7781: ERROR:  duplicate key value violates unique constraint "cities_pkey"
+DETAIL:  Key (city_id)=(city-5) already exists.
+CONTEXT:  COPY cities, line 1
+psql:/home/nemro/pg_full_backup.sql:7872: ERROR:  duplicate key value violates unique constraint "commissions_pkey"
+DETAIL:  Key (commission_id)=(commission-82) already exists.
+CONTEXT:  COPY commissions, line 1
+psql:/home/nemro/pg_full_backup.sql:8035: ERROR:  duplicate key value violates unique constraint "communications_pkey"
+DETAIL:  Key (communication_id)=(communication-152) already exists.
+CONTEXT:  COPY communications, line 1
+psql:/home/nemro/pg_full_backup.sql:8096: ERROR:  duplicate key value violates unique constraint "contracts_pkey"
+DETAIL:  Key (contract_id)=(contract-52) already exists.
+CONTEXT:  COPY contracts, line 1
+psql:/home/nemro/pg_full_backup.sql:8234: ERROR:  duplicate key value violates unique constraint "customers_pkey"
+DETAIL:  Key (customer_id)=(customer-126) already exists.
+CONTEXT:  COPY customers, line 1
+psql:/home/nemro/pg_full_backup.sql:8445: ERROR:  duplicate key value violates unique constraint "document_access_log_pkey"
+DETAIL:  Key (document_access_id)=(document_access-116) already exists.
+CONTEXT:  COPY document_access_log, line 1
+psql:/home/nemro/pg_full_backup.sql:8463: ERROR:  duplicate key value violates unique constraint "document_types_pkey"
+DETAIL:  Key (document_type_id)=(document_type-6) already exists.
+CONTEXT:  COPY document_types, line 1
+psql:/home/nemro/pg_full_backup.sql:8572: ERROR:  duplicate key value violates unique constraint "documents_pkey"
+DETAIL:  Key (document_id)=(document-101) already exists.
+CONTEXT:  COPY documents, line 1
+psql:/home/nemro/pg_full_backup.sql:8782: ERROR:  duplicate key value violates unique constraint "lead_events_pkey"
+DETAIL:  Key (lead_event_id)=(lead_event-202) already exists.
+CONTEXT:  COPY lead_events, line 1
+psql:/home/nemro/pg_full_backup.sql:8970: ERROR:  duplicate key value violates unique constraint "lead_notes_pkey"
+DETAIL:  Key (note_id)=(note-180) already exists.
+CONTEXT:  COPY lead_notes, line 1
+psql:/home/nemro/pg_full_backup.sql:8988: ERROR:  duplicate key value violates unique constraint "lead_sources_pkey"
+DETAIL:  Key (lead_source_id)=(lead_source-2) already exists.
+CONTEXT:  COPY lead_sources, line 1
+psql:/home/nemro/pg_full_backup.sql:9001: ERROR:  duplicate key value violates unique constraint "lead_units_pkey"
+DETAIL:  Key (lead_id, unit_id)=(lead-130, unit-2) already exists.
+CONTEXT:  COPY lead_units, line 1
+psql:/home/nemro/pg_full_backup.sql:9138: ERROR:  duplicate key value violates unique constraint "leads_pkey"
+DETAIL:  Key (lead_id)=(lead-124) already exists.
+CONTEXT:  COPY leads, line 1
+psql:/home/nemro/pg_full_backup.sql:9326: ERROR:  duplicate key value violates unique constraint "listings_pkey"
+DETAIL:  Key (listing_id)=(listing-11) already exists.
+CONTEXT:  COPY listings, line 1
+psql:/home/nemro/pg_full_backup.sql:9534: ERROR:  duplicate key value violates unique constraint "login_events_pkey"
+DETAIL:  Key (login_event_id)=(login_event-88) already exists.
+CONTEXT:  COPY login_events, line 1
+psql:/home/nemro/pg_full_backup.sql:9550: ERROR:  duplicate key value violates unique constraint "loss_reasons_pkey"
+DETAIL:  Key (loss_reason_id)=(loss_reason-1) already exists.
+CONTEXT:  COPY loss_reasons, line 1
+psql:/home/nemro/pg_full_backup.sql:9659: ERROR:  duplicate key value violates unique constraint "maintenance_tickets_pkey"
+DETAIL:  Key (ticket_id)=(ticket-98) already exists.
+CONTEXT:  COPY maintenance_tickets, line 1
+psql:/home/nemro/pg_full_backup.sql:9768: ERROR:  duplicate key value violates unique constraint "maintenance_work_orders_pkey"
+DETAIL:  Key (work_order_id)=(work_order-45) already exists.
+CONTEXT:  COPY maintenance_work_orders, line 1
+psql:/home/nemro/pg_full_backup.sql:9858: ERROR:  duplicate key value violates unique constraint "managed_units_pkey"
+DETAIL:  Key (management_contract_id, unit_id)=(management_contract-54, unit-41) already exists.
+CONTEXT:  COPY managed_units, line 1
+psql:/home/nemro/pg_full_backup.sql:9919: ERROR:  duplicate key value violates unique constraint "management_contracts_pkey"
+DETAIL:  Key (management_contract_id)=(management_contract-53) already exists.
+CONTEXT:  COPY management_contracts, line 1
+psql:/home/nemro/pg_full_backup.sql:9990: ERROR:  duplicate key value violates unique constraint "offers_pkey"
+DETAIL:  Key (offer_id)=(offer-61) already exists.
+CONTEXT:  COPY offers, line 1
+psql:/home/nemro/pg_full_backup.sql:10104: ERROR:  duplicate key value violates unique constraint "opportunities_pkey"
+DETAIL:  Key (opportunity_id)=(opportunity-101) already exists.
+CONTEXT:  COPY opportunities, line 1
+psql:/home/nemro/pg_full_backup.sql:10269: ERROR:  duplicate key value violates unique constraint "opportunity_units_pkey"
+DETAIL:  Key (opportunity_id, unit_id)=(opportunity-103, unit-119) already exists.
+CONTEXT:  COPY opportunity_units, line 1
+psql:/home/nemro/pg_full_backup.sql:10278: ERROR:  duplicate key value violates unique constraint "organizations_pkey"
+DETAIL:  Key (organization_id)=(organization-1) already exists.
+CONTEXT:  COPY organizations, line 1
+psql:/home/nemro/pg_full_backup.sql:10442: ERROR:  duplicate key value violates unique constraint "payments_pkey"
+DETAIL:  Key (payment_id)=(payment-153) already exists.
+CONTEXT:  COPY payments, line 1
+psql:/home/nemro/pg_full_backup.sql:10468: ERROR:  duplicate key value violates unique constraint "permissions_pkey"
+DETAIL:  Key (permission_id)=(permission-14) already exists.
+CONTEXT:  COPY permissions, line 1
+psql:/home/nemro/pg_full_backup.sql:10498: ERROR:  duplicate key value violates unique constraint "projects_pkey"
+DETAIL:  Key (project_id)=(project-6) already exists.
+CONTEXT:  COPY projects, line 1
+psql:/home/nemro/pg_full_backup.sql:10866: ERROR:  duplicate key value violates unique constraint "property_media_pkey"
+DETAIL:  Key (media_id)=(media-331) already exists.
+CONTEXT:  COPY property_media, line 1
+psql:/home/nemro/pg_full_backup.sql:10887: ERROR:  duplicate key value violates unique constraint "property_types_pkey"
+DETAIL:  Key (property_type_id)=(property_type-8) already exists.
+CONTEXT:  COPY property_types, line 1
+psql:/home/nemro/pg_full_backup.sql:11049: ERROR:  duplicate key value violates unique constraint "rent_collections_pkey"
+DETAIL:  Key (rent_collection_id)=(rent_collection-10) already exists.
+CONTEXT:  COPY rent_collections, line 1
+psql:/home/nemro/pg_full_backup.sql:11107: ERROR:  duplicate key value violates unique constraint "reservations_pkey"
+DETAIL:  Key (reservation_id)=(reservation-14) already exists.
+CONTEXT:  COPY reservations, line 1
+psql:/home/nemro/pg_full_backup.sql:11182: ERROR:  duplicate key value violates unique constraint "role_permissions_pkey"
+DETAIL:  Key (role_id, permission_id)=(role-3, permission-7) already exists.
+CONTEXT:  COPY role_permissions, line 1
+psql:/home/nemro/pg_full_backup.sql:11200: ERROR:  duplicate key value violates unique constraint "roles_pkey"
+DETAIL:  Key (role_id)=(role-9) already exists.
+CONTEXT:  COPY roles, line 1
+psql:/home/nemro/pg_full_backup.sql:11338: ERROR:  duplicate key value violates unique constraint "tasks_pkey"
+DETAIL:  Key (task_id)=(task-123) already exists.
+CONTEXT:  COPY tasks, line 1
+psql:/home/nemro/pg_full_backup.sql:11397: ERROR:  duplicate key value violates unique constraint "tenancies_pkey"
+DETAIL:  Key (tenancy_id)=(tenancy-5) already exists.
+CONTEXT:  COPY tenancies, line 1
+psql:/home/nemro/pg_full_backup.sql:11705: ERROR:  duplicate key value violates unique constraint "unit_status_history_pkey"
+DETAIL:  Key (unit_status_history_id)=(unit_status_history-279) already exists.
+CONTEXT:  COPY unit_status_history, line 1
+psql:/home/nemro/pg_full_backup.sql:12014: ERROR:  duplicate key value violates unique constraint "units_pkey"
+DETAIL:  Key (unit_id)=(unit-230) already exists.
+CONTEXT:  COPY units, line 1
+psql:/home/nemro/pg_full_backup.sql:12121: ERROR:  duplicate key value violates unique constraint "user_roles_pkey"
+DETAIL:  Key (user_id, role_id)=(user-1, role-10) already exists.
+CONTEXT:  COPY user_roles, line 1
+psql:/home/nemro/pg_full_backup.sql:12180: ERROR:  duplicate key value violates unique constraint "uq_users_org_email"
+DETAIL:  Key (organization_id, email)=(organization-1, falnemari@live.com) already exists.
+CONTEXT:  COPY users, line 1
+psql:/home/nemro/pg_full_backup.sql:12214: ERROR:  duplicate key value violates unique constraint "uq_vendor_tax"
+DETAIL:  Key (tax_number)=(310000000001) already exists.
+CONTEXT:  COPY vendors, line 1
+psql:/home/nemro/pg_full_backup.sql:12323: ERROR:  duplicate key value violates unique constraint "viewings_pkey"
+DETAIL:  Key (viewing_id)=(viewing-103) already exists.
+CONTEXT:  COPY viewings, line 1
+psql:/home/nemro/pg_full_backup.sql:12380: ERROR:  duplicate key value violates unique constraint "workflow_templates_pkey"
+DETAIL:  Key (template_id)=(TASK_LEAD_FIRST_CONTACT) already exists.
+CONTEXT:  COPY workflow_templates, line 1
+ setval 
+--------
+    249
+(1 row)
+
+ setval 
+--------
+      9
+(1 row)
+
+ setval 
+--------
+    236
+(1 row)
+
+ setval 
+--------
+      6
+(1 row)
+
+ setval 
+--------
+     61
+(1 row)
+
+ setval 
+--------
+     14
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+     84
+(1 row)
+
+ setval 
+--------
+    167
+(1 row)
+
+ setval 
+--------
+     54
+(1 row)
+
+ setval 
+--------
+    206
+(1 row)
+
+ setval 
+--------
+    204
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    102
+(1 row)
+
+ setval 
+--------
+    202
+(1 row)
+
+ setval 
+--------
+    181
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    136
+(1 row)
+
+ setval 
+--------
+    181
+(1 row)
+
+ setval 
+--------
+    201
+(1 row)
+
+ setval 
+--------
+      9
+(1 row)
+
+ setval 
+--------
+    102
+(1 row)
+
+ setval 
+--------
+    102
+(1 row)
+
+ setval 
+--------
+     54
+(1 row)
+
+ setval 
+--------
+     66
+(1 row)
+
+ setval 
+--------
+    112
+(1 row)
+
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+    158
+(1 row)
+
+ setval 
+--------
+     19
+(1 row)
+
+ setval 
+--------
+     22
+(1 row)
+
+ setval 
+--------
+    361
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    155
+(1 row)
+
+ setval 
+--------
+     53
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+    297
+(1 row)
+
+ setval 
+--------
+     52
+(1 row)
+
+ setval 
+--------
+    305
+(1 row)
+
+ setval 
+--------
+    302
+(1 row)
+
+ setval 
+--------
+     51
+(1 row)
+
+ setval 
+--------
+     27
+(1 row)
+
+ setval 
+--------
+    103
+(1 row)
+
+psql:/home/nemro/pg_full_backup.sql:12682: ERROR:  multiple primary keys for table "activities" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12690: ERROR:  multiple primary keys for table "activity_types" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12698: ERROR:  multiple primary keys for table "audit_logs" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12706: ERROR:  multiple primary keys for table "branches" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12714: ERROR:  multiple primary keys for table "buildings" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12722: ERROR:  multiple primary keys for table "campaign_leads" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12730: ERROR:  multiple primary keys for table "campaigns" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12738: ERROR:  multiple primary keys for table "cities" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12746: ERROR:  multiple primary keys for table "commissions" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12754: ERROR:  multiple primary keys for table "communications" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12762: ERROR:  multiple primary keys for table "contracts" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12770: ERROR:  multiple primary keys for table "customers" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12778: ERROR:  multiple primary keys for table "document_access_log" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12786: ERROR:  multiple primary keys for table "document_types" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12794: ERROR:  multiple primary keys for table "documents" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12802: ERROR:  multiple primary keys for table "lead_events" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12810: ERROR:  multiple primary keys for table "lead_notes" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12818: ERROR:  multiple primary keys for table "lead_sources" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12826: ERROR:  multiple primary keys for table "lead_units" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12834: ERROR:  multiple primary keys for table "leads" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12842: ERROR:  multiple primary keys for table "listings" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12850: ERROR:  multiple primary keys for table "login_events" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12858: ERROR:  multiple primary keys for table "loss_reasons" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12866: ERROR:  multiple primary keys for table "maintenance_tickets" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12874: ERROR:  multiple primary keys for table "maintenance_work_orders" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12882: ERROR:  multiple primary keys for table "managed_units" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12890: ERROR:  multiple primary keys for table "management_contracts" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12898: ERROR:  multiple primary keys for table "offers" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12906: ERROR:  multiple primary keys for table "opportunities" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12914: ERROR:  multiple primary keys for table "opportunity_units" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12922: ERROR:  multiple primary keys for table "organizations" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12930: ERROR:  multiple primary keys for table "payments" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12938: ERROR:  multiple primary keys for table "permissions" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12946: ERROR:  multiple primary keys for table "projects" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12954: ERROR:  multiple primary keys for table "property_media" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12962: ERROR:  multiple primary keys for table "property_types" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12970: ERROR:  multiple primary keys for table "rent_collections" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12978: ERROR:  multiple primary keys for table "reservations" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12986: ERROR:  multiple primary keys for table "role_permissions" are not allowed
+psql:/home/nemro/pg_full_backup.sql:12994: ERROR:  multiple primary keys for table "roles" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13002: ERROR:  multiple primary keys for table "tasks" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13010: ERROR:  multiple primary keys for table "tenancies" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13018: ERROR:  multiple primary keys for table "unit_status_history" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13026: ERROR:  multiple primary keys for table "units" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13034: ERROR:  relation "uq_activity_types_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13042: ERROR:  relation "uq_branches_org_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13050: ERROR:  relation "uq_buildings_project_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13058: ERROR:  relation "uq_communications_external_id" already exists
+psql:/home/nemro/pg_full_backup.sql:13066: ERROR:  relation "uq_contract_number" already exists
+psql:/home/nemro/pg_full_backup.sql:13074: ERROR:  relation "uq_customers_org_national_hash" already exists
+psql:/home/nemro/pg_full_backup.sql:13082: ERROR:  relation "uq_document_types_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13090: ERROR:  relation "uq_documents_hash" already exists
+psql:/home/nemro/pg_full_backup.sql:13098: ERROR:  relation "uq_lead_sources_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13106: ERROR:  relation "uq_listings_external_id" already exists
+psql:/home/nemro/pg_full_backup.sql:13114: ERROR:  relation "uq_loss_reasons_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13122: ERROR:  relation "uq_management_contract_number" already exists
+psql:/home/nemro/pg_full_backup.sql:13130: ERROR:  relation "uq_organizations_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13138: ERROR:  relation "uq_organizations_tax" already exists
+psql:/home/nemro/pg_full_backup.sql:13146: ERROR:  relation "uq_payment_reference" already exists
+psql:/home/nemro/pg_full_backup.sql:13154: ERROR:  relation "uq_permissions_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13162: ERROR:  relation "uq_property_media_hash" already exists
+psql:/home/nemro/pg_full_backup.sql:13170: ERROR:  relation "uq_property_types_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13178: ERROR:  relation "uq_reservation_number" already exists
+psql:/home/nemro/pg_full_backup.sql:13186: ERROR:  relation "uq_roles_org_code" already exists
+psql:/home/nemro/pg_full_backup.sql:13194: ERROR:  relation "uq_tenancy_contract_number" already exists
+psql:/home/nemro/pg_full_backup.sql:13202: ERROR:  relation "uq_users_org_email" already exists
+psql:/home/nemro/pg_full_backup.sql:13210: ERROR:  relation "uq_users_org_employee" already exists
+psql:/home/nemro/pg_full_backup.sql:13218: ERROR:  relation "uq_vendor_tax" already exists
+psql:/home/nemro/pg_full_backup.sql:13226: ERROR:  multiple primary keys for table "user_roles" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13234: ERROR:  multiple primary keys for table "users" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13242: ERROR:  multiple primary keys for table "vendors" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13250: ERROR:  multiple primary keys for table "viewings" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13258: ERROR:  multiple primary keys for table "workflow_templates" are not allowed
+psql:/home/nemro/pg_full_backup.sql:13265: ERROR:  relation "idx_audit_entity_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13272: ERROR:  relation "idx_audit_user_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13279: ERROR:  relation "idx_branches_org" already exists
+psql:/home/nemro/pg_full_backup.sql:13286: ERROR:  relation "idx_campaign_leads_lead" already exists
+psql:/home/nemro/pg_full_backup.sql:13293: ERROR:  relation "idx_commissions_user_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13300: ERROR:  relation "idx_communications_customer_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13307: ERROR:  relation "idx_contracts_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13314: ERROR:  relation "idx_customers_search_trgm" already exists
+psql:/home/nemro/pg_full_backup.sql:13321: ERROR:  relation "idx_documents_contract" already exists
+psql:/home/nemro/pg_full_backup.sql:13328: ERROR:  relation "idx_documents_customer" already exists
+psql:/home/nemro/pg_full_backup.sql:13335: ERROR:  relation "idx_lead_events_lead_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13342: ERROR:  relation "idx_lead_units_lead" already exists
+psql:/home/nemro/pg_full_backup.sql:13349: ERROR:  relation "idx_lead_units_unit" already exists
+psql:/home/nemro/pg_full_backup.sql:13356: ERROR:  relation "idx_leads_assigned_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13363: ERROR:  relation "idx_leads_first_contact_due" already exists
+psql:/home/nemro/pg_full_backup.sql:13370: ERROR:  relation "idx_leads_org_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13377: ERROR:  relation "idx_leads_source" already exists
+psql:/home/nemro/pg_full_backup.sql:13384: ERROR:  relation "idx_leads_unit_id" already exists
+psql:/home/nemro/pg_full_backup.sql:13391: ERROR:  relation "idx_listings_unit_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13398: ERROR:  relation "idx_login_user_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13405: ERROR:  relation "idx_maintenance_unit_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13412: ERROR:  relation "idx_opportunities_agent" already exists
+psql:/home/nemro/pg_full_backup.sql:13419: ERROR:  relation "idx_opportunities_stage" already exists
+psql:/home/nemro/pg_full_backup.sql:13426: ERROR:  relation "idx_payments_contract_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13433: ERROR:  relation "idx_prevent_duplicate_open_task" already exists
+psql:/home/nemro/pg_full_backup.sql:13440: ERROR:  relation "idx_rent_collections_due_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13447: ERROR:  relation "idx_reservations_unit_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13454: ERROR:  relation "idx_tasks_assignee_due" already exists
+psql:/home/nemro/pg_full_backup.sql:13461: ERROR:  relation "idx_tenancies_unit_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13468: ERROR:  relation "idx_units_building_status" already exists
+psql:/home/nemro/pg_full_backup.sql:13475: ERROR:  relation "idx_units_number_trgm" already exists
+psql:/home/nemro/pg_full_backup.sql:13482: ERROR:  relation "idx_units_owner" already exists
+psql:/home/nemro/pg_full_backup.sql:13489: ERROR:  relation "idx_units_type_city_support" already exists
+psql:/home/nemro/pg_full_backup.sql:13496: ERROR:  relation "idx_users_branch" already exists
+psql:/home/nemro/pg_full_backup.sql:13503: ERROR:  relation "idx_viewings_agent_time" already exists
+psql:/home/nemro/pg_full_backup.sql:13511: ERROR:  constraint "activities_activity_type_id_fkey" for relation "activities" already exists
+psql:/home/nemro/pg_full_backup.sql:13519: ERROR:  constraint "activities_customer_id_fkey" for relation "activities" already exists
+psql:/home/nemro/pg_full_backup.sql:13527: ERROR:  constraint "activities_lead_id_fkey" for relation "activities" already exists
+psql:/home/nemro/pg_full_backup.sql:13535: ERROR:  constraint "activities_opportunity_id_fkey" for relation "activities" already exists
+psql:/home/nemro/pg_full_backup.sql:13543: ERROR:  constraint "activities_user_id_fkey" for relation "activities" already exists
+psql:/home/nemro/pg_full_backup.sql:13551: ERROR:  constraint "audit_logs_organization_id_fkey" for relation "audit_logs" already exists
+psql:/home/nemro/pg_full_backup.sql:13559: ERROR:  constraint "audit_logs_user_id_fkey" for relation "audit_logs" already exists
+psql:/home/nemro/pg_full_backup.sql:13567: ERROR:  constraint "branches_city_id_fkey" for relation "branches" already exists
+psql:/home/nemro/pg_full_backup.sql:13575: ERROR:  constraint "branches_organization_id_fkey" for relation "branches" already exists
+psql:/home/nemro/pg_full_backup.sql:13583: ERROR:  constraint "buildings_project_id_fkey" for relation "buildings" already exists
+psql:/home/nemro/pg_full_backup.sql:13591: ERROR:  constraint "campaign_leads_campaign_id_fkey" for relation "campaign_leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13599: ERROR:  constraint "campaign_leads_lead_id_fkey" for relation "campaign_leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13607: ERROR:  constraint "campaigns_organization_id_fkey" for relation "campaigns" already exists
+psql:/home/nemro/pg_full_backup.sql:13615: ERROR:  constraint "commissions_contract_id_fkey" for relation "commissions" already exists
+psql:/home/nemro/pg_full_backup.sql:13623: ERROR:  constraint "commissions_user_id_fkey" for relation "commissions" already exists
+psql:/home/nemro/pg_full_backup.sql:13631: ERROR:  constraint "communications_customer_id_fkey" for relation "communications" already exists
+psql:/home/nemro/pg_full_backup.sql:13639: ERROR:  constraint "communications_lead_id_fkey" for relation "communications" already exists
+psql:/home/nemro/pg_full_backup.sql:13647: ERROR:  constraint "contracts_reservation_id_fkey" for relation "contracts" already exists
+psql:/home/nemro/pg_full_backup.sql:13655: ERROR:  constraint "customers_organization_id_fkey" for relation "customers" already exists
+psql:/home/nemro/pg_full_backup.sql:13663: ERROR:  constraint "document_access_log_document_id_fkey" for relation "document_access_log" already exists
+psql:/home/nemro/pg_full_backup.sql:13671: ERROR:  constraint "document_access_log_user_id_fkey" for relation "document_access_log" already exists
+psql:/home/nemro/pg_full_backup.sql:13679: ERROR:  constraint "documents_contract_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13687: ERROR:  constraint "documents_customer_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13695: ERROR:  constraint "documents_document_type_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13703: ERROR:  constraint "documents_organization_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13711: ERROR:  constraint "documents_unit_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13719: ERROR:  constraint "documents_uploaded_by_user_id_fkey" for relation "documents" already exists
+psql:/home/nemro/pg_full_backup.sql:13727: ERROR:  constraint "lead_events_lead_id_fkey" for relation "lead_events" already exists
+psql:/home/nemro/pg_full_backup.sql:13735: ERROR:  constraint "lead_notes_lead_id_fkey" for relation "lead_notes" already exists
+psql:/home/nemro/pg_full_backup.sql:13743: ERROR:  constraint "lead_notes_user_id_fkey" for relation "lead_notes" already exists
+psql:/home/nemro/pg_full_backup.sql:13751: ERROR:  constraint "lead_units_lead_id_fkey" for relation "lead_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13759: ERROR:  constraint "lead_units_unit_id_fkey" for relation "lead_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13767: ERROR:  constraint "leads_assigned_user_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13775: ERROR:  constraint "leads_branch_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13783: ERROR:  constraint "leads_customer_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13791: ERROR:  constraint "leads_lead_source_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13799: ERROR:  constraint "leads_organization_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13807: ERROR:  constraint "leads_preferred_city_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13815: ERROR:  constraint "leads_preferred_property_type_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13823: ERROR:  constraint "leads_unit_id_fkey" for relation "leads" already exists
+psql:/home/nemro/pg_full_backup.sql:13831: ERROR:  constraint "listings_unit_id_fkey" for relation "listings" already exists
+psql:/home/nemro/pg_full_backup.sql:13839: ERROR:  constraint "login_events_user_id_fkey" for relation "login_events" already exists
+psql:/home/nemro/pg_full_backup.sql:13847: ERROR:  constraint "maintenance_tickets_assigned_user_id_fkey" for relation "maintenance_tickets" already exists
+psql:/home/nemro/pg_full_backup.sql:13855: ERROR:  constraint "maintenance_tickets_reported_by_customer_id_fkey" for relation "maintenance_tickets" already exists
+psql:/home/nemro/pg_full_backup.sql:13863: ERROR:  constraint "maintenance_tickets_unit_id_fkey" for relation "maintenance_tickets" already exists
+psql:/home/nemro/pg_full_backup.sql:13871: ERROR:  constraint "maintenance_work_orders_assigned_user_id_fkey" for relation "maintenance_work_orders" already exists
+psql:/home/nemro/pg_full_backup.sql:13879: ERROR:  constraint "maintenance_work_orders_ticket_id_fkey" for relation "maintenance_work_orders" already exists
+psql:/home/nemro/pg_full_backup.sql:13887: ERROR:  constraint "maintenance_work_orders_vendor_id_fkey" for relation "maintenance_work_orders" already exists
+psql:/home/nemro/pg_full_backup.sql:13895: ERROR:  constraint "managed_units_management_contract_id_fkey" for relation "managed_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13903: ERROR:  constraint "managed_units_unit_id_fkey" for relation "managed_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13911: ERROR:  constraint "management_contracts_customer_id_fkey" for relation "management_contracts" already exists
+psql:/home/nemro/pg_full_backup.sql:13919: ERROR:  constraint "offers_opportunity_id_fkey" for relation "offers" already exists
+psql:/home/nemro/pg_full_backup.sql:13927: ERROR:  constraint "offers_unit_id_fkey" for relation "offers" already exists
+psql:/home/nemro/pg_full_backup.sql:13935: ERROR:  constraint "opportunities_assigned_user_id_fkey" for relation "opportunities" already exists
+psql:/home/nemro/pg_full_backup.sql:13943: ERROR:  constraint "opportunities_customer_id_fkey" for relation "opportunities" already exists
+psql:/home/nemro/pg_full_backup.sql:13951: ERROR:  constraint "opportunities_lead_id_fkey" for relation "opportunities" already exists
+psql:/home/nemro/pg_full_backup.sql:13959: ERROR:  constraint "opportunities_loss_reason_id_fkey" for relation "opportunities" already exists
+psql:/home/nemro/pg_full_backup.sql:13967: ERROR:  constraint "opportunity_units_opportunity_id_fkey" for relation "opportunity_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13975: ERROR:  constraint "opportunity_units_unit_id_fkey" for relation "opportunity_units" already exists
+psql:/home/nemro/pg_full_backup.sql:13983: ERROR:  constraint "payments_contract_id_fkey" for relation "payments" already exists
+psql:/home/nemro/pg_full_backup.sql:13991: ERROR:  constraint "projects_city_id_fkey" for relation "projects" already exists
+psql:/home/nemro/pg_full_backup.sql:13999: ERROR:  constraint "projects_developer_customer_id_fkey" for relation "projects" already exists
+psql:/home/nemro/pg_full_backup.sql:14007: ERROR:  constraint "projects_organization_id_fkey" for relation "projects" already exists
+psql:/home/nemro/pg_full_backup.sql:14015: ERROR:  constraint "property_media_unit_id_fkey" for relation "property_media" already exists
+psql:/home/nemro/pg_full_backup.sql:14023: ERROR:  constraint "rent_collections_tenancy_id_fkey" for relation "rent_collections" already exists
+psql:/home/nemro/pg_full_backup.sql:14031: ERROR:  constraint "reservations_customer_id_fkey" for relation "reservations" already exists
+psql:/home/nemro/pg_full_backup.sql:14039: ERROR:  constraint "reservations_opportunity_id_fkey" for relation "reservations" already exists
+psql:/home/nemro/pg_full_backup.sql:14047: ERROR:  constraint "reservations_unit_id_fkey" for relation "reservations" already exists
+psql:/home/nemro/pg_full_backup.sql:14055: ERROR:  constraint "role_permissions_permission_id_fkey" for relation "role_permissions" already exists
+psql:/home/nemro/pg_full_backup.sql:14063: ERROR:  constraint "role_permissions_role_id_fkey" for relation "role_permissions" already exists
+psql:/home/nemro/pg_full_backup.sql:14071: ERROR:  constraint "roles_organization_id_fkey" for relation "roles" already exists
+psql:/home/nemro/pg_full_backup.sql:14079: ERROR:  constraint "tasks_assigned_user_id_fkey" for relation "tasks" already exists
+psql:/home/nemro/pg_full_backup.sql:14087: ERROR:  constraint "tasks_customer_id_fkey" for relation "tasks" already exists
+psql:/home/nemro/pg_full_backup.sql:14095: ERROR:  constraint "tasks_lead_id_fkey" for relation "tasks" already exists
+psql:/home/nemro/pg_full_backup.sql:14103: ERROR:  constraint "tasks_opportunity_id_fkey" for relation "tasks" already exists
+psql:/home/nemro/pg_full_backup.sql:14111: ERROR:  constraint "tenancies_tenant_customer_id_fkey" for relation "tenancies" already exists
+psql:/home/nemro/pg_full_backup.sql:14119: ERROR:  constraint "tenancies_unit_id_fkey" for relation "tenancies" already exists
+psql:/home/nemro/pg_full_backup.sql:14127: ERROR:  constraint "unit_status_history_changed_by_user_id_fkey" for relation "unit_status_history" already exists
+psql:/home/nemro/pg_full_backup.sql:14135: ERROR:  constraint "unit_status_history_unit_id_fkey" for relation "unit_status_history" already exists
+psql:/home/nemro/pg_full_backup.sql:14143: ERROR:  constraint "units_assigned_user_id_fkey" for relation "units" already exists
+psql:/home/nemro/pg_full_backup.sql:14151: ERROR:  constraint "units_building_id_fkey" for relation "units" already exists
+psql:/home/nemro/pg_full_backup.sql:14159: ERROR:  constraint "units_owner_customer_id_fkey" for relation "units" already exists
+psql:/home/nemro/pg_full_backup.sql:14167: ERROR:  constraint "units_property_type_id_fkey" for relation "units" already exists
+psql:/home/nemro/pg_full_backup.sql:14175: ERROR:  constraint "user_roles_role_id_fkey" for relation "user_roles" already exists
+psql:/home/nemro/pg_full_backup.sql:14183: ERROR:  constraint "user_roles_user_id_fkey" for relation "user_roles" already exists
+psql:/home/nemro/pg_full_backup.sql:14191: ERROR:  constraint "users_branch_id_fkey" for relation "users" already exists
+psql:/home/nemro/pg_full_backup.sql:14199: ERROR:  constraint "users_manager_user_id_fkey" for relation "users" already exists
+psql:/home/nemro/pg_full_backup.sql:14207: ERROR:  constraint "users_organization_id_fkey" for relation "users" already exists
+psql:/home/nemro/pg_full_backup.sql:14215: ERROR:  constraint "vendors_organization_id_fkey" for relation "vendors" already exists
+psql:/home/nemro/pg_full_backup.sql:14223: ERROR:  constraint "viewings_agent_user_id_fkey" for relation "viewings" already exists
+psql:/home/nemro/pg_full_backup.sql:14231: ERROR:  constraint "viewings_customer_id_fkey" for relation "viewings" already exists
+psql:/home/nemro/pg_full_backup.sql:14239: ERROR:  constraint "viewings_lead_id_fkey" for relation "viewings" already exists
+psql:/home/nemro/pg_full_backup.sql:14247: ERROR:  constraint "viewings_opportunity_id_fkey" for relation "viewings" already exists
+psql:/home/nemro/pg_full_backup.sql:14255: ERROR:  constraint "viewings_unit_id_fkey" for relation "viewings" already exists

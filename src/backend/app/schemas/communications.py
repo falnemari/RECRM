@@ -110,6 +110,12 @@ class TaskCompleteIn(BaseModel):
 class TaskReopenIn(BaseModel):
     reason: Optional[str] = None
 
+class TaskCancelIn(BaseModel):
+    reason: str = Field("OTHER", description="Cancellation reason: PROPERTY_UNAVAILABLE, CLIENT_WITHDREW, NO_RESPONSE, FINANCE, PRICE, OTHER")
+    notes: Optional[str] = None
+    cancel_opportunity: Optional[bool] = False
+    cascade_cancel_opportunity: Optional[bool] = False
+
 class TaskCreateIn(BaseModel):
     template_id: Optional[str] = None
     title: str = Field(..., min_length=2)
@@ -194,4 +200,48 @@ class CommunicationCreateIn(BaseModel):
     template_id: Optional[str] = None
     sent_at: Optional[datetime] = None
     delivery_status: Optional[str] = "SENT"
+
+# ================= INTERNAL TASK REMINDER MESSAGES (CHATS & PINGS) =================
+class InternalPingCreateIn(BaseModel):
+    recipient_role: str = Field(..., description="Target role: DIRECT_MANAGER, ACCOUNTANT, PROPERTY_MANAGER, ASSIGNED_AGENT, GENERAL_MANAGER, etc.")
+    recipient_user_id: Optional[str] = Field(None, description="Explicit recipient user ID if known")
+    context_type: str = Field(..., description="Operational category: TASK, VIEWING, RESERVATION, RENT_COLLECTION, WORK_ORDER, INVOICE, CAMPAIGN, GENERAL")
+    context_id: str = Field(..., description="ID of the related record (e.g. TSK-102, CL-504)")
+    context_snapshot: dict = Field(default_factory=dict, description="Metadata snapshot of the row")
+    message_text: str = Field(..., min_length=2, max_length=2000, description="Ping message text")
+    urgency_level: str = Field("NORMAL", description="NORMAL, URGENT, CRITICAL")
+    is_archived: bool = Field(False, description="Archive at send time as proof")
+
+class InternalPingOut(BaseModel):
+    ping_id: str
+    sender_user_id: str
+    sender_name: Optional[str] = None
+    recipient_role: str
+    recipient_user_id: Optional[str] = None
+    recipient_name: Optional[str] = None
+    context_type: str
+    context_id: str
+    context_snapshot: dict
+    message_text: str
+    urgency_level: str
+    is_read: bool
+    read_at: Optional[datetime] = None
+    is_archived: bool
+    archived_at: Optional[datetime] = None
+    created_at: datetime
+
+class InternalPingsSummary(BaseModel):
+    total_count: int
+    unread_count: int
+    archived_count: int
+
+class InternalPingsInboxOut(BaseModel):
+    pings: list[InternalPingOut]
+    summary: InternalPingsSummary
+
+class CleanupExpiredPingsOut(BaseModel):
+    purged_count: int
+    retained_proofs_count: int
+    message: str
+
 

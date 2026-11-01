@@ -22,6 +22,8 @@ UNIT_SELECT_QUERY = """
         COALESCE(p_direct.name_en, p_bld.name_en) AS project_name_en,
         u.unit_number,
         u.floor_no,
+        u.total_floors,
+        b.floors_count AS building_floors_count,
         CAST(u.area_sqm AS FLOAT) AS area_sqm,
         u.bedrooms,
         u.bathrooms,
@@ -57,9 +59,10 @@ UNIT_SELECT_QUERY = """
 @router.get("/projects", response_model=CollectionEnvelope[ProjectOut])
 async def list_projects(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
+    page_size: int = Query(100, ge=1, le=200),
     status_filter: Optional[str] = Query(None, alias="status"),
     city_id: Optional[str] = None,
+    search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
@@ -67,18 +70,29 @@ async def list_projects(
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and status_filter.upper() != "ALL":
         conditions.append(f"p.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
 
-    if city_id:
+    if city_id and city_id.strip():
         conditions.append(f"p.city_id = ${p_idx}")
-        params.append(city_id)
+        params.append(city_id.strip())
+        p_idx += 1
+
+    if search and search.strip():
+        term = f"%{search.strip().lower()}%"
+        conditions.append(f"(LOWER(p.name_ar) LIKE ${p_idx} OR LOWER(p.name_en) LIKE ${p_idx} OR LOWER(p.project_id) LIKE ${p_idx} OR LOWER(c.name_en) LIKE ${p_idx} OR LOWER(c.name_ar) LIKE ${p_idx})")
+        params.append(term)
         p_idx += 1
 
     where_clause = " AND ".join(conditions)
-    total = await conn.fetchval(f"SELECT count(*) FROM projects p WHERE {where_clause}", *params)
+    total = await conn.fetchval(f"""
+        SELECT count(*) 
+        FROM projects p 
+        LEFT JOIN cities c ON p.city_id = c.city_id
+        WHERE {where_clause}
+    """, *params)
 
     query = f"""
         SELECT 
@@ -86,14 +100,20 @@ async def list_projects(
             p.organization_id,
             p.name_ar,
             p.name_en,
+            p.developer_customer_id,
+            COALESCE(dev.first_name || ' ' || dev.last_name, dev.company_name) AS developer_name,
             c.name_en AS city_name,
+            c.name_ar AS city_name_ar,
             p.status,
             p.start_date,
-            p.completion_date
+            p.completion_date,
+            (SELECT COUNT(*) FROM buildings b WHERE b.project_id = p.project_id)::int AS buildings_count,
+            (SELECT COUNT(*) FROM units u WHERE u.project_id = p.project_id OR u.building_id IN (SELECT b.building_id FROM buildings b WHERE b.project_id = p.project_id))::int AS units_count
         FROM projects p
         LEFT JOIN cities c ON p.city_id = c.city_id
+        LEFT JOIN customers dev ON p.developer_customer_id = dev.customer_id
         WHERE {where_clause}
-        ORDER BY p.name_en
+        ORDER BY p.name_ar ASC, p.project_id ASC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -282,9 +302,27 @@ async def update_unit_status(unit_id: str, payload: UnitStatusUpdate, conn: asyn
 @router.get("/buildings", response_model=CollectionEnvelope[BuildingOut])
 async def list_buildings(
     project_id: Optional[str] = None,
+    search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    query = """
+    conditions = ["1=1"]
+    params = []
+    p_idx = 1
+
+    if project_id and project_id.strip():
+        conditions.append(f"b.project_id = ${p_idx}")
+        params.append(project_id.strip())
+        p_idx += 1
+
+    if search and search.strip():
+        term = f"%{search.strip().lower()}%"
+        conditions.append(f"(LOWER(b.building_code) LIKE ${p_idx} OR LOWER(COALESCE(b.name, '')) LIKE ${p_idx} OR LOWER(b.building_id) LIKE ${p_idx} OR LOWER(COALESCE(p.name_ar, '')) LIKE ${p_idx} OR LOWER(COALESCE(p.name_en, '')) LIKE ${p_idx})")
+        params.append(term)
+        p_idx += 1
+
+    where_clause = " AND ".join(conditions)
+
+    query = f"""
         SELECT 
             b.building_id,
             b.project_id,
@@ -292,15 +330,13 @@ async def list_buildings(
             p.name_en AS project_name_en,
             b.building_code,
             b.name AS building_name,
-            b.floors_count
+            b.floors_count,
+            (SELECT COUNT(*) FROM units u WHERE u.building_id = b.building_id)::int AS units_count
         FROM buildings b
         LEFT JOIN projects p ON b.project_id = p.project_id
+        WHERE {where_clause}
+        ORDER BY b.building_code ASC
     """
-    params = []
-    if project_id:
-        query += " WHERE b.project_id = $1"
-        params.append(project_id)
-    query += " ORDER BY b.building_code"
     rows = await conn.fetch(query, *params)
     data = [BuildingOut(**dict(r)) for r in rows]
     return CollectionEnvelope(
@@ -405,17 +441,17 @@ async def create_unit(
 
     await conn.execute("""
         INSERT INTO units (
-            unit_id, project_id, building_id, unit_number, property_type_id, floor_no,
+            unit_id, project_id, building_id, unit_number, property_type_id, floor_no, total_floors,
             area_sqm, bedrooms, bathrooms, parking_spaces, orientation,
             asking_price, rent_price, annual_operating_expenses, annual_vacancy_rate, investment_notes,
             listing_purpose, status, owner_customer_id, assigned_user_id
         ) VALUES (
-            $1, $2, $3, $4, $5, $6,
-            $7, $8, $9, $10, $11,
-            $12, $13, $14, $15, $16,
-            $17, $18, $19, $20
+            $1, $2, $3, $4, $5, $6, $7,
+            $8, $9, $10, $11, $12,
+            $13, $14, $15, $16, $17,
+            $18, $19, $20, $21
         )
-    """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no,
+    """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no, payload.total_floors,
          payload.area_sqm, payload.bedrooms, payload.bathrooms, payload.parking_spaces, payload.orientation,
          payload.asking_price, payload.rent_price, payload.annual_operating_expenses, payload.annual_vacancy_rate, payload.investment_notes,
          lp, st, payload.owner_customer_id, payload.assigned_user_id
@@ -488,6 +524,7 @@ async def update_unit(
         "unit_number": payload.unit_number.strip() if payload.unit_number else None,
         "property_type_id": payload.property_type_id,
         "floor_no": payload.floor_no,
+        "total_floors": payload.total_floors,
         "area_sqm": payload.area_sqm,
         "bedrooms": payload.bedrooms,
         "bathrooms": payload.bathrooms,

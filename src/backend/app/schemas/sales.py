@@ -181,5 +181,34 @@ class OpportunityUnitCreateIn(BaseModel):
     is_primary: bool = False
     offered_price: Optional[float] = None
 
+class TaskCancelIn(BaseModel):
+    reason: str = Field(..., description="Reason code: PROPERTY_UNAVAILABLE, CLIENT_WITHDREW, NO_RESPONSE, FINANCE, PRICE, OTHER")
+    notes: Optional[str] = None
+    cancel_opportunity: Optional[bool] = False
+
+class OpportunityCancelIn(BaseModel):
+    reason: str = Field(..., description="Mandatory reason code: PROPERTY_UNAVAILABLE, CLIENT_WITHDREW, FINANCE, PRICE, COMPETITOR, TIMING, OTHER")
+    notes: Optional[str] = None
+    force_skip_settlement: Optional[bool] = False
+
+class RemediationTaskItem(BaseModel):
+    task_id: str
+    template_id: str
+    title: str
+    assigned_user_id: Optional[str] = None
+    owner_role: Optional[str] = None
+    status: str
+
+class OpportunityCancelOut(BaseModel):
+    opportunity_id: str
+    stage: str
+    is_settlement_required: bool
+    loss_reason_code: str
+    loss_reason_name: Optional[str] = None
+    remediation_tasks: List[RemediationTaskItem] = []
+    cancelled_tasks_count: int = 0
+    message_ar: str
+    message_en: str
+
 
 

@@ -4778,6 +4778,114 @@ class WorkflowEngine:
                 "business_transition": {"status": "FEES_COLLECTED"}
             }
 
+        # Cancellation Remediation: TASK_DEAL_FINANCIAL_SETTLEMENT
+        if tmpl_id == "TASK_DEAL_FINANCIAL_SETTLEMENT":
+            v_data = viewing_data or {}
+            opp_id = task.get("opportunity_id")
+            if opp_id:
+                # 1. Automatically cancel unpaid/pending invoices for this deal
+                await conn.execute(
+                    "UPDATE invoices SET status = 'CANCELLED', updated_at = NOW() WHERE opportunity_id = $1 AND status != 'PAID'",
+                    opp_id
+                )
+                # 2. Automatically cancel pending commissions
+                await conn.execute(
+                    """
+                    UPDATE commissions SET status = 'CANCELLED' 
+                    WHERE contract_id IN (
+                        SELECT c.contract_id FROM contracts c
+                        JOIN reservations r ON c.reservation_id = r.reservation_id
+                        WHERE r.opportunity_id = $1
+                    )
+                      AND status != 'PAID'
+                    """,
+                    opp_id
+                )
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_FEE_COLLECTED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=task["lead_id"],
+                opportunity_id=opp_id,
+                task_id=task_id,
+                outcome=outcome or "SETTLED",
+                notes=notes or "تم إنجاز وتدقيق التسوية المالية وإصدار الإشعارات الدائنة وتصفية المستحقات المالية بنجاح.",
+                completed_at=now_dt
+            )
+            finalized = False
+            if opp_id:
+                finalized = await WorkflowEngine.check_and_finalize_cancellation_if_ready(conn, opp_id, user_id)
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "deal_finalized": finalized
+            }
+
+        # Cancellation Remediation: TASK_DEAL_INVENTORY_RELEASE
+        if tmpl_id == "TASK_DEAL_INVENTORY_RELEASE":
+            opp_id = task.get("opportunity_id")
+            if opp_id:
+                # 1. Cancel active reservations
+                await conn.execute(
+                    "UPDATE reservations SET status = 'CANCELLED' WHERE opportunity_id = $1 AND status = 'ACTIVE'",
+                    opp_id
+                )
+                # 2. Release reserved units back to AVAILABLE
+                unit_rows = await conn.fetch(
+                    """
+                    SELECT u.unit_id, u.status 
+                    FROM units u
+                    WHERE u.unit_id IN (
+                        SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1
+                        UNION
+                        SELECT unit_id FROM reservations WHERE opportunity_id = $1
+                    ) AND u.status = 'RESERVED'
+                    """,
+                    opp_id
+                )
+                for u in unit_rows:
+                    await conn.execute(
+                        "UPDATE units SET status = 'AVAILABLE', updated_at = NOW() WHERE unit_id = $1",
+                        u["unit_id"]
+                    )
+                    hist_id = await get_next_id(conn, "unit_status_history", "ush")
+                    await conn.execute(
+                        """
+                        INSERT INTO unit_status_history (
+                            unit_status_history_id, unit_id, old_status, new_status,
+                            changed_by_user_id, changed_at, reason
+                        ) VALUES ($1, $2, 'RESERVED', 'AVAILABLE', $3, $4, $5)
+                        """,
+                        hist_id, u["unit_id"], user_id, now_dt, "فك حجز الوحدة وإعادتها للمخزون المتاح إثر إلغاء الصفقة"
+                    )
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_TASK_CANCELLED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=task["lead_id"],
+                opportunity_id=opp_id,
+                task_id=task_id,
+                outcome=outcome or "RELEASED",
+                notes=notes or "تم فك حجز الوحدة العقارية بنجاح وإعادتها لحالة متاح (AVAILABLE) في المخزون.",
+                completed_at=now_dt
+            )
+            finalized = False
+            if opp_id:
+                finalized = await WorkflowEngine.check_and_finalize_cancellation_if_ready(conn, opp_id, user_id)
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "deal_finalized": finalized
+            }
+
         # Rental Pipeline Stage Handling: TASK_RENT_PREPARE_TENANCY
         if tmpl_id == "TASK_RENT_PREPARE_TENANCY":
             v_data = viewing_data or {}
@@ -6922,6 +7030,336 @@ class WorkflowEngine:
             "activity": reopen_act,
             "task": dict(reopened_task)
         }
+
+    @staticmethod
+    async def cancel_task(
+        conn: asyncpg.Connection,
+        task_id: str,
+        user_id: str,
+        reason: str,
+        notes: Optional[str] = None,
+        cancel_opportunity: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Cancels an individual task, records ACT_TASK_CANCELLED,
+        and optionally triggers deal cancellation if requested.
+        """
+        task = await conn.fetchrow("SELECT * FROM tasks WHERE task_id = $1", task_id)
+        if not task:
+            raise ValueError(f"المهمة '{task_id}' غير موجودة (Task not found).")
+        if task["status"] == "CANCELLED":
+            return {"task": dict(task), "already_cancelled": True}
+        if task["status"] == "COMPLETED":
+            raise ValueError("المهمة مكتملة بالفعل، لا يمكن إلغاؤها. يمكنك استخدام إعادة الفتح والتراجع الذكي.")
+
+        now_dt = datetime.now(timezone.utc)
+        await conn.execute(
+            "UPDATE tasks SET status = 'CANCELLED', completed_at = $1 WHERE task_id = $2",
+            now_dt, task_id
+        )
+
+        activity = await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_TASK_CANCELLED",
+            user_id=user_id,
+            customer_id=task["customer_id"],
+            lead_id=task["lead_id"],
+            opportunity_id=task["opportunity_id"],
+            task_id=task_id,
+            outcome="CANCELLED",
+            notes=notes or f"تم إلغاء المهمة (السبب: {reason}).",
+            completed_at=now_dt
+        )
+
+        opp_result = None
+        if cancel_opportunity and task["opportunity_id"]:
+            opp_result = await WorkflowEngine.initiate_deal_cancellation(
+                conn=conn,
+                opportunity_id=task["opportunity_id"],
+                user_id=user_id,
+                reason_code=reason,
+                notes=notes
+            )
+
+        return {
+            "task_id": task_id,
+            "status": "CANCELLED",
+            "completed_at": now_dt.isoformat(),
+            "activity": activity,
+            "opportunity_cancellation": opp_result
+        }
+
+    @staticmethod
+    async def initiate_deal_cancellation(
+        conn: asyncpg.Connection,
+        opportunity_id: str,
+        user_id: str,
+        reason_code: str,
+        notes: Optional[str] = None,
+        force_skip_settlement: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Initiates deal cancellation with statutory gating:
+        1. Analyzes financial obligations (invoices, payments, earnest deposits).
+        2. Analyzes inventory locks (reserved units, active reservations).
+        3. Cancels forward operational tasks.
+        4. If obligations exist:
+           - Sets stage to 'UNDER_CANCELLATION' (gated)
+           - Spawns TASK_DEAL_FINANCIAL_SETTLEMENT for Accountant
+           - Spawns TASK_DEAL_INVENTORY_RELEASE for Sales Agent
+           - Records ACT_DEAL_CANCELLATION_INITIATED
+        5. If zero obligations exist:
+           - Finalizes directly to 'CLOSED_LOST'
+           - Reverts linked lead to 'LOST'
+           - Records ACT_DEAL_CANCELLATION_FINALIZED
+        """
+        now_dt = datetime.now(timezone.utc)
+        opp = await conn.fetchrow(
+            """
+            SELECT o.*, c.first_name, c.last_name, c.mobile 
+            FROM opportunities o
+            JOIN customers c ON o.customer_id = c.customer_id
+            WHERE o.opportunity_id = $1
+            """,
+            opportunity_id
+        )
+        if not opp:
+            raise ValueError(f"الصفقة '{opportunity_id}' غير موجودة (Opportunity not found).")
+        if opp["stage"] in ("CLOSED_LOST", "LOST"):
+            raise ValueError("الصفقة ملغاة ومغلقة بالفعل مسبقاً.")
+
+        # Map reason code to loss_reasons table
+        norm_reason = (reason_code or "OTHER").upper()
+        code_map = {
+            "PROPERTY_UNAVAILABLE": "PROPERTY_UNAVAILABLE",
+            "UNAVAILABLE": "PROPERTY_UNAVAILABLE",
+            "CLIENT_WITHDREW": "TIMING",
+            "WITHDREW": "TIMING",
+            "TIMING": "TIMING",
+            "FINANCE": "FINANCE",
+            "MORTGAGE_REJECTED": "FINANCE",
+            "PRICE": "PRICE",
+            "BUDGET": "PRICE",
+            "COMPETITOR": "COMPETITOR",
+            "NO_RESPONSE": "NO_RESPONSE",
+            "LOCATION": "LOCATION",
+            "DEFECT": "OTHER",
+            "OTHER": "OTHER"
+        }
+        mapped_code = code_map.get(norm_reason, "OTHER")
+        lr_row = await conn.fetchrow("SELECT loss_reason_id, name FROM loss_reasons WHERE code = $1 LIMIT 1", mapped_code)
+        if not lr_row:
+            lr_row = await conn.fetchrow("SELECT loss_reason_id, name FROM loss_reasons WHERE code = 'OTHER' LIMIT 1")
+        loss_reason_id = lr_row["loss_reason_id"] if lr_row else "loss_reason-4"
+        loss_reason_name = lr_row["name"] if lr_row else "Other"
+
+        # Check financial obligations
+        invoices = await conn.fetch(
+            "SELECT invoice_id, invoice_number, total_amount, status FROM invoices WHERE opportunity_id = $1 AND status != 'CANCELLED'",
+            opportunity_id
+        )
+        reservations = await conn.fetch(
+            "SELECT reservation_id, unit_id, deposit_amount, status FROM reservations WHERE opportunity_id = $1 AND status = 'ACTIVE'",
+            opportunity_id
+        )
+        reserved_units = await conn.fetch(
+            """
+            SELECT u.unit_id, u.unit_number 
+            FROM units u
+            JOIN opportunity_units ou ON u.unit_id = ou.unit_id
+            WHERE ou.opportunity_id = $1 AND u.status = 'RESERVED'
+            """,
+            opportunity_id
+        )
+
+        has_financial = len(invoices) > 0 or any((r["deposit_amount"] or 0) > 0 for r in reservations)
+        has_inventory = len(reservations) > 0 or len(reserved_units) > 0
+
+        # Cancel open forward operational tasks
+        cancelled_tasks = await conn.fetch(
+            """
+            UPDATE tasks 
+            SET status = 'CANCELLED', completed_at = $1 
+            WHERE opportunity_id = $2 
+              AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+              AND (template_id IS NULL OR template_id NOT IN ('TASK_DEAL_FINANCIAL_SETTLEMENT', 'TASK_DEAL_INVENTORY_RELEASE'))
+            RETURNING task_id, title
+            """,
+            now_dt, opportunity_id
+        )
+
+        if (not has_financial and not has_inventory) or force_skip_settlement:
+            # Immediate final cancellation: no liabilities or held assets
+            await conn.execute(
+                "UPDATE opportunities SET stage = 'CLOSED_LOST', loss_reason_id = $1, updated_at = NOW() WHERE opportunity_id = $2",
+                loss_reason_id, opportunity_id
+            )
+            if opp["lead_id"]:
+                await conn.execute("UPDATE leads SET status = 'LOST', updated_at = NOW() WHERE lead_id = $1", opp["lead_id"])
+
+            await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_DEAL_CANCELLATION_FINALIZED",
+                user_id=user_id,
+                customer_id=opp["customer_id"],
+                lead_id=opp["lead_id"],
+                opportunity_id=opportunity_id,
+                outcome="CLOSED_LOST",
+                notes=notes or f"تم إلغاء الصفقة نهائياً لعدم وجود التزامات مالية أو حجوزات نشطة (السبب: {loss_reason_name}).",
+                completed_at=now_dt
+            )
+            return {
+                "opportunity_id": opportunity_id,
+                "stage": "CLOSED_LOST",
+                "is_settlement_required": False,
+                "loss_reason_code": mapped_code,
+                "loss_reason_name": loss_reason_name,
+                "remediation_tasks": [],
+                "cancelled_tasks_count": len(cancelled_tasks),
+                "message_ar": "تم إلغاء الصفقة نهائياً وإغلاق المسار بنجاح لعدم وجود التزامات مالية أو وحدات محجوزة.",
+                "message_en": "Deal cancelled and finalized directly as no financial or inventory commitments exist."
+            }
+
+        # Gated cancellation: Transition to UNDER_CANCELLATION and spawn remediation tasks
+        await conn.execute(
+            "UPDATE opportunities SET stage = 'UNDER_CANCELLATION', loss_reason_id = $1, updated_at = NOW() WHERE opportunity_id = $2",
+            loss_reason_id, opportunity_id
+        )
+
+        remediation_tasks = []
+
+        # 1. Financial Settlement Task (Accountant)
+        if has_financial:
+            acct_user_id = await conn.fetchval(
+                """
+                SELECT u.user_id FROM users u
+                JOIN user_roles ur ON u.user_id = ur.user_id
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE r.role_code = 'ACCOUNTANT' AND u.status = 'ACTIVE'
+                LIMIT 1
+                """
+            ) or opp["assigned_user_id"] or user_id
+
+            fin_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_DEAL_FINANCIAL_SETTLEMENT",
+                opportunity_id=opportunity_id,
+                lead_id=opp["lead_id"],
+                customer_id=opp["customer_id"],
+                assigned_user_id=acct_user_id,
+                priority="HIGH"
+            )
+            remediation_tasks.append({
+                "task_id": fin_task["task_id"],
+                "template_id": fin_task["template_id"],
+                "title": fin_task["title"],
+                "assigned_user_id": fin_task["assigned_user_id"],
+                "owner_role": "ACCOUNTANT",
+                "status": fin_task["status"]
+            })
+
+        # 2. Inventory Release Task (Sales Agent / Property Manager)
+        if has_inventory:
+            agent_user_id = opp["assigned_user_id"] or user_id
+            inv_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id="TASK_DEAL_INVENTORY_RELEASE",
+                opportunity_id=opportunity_id,
+                lead_id=opp["lead_id"],
+                customer_id=opp["customer_id"],
+                assigned_user_id=agent_user_id,
+                priority="HIGH"
+            )
+            remediation_tasks.append({
+                "task_id": inv_task["task_id"],
+                "template_id": inv_task["template_id"],
+                "title": inv_task["title"],
+                "assigned_user_id": inv_task["assigned_user_id"],
+                "owner_role": "SALES_AGENT",
+                "status": inv_task["status"]
+            })
+
+        # Record activity: ACT_DEAL_CANCELLATION_INITIATED
+        await WorkflowEngine.record_activity_from_template(
+            conn=conn,
+            template_id="ACT_DEAL_CANCELLATION_INITIATED",
+            user_id=user_id,
+            customer_id=opp["customer_id"],
+            lead_id=opp["lead_id"],
+            opportunity_id=opportunity_id,
+            outcome="UNDER_CANCELLATION",
+            notes=notes or f"بدء إجراءات إلغاء الصفقة وتوليد {len(remediation_tasks)} مهام تسوية إلزامية (السبب: {loss_reason_name}).",
+            completed_at=now_dt
+        )
+
+        return {
+            "opportunity_id": opportunity_id,
+            "stage": "UNDER_CANCELLATION",
+            "is_settlement_required": True,
+            "loss_reason_code": mapped_code,
+            "loss_reason_name": loss_reason_name,
+            "remediation_tasks": remediation_tasks,
+            "cancelled_tasks_count": len(cancelled_tasks),
+            "message_ar": f"تم تفعيل مسار إلغاء الصفقة وتوليد {len(remediation_tasks)} مهام تسوية مالية ومخزنية. لن تُلغى الصفقة نهائياً إلا بعد تأكيد إنجاز كافة مهام التسوية.",
+            "message_en": f"Deal cancellation initiated with {len(remediation_tasks)} mandatory settlement tasks. Deal will remain gated until all tasks are completed."
+        }
+
+    @staticmethod
+    async def check_and_finalize_cancellation_if_ready(
+        conn: asyncpg.Connection,
+        opportunity_id: str,
+        user_id: Optional[str] = None
+    ) -> bool:
+        """
+        Gating Rule: Checks if all pending remediation tasks for this opportunity are completed.
+        If zero open remediation tasks remain:
+          - Automatically finalizes the opportunity to CLOSED_LOST
+          - Updates linked lead to LOST
+          - Records ACT_DEAL_CANCELLATION_FINALIZED
+          - Returns True
+        Otherwise returns False.
+        """
+        opp = await conn.fetchrow("SELECT * FROM opportunities WHERE opportunity_id = $1", opportunity_id)
+        if not opp or opp["stage"] not in ("UNDER_CANCELLATION", "CANCELLATION_PENDING"):
+            return False
+
+        open_remediation = await conn.fetchval(
+            """
+            SELECT count(*) FROM tasks
+            WHERE opportunity_id = $1
+              AND template_id IN ('TASK_DEAL_FINANCIAL_SETTLEMENT', 'TASK_DEAL_INVENTORY_RELEASE')
+              AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            """,
+            opportunity_id
+        ) or 0
+
+        if open_remediation == 0:
+            now_dt = datetime.now(timezone.utc)
+            # Finalize opportunity
+            await conn.execute(
+                "UPDATE opportunities SET stage = 'CLOSED_LOST', updated_at = NOW() WHERE opportunity_id = $1",
+                opportunity_id
+            )
+            # Finalize lead
+            if opp["lead_id"]:
+                await conn.execute(
+                    "UPDATE leads SET status = 'LOST', updated_at = NOW() WHERE lead_id = $1",
+                    opp["lead_id"]
+                )
+            # Record final activity
+            await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_DEAL_CANCELLATION_FINALIZED",
+                user_id=user_id or opp["assigned_user_id"],
+                customer_id=opp["customer_id"],
+                lead_id=opp["lead_id"],
+                opportunity_id=opportunity_id,
+                outcome="CLOSED_LOST",
+                notes="اكتملت كافة الأنشطة والإجراءات المالية والتشغيلية المترتبة على الإلغاء، وتم إغلاق الصفقة كملغاة نهائياً.",
+                completed_at=now_dt
+            )
+            return True
+        return False
 
     @staticmethod
     async def evaluate_sla_escalations(conn: asyncpg.Connection) -> Dict[str, Any]:

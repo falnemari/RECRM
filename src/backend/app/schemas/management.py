@@ -10,6 +10,10 @@ class ManagementSummaryOut(BaseModel):
     overdue_rent_collections: int
     total_vendors: int
     active_management_contracts: int
+    total_managed_units: Optional[int] = 0
+    occupancy_rate: Optional[float] = 0.0
+    total_yield_distributed: Optional[float] = 0.0
+    pending_owner_payouts: Optional[float] = 0.0
 
 class TenancyOut(BaseModel):
     tenancy_id: str
@@ -19,22 +23,30 @@ class TenancyOut(BaseModel):
     tenant_name: Optional[str] = None
     tenant_mobile: Optional[str] = None
     contract_number: str
+    ejar_contract_number: Optional[str] = None
+    ejar_status: Optional[str] = "ACTIVE"
+    contract_type: Optional[str] = "RESIDENTIAL"
     start_date: date
     end_date: Optional[date] = None
     rent_amount: float
     payment_frequency: Optional[str] = None
     deposit_amount: Optional[float] = None
+    security_deposit_status: Optional[str] = "HELD"
     status: str
 
 class TenancyCreateIn(BaseModel):
     unit_id: str
     tenant_customer_id: str
     contract_number: Optional[str] = None
+    ejar_contract_number: Optional[str] = None
+    ejar_status: Optional[str] = "ACTIVE"
+    contract_type: Optional[str] = "RESIDENTIAL"
     start_date: date
     end_date: Optional[date] = None
     rent_amount: float = Field(..., gt=0)
     payment_frequency: Optional[str] = "ANNUAL"
     deposit_amount: Optional[float] = 0.0
+    security_deposit_status: Optional[str] = "HELD"
     status: Optional[str] = "ACTIVE"
     generate_installments: Optional[bool] = True
     installments_count: Optional[int] = Field(1, ge=1, le=12)
@@ -120,8 +132,13 @@ class WorkOrderOut(BaseModel):
     vendor_name: Optional[str] = None
     assigned_user_id: Optional[str] = None
     assigned_user_name: Optional[str] = None
+    cost_bearer: Optional[str] = "OWNER"
     quoted_amount: Optional[float] = None
     approved_amount: Optional[float] = None
+    vat_amount: Optional[float] = 0.0
+    total_amount: Optional[float] = 0.0
+    invoice_ref: Optional[str] = None
+    notes: Optional[str] = None
     completed_at: Optional[datetime] = None
     status: str
 
@@ -129,13 +146,23 @@ class WorkOrderCreateIn(BaseModel):
     ticket_id: str
     vendor_id: Optional[str] = None
     assigned_user_id: Optional[str] = None
+    cost_bearer: Optional[str] = "OWNER"
     quoted_amount: Optional[float] = None
     approved_amount: Optional[float] = None
+    vat_amount: Optional[float] = None
+    total_amount: Optional[float] = None
+    invoice_ref: Optional[str] = None
+    notes: Optional[str] = None
     status: Optional[str] = "REQUESTED"
 
 class WorkOrderUpdateIn(BaseModel):
     status: Optional[str] = None
+    cost_bearer: Optional[str] = None
     approved_amount: Optional[float] = None
+    vat_amount: Optional[float] = None
+    total_amount: Optional[float] = None
+    invoice_ref: Optional[str] = None
+    notes: Optional[str] = None
     completed_at: Optional[datetime] = None
 
 class ManagementContractOut(BaseModel):
@@ -159,3 +186,65 @@ class ManagementContractCreateIn(BaseModel):
     fee_rate: Optional[float] = 5.0
     unit_ids: Optional[List[str]] = []
     status: Optional[str] = "ACTIVE"
+
+class OwnerYieldDistributionOut(BaseModel):
+    distribution_id: str
+    management_contract_id: str
+    contract_number: Optional[str] = None
+    owner_customer_id: str
+    owner_name: Optional[str] = None
+    owner_mobile: Optional[str] = None
+    period_start: date
+    period_end: date
+    gross_rent_collected: float
+    management_fee_rate: float
+    management_fee_amount: float
+    maintenance_expenses_deducted: float
+    other_deductions: float
+    net_yield_amount: float
+    status: str
+    payment_reference: Optional[str] = None
+    bank_name: Optional[str] = None
+    iban: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime
+
+class OwnerYieldCalculationPreviewOut(BaseModel):
+    management_contract_id: str
+    owner_customer_id: str
+    owner_name: str
+    contract_number: str
+    period_start: date
+    period_end: date
+    fee_type: str
+    management_fee_rate: float
+    managed_units_count: int
+    gross_rent_collected: float
+    rent_collections_count: int
+    management_fee_amount: float
+    maintenance_expenses_deducted: float
+    work_orders_count: int
+    other_deductions: float
+    net_yield_amount: float
+    units_breakdown: List[dict] = []
+
+class OwnerYieldDistributionCalculateIn(BaseModel):
+    management_contract_id: str
+    period_start: date
+    period_end: date
+    other_deductions: Optional[float] = 0.0
+
+class OwnerYieldDistributionCreateIn(BaseModel):
+    management_contract_id: str
+    period_start: date
+    period_end: date
+    other_deductions: Optional[float] = 0.0
+    notes: Optional[str] = None
+
+class OwnerYieldDistributionPayoutIn(BaseModel):
+    payment_reference: str
+    bank_name: Optional[str] = None
+    iban: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    notes: Optional[str] = None

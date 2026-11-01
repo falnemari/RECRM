@@ -515,6 +515,10 @@
 
         <!-- 1. Pipeline Board View -->
         <div id="view-pipeline">
+            <div id="opp-filter-banner" style="display:none; background:#eff6ff; border:1.5px solid #93c5fd; border-radius:8px; padding:10px 16px; margin-bottom:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div id="opp-filter-banner-text" style="color:#1e40af; font-size:0.9em; font-weight:700;"></div>
+                <button type="button" class="btn-sm btn-secondary" onclick="clearOppSearchFilter()" style="background:white; color:#1e40af; border-color:#93c5fd; padding:3px 10px; font-size:0.82em; font-weight:700; cursor:pointer;">✕ إلغاء التصفية وعرض كافة الصفقات</button>
+            </div>
             <div class="pipeline-container">
                 <!-- QUALIFIED -->
                 <div class="column">
@@ -948,6 +952,66 @@
         </div>
     </div>
 
+    <!-- Cancel Opportunity Confirmation Modal -->
+    <div class="modal-overlay" id="modal-cancel-opportunity" style="display: none; z-index: 1600;">
+        <div class="modal-box" style="max-width: 600px; border-top: 5px solid #dc2626;">
+            <div class="modal-header" style="border-bottom: 1px solid #fee2e2;">
+                <h3 style="margin: 0; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
+                    <span>⚠️</span>
+                    <span>تحذير تأكيدي: إلغاء الصفقة وبدء التسوية النظامية</span>
+                </h3>
+                <button class="close-btn" onclick="closeCancelOpportunityModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.88em; color: #991b1b; line-height: 1.6;">
+                    <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span>🛑</span> ضوابط إلغاء الصفقات والتسوية الإلزامية:
+                    </div>
+                    <div>
+                        بموجب ضوابط الهيئة العامة للعقار ونظام المعاملات المدنية، سيفحص النظام كافة الالتزامات المالية وحجوزات المخزون المرتبطة بهذه الصفقة:
+                        <ul style="margin: 6px 0 0 18px; padding: 0;">
+                            <li>إذا وُجدت التزامات مالية أو عربون أو حجز: تتحول الصفقة تلقائياً إلى <strong>(قيد الإلغاء والتسوية UNDER_CANCELLATION)</strong> وتنشأ مهام تسوية إلزامية.</li>
+                            <li><strong>لن تُلغى الصفقة نهائياً (CLOSED_LOST)</strong> إلا بعد تأكد النظام من إنجاز وتصفية كافة المهام المتعلقة وفك حجز المخزون.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <input type="hidden" id="cancel-opp-id-val">
+
+                <div style="margin-bottom: 12px; font-size: 0.88em; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                    <div><strong>معرف الصفقة:</strong> <span id="cancel-opp-id-display" style="font-family: monospace; color: #0284c7;">--</span></div>
+                    <div style="margin-top: 4px;"><strong>العميل:</strong> <span id="cancel-opp-cust-display" style="color: #1e293b; font-weight: 600;">--</span></div>
+                    <div style="margin-top: 4px;"><strong>المرحلة الحالية:</strong> <span id="cancel-opp-stage-display" class="badge" style="background: #e2e8f0; color: #334155;">--</span></div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight: 700; font-size: 0.88em; display: block; margin-bottom: 6px;">سبب الإلغاء (إلزامي) *</label>
+                    <select id="cancel-opp-reason" class="search-input" style="width: 100%; font-size: 0.9em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="PROPERTY_UNAVAILABLE">عدم توفر الوحدات المطلوبة أو تم حجزها (Property Unavailable)</option>
+                        <option value="CLIENT_WITHDREW">انسحاب أو تراجع العميل (Client Withdrew)</option>
+                        <option value="FINANCE">تعثر مالي أو رفض طلب التمويل العقاري (Mortgage/Finance Rejected)</option>
+                        <option value="PRICE">عدم الاتفاق على السعر أو شروط الدفع (Price / Budget Dispute)</option>
+                        <option value="COMPETITOR">اختيار عرض بديل من منافس آخر (Competitor Chosen)</option>
+                        <option value="NO_RESPONSE">انقطاع الاتصال وعدم استجابة العميل (No Response)</option>
+                        <option value="LOCATION">عدم ملاءمة الموقع أو الحي (Location Mismatch)</option>
+                        <option value="OTHER">سبب آخر (Other)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight: 700; font-size: 0.88em; display: block; margin-bottom: 6px;">ملاحظات وتفاصيل أسباب الإلغاء والتسوية:</label>
+                    <textarea id="cancel-opp-notes" class="search-input" style="width: 100%; height: 75px; font-size: 0.88em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="أدخل ملخص مبررات الإلغاء والتسوية المطلوبة..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn-secondary" onclick="closeCancelOpportunityModal()">تراجع</button>
+                <button type="button" id="btn-confirm-cancel-opp" class="btn-primary" style="background: #dc2626; border-color: #b91c1c; color: white; font-weight: 700;" onclick="submitCancelOpportunity()">
+                    ⚠️ تأكيد بدء إجراءات الإلغاء والتسوية
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Automatic API Base: handles file://, localhost:8000, and Live Server
         const API_BASE = (() => {
@@ -1176,7 +1240,7 @@
             }
         };
 
-        let currentLang = 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
 
         function setGlobalArabicFont(fontVal) {
             localStorage.setItem('recrm_ar_font', fontVal);
@@ -1202,11 +1266,14 @@
                 }
             });
             const lbl = document.getElementById('lang-label');
-            if (lbl && i18nData[currentLang]) {
-                lbl.textContent = i18nData[currentLang].lang_label;
+            if (lbl) {
+                lbl.textContent = currentLang === 'ar' ? 'English' : 'عربي';
             }
             localStorage.setItem('recrm_lang', currentLang);
             populateAgentFilter();
+            if (typeof allOpportunities !== 'undefined' && allOpportunities && allOpportunities.length > 0) {
+                filterOpportunities();
+            }
         }
 
         function toggleLanguage() {
@@ -1480,8 +1547,28 @@
                 }
             }
 
+            const banner = document.getElementById('opp-filter-banner');
+            const bannerText = document.getElementById('opp-filter-banner-text');
+            const activeFilterKey = targetOppId || targetLeadId || q;
+            if (activeFilterKey && banner && bannerText) {
+                banner.style.display = 'flex';
+                bannerText.innerHTML = isAr
+                    ? `🎯 <strong>تم تخصيص وتحديد الفرصة البيعية (${activeFilterKey})</strong> بناءً على طلبك من لوحة التحكم - تم حجب باقي السجلات لتركيز العمل.`
+                    : `🎯 <strong>Displaying isolated opportunity for (${activeFilterKey})</strong> - other items filtered out.`;
+            } else if (banner) {
+                banner.style.display = 'none';
+            }
+
             renderPipeline(filtered);
             checkAndHighlightTargetOpportunity();
+        }
+
+        function clearOppSearchFilter() {
+            const s = document.getElementById('opp-search');
+            if (s) s.value = '';
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+            filterOpportunities();
         }
 
         function renderPipeline(opps) {
@@ -1503,7 +1590,7 @@
                     groups['NEGOTIATION'].push(o);
                 } else if (st === 'WON' || st === 'CLOSED_WON') {
                     groups['WON'].push(o);
-                } else if (st === 'LOST' || st === 'CLOSED_LOST') {
+                } else if (st === 'LOST' || st === 'CLOSED_LOST' || st === 'UNDER_CANCELLATION' || st === 'CANCELLATION_PENDING') {
                     groups['LOST'].push(o);
                 } else if (groups[st]) {
                     groups[st].push(o);
@@ -1569,12 +1656,18 @@
                             ${o.bedrooms_min != null ? `<span>• ${o.bedrooms_min}+ ${isAr ? 'غرف' : 'Beds'}</span>` : ''}
                         </div>
                     ` : '';
+
+                    const isUnderCancellation = (o.stage === 'UNDER_CANCELLATION' || o.stage === 'CANCELLATION_PENDING');
+                    const stageBadgeHtml = isUnderCancellation 
+                        ? `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 0.7em;">⏳ ${isAr ? 'قيد الإلغاء والتسوية' : 'Under Cancellation'}</span>`
+                        : `<span class="badge badge-primary" style="font-size: 0.7em;">${o.stage}</span>`;
+
                     return `
                         <div class="opportunity-card${highlightCls}" id="opp-card-${o.opportunity_id}" data-opp-id="${o.opportunity_id}" data-lead-id="${o.lead_id || ''}" onclick="openOpportunityDetailModal('${o.opportunity_id}')">
                             ${highlightBadge}
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                                 <div class="opp-title">${o.customer_name || 'Direct Inquirer'}</div>
-                                <span class="badge badge-primary" style="font-size: 0.7em;">${o.stage}</span>
+                                ${stageBadgeHtml}
                             </div>
                             <div class="opp-customer">📞 ${o.customer_mobile || '--'}</div>
                             ${reqTag}
@@ -1600,39 +1693,121 @@
 
         function getStageMoveButtons(o) {
             const st = (o.stage || '').toUpperCase();
+            const isAr = currentLang === 'ar';
             if (st === 'QUALIFIED') {
                 return `
                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Move directly to Viewing stage">➔</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" onclick="openCancelOpportunityModal('${o.opportunity_id}')" title="${isAr ? 'إلغاء الصفقة مع رسالة تحذيرية وتسوية الالتزامات' : 'Cancel Deal'}">❌</button>
                 `;
             } else if (st === 'VIEWING') {
                 return `
                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Back to Qualified">◀</button>
-                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'NEGOTIATION')" title="Move to Offer/Negotiation">📑 ${currentLang === 'ar' ? 'تفاوض ➔' : 'Offer ➔'}</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'NEGOTIATION')" title="Move to Offer/Negotiation">📑 ${isAr ? 'تفاوض ➔' : 'Offer ➔'}</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" onclick="openCancelOpportunityModal('${o.opportunity_id}')" title="${isAr ? 'إلغاء الصفقة مع رسالة تحذيرية وتسوية الالتزامات' : 'Cancel Deal'}">❌</button>
                 `;
-            } else if (st === 'OFFER' || st === 'NEGOTIATION') {
+            } else if (st === 'OFFER' || st === 'NEGOTIATION' || st === 'RESERVATION') {
                 return `
                     <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'VIEWING')" title="Back to Viewing">◀</button>
-                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #dcfce7; color: #166534;" onclick="quickAdvanceStage('${o.opportunity_id}', 'WON')" title="Mark as Won">🏆 ${currentLang === 'ar' ? 'فوز' : 'Won'}</button>
-                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #fee2e2; color: #991b1b;" onclick="quickAdvanceStage('${o.opportunity_id}', 'LOST')" title="Mark as Lost">❌</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #dcfce7; color: #166534;" onclick="quickAdvanceStage('${o.opportunity_id}', 'WON')" title="Mark as Won">🏆 ${isAr ? 'فوز' : 'Won'}</button>
+                    <button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" onclick="openCancelOpportunityModal('${o.opportunity_id}')" title="${isAr ? 'إلغاء الصفقة مع رسالة تحذيرية وتسوية الالتزامات' : 'Cancel Deal'}">❌</button>
                 `;
+            } else if (st === 'UNDER_CANCELLATION' || st === 'CANCELLATION_PENDING') {
+                return `<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.72em; font-weight:700; border: 1px solid #fde68a;">⏳ ${isAr ? 'قيد التسوية' : 'Settling'}</span>`;
             } else if (st === 'WON' || st === 'CLOSED_WON') {
-                return `<span style="font-size: 0.75em; color: #166534; font-weight: 700;">✓ ${currentLang === 'ar' ? 'صفقة رابحة' : 'WON'}</span>`;
+                return `<span style="font-size: 0.75em; color: #166534; font-weight: 700;">✓ ${isAr ? 'صفقة رابحة' : 'WON'}</span>`;
             } else {
-                return `<button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Re-open deal">🔄 ${currentLang === 'ar' ? 'إعادة فتح' : 'Re-open'}</button>`;
+                return `<button class="btn-sm" style="font-size: 0.75em; padding: 2px 6px;" onclick="quickAdvanceStage('${o.opportunity_id}', 'QUALIFIED')" title="Re-open deal">🔄 ${isAr ? 'إعادة فتح' : 'Re-open'}</button>`;
             }
         }
 
         async function quickAdvanceStage(oppId, nextStage) {
+            if (nextStage === 'LOST' || nextStage === 'CLOSED_LOST') {
+                openCancelOpportunityModal(oppId);
+                return;
+            }
             try {
                 const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ stage: nextStage })
                 });
-                if (!res.ok) throw new Error('Stage transition failed');
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(json.detail || 'Stage transition failed');
                 fetchOpportunities();
             } catch (err) {
                 alert('Failed to update stage: ' + err.message);
+            }
+        }
+
+        function openCancelOpportunityModal(oppId) {
+            const opp = allOpportunities.find(o => o.opportunity_id === oppId);
+            document.getElementById('cancel-opp-id-val').value = oppId;
+            document.getElementById('cancel-opp-id-display').textContent = oppId;
+            document.getElementById('cancel-opp-cust-display').textContent = opp?.customer_name || 'Client';
+            document.getElementById('cancel-opp-stage-display').textContent = opp?.stage || '--';
+            document.getElementById('cancel-opp-notes').value = '';
+            document.getElementById('cancel-opp-reason').value = 'PROPERTY_UNAVAILABLE';
+
+            const modal = document.getElementById('modal-cancel-opportunity');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeCancelOpportunityModal() {
+            const modal = document.getElementById('modal-cancel-opportunity');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitCancelOpportunity() {
+            const oppId = document.getElementById('cancel-opp-id-val').value;
+            const reason = document.getElementById('cancel-opp-reason').value;
+            const notes = document.getElementById('cancel-opp-notes').value;
+            const btn = document.getElementById('btn-confirm-cancel-opp');
+            const isAr = currentLang === 'ar';
+
+            if (!oppId) return;
+
+            btn.disabled = true;
+            btn.textContent = isAr ? '⏳ جاري فحص الالتزامات وبدء التسوية...' : '⏳ Checking commitments...';
+
+            try {
+                const uId = (window.getCurrentUserProfile ? window.getCurrentUserProfile()?.user_id : null) || localStorage.getItem('recrm_user_id') || 'user-51';
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': uId
+                    },
+                    body: JSON.stringify({
+                        reason: reason,
+                        notes: notes,
+                        force_skip_settlement: false
+                    })
+                });
+
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(json.detail || 'Failed to initiate cancellation');
+                }
+
+                const data = json.data;
+                closeCancelOpportunityModal();
+
+                if (data.is_settlement_required) {
+                    alert(
+                        isAr 
+                            ? `⚠️ تم تحويل الصفقة إلى مرحلة (قيد الإلغاء والتسوية UNDER_CANCELLATION).\n\nتم توليد ${data.remediation_tasks?.length || 0} مهام تسوية إلزامية (مالية / فك حجز مخزون).\n\nتنبيه الحوكمة: لن تُلغى الصفقة نهائياً إلا بعد تأكيد إنجاز كافة مهام التسوية.`
+                            : `⚠️ Deal moved to UNDER_CANCELLATION.\n\nGenerated ${data.remediation_tasks?.length || 0} mandatory remediation tasks. The deal will only close once all remediation tasks are completed.`
+                    );
+                } else {
+                    alert(isAr ? '✓ تم إلغاء الصفقة نهائياً بنجاح لعدم وجود التزامات مالية أو وحدات محجوزة.' : '✓ Deal cancelled and closed successfully as no commitments exist.');
+                }
+
+                await fetchOpportunities();
+            } catch (err) {
+                alert((isAr ? 'فشل إلغاء الصفقة: ' : 'Failed to cancel deal: ') + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = isAr ? '⚠️ تأكيد بدء إجراءات الإلغاء والتسوية' : '⚠️ Confirm Cancellation';
             }
         }
 
@@ -1677,6 +1852,12 @@
         }
 
         function setDetailStage(stageVal) {
+            if (stageVal === 'LOST' || stageVal === 'CLOSED_LOST') {
+                const oppId = document.getElementById('opp-detail-id').value;
+                closeOppDetailModal();
+                openCancelOpportunityModal(oppId);
+                return;
+            }
             document.getElementById('opp-detail-stage').value = stageVal;
         }
 
@@ -1866,8 +2047,14 @@
         async function submitUpdateOpportunity(e) {
             e.preventDefault();
             const oppId = document.getElementById('opp-detail-id').value;
+            const stage = document.getElementById('opp-detail-stage').value;
+            if (stage === 'LOST' || stage === 'CLOSED_LOST') {
+                closeOppDetailModal();
+                openCancelOpportunityModal(oppId);
+                return;
+            }
             const payload = {
-                stage: document.getElementById('opp-detail-stage').value,
+                stage: stage,
                 expected_value: parseFloat(document.getElementById('opp-detail-val').value) || null,
                 expected_close_date: document.getElementById('opp-detail-close').value || null,
                 assigned_user_id: document.getElementById('opp-detail-agent').value || null
@@ -1879,7 +2066,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!res.ok) throw new Error('Update failed');
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(json.detail || 'Update failed');
                 closeOppDetailModal();
                 fetchOpportunities();
                 alert(currentLang === 'ar' ? 'تم تحديث الفرصة البيعية بنجاح!' : 'Opportunity updated successfully!');
@@ -3388,6 +3576,11 @@
                     agSelect.innerHTML = `<option value="${urlAgent}" selected>Loading agent...</option>`;
                     agSelect.value = urlAgent;
                 }
+            }
+            const preOpp = urlParams.get('opportunity_id') || urlParams.get('opp_id');
+            const preSearch = urlParams.get('search');
+            if ((preOpp || preSearch) && document.getElementById('opp-search')) {
+                document.getElementById('opp-search').value = preOpp || preSearch;
             }
             initSalesData();
             fetchOpportunities();

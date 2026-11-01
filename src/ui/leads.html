@@ -885,7 +885,7 @@
             return `${window.location.protocol}//${host}:8000`;
         })();
 
-        let currentLang = 'en';
+        let currentLang = localStorage.getItem('recrm_lang') || 'ar';
         let cachedLeads = [];
         let refCities = [];
         let refPropertyTypes = [];
@@ -2714,6 +2714,11 @@
                     filterUser.innerHTML = `<option value="${urlAgent}" selected>Loading agent...</option>`;
                     filterUser.value = urlAgent;
                 }
+            }
+            const preLead = urlParams.get('lead_id') || urlParams.get('id') || urlParams.get('search');
+            if (preLead) {
+                const sBox = document.getElementById('search-box');
+                if (sBox) sBox.value = preLead;
             }
             fetchLeads(); // Priority 1: Immediate live data display
             setTimeout(initReferenceData, 150); // Priority 2: Pre-fetch modal reference selects in background

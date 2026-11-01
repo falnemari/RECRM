@@ -610,9 +610,9 @@ def render_due_diligence_report(doc: Dict[str, Any], meta: Dict[str, Any]) -> st
     gross_rent_pct = (gross_rent / p_price * 100.0) if p_price > 0 else 0.0
     eff_gross_income = float(meta.get("effective_gross_income") or meta.get("effective_gross_income_sar") or max(0.0, gross_rent - vac_allowance))
     egi_pct = (eff_gross_income / p_price * 100.0) if p_price > 0 else 0.0
-    opex = float(meta.get("annual_operating_expenses") or meta.get("operating_expenses") or meta.get("operating_expenses_opex_sar") or (gross_rent * 0.10))
+    opex = float(meta.get("annual_operating_expenses") or meta.get("operating_expenses") or meta.get("operating_expenses_opex") or meta.get("operating_expenses_opex_sar") or (gross_rent * 0.10))
     opex_pct = (opex / gross_rent * 100.0) if gross_rent > 0 else 0.0
-    noi = float(meta.get("net_operating_income") or meta.get("net_operating_income_noi_sar") or meta.get("target_noi") or max(0.0, eff_gross_income - opex))
+    noi = float(meta.get("net_operating_income") or meta.get("net_operating_income_noi") or meta.get("net_operating_income_noi_sar") or meta.get("target_noi") or max(0.0, eff_gross_income - opex))
     cap_rate = float(meta.get("cap_rate") or meta.get("cap_rate_percent") or ((noi / p_price * 100.0) if p_price > 0 else 0.0))
     cash_inv = float(meta.get("cash_invested") or meta.get("cash_invested_sar") or p_price)
     coc_return = float(meta.get("cash_on_cash_return_percent") or ((noi / cash_inv * 100.0) if cash_inv > 0 else 0.0))
@@ -1652,6 +1652,21 @@ def render_commission_settlement(doc: Dict[str, Any], meta: Dict[str, Any]) -> s
     """
 
 
+def render_soil_report(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
+    """Renders Soil & Environmental Inspection report."""
+    return f"""
+    <div class="doc-title-block">
+        <h3>تقرير جسات التربة والسلامة الإنشائية SBC</h3>
+        <div class="doc-subtitle">فحص التربة والأساسات المعتمد وفق كود البناء السعودي</div>
+    </div>
+    <div class="info-grid">
+        <div class="info-item"><span class="info-label">قدرة التحمل:</span><span class="info-val">{meta.get('bearing_capacity', '300 kPa')}</span></div>
+        <div class="info-item"><span class="info-label">النطاق الزلزالي:</span><span class="info-val">{meta.get('seismic_zone', 'Zone 2B')}</span></div>
+        <div class="info-item"><span class="info-label">الملاحظات الإنشائية:</span><span class="info-val">{meta.get('structural_notes', 'مطابق للاشتراطات الفنية')}</span></div>
+    </div>
+    """
+
+
 def render_generic_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
     """Fallback renderer for any official document."""
     doc_type_name = doc.get("document_type_name") or doc.get("document_type_code") or "مستند رسمي"
@@ -1850,6 +1865,8 @@ def render_document_html(doc_row: Dict[str, Any]) -> str:
         content = render_contract_document(doc_row, meta)
     elif "COMMISSION" in code:
         content = render_commission_settlement(doc_row, meta)
+    elif "SOIL" in code or "ENVIRONMENTAL" in code:
+        content = render_soil_report(doc_row, meta)
     else:
         content = render_generic_document(doc_row, meta)
 

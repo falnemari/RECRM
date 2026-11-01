@@ -52,6 +52,7 @@ CORE_SYSTEM_TABLES = [
 # Operational CRM, Sales, Finance & Management Tables
 OPERATIONAL_CRM_TABLES = [
     # Level 1: Logs & Detail items
+    "internal_task_pings",
     "document_access_log",
     "audit_logs",
     "login_events",
@@ -59,6 +60,7 @@ OPERATIONAL_CRM_TABLES = [
     "payments",
     "commissions",
     "rent_collections",
+    "owner_yield_distributions",
     "maintenance_work_orders",
     "campaign_leads",
     "lead_events",
@@ -114,6 +116,7 @@ OPERATIONAL_SEQUENCES = [
     "seq_management_contracts_id",
     "seq_offers_id",
     "seq_opportunities_id",
+    "seq_owner_yield_distributions_id",
     "seq_payments_id",
     "seq_rent_collections_id",
     "seq_reservations_id",

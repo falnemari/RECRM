@@ -9,7 +9,9 @@ from app.schemas.reports import (
     ExecutiveDashboard, ExecutiveKPIs, StatusBreakdown,
     MultiTierDashboardOut, FunnelKPIs, ScopeInfo,
     BranchFunnelItem, AgentFunnelItem, OpportunityFunnelItem,
-    LivePulseEvent, DrilldownData
+    LivePulseEvent, DrilldownData,
+    AgendaCalendarItem, AgendaCalendarSummary, AgendaCalendarResponse,
+    FinancialScheduleItem, FinancialScheduleSummary, FinancialScheduleResponse
 )
 from app.services.calculation_service import CalculationService
 
@@ -896,5 +898,1000 @@ async def get_managerial_kpis_report(
         },
         meta=BaseMeta()
     )
+
+
+# =====================================================================
+# 1. AGENDA CALENDAR ENDPOINT (مفكرة الكاليندر والتقويم التشغيلي)
+# =====================================================================
+@router.get("/agenda-calendar", response_model=ResponseEnvelope[AgendaCalendarResponse])
+async def get_agenda_calendar(
+    scope: str = Query("GLOBAL", pattern="^(GLOBAL|BRANCH|TEAM|OWN)$"),
+    branch_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+    lead_id: Optional[str] = Query(None, description="Filter events by lead ID"),
+    opportunity_id: Optional[str] = Query(None, description="Filter events by opportunity ID"),
+    event_type: Optional[str] = Query(None),
+    uncompleted_only: bool = Query(True, description="Strictly filter for uncompleted/unexecuted tasks and scheduled items"),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Returns unified operational schedule events (Tasks, Viewings, Reservations,
+    Rent Collections, Maintenance Orders, Campaigns) scoped by user/branch/global.
+    By default (uncompleted_only=True), focuses strictly on unfinished, unexecuted,
+    and scheduled tasks and deadlines.
+    Displays Lead_id, Task_id, Viewing_id, or Reservation_id prominently for each record.
+    """
+    if x_user_id:
+        roles_rows = await conn.fetch("""
+            SELECT r.role_code FROM user_roles ur
+            JOIN roles r ON ur.role_id = r.role_id
+            WHERE ur.user_id = $1
+        """, x_user_id)
+        role_codes = [r["role_code"] for r in roles_rows]
+        user_scope = resolve_user_data_scope(role_codes)
+        if user_scope == "OWN":
+            scope = "OWN"
+            user_id = x_user_id
+        elif user_scope == "BRANCH":
+            scope = "BRANCH"
+            user_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if user_branch:
+                branch_id = user_branch
+
+    target_user_ids: Optional[List[str]] = None
+    target_branch_id: Optional[str] = branch_id
+    branch_name: Optional[str] = None
+    user_name: Optional[str] = None
+
+    if user_id:
+        u_row = await conn.fetchrow("""
+            SELECT u.user_id, u.full_name, u.branch_id, b.name AS branch_name
+            FROM users u
+            LEFT JOIN branches b ON u.branch_id = b.branch_id
+            WHERE u.user_id = $1
+        """, user_id)
+        if u_row:
+            user_name = u_row["full_name"]
+            if not target_branch_id:
+                target_branch_id = u_row["branch_id"]
+                branch_name = u_row["branch_name"]
+
+    if scope == "OWN":
+        if not user_id:
+            user_id = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id ASC LIMIT 1")
+        u_row = await conn.fetchrow("SELECT full_name, branch_id FROM users WHERE user_id = $1", user_id)
+        user_name = u_row["full_name"] if u_row else user_id
+        target_user_ids = [user_id]
+        target_branch_id = None
+    elif scope == "TEAM":
+        if not user_id:
+            user_id = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id ASC LIMIT 1")
+        team_rows = await conn.fetch("""
+            WITH RECURSIVE subordinates AS (
+                SELECT user_id FROM users WHERE user_id = $1 OR manager_user_id = $1
+                UNION
+                SELECT u.user_id FROM users u
+                INNER JOIN subordinates s ON s.user_id = u.manager_user_id
+            )
+            SELECT user_id FROM subordinates
+        """, user_id)
+        target_user_ids = [tr["user_id"] for tr in team_rows] or [user_id]
+    elif scope == "BRANCH":
+        if not target_branch_id:
+            target_branch_id = await conn.fetchval("SELECT branch_id FROM branches WHERE status = 'ACTIVE' ORDER BY branch_id LIMIT 1")
+        b_users = await conn.fetch("SELECT user_id FROM users WHERE branch_id = $1", target_branch_id)
+        target_user_ids = [r["user_id"] for r in b_users]
+        if not branch_name:
+            branch_name = await conn.fetchval("SELECT name FROM branches WHERE branch_id = $1", target_branch_id)
+    elif scope == "GLOBAL":
+        target_user_ids = None
+        target_branch_id = None
+
+    now = datetime.now(timezone.utc)
+    today_date = now.date()
+    events: List[AgendaCalendarItem] = []
+
+    # 1. Tasks
+    task_conds = ["t.due_at IS NOT NULL"]
+    if uncompleted_only:
+        task_conds.append("t.status NOT IN ('COMPLETED', 'CANCELLED')")
+    task_p = []
+    if lead_id and opportunity_id:
+        task_conds.append(f"(t.lead_id = ${len(task_p) + 1} OR t.opportunity_id = ${len(task_p) + 2})")
+        task_p.extend([lead_id, opportunity_id])
+    elif lead_id:
+        task_conds.append(f"t.lead_id = ${len(task_p) + 1}")
+        task_p.append(lead_id)
+    elif opportunity_id:
+        task_conds.append(f"t.opportunity_id = ${len(task_p) + 1}")
+        task_p.append(opportunity_id)
+
+    if target_user_ids:
+        task_conds.append(f"t.assigned_user_id = ANY(${len(task_p) + 1})")
+        task_p.append(target_user_ids)
+    elif target_branch_id:
+        task_conds.append(f"(u.branch_id = ${len(task_p) + 1} OR l.branch_id = ${len(task_p) + 1})")
+        task_p.append(target_branch_id)
+
+    task_sql = f"""
+        SELECT t.task_id, t.title, t.due_at, t.lead_id, t.opportunity_id, t.priority, t.status,
+               t.assigned_user_id, u.full_name AS assigned_user_name, b.name AS branch_name,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+        FROM tasks t
+        LEFT JOIN users u ON t.assigned_user_id = u.user_id
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        LEFT JOIN leads l ON t.lead_id = l.lead_id
+        LEFT JOIN customers c ON t.customer_id = c.customer_id
+        WHERE {' AND '.join(task_conds)}
+        ORDER BY t.due_at DESC
+        LIMIT 200
+    """
+    task_rows = await conn.fetch(task_sql, *task_p)
+    for r in task_rows:
+        d = r["due_at"]
+        d_date = d.date() if hasattr(d, "date") else None
+        st = r["status"]
+        if st == "COMPLETED":
+            st_lbl = "مهمة منجزة"
+            color = "#10b981"
+        elif st == "CANCELLED":
+            st_lbl = "مهمة ملغاة"
+            color = "#94a3b8"
+        elif d < now:
+            st_lbl = "مهمة متأخرة التنفيذ"
+            color = "#ef4444"
+        elif d_date == today_date:
+            st_lbl = "مستحقة اليوم"
+            color = "#f59e0b"
+        else:
+            st_lbl = "مهمة قادمة"
+            color = "#3b82f6"
+
+        events.append(AgendaCalendarItem(
+            event_id=r["task_id"],
+            event_type="TASK",
+            event_type_label_ar="مهمة تشغيلية",
+            event_type_label_en="Operational Task",
+            title=r["title"] or "مهمة غير مسماة",
+            event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+            lead_id=r["lead_id"],
+            task_id=r["task_id"],
+            opportunity_id=r["opportunity_id"],
+            customer_name=r["customer_name"],
+            assigned_user_id=r["assigned_user_id"],
+            assigned_user_name=r["assigned_user_name"],
+            branch_name=r["branch_name"],
+            priority=r["priority"],
+            status=st,
+            status_label_ar=st_lbl,
+            badge_color=color
+        ))
+
+    # 2. Viewings
+    v_conds = ["v.scheduled_start IS NOT NULL"]
+    if uncompleted_only:
+        v_conds.append("v.status NOT IN ('COMPLETED', 'CANCELLED')")
+    v_p = []
+    if lead_id and opportunity_id:
+        v_conds.append(f"(v.lead_id = ${len(v_p) + 1} OR v.opportunity_id = ${len(v_p) + 2})")
+        v_p.extend([lead_id, opportunity_id])
+    elif lead_id:
+        v_conds.append(f"v.lead_id = ${len(v_p) + 1}")
+        v_p.append(lead_id)
+    elif opportunity_id:
+        v_conds.append(f"v.opportunity_id = ${len(v_p) + 1}")
+        v_p.append(opportunity_id)
+
+    if target_user_ids:
+        v_conds.append(f"v.agent_user_id = ANY(${len(v_p) + 1})")
+        v_p.append(target_user_ids)
+    elif target_branch_id:
+        v_conds.append(f"u.branch_id = ${len(v_p) + 1}")
+        v_p.append(target_branch_id)
+
+    v_sql = f"""
+        SELECT v.viewing_id, v.lead_id, v.opportunity_id, v.unit_id, un.unit_number,
+               v.scheduled_start, v.scheduled_end, v.status, v.agent_user_id,
+               u.full_name AS assigned_user_name, b.name AS branch_name,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+        FROM viewings v
+        LEFT JOIN units un ON v.unit_id = un.unit_id
+        LEFT JOIN users u ON v.agent_user_id = u.user_id
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        LEFT JOIN customers c ON v.customer_id = c.customer_id
+        WHERE {' AND '.join(v_conds)}
+        ORDER BY v.scheduled_start DESC
+        LIMIT 100
+    """
+    v_rows = await conn.fetch(v_sql, *v_p)
+    for r in v_rows:
+        d = r["scheduled_start"]
+        d_date = d.date() if hasattr(d, "date") else None
+        st = r["status"]
+        if st == "COMPLETED":
+            st_lbl = "معاينة منفذة"
+            color = "#10b981"
+        elif st == "CANCELLED":
+            st_lbl = "معاينة ملغاة"
+            color = "#94a3b8"
+        elif d < now:
+            st_lbl = "معاينة متأخرة التنفيذ"
+            color = "#ef4444"
+        elif d_date == today_date:
+            st_lbl = "معاينة اليوم"
+            color = "#0284c7"
+        else:
+            st_lbl = "معاينة قادمة مجدولة"
+            color = "#0ea5e9"
+
+        u_num = r["unit_number"]
+        v_title = f"معاينة وحدة #{u_num}" if u_num else "معاينة عقار ميدانية"
+        events.append(AgendaCalendarItem(
+            event_id=r["viewing_id"],
+            event_type="VIEWING",
+            event_type_label_ar="معاينة ميدانية",
+            event_type_label_en="Site Viewing",
+            title=v_title,
+            event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+            end_date=r["scheduled_end"].isoformat() if r["scheduled_end"] and hasattr(r["scheduled_end"], "isoformat") else None,
+            lead_id=r["lead_id"],
+            viewing_id=r["viewing_id"],
+            opportunity_id=r["opportunity_id"],
+            unit_id=r["unit_id"],
+            unit_number=u_num,
+            customer_name=r["customer_name"],
+            assigned_user_id=r["agent_user_id"],
+            assigned_user_name=r["assigned_user_name"],
+            branch_name=r["branch_name"],
+            status=st,
+            status_label_ar=st_lbl,
+            badge_color=color
+        ))
+
+    # 3. Reservations
+    res_conds = ["r.expires_at IS NOT NULL"]
+    if uncompleted_only:
+        res_conds.append("r.status NOT IN ('CONVERTED', 'CANCELLED')")
+    res_p = []
+    if lead_id and opportunity_id:
+        res_conds.append(f"(opp.lead_id = ${len(res_p) + 1} OR r.opportunity_id = ${len(res_p) + 2})")
+        res_p.extend([lead_id, opportunity_id])
+    elif lead_id:
+        res_conds.append(f"opp.lead_id = ${len(res_p) + 1}")
+        res_p.append(lead_id)
+    elif opportunity_id:
+        res_conds.append(f"r.opportunity_id = ${len(res_p) + 1}")
+        res_p.append(opportunity_id)
+
+    if target_user_ids:
+        res_conds.append(f"opp.assigned_user_id = ANY(${len(res_p) + 1})")
+        res_p.append(target_user_ids)
+    elif target_branch_id:
+        res_conds.append(f"u.branch_id = ${len(res_p) + 1}")
+        res_p.append(target_branch_id)
+
+    res_sql = f"""
+        SELECT r.reservation_id, r.reservation_number, r.opportunity_id, opp.lead_id,
+               r.unit_id, un.unit_number, r.reserved_at, r.expires_at, r.deposit_amount, r.status,
+               opp.assigned_user_id, u.full_name AS assigned_user_name, b.name AS branch_name,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+        FROM reservations r
+        LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
+        LEFT JOIN users u ON opp.assigned_user_id = u.user_id
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        LEFT JOIN customers c ON r.customer_id = c.customer_id
+        WHERE {' AND '.join(res_conds)}
+        ORDER BY r.expires_at DESC
+        LIMIT 100
+    """
+    res_rows = await conn.fetch(res_sql, *res_p)
+    for r in res_rows:
+        d = r["expires_at"] or r["reserved_at"]
+        st = r["status"]
+        if st in ("CONVERTED", "CONFIRMED"):
+            st_lbl = "حجز مثبت / تحول لعقد"
+            color = "#10b981"
+        elif st == "CANCELLED":
+            st_lbl = "حجز ملغي"
+            color = "#94a3b8"
+        elif r["expires_at"] and r["expires_at"] < now:
+            st_lbl = "حجز منتهي المهلة"
+            color = "#dc2626"
+        else:
+            st_lbl = "حجز ساري ومؤقت"
+            color = "#f59e0b"
+
+        u_num = r["unit_number"]
+        r_title = f"حجز وحدة #{u_num}" if u_num else f"حجز {r['reservation_number']}"
+        events.append(AgendaCalendarItem(
+            event_id=r["reservation_id"],
+            event_type="RESERVATION",
+            event_type_label_ar="حجز وحدة",
+            event_type_label_en="Unit Reservation",
+            title=r_title,
+            event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+            lead_id=r["lead_id"],
+            reservation_id=r["reservation_id"],
+            opportunity_id=r["opportunity_id"],
+            unit_id=r["unit_id"],
+            unit_number=u_num,
+            customer_name=r["customer_name"],
+            assigned_user_id=r["assigned_user_id"],
+            assigned_user_name=r["assigned_user_name"],
+            branch_name=r["branch_name"],
+            status=st,
+            status_label_ar=st_lbl,
+            badge_color=color,
+            amount=float(r["deposit_amount"] or 0.0)
+        ))
+
+    # 4. Rent Collections
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        rc_conds = ["rc.due_date IS NOT NULL"]
+        if uncompleted_only:
+            rc_conds.append("rc.status NOT IN ('PAID', 'CANCELLED')")
+        rc_sql = f"""
+            SELECT rc.rent_collection_id, rc.tenancy_id, ten.unit_id, un.unit_number,
+                   rc.due_date, rc.amount_due, rc.amount_paid, rc.status,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+            FROM rent_collections rc
+            JOIN tenancies ten ON rc.tenancy_id = ten.tenancy_id
+            LEFT JOIN units un ON ten.unit_id = un.unit_id
+            LEFT JOIN customers c ON ten.tenant_customer_id = c.customer_id
+            WHERE {' AND '.join(rc_conds)}
+            ORDER BY rc.due_date DESC
+            LIMIT 50
+        """
+        rc_rows = await conn.fetch(rc_sql)
+        for r in rc_rows:
+            d = r["due_date"]
+            st = r["status"]
+            if st == "PAID":
+                st_lbl = "دفعة إيجار محصلة"
+                color = "#10b981"
+            elif d < today_date:
+                st_lbl = "دفعة إيجار متأخرة"
+                color = "#ef4444"
+            else:
+                st_lbl = "دفعة إيجار مستحقة"
+                color = "#7c3aed"
+
+            u_num = r["unit_number"]
+            events.append(AgendaCalendarItem(
+                event_id=r["rent_collection_id"],
+                event_type="RENT_COLLECTION",
+                event_type_label_ar="تحصيل إيجاري",
+                event_type_label_en="Rent Collection",
+                title=f"استحقاق إيجار وحدة #{u_num}" if u_num else f"دفعة إيجار {r['rent_collection_id']}",
+                event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+                unit_id=r["unit_id"],
+                unit_number=u_num,
+                customer_name=r["customer_name"],
+                status=st,
+                status_label_ar=st_lbl,
+                badge_color=color,
+                amount=float(r["amount_due"] or 0.0)
+            ))
+
+    # 5. Maintenance Orders
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        mwo_conds = ["COALESCE(tick.due_at, mwo.completed_at, tick.opened_at) IS NOT NULL"]
+        if uncompleted_only:
+            mwo_conds.append("mwo.status NOT IN ('COMPLETED', 'CANCELLED')")
+        mwo_sql = f"""
+            SELECT mwo.work_order_id, mwo.ticket_id, tick.unit_id, un.unit_number,
+                   COALESCE(tick.due_at, mwo.completed_at, tick.opened_at) AS event_date,
+                   mwo.status, mwo.total_amount, tick.category
+            FROM maintenance_work_orders mwo
+            JOIN maintenance_tickets tick ON mwo.ticket_id = tick.ticket_id
+            LEFT JOIN units un ON tick.unit_id = un.unit_id
+            WHERE {' AND '.join(mwo_conds)}
+            ORDER BY event_date DESC
+            LIMIT 30
+        """
+        mwo_rows = await conn.fetch(mwo_sql)
+        for r in mwo_rows:
+            d = r["event_date"]
+            if not d:
+                continue
+            st = r["status"]
+            if st == "COMPLETED":
+                st_lbl = "صيانة مكتملة"
+                color = "#10b981"
+            elif st == "IN_PROGRESS":
+                st_lbl = "صيانة قيد التنفيذ"
+                color = "#0284c7"
+            else:
+                st_lbl = "أمر صيانة معتمد"
+                color = "#d97706"
+
+            events.append(AgendaCalendarItem(
+                event_id=r["work_order_id"],
+                event_type="MAINTENANCE",
+                event_type_label_ar="أمر صيانة",
+                event_type_label_en="Maintenance Order",
+                title=f"صيانة: {r['category'] or 'عامة'} - وحدة #{r['unit_number'] or ''}",
+                event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+                ticket_id=r["ticket_id"],
+                work_order_id=r["work_order_id"],
+                unit_id=r["unit_id"],
+                unit_number=r["unit_number"],
+                status=st,
+                status_label_ar=st_lbl,
+                badge_color=color,
+                amount=float(r["total_amount"] or 0.0)
+            ))
+
+    # 6. Campaigns
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        camp_conds = ["(camp.start_date IS NOT NULL OR camp.end_date IS NOT NULL)"]
+        if uncompleted_only:
+            camp_conds.append("camp.status NOT IN ('COMPLETED', 'CANCELLED')")
+        camp_sql = f"""
+            SELECT camp.campaign_id, camp.name, camp.budget, camp.status,
+                   camp.start_date, camp.end_date
+            FROM campaigns camp
+            WHERE {' AND '.join(camp_conds)}
+            ORDER BY camp.start_date DESC
+            LIMIT 20
+        """
+        camp_rows = await conn.fetch(camp_sql)
+        for r in camp_rows:
+            d = r["start_date"] or r["end_date"]
+            st = r["status"]
+            events.append(AgendaCalendarItem(
+                event_id=r["campaign_id"],
+                event_type="CAMPAIGN",
+                event_type_label_ar="حملة تسويقية",
+                event_type_label_en="Marketing Campaign",
+                title=f"حملة: {r['name']}",
+                event_date=d.isoformat() if hasattr(d, "isoformat") else str(d),
+                end_date=r["end_date"].isoformat() if r["end_date"] and hasattr(r["end_date"], "isoformat") else None,
+                status=st,
+                status_label_ar="حملة نشطة" if st == "ACTIVE" else "حملة مكتملة",
+                badge_color="#8b5cf6" if st == "ACTIVE" else "#64748b",
+                amount=float(r["budget"] or 0.0)
+            ))
+
+    # Sort descending by date
+    events.sort(key=lambda x: str(x.event_date), reverse=True)
+
+    if event_type and event_type.upper() != "ALL":
+        events = [e for e in events if e.event_type == event_type.upper()]
+
+    summary = AgendaCalendarSummary(
+        total_events=len(events),
+        tasks_count=sum(1 for e in events if e.event_type == "TASK"),
+        viewings_count=sum(1 for e in events if e.event_type == "VIEWING"),
+        reservations_count=sum(1 for e in events if e.event_type == "RESERVATION"),
+        collections_count=sum(1 for e in events if e.event_type == "RENT_COLLECTION"),
+        maintenance_count=sum(1 for e in events if e.event_type == "MAINTENANCE"),
+        campaigns_count=sum(1 for e in events if e.event_type == "CAMPAIGN"),
+        overdue_count=sum(1 for e in events if "متأخر" in (e.status_label_ar or "") or e.badge_color in ("#ef4444", "#dc2626")),
+        today_count=sum(1 for e in events if "اليوم" in (e.status_label_ar or "")),
+        upcoming_count=sum(1 for e in events if "قادم" in (e.status_label_ar or "") or "ساري" in (e.status_label_ar or "") or "مستحق" in (e.status_label_ar or "") or "قيد" in (e.status_label_ar or ""))
+    )
+
+    scope_info = ScopeInfo(
+        scope=scope,
+        branch_id=target_branch_id,
+        branch_name=branch_name,
+        user_id=user_id if scope == "OWN" else None,
+        user_name=user_name if scope == "OWN" else None
+    )
+
+    return ResponseEnvelope(
+        data=AgendaCalendarResponse(
+            summary=summary,
+            scope_info=scope_info,
+            events=events
+        ),
+        meta=BaseMeta()
+    )
+
+
+# =====================================================================
+# 2. FINANCIAL DUES & COLLECTIONS SCHEDULE (مفكرة وجدول المبالغ والتحصيلات)
+# =====================================================================
+@router.get("/financial-schedule", response_model=ResponseEnvelope[FinancialScheduleResponse])
+async def get_financial_schedule(
+    scope: str = Query("GLOBAL", pattern="^(GLOBAL|BRANCH|TEAM|OWN)$"),
+    branch_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+    lead_id: Optional[str] = Query(None, description="Filter financial dues by lead ID"),
+    opportunity_id: Optional[str] = Query(None, description="Filter financial dues by opportunity ID"),
+    category: Optional[str] = Query(None),  # ALL, DEALS_LEADS, PROPERTY_MANAGEMENT, MARKETING
+    collection_status: Optional[str] = Query(None),  # ALL, COLLECTED, PENDING, OVERDUE, CANCELLED
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Returns an itemized financial dues and collections schedule classified by:
+    - Deal / Lead ID (Invoices, Brokerage Commissions, Reservation Araboun)
+    - Property Management Tasks (Periodic Rent Collections, Work Order Costs)
+    - Marketing Campaigns Tasks (Campaign Budget & Ad Spend)
+    Displays collection status indicators and due/collection dates clearly.
+    """
+    if x_user_id:
+        roles_rows = await conn.fetch("""
+            SELECT r.role_code FROM user_roles ur
+            JOIN roles r ON ur.role_id = r.role_id
+            WHERE ur.user_id = $1
+        """, x_user_id)
+        role_codes = [r["role_code"] for r in roles_rows]
+        user_scope = resolve_user_data_scope(role_codes)
+        if user_scope == "OWN":
+            scope = "OWN"
+            user_id = x_user_id
+        elif user_scope == "BRANCH":
+            scope = "BRANCH"
+            user_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", x_user_id)
+            if user_branch:
+                branch_id = user_branch
+
+    target_user_ids: Optional[List[str]] = None
+    target_branch_id: Optional[str] = branch_id
+    branch_name: Optional[str] = None
+    user_name: Optional[str] = None
+
+    if user_id:
+        u_row = await conn.fetchrow("""
+            SELECT u.user_id, u.full_name, u.branch_id, b.name AS branch_name
+            FROM users u
+            LEFT JOIN branches b ON u.branch_id = b.branch_id
+            WHERE u.user_id = $1
+        """, user_id)
+        if u_row:
+            user_name = u_row["full_name"]
+            if not target_branch_id:
+                target_branch_id = u_row["branch_id"]
+                branch_name = u_row["branch_name"]
+
+    if scope == "OWN":
+        if not user_id:
+            user_id = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id ASC LIMIT 1")
+        u_row = await conn.fetchrow("SELECT full_name, branch_id FROM users WHERE user_id = $1", user_id)
+        user_name = u_row["full_name"] if u_row else user_id
+        target_user_ids = [user_id]
+        target_branch_id = None
+    elif scope == "TEAM":
+        if not user_id:
+            user_id = await conn.fetchval("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY user_id ASC LIMIT 1")
+        team_rows = await conn.fetch("""
+            WITH RECURSIVE subordinates AS (
+                SELECT user_id FROM users WHERE user_id = $1 OR manager_user_id = $1
+                UNION
+                SELECT u.user_id FROM users u
+                INNER JOIN subordinates s ON s.user_id = u.manager_user_id
+            )
+            SELECT user_id FROM subordinates
+        """, user_id)
+        target_user_ids = [tr["user_id"] for tr in team_rows] or [user_id]
+    elif scope == "BRANCH":
+        if not target_branch_id:
+            target_branch_id = await conn.fetchval("SELECT branch_id FROM branches WHERE status = 'ACTIVE' ORDER BY branch_id LIMIT 1")
+        b_users = await conn.fetch("SELECT user_id FROM users WHERE branch_id = $1", target_branch_id)
+        target_user_ids = [r["user_id"] for r in b_users]
+        if not branch_name:
+            branch_name = await conn.fetchval("SELECT name FROM branches WHERE branch_id = $1", target_branch_id)
+    elif scope == "GLOBAL":
+        target_user_ids = None
+        target_branch_id = None
+
+    now = datetime.now(timezone.utc)
+    today_date = now.date()
+    items: List[FinancialScheduleItem] = []
+
+    # 1. Invoices (DEALS_LEADS)
+    inv_conds = ["1=1"]
+    inv_p = []
+    if lead_id and opportunity_id:
+        inv_conds.append(f"(inv.lead_id = ${len(inv_p) + 1} OR inv.opportunity_id = ${len(inv_p) + 2})")
+        inv_p.extend([lead_id, opportunity_id])
+    elif lead_id:
+        inv_conds.append(f"inv.lead_id = ${len(inv_p) + 1}")
+        inv_p.append(lead_id)
+    elif opportunity_id:
+        inv_conds.append(f"inv.opportunity_id = ${len(inv_p) + 1}")
+        inv_p.append(opportunity_id)
+
+    if target_user_ids:
+        inv_conds.append(f"l.assigned_user_id = ANY(${len(inv_p) + 1})")
+        inv_p.append(target_user_ids)
+    elif target_branch_id:
+        inv_conds.append(f"u.branch_id = ${len(inv_p) + 1}")
+        inv_p.append(target_branch_id)
+
+    inv_sql = f"""
+        SELECT inv.invoice_id, inv.invoice_number, inv.invoice_type, inv.lead_id, inv.opportunity_id,
+               inv.unit_id, un.unit_number, inv.total_amount, inv.amount_paid, inv.status,
+               inv.due_date, inv.paid_at,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+               u.full_name AS assigned_user_name, b.name AS branch_name
+        FROM invoices inv
+        LEFT JOIN units un ON inv.unit_id = un.unit_id
+        LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+        LEFT JOIN leads l ON inv.lead_id = l.lead_id
+        LEFT JOIN users u ON l.assigned_user_id = u.user_id
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        WHERE {' AND '.join(inv_conds)}
+        ORDER BY inv.created_at DESC
+        LIMIT 100
+    """
+    inv_rows = await conn.fetch(inv_sql, *inv_p)
+    for r in inv_rows:
+        tot = float(r["total_amount"] or 0.0)
+        pd = float(r["amount_paid"] or 0.0)
+        rem = max(0.0, tot - pd)
+        d_date = r["due_date"]
+        st = r["status"]
+        days_over = 0
+
+        if st == "PAID" or pd >= tot:
+            c_st = "COLLECTED"
+            c_lbl = "تم التحصيل"
+            c_col = "#10b981"
+        elif st == "CANCELLED":
+            c_st = "CANCELLED"
+            c_lbl = "فاتورة ملغاة"
+            c_col = "#94a3b8"
+        elif d_date and d_date < today_date:
+            c_st = "OVERDUE"
+            days_over = (today_date - d_date).days
+            c_lbl = f"متأخرة عن السداد ({days_over} يوم)"
+            c_col = "#ef4444"
+        else:
+            c_st = "PENDING"
+            c_lbl = "معلقة / بانتظار التحصيل"
+            c_col = "#f59e0b"
+
+        inv_type_lbl = "فاتورة ضريبية وسعي" if r["invoice_type"] == "TAX_INVOICE" else "فاتورة خدمات وساطة"
+        items.append(FinancialScheduleItem(
+            item_id=r["invoice_id"],
+            category="DEALS_LEADS",
+            category_label_ar="الصفقات والطلبات",
+            item_type_code="INVOICE",
+            item_type="INVOICE",
+            item_type_label_ar=inv_type_lbl,
+            item_type_label_en="Tax Invoice",
+            title=f"فاتورة {r['invoice_number']}",
+            lead_id=r["lead_id"],
+            opportunity_id=r["opportunity_id"],
+            unit_id=r["unit_id"],
+            unit_number=r["unit_number"],
+            customer_name=r["customer_name"],
+            amount=tot,
+            amount_paid=pd,
+            amount_remaining=rem,
+            collection_status=c_st,
+            collection_status_ar=c_lbl,
+            badge_color=c_col,
+            due_date=d_date.isoformat() if hasattr(d_date, "isoformat") else str(d_date) if d_date else None,
+            collected_at=r["paid_at"].isoformat() if r["paid_at"] and hasattr(r["paid_at"], "isoformat") else None,
+            assigned_user_name=r["assigned_user_name"],
+            branch_name=r["branch_name"],
+            days_overdue=days_over
+        ))
+
+    # 2. Reservation Deposits (DEALS_LEADS)
+    res_conds = ["r.deposit_amount > 0"]
+    res_p = []
+    if lead_id and opportunity_id:
+        res_conds.append(f"(opp.lead_id = ${len(res_p) + 1} OR r.opportunity_id = ${len(res_p) + 2})")
+        res_p.extend([lead_id, opportunity_id])
+    elif lead_id:
+        res_conds.append(f"opp.lead_id = ${len(res_p) + 1}")
+        res_p.append(lead_id)
+    elif opportunity_id:
+        res_conds.append(f"r.opportunity_id = ${len(res_p) + 1}")
+        res_p.append(opportunity_id)
+
+    if target_user_ids:
+        res_conds.append(f"opp.assigned_user_id = ANY(${len(res_p) + 1})")
+        res_p.append(target_user_ids)
+    elif target_branch_id:
+        res_conds.append(f"u.branch_id = ${len(res_p) + 1}")
+        res_p.append(target_branch_id)
+
+    res_sql = f"""
+        SELECT r.reservation_id, r.reservation_number, r.opportunity_id, opp.lead_id,
+               r.unit_id, un.unit_number, r.deposit_amount, r.status,
+               r.reserved_at, r.expires_at,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+               u.full_name AS assigned_user_name, b.name AS branch_name
+        FROM reservations r
+        LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
+        LEFT JOIN units un ON r.unit_id = un.unit_id
+        LEFT JOIN customers c ON r.customer_id = c.customer_id
+        LEFT JOIN users u ON opp.assigned_user_id = u.user_id
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        WHERE {' AND '.join(res_conds)}
+        ORDER BY r.reserved_at DESC
+        LIMIT 100
+    """
+    res_rows = await conn.fetch(res_sql, *res_p)
+    for r in res_rows:
+        tot = float(r["deposit_amount"] or 0.0)
+        st = r["status"]
+        exp = r["expires_at"]
+        days_over = 0
+
+        if st in ("CONVERTED", "CONFIRMED"):
+            c_st = "COLLECTED"
+            c_lbl = "عربون محصل ومثبت"
+            c_col = "#10b981"
+            pd = tot
+            rem = 0.0
+            coll_date = r["reserved_at"]
+        elif st == "CANCELLED":
+            c_st = "CANCELLED"
+            c_lbl = "عربون مسترد / ملغي"
+            c_col = "#94a3b8"
+            pd = 0.0
+            rem = 0.0
+            coll_date = None
+        elif exp and exp < now:
+            c_st = "OVERDUE"
+            days_over = (now.date() - exp.date()).days
+            c_lbl = f"عربون منتهي المهلة ({days_over} يوم)"
+            c_col = "#dc2626"
+            pd = 0.0
+            rem = tot
+            coll_date = None
+        else:
+            c_st = "PENDING"
+            c_lbl = "عربون قيد الاستلام / حجز ساري"
+            c_col = "#f59e0b"
+            pd = 0.0
+            rem = tot
+            coll_date = None
+
+        u_num = r["unit_number"]
+        items.append(FinancialScheduleItem(
+            item_id=r["reservation_id"],
+            category="DEALS_LEADS",
+            category_label_ar="الصفقات والطلبات",
+            item_type_code="RESERVATION_DEPOSIT",
+            item_type="RESERVATION_DEPOSIT",
+            item_type_label_ar="عربون حجز صفقة",
+            item_type_label_en="Reservation Deposit",
+            title=f"عربون حجز وحدة #{u_num}" if u_num else f"عربون {r['reservation_number']}",
+            lead_id=r["lead_id"],
+            opportunity_id=r["opportunity_id"],
+            unit_id=r["unit_id"],
+            unit_number=u_num,
+            customer_name=r["customer_name"],
+            amount=tot,
+            amount_paid=pd,
+            amount_remaining=rem,
+            collection_status=c_st,
+            collection_status_ar=c_lbl,
+            badge_color=c_col,
+            due_date=exp.isoformat() if exp and hasattr(exp, "isoformat") else None,
+            collected_at=coll_date.isoformat() if coll_date and hasattr(coll_date, "isoformat") else None,
+            assigned_user_name=r["assigned_user_name"],
+            branch_name=r["branch_name"],
+            days_overdue=days_over
+        ))
+
+    # 3. Rent Collections (PROPERTY_MANAGEMENT)
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        rc_sql = """
+            SELECT rc.rent_collection_id, rc.tenancy_id, ten.unit_id, un.unit_number,
+                   rc.due_date, rc.amount_due, rc.amount_paid, rc.paid_at, rc.status,
+                   COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+            FROM rent_collections rc
+            JOIN tenancies ten ON rc.tenancy_id = ten.tenancy_id
+            LEFT JOIN units un ON ten.unit_id = un.unit_id
+            LEFT JOIN customers c ON ten.tenant_customer_id = c.customer_id
+            WHERE rc.due_date IS NOT NULL
+            ORDER BY rc.due_date DESC
+            LIMIT 100
+        """
+        rc_rows = await conn.fetch(rc_sql)
+        for r in rc_rows:
+            tot = float(r["amount_due"] or 0.0)
+            pd = float(r["amount_paid"] or 0.0)
+            rem = max(0.0, tot - pd)
+            d_date = r["due_date"]
+            st = r["status"]
+            days_over = 0
+
+            if st == "PAID" or pd >= tot:
+                c_st = "COLLECTED"
+                c_lbl = "تم التحصيل"
+                c_col = "#10b981"
+            elif d_date and d_date < today_date:
+                c_st = "OVERDUE"
+                days_over = (today_date - d_date).days
+                c_lbl = f"متأخرة عن السداد ({days_over} يوم)"
+                c_col = "#ef4444"
+            else:
+                c_st = "PENDING"
+                c_lbl = "مستحقة قريباً"
+                c_col = "#f59e0b"
+
+            u_num = r["unit_number"]
+            items.append(FinancialScheduleItem(
+                item_id=r["rent_collection_id"],
+                category="PROPERTY_MANAGEMENT",
+                category_label_ar="إدارة الأملاك",
+                item_type_code="RENT_COLLECTION",
+                item_type="RENT_COLLECTION",
+                item_type_label_ar="دفعة إيجار دورية",
+                item_type_label_en="Periodic Rent Collection",
+                title=f"إيجار وحدة #{u_num}" if u_num else f"تحصيل {r['rent_collection_id']}",
+                unit_id=r["unit_id"],
+                unit_number=u_num,
+                customer_name=r["customer_name"],
+                amount=tot,
+                amount_paid=pd,
+                amount_remaining=rem,
+                collection_status=c_st,
+                collection_status_ar=c_lbl,
+                badge_color=c_col,
+                due_date=d_date.isoformat() if hasattr(d_date, "isoformat") else str(d_date),
+                collected_at=r["paid_at"].isoformat() if r["paid_at"] and hasattr(r["paid_at"], "isoformat") else None,
+                days_overdue=days_over
+            ))
+
+    # 4. Maintenance Work Orders (PROPERTY_MANAGEMENT)
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        mwo_sql = """
+            SELECT mwo.work_order_id, mwo.ticket_id, tick.unit_id, un.unit_number,
+                   mwo.total_amount, mwo.approved_amount, mwo.status,
+                   mwo.completed_at, tick.due_at, tick.category
+            FROM maintenance_work_orders mwo
+            JOIN maintenance_tickets tick ON mwo.ticket_id = tick.ticket_id
+            LEFT JOIN units un ON tick.unit_id = un.unit_id
+            ORDER BY mwo.work_order_id DESC
+            LIMIT 50
+        """
+        mwo_rows = await conn.fetch(mwo_sql)
+        for r in mwo_rows:
+            tot = float(r["total_amount"] or r["approved_amount"] or 0.0)
+            st = r["status"]
+            if st == "COMPLETED":
+                c_st = "COLLECTED"
+                c_lbl = "مسدد ومنجز"
+                c_col = "#10b981"
+                pd = tot
+                rem = 0.0
+            elif st == "CANCELLED":
+                c_st = "CANCELLED"
+                c_lbl = "ملغي"
+                c_col = "#94a3b8"
+                pd = 0.0
+                rem = 0.0
+            else:
+                c_st = "PENDING"
+                c_lbl = "قيد التنفيذ / مستحق"
+                c_col = "#f59e0b"
+                pd = 0.0
+                rem = tot
+
+            u_num = r["unit_number"]
+            items.append(FinancialScheduleItem(
+                item_id=r["work_order_id"],
+                category="PROPERTY_MANAGEMENT",
+                category_label_ar="إدارة الأملاك",
+                item_type_code="MAINTENANCE_ORDER",
+                item_type="MAINTENANCE_ORDER",
+                item_type_label_ar="أمر عمل صيانة",
+                item_type_label_en="Work Order Cost",
+                title=f"صيانة: {r['category'] or 'عامة'} وحدة #{u_num or ''}",
+                ticket_id=r["ticket_id"],
+                work_order_id=r["work_order_id"],
+                unit_id=r["unit_id"],
+                unit_number=u_num,
+                amount=tot,
+                amount_paid=pd,
+                amount_remaining=rem,
+                collection_status=c_st,
+                collection_status_ar=c_lbl,
+                badge_color=c_col,
+                due_date=r["due_at"].isoformat() if r["due_at"] and hasattr(r["due_at"], "isoformat") else None,
+                collected_at=r["completed_at"].isoformat() if r["completed_at"] and hasattr(r["completed_at"], "isoformat") else None
+            ))
+
+    # 5. Marketing Campaigns (MARKETING)
+    if scope in ("GLOBAL", "BRANCH") and not lead_id and not opportunity_id:
+        camp_sql = """
+            SELECT camp.campaign_id, camp.name, camp.budget, camp.status,
+                   camp.start_date, camp.end_date
+            FROM campaigns camp
+            ORDER BY camp.start_date DESC
+            LIMIT 20
+        """
+        camp_rows = await conn.fetch(camp_sql)
+        for r in camp_rows:
+            tot = float(r["budget"] or 0.0)
+            st = r["status"]
+            if st == "COMPLETED":
+                c_st = "COLLECTED"
+                c_lbl = "مصروفة ومنفذة"
+                c_col = "#10b981"
+                pd = tot
+                rem = 0.0
+            else:
+                c_st = "PENDING"
+                c_lbl = "ميزانية معتمدة جارية"
+                c_col = "#f59e0b"
+                pd = 0.0
+                rem = tot
+
+            items.append(FinancialScheduleItem(
+                item_id=r["campaign_id"],
+                category="MARKETING",
+                category_label_ar="الحملات الإعلانية",
+                item_type_code="CAMPAIGN_BUDGET",
+                item_type="CAMPAIGN_BUDGET",
+                item_type_label_ar="ميزانية حملة إعلانية",
+                item_type_label_en="Campaign Budget",
+                title=f"حملة: {r['name']}",
+                amount=tot,
+                amount_paid=pd,
+                amount_remaining=rem,
+                collection_status=c_st,
+                collection_status_ar=c_lbl,
+                badge_color=c_col,
+                due_date=r["end_date"].isoformat() if r["end_date"] and hasattr(r["end_date"], "isoformat") else None
+            ))
+
+    # Sort items by due_date: nearest due date first (ascending: earliest/overdue first, nulls at end)
+    def sort_due_key(item):
+        d = item.due_date
+        if not d:
+            return (1, "9999-12-31")
+        d_str = d.isoformat() if hasattr(d, "isoformat") else str(d)
+        return (0, d_str)
+
+    items.sort(key=sort_due_key)
+
+    # Filter by category if requested
+    if category and category.upper() != "ALL":
+        items = [i for i in items if i.category == category.upper()]
+
+    # Filter by collection_status if requested
+    if collection_status and collection_status.upper() != "ALL":
+        items = [i for i in items if i.collection_status == collection_status.upper()]
+
+    tot_dues = sum(i.amount for i in items)
+    tot_coll = sum(i.amount_paid for i in items)
+    tot_pend = sum(i.amount_remaining for i in items if i.collection_status == "PENDING")
+    tot_over = sum(i.amount_remaining for i in items if i.collection_status == "OVERDUE")
+    rate_pct = round((tot_coll / tot_dues * 100.0), 2) if tot_dues > 0 else 0.0
+
+    summary = FinancialScheduleSummary(
+        total_dues_amount=tot_dues,
+        total_collected_amount=tot_coll,
+        total_pending_amount=tot_pend,
+        total_overdue_amount=tot_over,
+        collection_rate_percent=rate_pct,
+        deals_leads_count=sum(1 for i in items if i.category == "DEALS_LEADS"),
+        property_management_count=sum(1 for i in items if i.category == "PROPERTY_MANAGEMENT"),
+        marketing_count=sum(1 for i in items if i.category == "MARKETING"),
+        total_items=len(items)
+    )
+
+    scope_info = ScopeInfo(
+        scope=scope,
+        branch_id=target_branch_id,
+        branch_name=branch_name,
+        user_id=user_id if scope == "OWN" else None,
+        user_name=user_name if scope == "OWN" else None
+    )
+
+    return ResponseEnvelope(
+        data=FinancialScheduleResponse(
+            summary=summary,
+            scope_info=scope_info,
+            items=items
+        ),
+        meta=BaseMeta()
+    )
+
 
 

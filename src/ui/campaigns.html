@@ -437,6 +437,16 @@
                 <div class="kpi-val" id="kpi-conv">--%</div>
                 <div class="kpi-sub" id="kpi-qual-count">Loading qualified leads...</div>
             </div>
+            <div class="kpi-card" style="border-top: 3px solid #059669;">
+                <div class="kpi-title">قيمة الصفقات المحققة</div>
+                <div class="kpi-val" id="kpi-won-val" style="color: #059669;">-- SAR</div>
+                <div class="kpi-sub">Total Closed-Won Revenue</div>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #2563eb;">
+                <div class="kpi-title">العائد الإعلاني ROAS</div>
+                <div class="kpi-val" id="kpi-roas" style="color: #2563eb;">--%</div>
+                <div class="kpi-sub">Return on Ad Spend</div>
+            </div>
         </div>
 
         <!-- Channels Overview -->
@@ -457,10 +467,15 @@
                 <input type="text" id="search-campaign" placeholder="Search campaign name..." style="flex-grow: 1; min-width: 220px;" oninput="debounceFetchCampaigns()">
                 <select id="filter-channel" onchange="fetchCampaigns()">
                     <option value="" data-i18n="opt_all_channels">All Channels</option>
-                    <option value="SOCIAL">Social Media (SOCIAL)</option>
-                    <option value="SEARCH">Search Engines (SEARCH)</option>
-                    <option value="PORTAL">Property Portals (PORTAL)</option>
-                    <option value="EMAIL">Email Marketing (EMAIL)</option>
+                    <option value="AQAR">منصة عقار (AQAR)</option>
+                    <option value="BAYUT">منصة بيوت ودبيزل (BAYUT)</option>
+                    <option value="SAHEM">منصة سهم العقارية (SAHEM)</option>
+                    <option value="SNAPCHAT_ADS">سناب شات (SNAPCHAT)</option>
+                    <option value="TIKTOK_ADS">تيك توك (TIKTOK)</option>
+                    <option value="GOOGLE_SEARCH">إعلانات قوقل (GOOGLE)</option>
+                    <option value="META_INSTAGRAM">انستغرام وميتا (META)</option>
+                    <option value="WHATSAPP_CAMPAIGN">واتساب أعمال (WHATSAPP)</option>
+                    <option value="SOCIAL">شبكات اجتماعية أخرى (SOCIAL)</option>
                 </select>
                 <select id="filter-status" onchange="fetchCampaigns()">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
@@ -483,12 +498,14 @@
                             <th data-i18n="th_leads">Leads</th>
                             <th data-i18n="th_qualified">Qualified</th>
                             <th data-i18n="th_cpl">Cost / Lead</th>
+                            <th data-i18n="th_won_val">Won Revenue</th>
+                            <th data-i18n="th_roas">ROAS %</th>
                             <th data-i18n="th_status">Status</th>
                             <th data-i18n="th_actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="campaigns-tbody">
-                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading campaigns...</td></tr>
+                        <tr><td colspan="12" style="text-align: center; padding: 24px;">Loading campaigns...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -562,10 +579,15 @@
                         <div class="form-group">
                             <label data-i18n="lbl_channel">Marketing Channel *</label>
                             <select id="fc-channel" required>
-                                <option value="SOCIAL">Social Media (Snapchat, Instagram, X)</option>
-                                <option value="SEARCH">Search Engine (Google Ads, SEO)</option>
-                                <option value="PORTAL">Property Portals (Aqar, Bayut)</option>
-                                <option value="EMAIL">Email & SMS Outreach</option>
+                                <option value="AQAR">منصة عقار (Aqar Portal)</option>
+                                <option value="BAYUT">منصة بيوت ودبيزل (Bayut / Dubizzle)</option>
+                                <option value="SAHEM">منصة سهم العقارية (Sahem)</option>
+                                <option value="SNAPCHAT_ADS">إعلانات سناب شات (Snapchat Ads)</option>
+                                <option value="TIKTOK_ADS">إعلانات تيك توك (TikTok Ads)</option>
+                                <option value="GOOGLE_SEARCH">إعلانات قوقل للبحث (Google Search)</option>
+                                <option value="META_INSTAGRAM">انستغرام وميتا (Meta / Instagram)</option>
+                                <option value="WHATSAPP_CAMPAIGN">حملات واتساب المباشرة (WhatsApp Business)</option>
+                                <option value="SOCIAL">شبكات اجتماعية أخرى (Other Social)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -706,7 +728,7 @@
                 ev_offer_requested: "Offer Requested (OFFER_REQUESTED)",
                 btn_new_campaign: "+ New Campaign", btn_attach_lead: "+ Attribute Lead", btn_log_event: "+ Log Marketing Event",
                 th_name: "Campaign Name", th_channel: "Channel", th_dates: "Schedule Dates", th_budget: "Budget (SAR)",
-                th_leads: "Leads", th_qualified: "Qualified", th_cpl: "Cost / Lead", th_status: "Status", th_actions: "Actions",
+                th_leads: "Leads", th_qualified: "Qualified", th_cpl: "Cost / Lead", th_won_val: "Won Revenue (SAR)", th_roas: "ROAS %", th_status: "Status", th_actions: "Actions",
                 th_customer: "Customer / Prospect", th_contact: "Mobile & Email", th_campaign_source: "Campaign / Channel",
                 th_inquiry: "Inquiry Type", th_lead_status: "Lead Status", th_priority: "Priority", th_agent: "Assigned Agent",
                 th_captured_at: "Captured Date", modal_new_camp_title: "Launch New Marketing Campaign",
@@ -747,7 +769,7 @@
                 ev_offer_requested: "طلب عرض سعر رسمي (OFFER_REQUESTED)",
                 btn_new_campaign: "+ حملة جديدة", btn_attach_lead: "+ ربط عميل بحملة", btn_log_event: "+ تسجيل حدث تسويقي",
                 th_name: "اسم الحملة", th_channel: "القناة الإعلانية", th_dates: "فترة الحملة", th_budget: "الميزانية (ريال)",
-                th_leads: "الطلبات", th_qualified: "المؤهلون", th_cpl: "تكلفة الطلب (CPL)", th_status: "الحالة", th_actions: "الإجراءات",
+                th_leads: "الطلبات", th_qualified: "المؤهلون", th_cpl: "تكلفة الطلب (CPL)", th_won_val: "الصفقات الرابحة (ريال)", th_roas: "العائد ROAS", th_status: "الحالة", th_actions: "الإجراءات",
                 th_customer: "العميل / مقدم الطلب", th_contact: "الجوال والبريد", th_campaign_source: "الحملة / القناة",
                 th_inquiry: "نوع الطلب", th_lead_status: "حالة الطلب", th_priority: "الأولوية", th_agent: "الوسيط المسؤول",
                 th_captured_at: "تاريخ الاستقطاب", modal_new_camp_title: "إطلاق حملة تسويقية جديدة",
@@ -833,6 +855,9 @@
                 document.getElementById('kpi-leads').textContent = d.total_leads_captured;
                 document.getElementById('kpi-conv').textContent = `${d.overall_conversion_rate}%`;
                 document.getElementById('kpi-qual-count').textContent = `${d.qualified_leads_count} Qualified Leads`;
+                const wonVal = d.total_won_deals_value ? Number(d.total_won_deals_value).toLocaleString() : '0';
+                document.getElementById('kpi-won-val').textContent = `${wonVal} SAR`;
+                document.getElementById('kpi-roas').textContent = `${d.overall_roas || 0}%`;
 
                 // Render Channel Breakdown
                 const channelIcons = {
@@ -887,7 +912,7 @@
 
                 const tbody = document.getElementById('campaigns-tbody');
                 if (cachedCampaigns.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No campaigns found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 24px;">No campaigns found.</td></tr>';
                     return;
                 }
 
@@ -896,6 +921,10 @@
                     const channelClass = `badge-${(c.channel || 'social').toLowerCase()}`;
                     const dates = c.start_date ? `${c.start_date} ${c.end_date ? '→ ' + c.end_date : ''}` : '--';
                     const cpl = c.cost_per_lead ? `${Number(c.cost_per_lead).toLocaleString()} SAR` : '--';
+                    const wonVal = c.won_deals_value ? `${Number(c.won_deals_value).toLocaleString()} SAR` : '0 SAR';
+                    const roasBadge = (c.roas && c.roas > 0)
+                        ? `<span class="badge" style="background: #eff6ff; color: #1d4ed8; font-weight: 800;">${c.roas}%</span>`
+                        : `<span style="color: var(--text-muted);">--</span>`;
                     
                     return `
                         <tr>
@@ -907,9 +936,12 @@
                             <td><span class="badge" style="background: #e2e8f0;">${c.leads_count}</span></td>
                             <td><span class="badge" style="background: #dcfce7; color: #166534;">${c.qualified_leads_count}</span></td>
                             <td><strong>${cpl}</strong></td>
+                            <td><strong style="color: #059669;">${wonVal}</strong></td>
+                            <td>${roasBadge}</td>
                             <td><span class="badge ${statusClass}">${c.status}</span></td>
-                            <td>
-                                <button class="btn btn-outline btn-sm" onclick="filterLeadsForCampaign('${c.campaign_id}')">View Leads →</button>
+                            <td style="white-space: nowrap;">
+                                <button class="btn btn-outline btn-sm" onclick="filterLeadsForCampaign('${c.campaign_id}')" title="View Leads">العملاء →</button>
+                                <button class="btn btn-outline btn-sm" style="border-color: #3b82f6; color: #1d4ed8;" onclick="copySmartUTMLink('${c.campaign_id}')" title="Copy smart UTM tracking link">🔗 UTM</button>
                             </td>
                         </tr>
                     `;
@@ -917,7 +949,28 @@
 
             } catch (err) {
                 console.error(err);
-                document.getElementById('campaigns-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center; padding: 24px;">Failed to load campaigns from API.</td></tr>';
+                document.getElementById('campaigns-tbody').innerHTML = '<tr><td colspan="12" style="color: red; text-align: center; padding: 24px;">Failed to load campaigns from API.</td></tr>';
+            }
+        }
+
+        async function copySmartUTMLink(campaignId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/campaigns/${campaignId}/generate-tracking-url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base_url: window.location.origin + '/listings.html' })
+                });
+                if (!res.ok) throw new Error('Failed to generate tracking link');
+                const json = await res.json();
+                const trackingUrl = json.data.tracking_url;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(trackingUrl);
+                    alert(`تم نسخ رابط التتبع الذكي للحملة بنجاح:\n\n${trackingUrl}`);
+                } else {
+                    prompt("انسخ رابط التتبع التالي:", trackingUrl);
+                }
+            } catch (err) {
+                alert(`خطأ: ${err.message}`);
             }
         }
 
@@ -1147,6 +1200,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTypography();
             setLanguage(currentLang);
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search') || urlParams.get('campaign_id');
+            if (searchParam) {
+                const sInput = document.getElementById('search-campaign');
+                if (sInput) sInput.value = searchParam;
+            }
             fetchMarketingSummary();
             fetchCampaigns();
         });

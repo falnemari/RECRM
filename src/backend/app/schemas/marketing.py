@@ -17,6 +17,8 @@ class MarketingSummaryOut(BaseModel):
     total_leads_captured: int
     qualified_leads_count: int
     overall_conversion_rate: float
+    total_won_deals_value: Optional[float] = 0.0
+    overall_roas: Optional[float] = 0.0
     channel_breakdown: List[ChannelMetric]
 
 class CampaignOut(BaseModel):
@@ -24,19 +26,34 @@ class CampaignOut(BaseModel):
     organization_id: str
     name: str
     channel: Optional[str] = None
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
+    target_property_id: Optional[str] = None
+    target_city_id: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     budget: Optional[float] = 0.0
     status: str
+    impressions_count: Optional[int] = 0
+    clicks_count: Optional[int] = 0
     leads_count: int = 0
     qualified_leads_count: int = 0
     lost_leads_count: int = 0
+    won_deals_count: Optional[int] = 0
+    won_deals_value: Optional[float] = 0.0
+    roas: Optional[float] = 0.0
     conversion_rate: float = 0.0
     cost_per_lead: Optional[float] = None
+    tracking_url: Optional[str] = None
 
 class CampaignCreateIn(BaseModel):
     name: str = Field(..., min_length=2, description="Campaign name")
-    channel: Optional[str] = Field("SOCIAL", description="Marketing channel (SOCIAL, SEARCH, PORTAL, EMAIL)")
+    channel: Optional[str] = Field("AQAR", description="Marketing channel (AQAR, BAYUT, SAHEM, SNAPCHAT_ADS, TIKTOK_ADS, GOOGLE_SEARCH, META_INSTAGRAM, WHATSAPP_CAMPAIGN)")
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    target_property_id: Optional[str] = None
+    target_city_id: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     budget: Optional[float] = Field(0.0, ge=0)
@@ -45,10 +62,30 @@ class CampaignCreateIn(BaseModel):
 class CampaignUpdateIn(BaseModel):
     name: Optional[str] = None
     channel: Optional[str] = None
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    target_property_id: Optional[str] = None
+    target_city_id: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     budget: Optional[float] = Field(None, ge=0)
     status: Optional[str] = None
+    impressions_count: Optional[int] = None
+    clicks_count: Optional[int] = None
+
+class CampaignTrackingUrlGenerateIn(BaseModel):
+    base_url: Optional[str] = "https://recrm.sa/landing"
+    unit_id: Optional[str] = None
+    custom_utm_content: Optional[str] = None
+
+class CampaignTrackingUrlOut(BaseModel):
+    campaign_id: str
+    channel: str
+    full_url: str
+    utm_source: str
+    utm_medium: str
+    utm_campaign: str
+    utm_content: Optional[str] = None
 
 class CampaignLeadOut(BaseModel):
     campaign_id: str

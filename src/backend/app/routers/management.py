@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from datetime import datetime, date, timezone, timedelta
 import random
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
+from fastapi.responses import HTMLResponse
 import asyncpg
 from app.database import get_db, get_next_id
 from app.services.workflow_engine import WorkflowEngine
@@ -14,7 +15,10 @@ from app.schemas.management import (
     MaintenanceTicketOut, MaintenanceTicketCreateIn, MaintenanceTicketUpdateIn,
     VendorOut, VendorCreateIn,
     WorkOrderOut, WorkOrderCreateIn, WorkOrderUpdateIn,
-    ManagementContractOut, ManagementContractCreateIn
+    ManagementContractOut, ManagementContractCreateIn,
+    OwnerYieldDistributionOut, OwnerYieldCalculationPreviewOut,
+    OwnerYieldDistributionCalculateIn, OwnerYieldDistributionCreateIn,
+    OwnerYieldDistributionPayoutIn
 )
 
 router = APIRouter(tags=["Property Management"])
@@ -48,13 +52,33 @@ async def get_management_summary(conn: asyncpg.Connection = Depends(get_db)):
         "SELECT count(*) FROM management_contracts WHERE status = 'ACTIVE'"
     ) or 0
 
+    total_managed_units = await conn.fetchval(
+        "SELECT count(DISTINCT unit_id) FROM managed_units"
+    ) or 0
+
+    occupancy_rate = 0.0
+    if total_managed_units > 0:
+        occupancy_rate = round(float(active_tenancies) / float(total_managed_units) * 100.0, 1)
+
+    total_yield_distributed = await conn.fetchval(
+        "SELECT COALESCE(SUM(net_yield_amount), 0) FROM owner_yield_distributions WHERE status = 'PAID'"
+    ) or 0.0
+
+    pending_owner_payouts = await conn.fetchval(
+        "SELECT COALESCE(SUM(net_yield_amount), 0) FROM owner_yield_distributions WHERE status IN ('DRAFT', 'APPROVED')"
+    ) or 0.0
+
     summary_data = ManagementSummaryOut(
         active_tenancies=active_tenancies,
         total_active_rent_amount=float(total_active_rent),
         open_maintenance_tickets=open_tickets,
         overdue_rent_collections=overdue_collections,
         total_vendors=total_vendors,
-        active_management_contracts=active_pm_contracts
+        active_management_contracts=active_pm_contracts,
+        total_managed_units=total_managed_units,
+        occupancy_rate=occupancy_rate,
+        total_yield_distributed=float(total_yield_distributed),
+        pending_owner_payouts=float(pending_owner_payouts)
     )
     return ResponseEnvelope(data=summary_data)
 
@@ -72,12 +96,14 @@ async def list_tenancies(
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"t.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -94,7 +120,7 @@ async def list_tenancies(
 
     if search:
         s = f"%{search.strip()}%"
-        conditions.append(f"(t.contract_number ILIKE ${p_idx} OR u.unit_number ILIKE ${p_idx} OR c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx})")
+        conditions.append(f"(t.contract_number ILIKE ${p_idx} OR t.ejar_contract_number ILIKE ${p_idx} OR u.unit_number ILIKE ${p_idx} OR c.first_name ILIKE ${p_idx} OR c.last_name ILIKE ${p_idx} OR c.company_name ILIKE ${p_idx})")
         params.append(s)
         p_idx += 1
 
@@ -119,11 +145,15 @@ async def list_tenancies(
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name,
             c.mobile AS tenant_mobile,
             t.contract_number,
+            t.ejar_contract_number,
+            t.ejar_status,
+            t.contract_type,
             t.start_date,
             t.end_date,
             CAST(t.rent_amount AS FLOAT) AS rent_amount,
             t.payment_frequency,
             CAST(t.deposit_amount AS FLOAT) AS deposit_amount,
+            t.security_deposit_status,
             t.status
         FROM tenancies t
         LEFT JOIN units u ON t.unit_id = u.unit_id
@@ -132,13 +162,13 @@ async def list_tenancies(
         ORDER BY t.start_date DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [TenancyOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/tenancies", response_model=ResponseEnvelope[TenancyOut], status_code=status.HTTP_201_CREATED)
@@ -165,10 +195,26 @@ async def create_tenancy(
                 generate_installments=payload.generate_installments if payload.generate_installments is not None else True,
                 installments_count=payload.installments_count or 1
             )
+            tenancy = res["tenancy"]
+            if payload.ejar_contract_number or payload.contract_type or payload.security_deposit_status or payload.ejar_status:
+                await conn.execute(
+                    """
+                    UPDATE tenancies 
+                    SET ejar_contract_number = COALESCE($1, ejar_contract_number),
+                        ejar_status = COALESCE($2, ejar_status),
+                        contract_type = COALESCE($3, contract_type),
+                        security_deposit_status = COALESCE($4, security_deposit_status)
+                    WHERE tenancy_id = $5
+                    """,
+                    payload.ejar_contract_number,
+                    payload.ejar_status or 'ACTIVE',
+                    payload.contract_type or 'RESIDENTIAL',
+                    payload.security_deposit_status or 'HELD',
+                    tenancy["tenancy_id"]
+                )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    tenancy = res["tenancy"]
     out = TenancyOut(
         tenancy_id=tenancy["tenancy_id"],
         unit_id=tenancy["unit_id"],
@@ -177,11 +223,15 @@ async def create_tenancy(
         tenant_name=res.get("tenant_name"),
         tenant_mobile=res.get("tenant_mobile"),
         contract_number=tenancy["contract_number"],
+        ejar_contract_number=payload.ejar_contract_number,
+        ejar_status=payload.ejar_status or "ACTIVE",
+        contract_type=payload.contract_type or "RESIDENTIAL",
         start_date=tenancy["start_date"],
         end_date=tenancy["end_date"],
         rent_amount=float(tenancy["rent_amount"]),
         payment_frequency=tenancy["payment_frequency"],
         deposit_amount=float(tenancy["deposit_amount"]),
+        security_deposit_status=payload.security_deposit_status or "HELD",
         status=tenancy["status"]
     )
     return ResponseEnvelope(data=out)
@@ -195,6 +245,23 @@ async def get_tenancy_detail(tenancy_id: str, conn: asyncpg.Connection = Depends
             t.unit_id,
             u.unit_number,
             t.tenant_customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name,
+            c.mobile AS tenant_mobile,
+            c.email AS tenant_email,
+            t.contract_number,
+            t.ejar_contract_number,
+            t.ejar_status,
+            t.contract_type,
+            t.start_date,
+            t.end_date,
+            CAST(t.rent_amount AS FLOAT) AS rent_amount,
+            t.payment_frequency,
+            CAST(t.deposit_amount AS FLOAT) AS deposit_amount,
+            t.security_deposit_status,
+            t.status
+        FROM tenancies t
+        LEFT JOIN units u ON t.unit_id = u.unit_id
+        LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
             COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name,
             c.mobile AS tenant_mobile,
             c.email AS tenant_email,
@@ -271,15 +338,19 @@ async def list_rent_collections(
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
     tenancy_id: Optional[str] = None,
+    collection_id: Optional[str] = None,
+    search: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"rc.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -287,6 +358,24 @@ async def list_rent_collections(
     if tenancy_id:
         conditions.append(f"rc.tenancy_id = ${p_idx}")
         params.append(tenancy_id)
+        p_idx += 1
+
+    if collection_id:
+        conditions.append(f"rc.rent_collection_id = ${p_idx}")
+        params.append(collection_id)
+        p_idx += 1
+
+    if search:
+        s = f"%{search.strip()}%"
+        conditions.append(f"""(
+            rc.rent_collection_id ILIKE ${p_idx}
+            OR t.contract_number ILIKE ${p_idx}
+            OR u.unit_number ILIKE ${p_idx}
+            OR c.first_name ILIKE ${p_idx}
+            OR c.last_name ILIKE ${p_idx}
+            OR c.company_name ILIKE ${p_idx}
+        )""")
+        params.append(s)
         p_idx += 1
 
     if is_overdue:
@@ -297,6 +386,9 @@ async def list_rent_collections(
         f"""
         SELECT count(*) 
         FROM rent_collections rc
+        LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+        LEFT JOIN units u ON t.unit_id = u.unit_id
+        LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
         WHERE {where_clause}
         """,
         *params
@@ -322,13 +414,13 @@ async def list_rent_collections(
         ORDER BY rc.due_date ASC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [RentCollectionOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/tenancies/{tenancy_id}/rent-collections", response_model=ResponseEnvelope[RentCollectionOut], status_code=status.HTTP_201_CREATED)
@@ -458,15 +550,18 @@ async def list_maintenance_tickets(
     priority: Optional[str] = None,
     category: Optional[str] = None,
     unit_id: Optional[str] = None,
+    ticket_id: Optional[str] = None,
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"mt.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -486,9 +581,19 @@ async def list_maintenance_tickets(
         params.append(unit_id)
         p_idx += 1
 
+    if ticket_id:
+        conditions.append(f"mt.ticket_id = ${p_idx}")
+        params.append(ticket_id)
+        p_idx += 1
+
     if search:
         s = f"%{search.strip()}%"
-        conditions.append(f"(mt.description ILIKE ${p_idx} OR u.unit_number ILIKE ${p_idx})")
+        conditions.append(f"""(
+            mt.ticket_id ILIKE ${p_idx} 
+            OR mt.description ILIKE ${p_idx} 
+            OR u.unit_number ILIKE ${p_idx}
+            OR EXISTS (SELECT 1 FROM maintenance_work_orders mwo WHERE mwo.ticket_id = mt.ticket_id AND mwo.work_order_id ILIKE ${p_idx})
+        )""")
         params.append(s)
         p_idx += 1
 
@@ -530,13 +635,13 @@ async def list_maintenance_tickets(
             mt.opened_at DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [MaintenanceTicketOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/maintenance-tickets", response_model=ResponseEnvelope[MaintenanceTicketOut], status_code=status.HTTP_201_CREATED)
@@ -715,12 +820,14 @@ async def list_work_orders(
     vendor_id: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"mwo.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -751,8 +858,13 @@ async def list_work_orders(
             v.vendor_name,
             mwo.assigned_user_id,
             usr.full_name AS assigned_user_name,
+            mwo.cost_bearer,
             CAST(mwo.quoted_amount AS FLOAT) AS quoted_amount,
             CAST(mwo.approved_amount AS FLOAT) AS approved_amount,
+            CAST(mwo.vat_amount AS FLOAT) AS vat_amount,
+            CAST(mwo.total_amount AS FLOAT) AS total_amount,
+            mwo.invoice_ref,
+            mwo.notes,
             mwo.completed_at,
             mwo.status
         FROM maintenance_work_orders mwo
@@ -764,13 +876,13 @@ async def list_work_orders(
         ORDER BY mwo.work_order_id DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [WorkOrderOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/maintenance-tickets/{ticket_id}/work-orders", response_model=ResponseEnvelope[WorkOrderOut], status_code=status.HTTP_201_CREATED)
@@ -805,17 +917,24 @@ async def create_work_order(
 
     wo_id = await get_next_id(conn, "maintenance_work_orders", "work_order")
     st = (payload.status or "REQUESTED").upper()
+    cost_bearer = (payload.cost_bearer or "OWNER").upper()
+
+    quoted = payload.quoted_amount or 0.0
+    vat = payload.vat_amount if payload.vat_amount is not None else round(quoted * 0.15, 2)
+    tot = payload.total_amount if payload.total_amount is not None else round(quoted + vat, 2)
 
     async with conn.transaction():
         await conn.execute(
             """
             INSERT INTO maintenance_work_orders (
                 work_order_id, ticket_id, vendor_id, assigned_user_id,
-                quoted_amount, approved_amount, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                quoted_amount, approved_amount, status, cost_bearer, vat_amount, total_amount,
+                invoice_ref, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             """,
             wo_id, ticket_id, payload.vendor_id, payload.assigned_user_id,
-            payload.quoted_amount, payload.approved_amount, st
+            payload.quoted_amount, payload.approved_amount, st, cost_bearer, vat, tot,
+            payload.invoice_ref, payload.notes
         )
         # Advance ticket status to IN_PROGRESS if OPEN
         await conn.execute(
@@ -832,8 +951,13 @@ async def create_work_order(
         vendor_name=vendor_name,
         assigned_user_id=payload.assigned_user_id,
         assigned_user_name=user_name,
+        cost_bearer=cost_bearer,
         quoted_amount=payload.quoted_amount,
         approved_amount=payload.approved_amount,
+        vat_amount=vat,
+        total_amount=tot,
+        invoice_ref=payload.invoice_ref,
+        notes=payload.notes,
         completed_at=None,
         status=st
     )
@@ -850,12 +974,18 @@ async def approve_work_order(
         raise HTTPException(status_code=404, detail="Work order not found")
 
     final_amount = approved_amount if approved_amount is not None else float(wo["quoted_amount"] or 0.0)
+    vat = round(final_amount * 0.15, 2)
+    tot = round(final_amount + vat, 2)
 
     await conn.execute(
-        "UPDATE maintenance_work_orders SET status = 'APPROVED', approved_amount = $1 WHERE work_order_id = $2",
-        final_amount, work_order_id
+        """
+        UPDATE maintenance_work_orders 
+        SET status = 'APPROVED', approved_amount = $1, vat_amount = $2, total_amount = $3 
+        WHERE work_order_id = $4
+        """,
+        final_amount, vat, tot, work_order_id
     )
-    return ResponseEnvelope(data={"work_order_id": str(work_order_id), "status": "APPROVED", "approved_amount": final_amount})
+    return ResponseEnvelope(data={"work_order_id": str(work_order_id), "status": "APPROVED", "approved_amount": final_amount, "total_amount": tot})
 
 @router.post("/work-orders/{work_order_id}/complete", response_model=ResponseEnvelope[dict])
 async def complete_work_order(
@@ -867,10 +997,22 @@ async def complete_work_order(
         raise HTTPException(status_code=404, detail="Work order not found")
 
     now = datetime.now(timezone.utc)
-    await conn.execute(
-        "UPDATE maintenance_work_orders SET status = 'COMPLETED', completed_at = $1 WHERE work_order_id = $2",
-        now, work_order_id
-    )
+    async with conn.transaction():
+        await conn.execute(
+            "UPDATE maintenance_work_orders SET status = 'COMPLETED', completed_at = $1 WHERE work_order_id = $2",
+            now, work_order_id
+        )
+        if wo["ticket_id"]:
+            # Check if all work orders for this ticket are completed
+            pending = await conn.fetchval(
+                "SELECT count(*) FROM maintenance_work_orders WHERE ticket_id = $1 AND status != 'COMPLETED'",
+                wo["ticket_id"]
+            )
+            if pending == 0:
+                await conn.execute(
+                    "UPDATE maintenance_tickets SET status = 'RESOLVED', closed_at = $1 WHERE ticket_id = $2 AND status != 'CLOSED'",
+                    now, wo["ticket_id"]
+                )
     return ResponseEnvelope(data={"work_order_id": str(work_order_id), "status": "COMPLETED", "completed_at": now.isoformat()})
 
 
@@ -885,12 +1027,14 @@ async def list_vendors(
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"v.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -919,13 +1063,13 @@ async def list_vendors(
         ORDER BY v.vendor_name ASC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [VendorOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/vendors", response_model=ResponseEnvelope[VendorOut], status_code=status.HTTP_201_CREATED)
@@ -975,12 +1119,14 @@ async def list_management_contracts(
     search: Optional[str] = None,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    offset = (page - 1) * page_size
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
     conditions = ["1=1"]
     params = []
     p_idx = 1
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, str):
         conditions.append(f"mc.status = ${p_idx}")
         params.append(status_filter.upper())
         p_idx += 1
@@ -1025,13 +1171,13 @@ async def list_management_contracts(
         ORDER BY mc.start_date DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
-    params.extend([page_size, offset])
+    params.extend([ps_val, offset])
     rows = await conn.fetch(query, *params)
     data = [ManagementContractOut(**dict(r)) for r in rows]
 
     return CollectionEnvelope(
         data=data,
-        meta=CollectionMeta(page=page, page_size=page_size, total=total)
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
     )
 
 @router.post("/management-contracts", response_model=ResponseEnvelope[ManagementContractOut], status_code=status.HTTP_201_CREATED)
@@ -1089,3 +1235,460 @@ async def create_management_contract(
         managed_units_count=len(payload.unit_ids or [])
     )
     return ResponseEnvelope(data=out)
+
+
+# ---------------------------------------------------------
+# Owner Relations & Periodic Yield Distributions
+# ---------------------------------------------------------
+@router.get("/owner-distributions", response_model=CollectionEnvelope[OwnerYieldDistributionOut])
+async def list_owner_distributions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    owner_id: Optional[str] = None,
+    contract_id: Optional[str] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    p_val = int(page) if isinstance(page, int) else (int(page.default) if hasattr(page, 'default') else 1)
+    ps_val = int(page_size) if isinstance(page_size, int) else (int(page_size.default) if hasattr(page_size, 'default') else 50)
+    offset = (p_val - 1) * ps_val
+    conditions = ["1=1"]
+    params = []
+    p_idx = 1
+
+    if status_filter and isinstance(status_filter, str):
+        conditions.append(f"d.status = ${p_idx}")
+        params.append(status_filter.upper())
+        p_idx += 1
+
+    if owner_id:
+        conditions.append(f"d.owner_customer_id = ${p_idx}")
+        params.append(owner_id)
+        p_idx += 1
+
+    if contract_id:
+        conditions.append(f"d.management_contract_id = ${p_idx}")
+        params.append(contract_id)
+        p_idx += 1
+
+    where_clause = " AND ".join(conditions)
+    total = await conn.fetchval(
+        f"SELECT count(*) FROM owner_yield_distributions d WHERE {where_clause}",
+        *params
+    ) or 0
+
+    query = f"""
+        SELECT 
+            d.distribution_id,
+            d.management_contract_id,
+            mc.contract_number,
+            d.owner_customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS owner_name,
+            c.mobile AS owner_mobile,
+            d.period_start,
+            d.period_end,
+            CAST(d.gross_rent_collected AS FLOAT) AS gross_rent_collected,
+            CAST(d.management_fee_rate AS FLOAT) AS management_fee_rate,
+            CAST(d.management_fee_amount AS FLOAT) AS management_fee_amount,
+            CAST(d.maintenance_expenses_deducted AS FLOAT) AS maintenance_expenses_deducted,
+            CAST(d.other_deductions AS FLOAT) AS other_deductions,
+            CAST(d.net_yield_amount AS FLOAT) AS net_yield_amount,
+            d.status,
+            d.payment_reference,
+            d.bank_name,
+            d.iban,
+            d.paid_at,
+            d.notes,
+            d.created_at
+        FROM owner_yield_distributions d
+        JOIN management_contracts mc ON d.management_contract_id = mc.management_contract_id
+        JOIN customers c ON d.owner_customer_id = c.customer_id
+        WHERE {where_clause}
+        ORDER BY d.created_at DESC
+        LIMIT ${p_idx} OFFSET ${p_idx + 1}
+    """
+    params.extend([ps_val, offset])
+    rows = await conn.fetch(query, *params)
+    data = [OwnerYieldDistributionOut(**dict(r)) for r in rows]
+
+    return CollectionEnvelope(
+        data=data,
+        meta=CollectionMeta(page=p_val, page_size=ps_val, total=total)
+    )
+
+
+@router.post("/owner-distributions/calculate", response_model=ResponseEnvelope[OwnerYieldCalculationPreviewOut])
+async def calculate_owner_yield_preview(
+    payload: OwnerYieldDistributionCalculateIn,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Simulates / previews periodic yield calculation for a property management contract.
+    Reconciles actual rent collections against management fee rate and approved owner maintenance work orders.
+    """
+    contract = await conn.fetchrow("""
+        SELECT mc.*, COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS owner_name
+        FROM management_contracts mc
+        JOIN customers c ON mc.customer_id = c.customer_id
+        WHERE mc.management_contract_id = $1
+    """, payload.management_contract_id)
+
+    if not contract:
+        raise HTTPException(status_code=404, detail="Management contract not found")
+
+    units = await conn.fetch("""
+        SELECT mu.unit_id, u.unit_number, u.rent_price
+        FROM managed_units mu
+        JOIN units u ON mu.unit_id = u.unit_id
+        WHERE mu.management_contract_id = $1
+    """, payload.management_contract_id)
+
+    unit_ids = [u["unit_id"] for u in units]
+
+    gross_rent = 0.0
+    collections_count = 0
+    work_orders_expense = 0.0
+    wo_count = 0
+    breakdown = []
+
+    if unit_ids:
+        # Actual collected rents for these units in the period
+        rent_rows = await conn.fetch("""
+            SELECT rc.rent_collection_id, rc.amount_paid, t.unit_id, u.unit_number, rc.due_date, rc.paid_at
+            FROM rent_collections rc
+            JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+            JOIN units u ON t.unit_id = u.unit_id
+            WHERE t.unit_id = ANY($1)
+              AND rc.status = 'PAID'
+              AND (rc.paid_at::date >= $2 AND rc.paid_at::date <= $3)
+        """, unit_ids, payload.period_start, payload.period_end)
+
+        if not rent_rows:
+            rent_rows = await conn.fetch("""
+                SELECT rc.rent_collection_id, rc.amount_paid, t.unit_id, u.unit_number, rc.due_date, rc.paid_at
+                FROM rent_collections rc
+                JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+                JOIN units u ON t.unit_id = u.unit_id
+                WHERE t.unit_id = ANY($1)
+                  AND rc.status = 'PAID'
+                  AND (rc.due_date >= $2 AND rc.due_date <= $3)
+            """, unit_ids, payload.period_start, payload.period_end)
+
+        collections_count = len(rent_rows)
+        gross_rent = float(sum(r["amount_paid"] or 0.0 for r in rent_rows))
+
+        # Maintenance work orders charged to OWNER in the period
+        wo_rows = await conn.fetch("""
+            SELECT mwo.work_order_id, COALESCE(mwo.approved_amount, mwo.quoted_amount, 0) as amount,
+                   mt.unit_id, u.unit_number, mt.description
+            FROM maintenance_work_orders mwo
+            JOIN maintenance_tickets mt ON mwo.ticket_id = mt.ticket_id
+            JOIN units u ON mt.unit_id = u.unit_id
+            WHERE mt.unit_id = ANY($1)
+              AND mwo.status = 'COMPLETED'
+              AND mwo.cost_bearer = 'OWNER'
+              AND (mwo.completed_at::date >= $2 AND mwo.completed_at::date <= $3)
+        """, unit_ids, payload.period_start, payload.period_end)
+
+        wo_count = len(wo_rows)
+        work_orders_expense = float(sum(w["amount"] or 0.0 for w in wo_rows))
+
+        for u in units:
+            u_rent = sum(float(r["amount_paid"] or 0) for r in rent_rows if r["unit_id"] == u["unit_id"])
+            u_wo = sum(float(w["amount"] or 0) for w in wo_rows if w["unit_id"] == u["unit_id"])
+            breakdown.append({
+                "unit_id": u["unit_id"],
+                "unit_number": u["unit_number"],
+                "gross_rent": u_rent,
+                "maintenance_expense": u_wo,
+                "net_unit_yield": round(max(0.0, u_rent - u_wo), 2)
+            })
+
+    fee_type = contract["fee_type"] or "PERCENT"
+    fee_rate = float(contract["fee_rate"] or 5.0)
+    if fee_type == "PERCENT":
+        management_fee = round(gross_rent * (fee_rate / 100.0), 2)
+    else:
+        management_fee = round(fee_rate, 2)
+
+    other_ded = float(payload.other_deductions or 0.0)
+    net_yield = round(max(0.0, gross_rent - management_fee - work_orders_expense - other_ded), 2)
+
+    preview = OwnerYieldCalculationPreviewOut(
+        management_contract_id=payload.management_contract_id,
+        owner_customer_id=contract["customer_id"],
+        owner_name=contract["owner_name"],
+        contract_number=contract["contract_number"],
+        period_start=payload.period_start,
+        period_end=payload.period_end,
+        fee_type=fee_type,
+        management_fee_rate=fee_rate,
+        managed_units_count=len(units),
+        gross_rent_collected=gross_rent,
+        rent_collections_count=collections_count,
+        management_fee_amount=management_fee,
+        maintenance_expenses_deducted=work_orders_expense,
+        work_orders_count=wo_count,
+        other_deductions=other_ded,
+        net_yield_amount=net_yield,
+        units_breakdown=breakdown
+    )
+    return ResponseEnvelope(data=preview)
+
+
+@router.post("/owner-distributions", response_model=ResponseEnvelope[OwnerYieldDistributionOut], status_code=status.HTTP_201_CREATED)
+async def create_owner_distribution(
+    payload: OwnerYieldDistributionCreateIn,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    calc_in = OwnerYieldDistributionCalculateIn(
+        management_contract_id=payload.management_contract_id,
+        period_start=payload.period_start,
+        period_end=payload.period_end,
+        other_deductions=payload.other_deductions
+    )
+    res = await calculate_owner_yield_preview(calc_in, conn=conn)
+    preview = res.data
+
+    dist_id = await get_next_id(conn, "owner_yield_distributions", "dist")
+    now = datetime.now(timezone.utc)
+
+    await conn.execute("""
+        INSERT INTO owner_yield_distributions (
+            distribution_id, organization_id, management_contract_id, owner_customer_id,
+            period_start, period_end, gross_rent_collected, management_fee_rate,
+            management_fee_amount, maintenance_expenses_deducted, other_deductions,
+            net_yield_amount, status, notes, created_at, updated_at
+        ) VALUES ($1, 'organization-1', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'DRAFT', $12, $13, $13)
+    """,
+        dist_id, preview.management_contract_id, preview.owner_customer_id,
+        preview.period_start, preview.period_end, preview.gross_rent_collected,
+        preview.management_fee_rate, preview.management_fee_amount,
+        preview.maintenance_expenses_deducted, preview.other_deductions,
+        preview.net_yield_amount, payload.notes, now
+    )
+
+    cust = await conn.fetchrow("SELECT mobile FROM customers WHERE customer_id = $1", preview.owner_customer_id)
+
+    out = OwnerYieldDistributionOut(
+        distribution_id=dist_id,
+        management_contract_id=preview.management_contract_id,
+        contract_number=preview.contract_number,
+        owner_customer_id=preview.owner_customer_id,
+        owner_name=preview.owner_name,
+        owner_mobile=cust["mobile"] if cust else None,
+        period_start=preview.period_start,
+        period_end=preview.period_end,
+        gross_rent_collected=preview.gross_rent_collected,
+        management_fee_rate=preview.management_fee_rate,
+        management_fee_amount=preview.management_fee_amount,
+        maintenance_expenses_deducted=preview.maintenance_expenses_deducted,
+        other_deductions=preview.other_deductions,
+        net_yield_amount=preview.net_yield_amount,
+        status="DRAFT",
+        payment_reference=None,
+        bank_name=None,
+        iban=None,
+        paid_at=None,
+        notes=payload.notes,
+        created_at=now
+    )
+    return ResponseEnvelope(data=out)
+
+
+@router.post("/owner-distributions/{distribution_id}/approve", response_model=ResponseEnvelope[dict])
+async def approve_owner_distribution(
+    distribution_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    dist = await conn.fetchrow("SELECT distribution_id, status FROM owner_yield_distributions WHERE distribution_id = $1", distribution_id)
+    if not dist:
+        raise HTTPException(status_code=404, detail="Owner distribution not found")
+
+    await conn.execute("UPDATE owner_yield_distributions SET status = 'APPROVED', updated_at = NOW() WHERE distribution_id = $1", distribution_id)
+    return ResponseEnvelope(data={"distribution_id": str(distribution_id), "status": "APPROVED"})
+
+
+@router.post("/owner-distributions/{distribution_id}/record-payout", response_model=ResponseEnvelope[dict])
+async def record_owner_distribution_payout(
+    distribution_id: str,
+    payload: OwnerYieldDistributionPayoutIn,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    dist = await conn.fetchrow("SELECT distribution_id, status FROM owner_yield_distributions WHERE distribution_id = $1", distribution_id)
+    if not dist:
+        raise HTTPException(status_code=404, detail="Owner distribution not found")
+
+    paid_time = payload.paid_at or datetime.now(timezone.utc)
+
+    await conn.execute("""
+        UPDATE owner_yield_distributions 
+        SET status = 'PAID', 
+            payment_reference = $1,
+            bank_name = $2,
+            iban = $3,
+            paid_at = $4,
+            notes = COALESCE($5, notes),
+            updated_at = NOW()
+        WHERE distribution_id = $6
+    """, payload.payment_reference, payload.bank_name, payload.iban, paid_time, payload.notes, distribution_id)
+
+    return ResponseEnvelope(data={
+        "distribution_id": str(distribution_id),
+        "status": "PAID",
+        "payment_reference": payload.payment_reference,
+        "paid_at": paid_time.isoformat()
+    })
+
+
+@router.get("/owner-distributions/{distribution_id}/statement-html", response_class=HTMLResponse)
+async def get_owner_distribution_statement_html(
+    distribution_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Renders official, printable, high-fidelity Owner Statement document (كشف حساب المالك وتوزيع العوائد).
+    """
+    dist = await conn.fetchrow("""
+        SELECT d.*, mc.contract_number, mc.fee_type,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS owner_name,
+               c.mobile AS owner_mobile, c.email AS owner_email, c.national_id_hash AS owner_id_number
+        FROM owner_yield_distributions d
+        JOIN management_contracts mc ON d.management_contract_id = mc.management_contract_id
+        JOIN customers c ON d.owner_customer_id = c.customer_id
+        WHERE d.distribution_id = $1
+    """, distribution_id)
+
+    if not dist:
+        raise HTTPException(status_code=404, detail="Owner distribution not found")
+
+    units = await conn.fetch("""
+        SELECT mu.unit_id, u.unit_number, u.asking_price, b.name as building_name
+        FROM managed_units mu
+        JOIN units u ON mu.unit_id = u.unit_id
+        LEFT JOIN buildings b ON u.building_id = b.building_id
+        WHERE mu.management_contract_id = $1
+    """, dist["management_contract_id"])
+
+    u_rows_html = "".join([f"""
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{u['unit_number']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{u['building_name'] or 'عقار مأهول'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: left; font-weight: bold; color: #10b981;">نشط ومؤجر</td>
+        </tr>
+    """ for u in units]) or "<tr><td colspan='3' style='padding: 10px; text-align: center;'>لا توجد وحدات مسجلة</td></tr>"
+
+    status_badge = {
+        "DRAFT": "<span style='background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-weight: bold;'>مسودة توزيع</span>",
+        "APPROVED": "<span style='background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-weight: bold;'>معتمد ومعد للصرف</span>",
+        "PAID": "<span style='background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-weight: bold;'>تم الصرف والتحويل البنكي</span>"
+    }.get(dist["status"], dist["status"])
+
+    html = f"""<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>كشف حساب المالك وتوزيع العوائد - {dist['distribution_id']}</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 30px; color: #1e293b; background: #fff; }}
+        .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f172a; padding-bottom: 20px; margin-bottom: 25px; }}
+        .header-title h1 {{ margin: 0; font-size: 24px; color: #0f172a; }}
+        .header-title p {{ margin: 5px 0 0 0; color: #64748b; font-size: 14px; }}
+        .statement-badge {{ text-align: left; }}
+        .meta-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 25px; }}
+        .meta-item {{ font-size: 14px; }}
+        .meta-item span {{ color: #64748b; }}
+        .meta-item strong {{ color: #0f172a; margin-right: 5px; }}
+        .kpi-cards {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 30px; }}
+        .kpi-box {{ padding: 14px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }}
+        .kpi-box.gross {{ background: #f0fdf4; border-color: #bbf7d0; }}
+        .kpi-box.fee {{ background: #eff6ff; border-color: #bfdbfe; }}
+        .kpi-box.maint {{ background: #fef2f2; border-color: #fecaca; }}
+        .kpi-box.net {{ background: #0f172a; color: white; border-color: #0f172a; }}
+        .kpi-box h4 {{ margin: 0; font-size: 12px; color: #64748b; }}
+        .kpi-box.net h4 {{ color: #94a3b8; }}
+        .kpi-box .val {{ font-size: 19px; font-weight: bold; margin-top: 6px; }}
+        .kpi-box.net .val {{ color: #38bdf8; font-size: 22px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }}
+        th {{ background: #f1f5f9; padding: 10px; text-align: right; border-bottom: 2px solid #cbd5e1; color: #334155; }}
+        .payout-box {{ background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 18px; margin-top: 20px; }}
+        .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }}
+        @media print {{ .no-print {{ display: none; }} body {{ padding: 10px; }} }}
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px; text-align: left;">
+        <button onclick="window.print()" style="background: #0f172a; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 14px;">🖨️ طباعة كشف الحساب الرسمي</button>
+    </div>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>مكتب معاذ خضر النمري للخدمات العقارية</h1>
+            <p>إدارة وتأجير وصيانة الأملاك والمرافق | كشف حساب المالك وتوزيع العوائد الدورية</p>
+        </div>
+        <div class="statement-badge">
+            {status_badge}
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">رقم السجل: {dist['distribution_id']}</div>
+        </div>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item"><span>اسم المالك:</span> <strong>{dist['owner_name']}</strong></div>
+        <div class="meta-item"><span>رقم عقد إدارة الأملاك:</span> <strong>{dist['contract_number']}</strong></div>
+        <div class="meta-item"><span>رقم الجوال:</span> <strong>{dist['owner_mobile'] or 'غير مسجل'}</strong></div>
+        <div class="meta-item"><span>فترة استحقاق العائد:</span> <strong>{dist['period_start']} إلى {dist['period_end']}</strong></div>
+        <div class="meta-item"><span>أتعاب إدارة الأملاك:</span> <strong>{dist['management_fee_rate']}% ({dist['fee_type']})</strong></div>
+        <div class="meta-item"><span>تاريخ إصدار الكشف:</span> <strong>{dist['created_at'].strftime('%Y-%m-%d %H:%M')}</strong></div>
+    </div>
+
+    <div class="kpi-cards">
+        <div class="kpi-box gross">
+            <h4>إجمالي الإيجارات المحصلة</h4>
+            <div class="val" style="color: #166534;">{float(dist['gross_rent_collected']):,.2f} ر.س</div>
+        </div>
+        <div class="kpi-box fee">
+            <h4>أتعاب إدارة الأملاك المخصومة</h4>
+            <div class="val" style="color: #1e40af;">- {float(dist['management_fee_amount']):,.2f} ر.س</div>
+        </div>
+        <div class="kpi-box maint">
+            <h4>مصاريف الصيانة والتشغيل</h4>
+            <div class="val" style="color: #991b1b;">- {float(dist['maintenance_expenses_deducted']):,.2f} ر.س</div>
+        </div>
+        <div class="kpi-box net">
+            <h4>صافي العائد المستحق للمالك</h4>
+            <div class="val">{float(dist['net_yield_amount']):,.2f} ر.س</div>
+        </div>
+    </div>
+
+    <h3 style="color: #0f172a; margin-bottom: 12px; font-size: 16px;">🏢 بيان الوحدات العقارية المدارة التابعة للعقد</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>رقم الوحدة العقارية</th>
+                <th>المبنى / المشروع</th>
+                <th style="text-align: left;">حالة الإشغال</th>
+            </tr>
+        </thead>
+        <tbody>
+            {u_rows_html}
+        </tbody>
+    </table>
+
+    <div class="payout-box">
+        <h4 style="margin: 0 0 10px 0; color: #6b21a8; font-size: 15px;">💳 بيانات التسوية والتحويل المالي للمالك</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
+            <div><span style="color: #64748b;">رقم الحوالة البنكية / المرجع:</span> <strong>{dist['payment_reference'] or 'قيد الاعتماد'}</strong></div>
+            <div><span style="color: #64748b;">البنك المحول إليه:</span> <strong>{dist['bank_name'] or 'البنك الأهلي السعودي / الراجحي'}</strong></div>
+            <div><span style="color: #64748b;">الآيبان المحول له:</span> <strong>{dist['iban'] or '--'}</strong></div>
+            <div><span style="color: #64748b;">تاريخ التحويل الفعلي:</span> <strong>{dist['paid_at'].strftime('%Y-%m-%d') if dist['paid_at'] else 'مجدول'}</strong></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>المحاسب المعتمد: إدارة الشؤون المالية وإدارة الأملاك</div>
+        <div>ختم واعتماد المكتب: معاذ خضر النمري للخدمات العقارية - ترخيص فال 1200000000</div>
+        <div>الصفحة 1 من 1</div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)

@@ -1,5 +1,6 @@
 from typing import Optional, List
 from uuid import UUID
+import logging
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
@@ -9,9 +10,12 @@ from app.routers.auth import check_user_scope_override, resolve_user_data_scope,
 from app.schemas.sales import (
     OpportunityOut, OpportunityUpdate, OpportunityCreateIn, ViewingOut, ViewingCreateIn, ReservationOut,
     OfferOut, OfferCreateIn, OfferUpdateIn, OfferDecisionIn, ReservationCreateIn, ReservationDepositVerifyIn,
-    OpportunityUnitOut, OpportunityUnitCreateIn
+    OpportunityUnitOut, OpportunityUnitCreateIn,
+    OpportunityCancelIn, OpportunityCancelOut
 )
 from app.services.workflow_engine import WorkflowEngine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Sales Pipeline"])
 
@@ -210,6 +214,48 @@ async def unblock_opportunity_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+@router.post("/opportunities/{opp_id}/cancel", response_model=ResponseEnvelope[OpportunityCancelOut])
+async def cancel_opportunity_endpoint(
+    opp_id: str,
+    payload: Optional[OpportunityCancelIn] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Deal Cancellation with Remediation Tasks & Statutory Gating:
+    - Initiates deal cancellation
+    - Identifies obligations (invoices, deposits, unit reservations)
+    - If obligations exist: transitions stage to UNDER_CANCELLATION and generates remediation tasks
+    - If zero obligations: finalizes immediately to CLOSED_LOST
+    """
+    user_id = x_user_id or "user-51"
+    reason = payload.reason if payload else "OTHER"
+    notes = payload.notes if payload else None
+    force_skip = payload.force_skip_settlement if payload else False
+
+    async with conn.transaction():
+        try:
+            result = await WorkflowEngine.initiate_deal_cancellation(
+                conn=conn,
+                opportunity_id=opp_id,
+                user_id=user_id,
+                reason_code=reason,
+                notes=notes,
+                force_skip_settlement=force_skip
+            )
+        except ValueError as e:
+            msg = str(e)
+            if "not found" in msg.lower() or "غير موجودة" in msg:
+                raise HTTPException(status_code=404, detail=msg)
+            raise HTTPException(status_code=400, detail=msg)
+        except Exception as e:
+            logger.error(f"Error initiating cancellation for opportunity {opp_id}: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to initiate cancellation: {str(e)}")
+
+    return ResponseEnvelope(data=OpportunityCancelOut(**result), meta=BaseMeta())
+
+
 @router.patch("/opportunities/{opp_id}", response_model=ResponseEnvelope[OpportunityOut])
 async def update_opportunity(opp_id: str, payload: OpportunityUpdate, conn: asyncpg.Connection = Depends(get_db)):
     updates = []
@@ -223,6 +269,32 @@ async def update_opportunity(opp_id: str, payload: OpportunityUpdate, conn: asyn
                 await WorkflowEngine.verify_saudi_fees_collected(conn, opportunity_id=opp_id)
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e))
+        elif new_stage in ("LOST", "CLOSED_LOST"):
+            # Gating Rule: Verify no pending remediation tasks exist
+            pending_remediation = await conn.fetchval("""
+                SELECT COUNT(*) FROM tasks
+                WHERE opportunity_id = $1
+                  AND template_id IN ('TASK_DEAL_FINANCIAL_SETTLEMENT', 'TASK_DEAL_INVENTORY_RELEASE')
+                  AND status IN ('OPEN', 'PENDING', 'IN_PROGRESS')
+            """, opp_id) or 0
+            if pending_remediation > 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="لا يمكن إلغاء وإغلاق الصفقة نهائياً؛ توجد مهام تسوية وتصفية معلقة (تصفية مالية / فك حجز وحدات). يجب إنجاز كافة مهام التسوية ليقوم النظام بإغلاق الصفقة تلقائياً."
+                )
+
+            # Check if there are active obligations requiring formal cancellation
+            active_res = await conn.fetchval("""
+                SELECT COUNT(*) FROM reservations WHERE opportunity_id = $1 AND status = 'ACTIVE'
+            """, opp_id) or 0
+            active_inv = await conn.fetchval("""
+                SELECT COUNT(*) FROM invoices WHERE opportunity_id = $1 AND status != 'CANCELLED'
+            """, opp_id) or 0
+            if active_res > 0 or active_inv > 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="لا يمكن إغلاق الصفقة كخاسرة/ملغاة لوجود التزامات نشطة (حجوزات أو فواتير قائمة). يرجى استخدام زر إلغاء الصفقة لبدء مسار التسوية النظامية وتصفية الالتزامات."
+                )
         updates.append(f"stage = ${p_idx}")
         params.append(new_stage)
         p_idx += 1
@@ -585,6 +657,7 @@ async def list_reservations(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
+    reservation_id: Optional[str] = Query(None),
     opportunity_id: Optional[str] = None,
     lead_id: Optional[str] = None,
     search: Optional[str] = Query(None),
@@ -598,6 +671,11 @@ async def list_reservations(
     if status_filter:
         conditions.append(f"r.status = ${p_idx}")
         params.append(status_filter.upper())
+        p_idx += 1
+
+    if reservation_id:
+        conditions.append(f"(r.reservation_id = ${p_idx} OR r.reservation_number = ${p_idx})")
+        params.append(reservation_id)
         p_idx += 1
 
     if opportunity_id:
@@ -619,7 +697,10 @@ async def list_reservations(
     if search:
         search_pattern = f"%{search}%"
         conditions.append(f"""(
+            r.reservation_id ILIKE ${p_idx} OR
             r.reservation_number ILIKE ${p_idx} OR
+            r.opportunity_id ILIKE ${p_idx} OR
+            opp.lead_id ILIKE ${p_idx} OR
             u.unit_number ILIKE ${p_idx} OR
             c.first_name ILIKE ${p_idx} OR
             c.last_name ILIKE ${p_idx} OR
