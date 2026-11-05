@@ -12,6 +12,7 @@ import asyncpg
 from app.config import settings
 from app.services.workflow_engine import WorkflowEngine
 from app.routers.finance import list_invoices, get_invoice, collect_invoice, generate_opportunity_fee_invoices
+from app.routers.management import get_tenancy_detail
 from app.routers.sales import update_opportunity
 from app.schemas.contracts import CollectInvoiceIn, GenerateFeeInvoicesIn
 from app.schemas.sales import OpportunityUpdate
@@ -302,4 +303,83 @@ class TestSaudiFeesAndInvoices(unittest.IsolatedAsyncioTestCase):
 
         finally:
             await tr.rollback()
+
+    async def test_tenancy_detail_and_invoice_search(self):
+        """
+        Verify that:
+        1. Tenancy detail endpoint returns tenancy, collections, and associated fee invoices without crashing.
+        2. Specifically checks tenancy-155 (unit-10) and finds INV-202610-5695-CUST and INV-202610-4356-OWNR.
+        3. list_invoices correctly finds invoices by invoice_number, invoice_id, unit, and tenancy_id.
+        """
+        # 1. Fetch tenancy-155 details
+        res = await get_tenancy_detail("tenancy-155", self.conn)
+        self.assertIsNotNone(res)
+        self.assertIn("tenancy", res.data)
+        self.assertIn("collections", res.data)
+        self.assertIn("invoices", res.data)
+        self.assertEqual(res.data["tenancy"]["contract_number"], "TEN-202610-8328")
+
+        inv_numbers = [i["invoice_number"] for i in res.data["invoices"]]
+        self.assertIn("INV-202610-5695-CUST", inv_numbers)
+        self.assertIn("INV-202610-4356-OWNR", inv_numbers)
+
+        # 2. Test list_invoices by exact invoice number
+        res_cust = await list_invoices(search="INV-202610-5695-CUST", x_user_id=self.agent_id, conn=self.conn)
+        self.assertTrue(any(i.invoice_number == "INV-202610-5695-CUST" for i in res_cust.data))
+
+        res_ownr = await list_invoices(search="INV-202610-4356-OWNR", x_user_id=self.agent_id, conn=self.conn)
+        self.assertTrue(any(i.invoice_number == "INV-202610-4356-OWNR" for i in res_ownr.data))
+
+        # 3. Test list_invoices by invoice_id
+        res_id17 = await list_invoices(search="inv-17", x_user_id=self.agent_id, conn=self.conn)
+        self.assertTrue(any(i.invoice_id == "inv-17" for i in res_id17.data))
+
+        res_id18 = await list_invoices(search="inv-18", x_user_id=self.agent_id, conn=self.conn)
+        self.assertTrue(any(i.invoice_id == "inv-18" for i in res_id18.data))
+
+        # 4. Test list_invoices by tenancy_id
+        res_ten = await list_invoices(tenancy_id="tenancy-155", x_user_id=self.agent_id, conn=self.conn)
+        ten_inv_numbers = [i.invoice_number for i in res_ten.data]
+        self.assertIn("INV-202610-5695-CUST", ten_inv_numbers)
+        self.assertIn("INV-202610-4356-OWNR", ten_inv_numbers)
+
+    def test_commission_and_payment_voucher_documents_and_task_completion(self):
+        """
+        Verify:
+        1. Commission voucher preview endpoint GET /api/v1/commissions/{id}/html.
+        2. Payment receipt voucher preview endpoint GET /api/v1/payments/{id}/html.
+        3. Task completion details returns commission object and archived document for TASK_COMMISSION_SETTLEMENT.
+        """
+        from starlette.testclient import TestClient
+        from app.main import app
+
+        with TestClient(app) as client:
+            # 1. Commission Voucher HTML Preview
+            res_comm = client.get("/api/v1/commissions/comm-520/html", headers={"X-User-ID": "user-19"})
+            self.assertEqual(res_comm.status_code, 200)
+            self.assertIn("سند صرف", res_comm.text)
+            self.assertIn("Shahad Alnemari", res_comm.text)
+            self.assertIn("156.25", res_comm.text)
+            self.assertIn("TEN-202611-2415", res_comm.text)
+
+            # 2. Payment Receipt HTML Preview
+            res_pay = client.get("/api/v1/payments/rent_collection-781/html", headers={"X-User-ID": "user-19"})
+            self.assertEqual(res_pay.status_code, 200)
+            self.assertIn("سند قبض", res_pay.text)
+            self.assertIn("Kheder Alnemari", res_pay.text)
+            self.assertIn("12,500", res_pay.text)
+
+            # 3. Task Completion Details for Commission Task
+            res_task = client.get("/api/v1/tasks/task-17152/completion-details", headers={"X-User-ID": "user-19"})
+            self.assertEqual(res_task.status_code, 200)
+            t_data = res_task.json()["data"]
+            self.assertIsNotNone(t_data.get("commission"))
+            self.assertEqual(t_data["commission"]["commission_id"], "comm-520")
+            self.assertEqual(t_data["commission"]["status"], "PAID")
+            self.assertEqual(float(t_data["commission"]["amount"]), 156.25)
+
+            # Verify document for commission is linked
+            doc_codes = [d["document_type_code"] for d in t_data.get("documents", [])]
+            self.assertIn("COMMISSION_SETTLEMENT", doc_codes)
+
 

@@ -34,8 +34,10 @@ class LeadOut(BaseModel):
     budget_max: Optional[float] = None
     preferred_city_id: Optional[str] = None
     preferred_city_name: Optional[str] = None
+    preferred_city_name_ar: Optional[str] = None
     preferred_property_type_id: Optional[str] = None
     preferred_property_type_name: Optional[str] = None
+    preferred_property_type_name_ar: Optional[str] = None
     bedrooms_min: Optional[int] = None
     area_min_sqm: Optional[float] = None
     unit_id: Optional[str] = None

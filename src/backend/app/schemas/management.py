@@ -33,6 +33,11 @@ class TenancyOut(BaseModel):
     deposit_amount: Optional[float] = None
     security_deposit_status: Optional[str] = "HELD"
     status: str
+    bank_name: Optional[str] = None
+    bank_iban: Optional[str] = None
+    bank_beneficiary: Optional[str] = None
+    maintenance_terms: Optional[str] = None
+    notes: Optional[str] = None
 
 class TenancyCreateIn(BaseModel):
     unit_id: str
@@ -50,6 +55,12 @@ class TenancyCreateIn(BaseModel):
     status: Optional[str] = "ACTIVE"
     generate_installments: Optional[bool] = True
     installments_count: Optional[int] = Field(1, ge=1, le=12)
+    first_due_date: Optional[date] = None
+    bank_name: Optional[str] = None
+    bank_iban: Optional[str] = None
+    bank_beneficiary: Optional[str] = None
+    maintenance_terms: Optional[str] = None
+    notes: Optional[str] = None
     lead_id: Optional[str] = None
     opportunity_id: Optional[str] = None
 
@@ -64,6 +75,9 @@ class RentCollectionOut(BaseModel):
     amount_paid: float
     paid_at: Optional[datetime] = None
     status: str
+    document_id: Optional[str] = None
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
 
 class RentCollectionCreateIn(BaseModel):
     tenancy_id: str
@@ -72,6 +86,10 @@ class RentCollectionCreateIn(BaseModel):
 
 class RentCollectionPaymentIn(BaseModel):
     amount_paid: float = Field(..., gt=0)
+    payment_method: Optional[str] = "EJAR_ONLINE"
+    payment_reference: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    notes: Optional[str] = None
 
 class MaintenanceTicketOut(BaseModel):
     ticket_id: str

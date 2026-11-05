@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 
 class PaymentOut(BaseModel):
     payment_id: str
-    contract_id: str
+    contract_id: Optional[str] = None
     payment_reference: Optional[str] = None
     due_date: Optional[date] = None
     amount_due: float
@@ -18,6 +18,8 @@ class PaymentOut(BaseModel):
     contract_status: Optional[str] = None
     customer_name: Optional[str] = None
     unit_number: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
 
 class PaymentCreate(BaseModel):
     due_date: Optional[date] = None
@@ -78,6 +80,13 @@ class ContractOut(BaseModel):
     status: str
     total_paid: float = 0.0
     outstanding_balance: float = 0.0
+    payment_frequency: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_iban: Optional[str] = None
+    bank_beneficiary: Optional[str] = None
+    maintenance_terms: Optional[str] = None
+    notes: Optional[str] = None
+    ejar_contract_number: Optional[str] = None
 
 class ContractCreate(BaseModel):
     reservation_id: Optional[str] = None
@@ -130,6 +139,8 @@ class InvoiceOut(BaseModel):
     payer_customer_id: str
     payer_customer_name: Optional[str] = None
     payer_customer_mobile: Optional[str] = None
+    payer_name: Optional[str] = None
+    payer_mobile: Optional[str] = None
     opportunity_id: Optional[str] = None
     lead_id: Optional[str] = None
     contract_id: Optional[str] = None
@@ -163,4 +174,11 @@ class GenerateFeeInvoicesIn(BaseModel):
     buyer_brokerage_percent: Optional[float] = 2.5
     seller_brokerage_percent: Optional[float] = 0.0
     notes: Optional[str] = None
+
+class EditReferenceIn(BaseModel):
+    reference_number: Optional[str] = None
+    secondary_reference: Optional[str] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+
 

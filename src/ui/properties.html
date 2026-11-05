@@ -429,7 +429,13 @@
         <!-- ================= TAB 1: UNITS INVENTORY PANEL ================= -->
         <div id="panel-units">
             <div class="controls-bar">
-                <input type="text" id="search-box" placeholder="Search by unit number, unit_id or project..." style="flex-grow: 1; min-width: 220px;" oninput="fetchUnits()" data-i18n-placeholder="search_placeholder">
+                <input type="text" id="search-box" placeholder="Search by unit number, ID, project, property type, or city..." style="flex-grow: 1; min-width: 220px;" oninput="fetchUnits(1)" data-i18n-placeholder="search_placeholder">
+                <select id="unit-city-filter" onchange="onCityFilterChange()" style="min-width: 140px;">
+                    <option value="" data-i18n="opt_all_cities">All Cities</option>
+                </select>
+                <select id="unit-prop-type-filter" onchange="fetchUnits(1)" style="min-width: 160px;">
+                    <option value="" data-i18n="opt_all_prop_types">All Property Types</option>
+                </select>
                 <select id="project-filter" onchange="onProjectFilterChange()">
                     <option value="" data-i18n="opt_all_projects">All Projects</option>
                 </select>
@@ -506,18 +512,18 @@
 
             <!-- Projects Controls & Filters -->
             <div class="controls-bar" style="margin-bottom: 20px;">
-                <input type="text" id="proj-search-box" placeholder="بحث بالاسم، كود المشروع، المدينة، أو المطور..." style="flex-grow: 1; min-width: 240px;" oninput="fetchProjectsDirectory()">
+                <input type="text" id="proj-search-box" placeholder="Search by name, project code, city, or developer..." style="flex-grow: 1; min-width: 240px;" oninput="fetchProjectsDirectory()" data-i18n-placeholder="ph_proj_search">
                 <select id="proj-status-filter" onchange="fetchProjectsDirectory()">
-                    <option value="">جميع حالات المشاريع</option>
-                    <option value="ACTIVE">نشط (ACTIVE)</option>
-                    <option value="COMPLETED">مكتمل (COMPLETED)</option>
-                    <option value="UNDER_CONSTRUCTION">قيد الإنشاء (UNDER_CONSTRUCTION)</option>
-                    <option value="PLANNED">مخطط (PLANNED)</option>
+                    <option value="" data-i18n="opt_all_proj_status">All Project Statuses</option>
+                    <option value="ACTIVE" data-i18n="opt_active">ACTIVE</option>
+                    <option value="COMPLETED" data-i18n="opt_completed">COMPLETED</option>
+                    <option value="UNDER_CONSTRUCTION" data-i18n="opt_under_construction">UNDER_CONSTRUCTION</option>
+                    <option value="PLANNED" data-i18n="opt_planned">PLANNED</option>
                 </select>
                 <select id="proj-city-filter" onchange="fetchProjectsDirectory()">
-                    <option value="">جميع المدن</option>
+                    <option value="" data-i18n="opt_all_cities">All Cities</option>
                 </select>
-                <button type="button" class="btn btn-sm" onclick="resetProjectFilters()">إعادة ضبط</button>
+                <button type="button" class="btn btn-sm" onclick="resetProjectFilters()" data-i18n="btn_reset_filters">Reset Filters</button>
             </div>
 
             <!-- Projects Grid / Cards Container -->
@@ -548,11 +554,11 @@
 
             <!-- Buildings Controls & Filters -->
             <div class="controls-bar" style="margin-bottom: 20px;">
-                <input type="text" id="bld-search-box" placeholder="بحث بكود المبنى، اسم المبنى، أو اسم المشروع..." style="flex-grow: 1; min-width: 240px;" oninput="fetchBuildingsDirectory()">
+                <input type="text" id="bld-search-box" placeholder="Search by building code, building name, or project..." style="flex-grow: 1; min-width: 240px;" oninput="fetchBuildingsDirectory()" data-i18n-placeholder="ph_bld_search">
                 <select id="bld-parent-filter" onchange="fetchBuildingsDirectory()">
-                    <option value="">جميع المشاريع</option>
+                    <option value="" data-i18n="opt_all_projects">All Projects</option>
                 </select>
-                <button type="button" class="btn btn-sm" onclick="resetBuildingFilters()">إعادة ضبط</button>
+                <button type="button" class="btn btn-sm" onclick="resetBuildingFilters()" data-i18n="btn_reset_filters">Reset Filters</button>
             </div>
 
             <!-- Buildings Grid / Cards Container -->
@@ -588,7 +594,7 @@
                 <div id="add-proj-dup-alert" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; color: #92400e; font-size: 0.85em;">
                     <div style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
                         <span>⚠️</span>
-                        <span id="add-proj-dup-title">تنبيه لتلافي تكرار المشاريع:</span>
+                        <span id="add-proj-dup-title" data-i18n="add_proj_dup_title">Anti-Duplication Advisory Notice:</span>
                     </div>
                     <div id="add-proj-dup-msg" style="margin-top: 4px; line-height: 1.5;"></div>
                 </div>
@@ -607,6 +613,24 @@
                             <option value="COMPLETED" data-i18n="opt_status_completed">Completed</option>
                             <option value="PLANNED" data-i18n="opt_status_planned">Planned</option>
                         </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label data-i18n="lbl_developer">🏢 Developer (Customer / Company)</label>
+                        <select id="add-proj-developer">
+                            <option value="" data-i18n="opt_no_developer">-- Direct Agency / Unspecified --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_start_date">📅 Start Date</label>
+                        <input type="date" id="add-proj-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_end_date">🏁 End Date / Completion</label>
+                        <input type="date" id="add-proj-end-date">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -654,13 +678,114 @@
                 <div id="add-bld-dup-alert" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; color: #92400e; font-size: 0.85em;">
                     <div style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
                         <span>⚠️</span>
-                        <span id="add-bld-dup-title">تنبيه لتلافي تكرار المباني:</span>
+                        <span id="add-bld-dup-title" data-i18n="add_bld_dup_title">Anti-Duplication Advisory Notice:</span>
                     </div>
                     <div id="add-bld-dup-msg" style="margin-top: 4px; line-height: 1.5;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm" onclick="closeAddBuildingModal()" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn btn-success" data-i18n="btn_save_building">+ Save Building</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= EDIT PROJECT MODAL ================= -->
+    <div class="modal-overlay" id="edit-project-modal" style="z-index: 1250;">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="modal_edit_project_title">✏️ Edit Project</h3>
+                <button type="button" class="close-btn" onclick="closeEditProjectModal()">&times;</button>
+            </div>
+            <form onsubmit="saveEditProject(event)">
+                <input type="hidden" id="edit-proj-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_proj_name_ar">Project Name (Arabic) *</label>
+                        <input type="text" id="edit-proj-name-ar" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_proj_name_en">Project Name (English) *</label>
+                        <input type="text" id="edit-proj-name-en" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_city">City</label>
+                        <select id="edit-proj-city">
+                            <option value="" data-i18n="opt_select_city">-- Any City --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_status">Status</label>
+                        <select id="edit-proj-status">
+                            <option value="ACTIVE" data-i18n="opt_status_active">Active / Available</option>
+                            <option value="UNDER_CONSTRUCTION" data-i18n="opt_status_uc">Under Construction</option>
+                            <option value="COMPLETED" data-i18n="opt_status_completed">Completed</option>
+                            <option value="PLANNED" data-i18n="opt_status_planned">Planned</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label data-i18n="lbl_developer">🏢 Developer (Customer / Company)</label>
+                        <select id="edit-proj-developer">
+                            <option value="" data-i18n="opt_no_developer">-- Direct Agency / Unspecified --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_start_date">📅 Start Date</label>
+                        <input type="date" id="edit-proj-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_end_date">🏁 End Date / Completion</label>
+                        <input type="date" id="edit-proj-end-date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeEditProjectModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save_changes">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= EDIT BUILDING MODAL ================= -->
+    <div class="modal-overlay" id="edit-building-modal" style="z-index: 1250;">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="modal_edit_building_title">✏️ Edit Building</h3>
+                <button type="button" class="close-btn" onclick="closeEditBuildingModal()">&times;</button>
+            </div>
+            <form onsubmit="saveEditBuilding(event)">
+                <input type="hidden" id="edit-bld-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_project">Project *</label>
+                        <select id="edit-bld-project-id" required>
+                            <option value="" data-i18n="opt_select_project">-- Select Project --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_building_code">Building Code *</label>
+                        <input type="text" id="edit-bld-code" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_building_name">Building Name</label>
+                        <input type="text" id="edit-bld-name">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_floors_count">Floors Count</label>
+                        <input type="number" id="edit-bld-floors" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" onclick="closeEditBuildingModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save_changes">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -722,8 +847,8 @@
                     <div class="form-group" id="grp-add-floor-no" style="margin-bottom: 0;">
                         <label id="lbl-add-floor-no" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
                             <span data-i18n="lbl_floor_no">Floor Number</span>
-                            <small id="sub-add-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
-                                (رقم الطابق عندما تنتمي الوحدة لمبنى)
+                            <small id="sub-add-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;" data-i18n="sub_floor_no_desc">
+                                (Floor number when unit belongs to a building)
                             </small>
                         </label>
                         <input type="number" id="add-floor-no" placeholder="e.g. 2">
@@ -731,8 +856,8 @@
                     <div class="form-group" id="grp-add-total-floors" style="margin-bottom: 0;">
                         <label id="lbl-add-total-floors" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
                             <span data-i18n="lbl_total_floors">Total Floors</span>
-                            <small id="sub-add-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
-                                (عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)
+                            <small id="sub-add-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;" data-i18n="sub_total_floors_desc">
+                                (Floors count for Building, Villa, Duplex, Penthouse, Townhouse, Hotel)
                             </small>
                         </label>
                         <input type="number" id="add-total-floors" min="1" placeholder="e.g. 3">
@@ -893,8 +1018,8 @@
                     <div class="form-group" id="grp-edit-floor-no" style="margin-bottom: 0;">
                         <label id="lbl-edit-floor-no" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
                             <span data-i18n="lbl_floor_no">Floor Number</span>
-                            <small id="sub-edit-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
-                                (رقم الطابق عندما تنتمي الوحدة لمبنى)
+                            <small id="sub-edit-floor-no" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;" data-i18n="sub_floor_no_desc">
+                                (Floor number when unit belongs to a building)
                             </small>
                         </label>
                         <input type="number" id="edit-floor-no" placeholder="e.g. 2">
@@ -902,8 +1027,8 @@
                     <div class="form-group" id="grp-edit-total-floors" style="margin-bottom: 0;">
                         <label id="lbl-edit-total-floors" style="font-weight: 700; font-size: 0.88em; color: #1e293b; margin-bottom: 3px;">
                             <span data-i18n="lbl_total_floors">Total Floors</span>
-                            <small id="sub-edit-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;">
-                                (عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)
+                            <small id="sub-edit-total-floors" style="font-weight: normal; color: #64748b; display: block; font-size: 0.8em;" data-i18n="sub_total_floors_desc">
+                                (Floors count for Building, Villa, Duplex, Penthouse, Townhouse, Hotel)
                             </small>
                         </label>
                         <input type="number" id="edit-total-floors" min="1" placeholder="e.g. 3">
@@ -1031,12 +1156,16 @@
                 
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <span class="detail-label" id="det-lbl-project">🏗️ المشروع العقاري</span>
+                        <span class="detail-label" id="det-lbl-project" data-i18n="lbl_det_project">🏗️ Real Estate Project</span>
                         <span class="detail-val" id="det-project">--</span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label" id="det-lbl-building">🏛️ المبنى التابع له</span>
+                        <span class="detail-label" id="det-lbl-building" data-i18n="lbl_det_building">🏛️ Parent Building</span>
                         <span class="detail-val" id="det-building">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label" id="det-lbl-city" data-i18n="lbl_city">📍 City</span>
+                        <span class="detail-val" id="det-city">--</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label" data-i18n="lbl_prop_type">Property Type</span>
@@ -1051,15 +1180,15 @@
                         <span class="detail-val" id="det-area">--</span>
                     </div>
                     <div class="detail-item" id="det-item-floor">
-                        <span class="detail-label" id="det-lbl-floor">📍 رقم الطابق (Floor No)</span>
+                        <span class="detail-label" id="det-lbl-floor" data-i18n="lbl_det_floor">📍 Floor Number</span>
                         <span class="detail-val" id="det-floor">--</span>
                     </div>
                     <div class="detail-item" id="det-item-total-floors">
-                        <span class="detail-label" id="det-lbl-total-floors">🏢 عدد طوابق العقار (Total Floors)</span>
+                        <span class="detail-label" id="det-lbl-total-floors" data-i18n="lbl_det_total_floors">🏢 Property Total Floors</span>
                         <span class="detail-val" id="det-total-floors">--</span>
                     </div>
                     <div class="detail-item" id="det-item-bld-floors">
-                        <span class="detail-label" id="det-lbl-bld-floors">🏛️ إجمالي طوابق المبنى</span>
+                        <span class="detail-label" id="det-lbl-bld-floors" data-i18n="lbl_det_bld_floors">🏛️ Building Total Floors</span>
                         <span class="detail-val" id="det-building-floors">--</span>
                     </div>
                     <div class="detail-item">
@@ -1087,19 +1216,22 @@
                         <span class="detail-val" id="det-agent">--</span>
                     </div>
                     <div class="detail-item" id="det-invest-sec" style="grid-column: 1/-1; background:#f0fdf4; padding:8px 12px; border-radius:6px; border:1px solid #bbf7d0; margin-top:6px;">
-                        <div style="font-weight:700; color:#166534; font-size:0.85em; margin-bottom:4px;">💼 البيانات والمؤشرات الاستثمارية للأصل:</div>
+                        <div style="font-weight:700; color:#166534; font-size:0.85em; margin-bottom:4px;" data-i18n="det_invest_title">💼 Financial & Investment Baseline:</div>
                         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.85em;">
-                            <span>مصاريف التشغيل: <strong id="det-opex" style="color:#0f172a;">--</strong></span>
-                            <span>نسبة الشغور: <strong id="det-vac" style="color:#0f172a;">--</strong></span>
-                            <span>مصدر التدفقات: <strong id="det-notes" style="color:#475569;">--</strong></span>
+                            <span><span data-i18n="det_lbl_opex">Operating Expenses:</span> <strong id="det-opex" style="color:#0f172a;">--</strong></span>
+                            <span><span data-i18n="det_lbl_vac">Expected Vacancy:</span> <strong id="det-vac" style="color:#0f172a;">--</strong></span>
+                            <span><span data-i18n="det_lbl_notes">Cashflow Baseline:</span> <strong id="det-notes" style="color:#475569;">--</strong></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm" onclick="closeDetailsModal()" data-i18n="btn_close">Close</button>
-                <button type="button" class="btn btn-primary" onclick="switchToEditFromDetails()">✏️ <span data-i18n="btn_edit">Edit Unit</span></button>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button type="button" class="btn btn-danger-sm" onclick="confirmDeleteActiveDetailsUnit()" data-i18n="btn_delete">🗑️ Delete Unit</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-sm" onclick="closeDetailsModal()" data-i18n="btn_close">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="switchToEditFromDetails()">✏️ <span data-i18n="btn_edit">Edit Unit</span></button>
+                </div>
             </div>
         </div>
     </div>
@@ -1139,7 +1271,10 @@
                 banner_subtitle: "Integrated Real Estate Marketing & Management",
                 page_title: "Properties",
                 loading_inventory: "Loading properties from database...",
-                search_placeholder: "Search by unit number, unit_id or project...",
+                search_placeholder: "Search by unit number, ID, project, property type, or city...",
+                opt_all_cities: "All Cities",
+                opt_all_prop_types: "All Property Types",
+                lbl_city: "City",
                 opt_all_projects: "All Projects",
                 opt_all_buildings: "All Buildings & Projects",
                 opt_all_statuses: "All Statuses",
@@ -1265,6 +1400,33 @@
                 placeholder_parking: "e.g. 1",
                 placeholder_asking_price: "e.g. 450000",
                 placeholder_rent_price: "e.g. 35000",
+                sub_floor_no_desc: "(Floor number when unit belongs to a building)",
+                sub_total_floors_desc: "(Floors count for Building, Villa, Duplex, Penthouse, Townhouse, Hotel)",
+                add_proj_dup_title: "Anti-Duplication Advisory Notice:",
+                add_bld_dup_title: "Anti-Duplication Advisory Notice:",
+                ph_proj_search: "Search by project name, code, city, or developer...",
+                ph_bld_search: "Search by building code, building name, or project...",
+                opt_all_proj_status: "All Project Statuses",
+                opt_all_cities: "All Cities",
+                btn_reset_filters: "Reset Filters",
+                lbl_det_project: "🏗️ Real Estate Project",
+                lbl_det_building: "🏛️ Parent Building",
+                lbl_det_floor: "📍 Floor Number",
+                lbl_det_total_floors: "🏢 Property Total Floors",
+                lbl_det_bld_floors: "🏛️ Building Total Floors",
+                det_invest_title: "💼 Financial & Investment Baseline:",
+                det_lbl_opex: "Operating Expenses:",
+                det_lbl_vac: "Expected Vacancy:",
+                det_lbl_notes: "Cashflow Baseline:",
+                btn_save_changes: "Save Changes",
+                btn_edit_project: "Edit Project",
+                btn_edit_building: "Edit Building",
+                modal_edit_project_title: "✏️ Edit Project",
+                modal_edit_building_title: "✏️ Edit Building",
+                lbl_developer: "🏢 Developer (Customer / Company)",
+                opt_no_developer: "-- Direct Agency / Unspecified --",
+                lbl_start_date: "📅 Start Date",
+                lbl_end_date: "🏁 End Date / Completion",
                 banner_title: "Muath Khidr Al-Nemari Real Estate Services Office",
                 banner_subtitle: "Real Estate Services, Marketing & Property Management",
                 font_cairo: "Cairo", font_tajawal: "Tajawal", font_almarai: "Almarai", font_sakkal: "Sakkal Majalla",
@@ -1281,7 +1443,10 @@
                 banner_subtitle: "خدمات وتسويق وإدارة العقارات المتكاملة",
                 page_title: "المخزون",
                 loading_inventory: "جاري تحميل المخزون من قاعدة البيانات...",
-                search_placeholder: "البحث برقم الوحدة أو معرف الوحدة أو المشروع...",
+                search_placeholder: "البحث برقم الوحدة، المعرف، المشروع، نوع العقار أو المدينة...",
+                opt_all_cities: "جميع المدن",
+                opt_all_prop_types: "جميع أنواع العقار",
+                lbl_city: "المدينة",
                 opt_all_projects: "جميع المشاريع",
                 opt_all_buildings: "جميع المباني والمشاريع",
                 opt_all_statuses: "جميع الحالات",
@@ -1409,6 +1574,33 @@
                 placeholder_parking: "مثال: 1",
                 placeholder_asking_price: "مثال: 450000",
                 placeholder_rent_price: "مثال: 35000",
+                sub_floor_no_desc: "(رقم الطابق عندما تنتمي الوحدة لمبنى)",
+                sub_total_floors_desc: "(عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)",
+                add_proj_dup_title: "تنبيه لتلافي تكرار المشاريع:",
+                add_bld_dup_title: "تنبيه لتلافي تكرار المباني:",
+                ph_proj_search: "بحث بالاسم، كود المشروع، المدينة، أو المطور...",
+                ph_bld_search: "بحث بكود المبنى، اسم المبنى، أو اسم المشروع...",
+                opt_all_proj_status: "جميع حالات المشاريع",
+                opt_all_cities: "جميع المدن",
+                btn_reset_filters: "إعادة ضبط",
+                lbl_det_project: "🏗️ المشروع العقاري",
+                lbl_det_building: "🏛️ المبنى التابع له",
+                lbl_det_floor: "📍 رقم الطابق (Floor No)",
+                lbl_det_total_floors: "🏢 عدد طوابق العقار (Total Floors)",
+                lbl_det_bld_floors: "🏛️ إجمالي طوابق المبنى",
+                det_invest_title: "💼 البيانات والمؤشرات الاستثمارية للأصل:",
+                det_lbl_opex: "مصاريف التشغيل:",
+                det_lbl_vac: "نسبة الشغور:",
+                det_lbl_notes: "مصدر التدفقات:",
+                btn_save_changes: "حفظ التعديلات",
+                btn_edit_project: "تعديل المشروع",
+                btn_edit_building: "تعديل المبنى",
+                modal_edit_project_title: "✏️ تعديل بيانات المشروع",
+                modal_edit_building_title: "✏️ تعديل بيانات المبنى",
+                lbl_developer: "🏢 المطور العقاري (الشركة / العميل)",
+                opt_no_developer: "-- إدارة مباشرة للمكتب / غير محدد --",
+                lbl_start_date: "📅 تاريخ بدء المشروع",
+                lbl_end_date: "🏁 تاريخ الإنجاز / النهاية",
                 lang_label: "English"
             }
         };
@@ -1639,6 +1831,10 @@
                     ? `<span class="property-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-weight:700;">🏛️ ${bldDisplay}</span>`
                     : `<span class="property-badge" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:600;">🏡 ${isAr ? 'عقار مستقل' : 'Standalone'}</span>`;
 
+                const cityName = isAr
+                    ? (u.city_name_ar || u.city_name || (isAr ? 'غير محدد' : 'Unspecified'))
+                    : (u.city_name_en || u.city_name || 'Unspecified');
+
                 return `
                     <div class="property-card">
                         <div>
@@ -1646,6 +1842,8 @@
                                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                                     ${getBadge(u.status)}
                                     ${getPurposeBadge(u.listing_purpose)}
+                                    <span class="property-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-weight:700;">📍 ${cityName}</span>
+                                    <span class="property-badge" style="background:#fdf4ff; color:#86198f; border:1px solid #f5d0fe; font-weight:700;">🏷️ ${propTypeName}</span>
                                     ${buildingBadgeHtml}
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1657,8 +1855,11 @@
                             <div class="property-price">${price}</div>
                             <div class="property-meta">
                                 <div>
-                                    <span>🏗️ ${isAr ? 'المشروع' : 'Project'}: <strong>${projectName}</strong></span> | 
-                                    <span>${t.lbl_type}: <strong>${propTypeName}</strong></span>
+                                    <span>📍 ${isAr ? 'المدينة' : 'City'}: <strong>${cityName}</strong></span> | 
+                                    <span>🏷️ ${t.lbl_type}: <strong>${propTypeName}</strong></span>
+                                </div>
+                                <div>
+                                    <span>🏗️ ${isAr ? 'المشروع' : 'Project'}: <strong>${projectName}</strong></span>
                                 </div>
                                 <div>
                                     <span>🏛️ ${isAr ? 'المبنى التابع له' : 'Building'}: <strong>${hasBuilding ? bldDisplay : (isAr ? 'عقار مستقل (بدون مبنى)' : 'Standalone (No Building)')}</strong></span>
@@ -1675,9 +1876,10 @@
                                 <div>${t.lbl_owner}: <strong>${owner}</strong></div>
                             </div>
                         </div>
-                        <div class="card-actions">
-                            <button class="btn btn-sm" onclick="viewUnitDetails('${u.unit_id}')">👁️ ${t.btn_view_details}</button>
-                            <button class="btn btn-primary-sm" onclick="openEditUnitModal('${u.unit_id}')">✏️ ${t.btn_edit}</button>
+                        <div class="card-actions" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-sm" onclick="viewUnitDetails('${u.unit_id}')" style="flex: 1; min-width: 75px;">👁️ ${t.btn_view_details}</button>
+                            <button type="button" class="btn btn-primary-sm" onclick="openEditUnitModal('${u.unit_id}')" style="flex: 1; min-width: 75px;">✏️ ${t.btn_edit}</button>
+                            <button type="button" class="btn btn-sm" onclick="confirmDeleteUnitDirect('${u.unit_id}')" style="flex: 1; min-width: 75px; background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; font-weight: 600;">🗑️ ${isAr ? 'حذف' : 'Delete'}</button>
                         </div>
                     </div>
                 `;
@@ -1700,6 +1902,8 @@
             const search = document.getElementById('search-box').value;
             const prjId = document.getElementById('project-filter') ? document.getElementById('project-filter').value : '';
             const bldId = document.getElementById('building-filter').value;
+            const cityId = document.getElementById('unit-city-filter') ? document.getElementById('unit-city-filter').value : '';
+            const propTypeId = document.getElementById('unit-prop-type-filter') ? document.getElementById('unit-prop-type-filter').value : '';
             const status = document.getElementById('status-select').value;
             const purpose = document.getElementById('purpose-select')?.value || '';
             const bedrooms = document.getElementById('bedrooms-select').value;
@@ -1726,6 +1930,8 @@
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (prjId && !bldId) url += `&project_id=${encodeURIComponent(prjId)}`;
             if (bldId) url += `&building_id=${encodeURIComponent(bldId)}`;
+            if (cityId) url += `&city_id=${encodeURIComponent(cityId)}`;
+            if (propTypeId) url += `&property_type_id=${encodeURIComponent(propTypeId)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (purpose) url += `&listing_purpose=${encodeURIComponent(purpose)}`;
             if (bedrooms) url += `&bedrooms=${encodeURIComponent(bedrooms)}`;
@@ -1812,8 +2018,42 @@
             }
         }
 
+        function onCityFilterChange() {
+            const cityId = document.getElementById('unit-city-filter')?.value || '';
+            const prjFilter = document.getElementById('project-filter');
+            const isAr = currentLang === 'ar';
+            const t = i18nData[currentLang];
+            if (prjFilter) {
+                const curPrj = prjFilter.value;
+                const filteredProjects = cityId 
+                    ? cachedProjects.filter(p => p.city_id === cityId)
+                    : cachedProjects;
+                prjFilter.innerHTML = `<option value="">${t.opt_all_projects || 'All Projects'}</option>` + 
+                    filteredProjects.map(p => {
+                        const pName = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+                        return `<option value="${p.project_id}">${pName}</option>`;
+                    }).join('');
+                if (filteredProjects.some(p => p.project_id === curPrj)) {
+                    prjFilter.value = curPrj;
+                } else {
+                    prjFilter.value = '';
+                    updateBuildingFilterOptions('');
+                }
+            }
+            fetchUnits(1);
+        }
+
         function onProjectFilterChange() {
             const prjId = document.getElementById('project-filter')?.value || '';
+            if (prjId) {
+                const p = cachedProjects.find(x => x.project_id === prjId);
+                if (p && p.city_id) {
+                    const cityEl = document.getElementById('unit-city-filter');
+                    if (cityEl && !cityEl.value) {
+                        cityEl.value = p.city_id;
+                    }
+                }
+            }
             updateBuildingFilterOptions(prjId);
             fetchUnits(1);
         }
@@ -1836,9 +2076,21 @@
 
         function resetFilters() {
             document.getElementById('search-box').value = '';
-            if (document.getElementById('project-filter')) document.getElementById('project-filter').value = '';
+            if (document.getElementById('unit-city-filter')) document.getElementById('unit-city-filter').value = '';
+            if (document.getElementById('unit-prop-type-filter')) document.getElementById('unit-prop-type-filter').value = '';
+            if (document.getElementById('project-filter')) {
+                const isAr = currentLang === 'ar';
+                const t = i18nData[currentLang];
+                document.getElementById('project-filter').innerHTML = `<option value="">${t.opt_all_projects || 'All Projects'}</option>` + 
+                    cachedProjects.map(p => {
+                        const pName = isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+                        return `<option value="${p.project_id}">${pName}</option>`;
+                    }).join('');
+                document.getElementById('project-filter').value = '';
+            }
             updateBuildingFilterOptions('');
             document.getElementById('building-filter').value = '';
+            if (document.getElementById('unit-agent-filter')) document.getElementById('unit-agent-filter').value = '';
             document.getElementById('status-select').value = '';
             if (document.getElementById('purpose-select')) document.getElementById('purpose-select').value = '';
             document.getElementById('bedrooms-select').value = '';
@@ -1902,14 +2154,71 @@
             }
             updateBuildingFilterOptions(curPrjFilterVal);
 
+            // 1b. City & Property Type filters in controls-bar
+            const unitCityFilter = document.getElementById('unit-city-filter');
+            if (unitCityFilter) {
+                const prevCity = unitCityFilter.value;
+                unitCityFilter.innerHTML = `<option value="">${isAr ? '📍 جميع المدن' : '📍 All Cities'}</option>` +
+                    cachedCities.map(c => {
+                        const cName = isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar);
+                        return `<option value="${c.city_id}">${cName}</option>`;
+                    }).join('');
+                if (prevCity) unitCityFilter.value = prevCity;
+            }
+
+            const unitPtFilter = document.getElementById('unit-prop-type-filter');
+            if (unitPtFilter) {
+                const prevPt = unitPtFilter.value;
+                unitPtFilter.innerHTML = `<option value="">${isAr ? '🏷️ جميع أنواع العقار' : '🏷️ All Property Types'}</option>` +
+                    cachedPropertyTypes.map(pt => {
+                        const ptName = isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar);
+                        return `<option value="${pt.property_type_id}">${ptName}</option>`;
+                    }).join('');
+                if (prevPt) unitPtFilter.value = prevPt;
+            }
+
             // Unit agent filter in controls-bar
             const unitAgFilter = document.getElementById('unit-agent-filter');
             if (unitAgFilter && cachedUsers && cachedUsers.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
                 const curAg = unitAgFilter.value || urlAgent || '';
-                unitAgFilter.innerHTML = `<option value="">${isAr ? 'جميع الوسطاء' : 'All Agents'}</option>` + 
-                    cachedUsers.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+
+                const currentUser = (window.getCurrentUserProfile && window.getCurrentUserProfile()) || {};
+                let currentRoles = (currentUser.roles || []).map(r => (typeof r === 'string' ? r : (r.role_code || r.name || '')).toUpperCase());
+                if (currentUser.role_codes && Array.isArray(currentUser.role_codes)) {
+                    currentRoles = currentRoles.concat(currentUser.role_codes.map(rc => rc.toUpperCase()));
+                }
+                const isGM = currentRoles.some(r => ['SYS_ADMIN', 'ADMIN', 'GENERAL_MANAGER', 'AUDITOR'].includes(r));
+                const isBM = currentRoles.some(r => ['BRANCH_MANAGER', 'SALES_MANAGER'].includes(r));
+
+                let usersToShow = cachedUsers;
+                if (isBM && !isGM && currentUser.branch_id) {
+                    usersToShow = cachedUsers.filter(u => u.branch_id === currentUser.branch_id);
+                }
+
+                let html = `<option value="">${isAr ? '🌐 جميع الوسطاء' : '🌐 All Agents'}</option>`;
+                if (isBM && !isGM && currentUser.branch_id) {
+                    const branchName = currentUser.branch_name || (usersToShow[0]?.branch_name) || (isAr ? 'الفرع' : 'Branch');
+                    html += `<optgroup label="🏢 ${branchName} (${isAr ? 'وسطاء الفرع فقط' : 'Branch Brokers Only'})">`;
+                    html += usersToShow.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                    html += `</optgroup>`;
+                } else {
+                    const branchGroups = {};
+                    usersToShow.forEach(u => {
+                        const bName = u.branch_name || (isAr ? 'الإدارة العامة' : 'Headquarters');
+                        if (!branchGroups[bName]) branchGroups[bName] = [];
+                        branchGroups[bName].push(u);
+                    });
+                    const sortedBranches = Object.keys(branchGroups).sort((a, b) => a.localeCompare(b, isAr ? 'ar' : 'en'));
+                    for (const bName of sortedBranches) {
+                        html += `<optgroup label="🏢 ${bName}">`;
+                        html += branchGroups[bName].map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
+                        html += `</optgroup>`;
+                    }
+                }
+
+                unitAgFilter.innerHTML = html;
                 if (curAg) {
                     unitAgFilter.value = curAg;
                     fetchUnits(1);
@@ -1940,11 +2249,18 @@
             onAddUnitProjectChange();
             onEditUnitProjectChange();
 
-            // 2c. Project select in Add Building modal
+            // 2c. Project select in Add & Edit Building modal
             const addBldPrj = document.getElementById('add-bld-project-id');
             if (addBldPrj) addBldPrj.innerHTML = prjSelectOptions;
 
-            // 2d. City select in Add Project modal
+            const editBldPrj = document.getElementById('edit-bld-project-id');
+            if (editBldPrj) {
+                const prev = editBldPrj.value;
+                editBldPrj.innerHTML = prjSelectOptions;
+                if (prev) editBldPrj.value = prev;
+            }
+
+            // 2d. City select in Add & Edit Project modal
             const cityOptions = `<option value="">-- ${isAr ? 'اختر المدينة' : 'Select City'} --</option>` +
                 cachedCities.map(c => {
                     const cName = isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar);
@@ -1952,6 +2268,33 @@
                 }).join('');
             const addProjCity = document.getElementById('add-proj-city');
             if (addProjCity) addProjCity.innerHTML = cityOptions;
+
+            const editProjCity = document.getElementById('edit-proj-city');
+            if (editProjCity) {
+                const prev = editProjCity.value;
+                editProjCity.innerHTML = cityOptions;
+                if (prev) editProjCity.value = prev;
+            }
+
+            // 2e. Developer select in Add & Edit Project modal
+            const devOptions = `<option value="">${isAr ? '-- إدارة مباشرة للمكتب / غير محدد --' : '-- Direct Agency / Unspecified --'}</option>` +
+                cachedCustomers.map(c => {
+                    const cName = c.company_name ? `${c.company_name}${c.full_name ? ` (${c.full_name})` : ''}` : (c.full_name || c.customer_id);
+                    return `<option value="${c.customer_id}">${cName} [${c.customer_id}]</option>`;
+                }).join('');
+
+            const addProjDev = document.getElementById('add-proj-developer');
+            if (addProjDev) {
+                const prev = addProjDev.value;
+                addProjDev.innerHTML = devOptions;
+                if (prev) addProjDev.value = prev;
+            }
+            const editProjDev = document.getElementById('edit-proj-developer');
+            if (editProjDev) {
+                const prev = editProjDev.value;
+                editProjDev.innerHTML = devOptions;
+                if (prev) editProjDev.value = prev;
+            }
 
             // 3. Property Types in Add & Edit modals
             const ptPlaceholder = isAr ? '-- اختر نوع العقار --' : '-- Select Property Type --';
@@ -2057,13 +2400,52 @@
 
         function onAddUnitBuildingChange() {
             const bldId = document.getElementById('add-building-id')?.value || '';
+            const totalFloorsInput = document.getElementById('add-total-floors');
+            const floorNoInput = document.getElementById('add-floor-no');
+            const subHint = document.getElementById('sub-add-total-floors');
+            const isAr = currentLang === 'ar';
+
             if (bldId) {
-                const b = cachedBuildings.find(x => x.building_id === bldId);
+                const b = (cachedBuildings || []).find(x => x.building_id === bldId);
                 if (b && b.project_id) {
                     const prjSelect = document.getElementById('add-project-id');
                     if (prjSelect && prjSelect.value !== b.project_id) {
                         prjSelect.value = b.project_id;
                     }
+                }
+                if (b && b.floors_count != null) {
+                    if (totalFloorsInput) {
+                        totalFloorsInput.value = b.floors_count;
+                        totalFloorsInput.readOnly = true;
+                        totalFloorsInput.style.backgroundColor = '#f1f5f9';
+                        totalFloorsInput.style.cursor = 'not-allowed';
+                    }
+                    if (subHint) {
+                        subHint.textContent = isAr 
+                            ? `(مأخوذ تلقائياً ومثبت من بيانات المبنى: ${b.floors_count} طوابق)`
+                            : `(Locked & inherited from Building: ${b.floors_count} floors)`;
+                        subHint.style.color = '#0284c7';
+                        subHint.style.fontWeight = '700';
+                    }
+                    if (floorNoInput) {
+                        floorNoInput.max = b.floors_count;
+                    }
+                }
+            } else {
+                if (totalFloorsInput) {
+                    totalFloorsInput.readOnly = false;
+                    totalFloorsInput.style.backgroundColor = '';
+                    totalFloorsInput.style.cursor = '';
+                }
+                if (subHint) {
+                    subHint.textContent = isAr
+                        ? "(عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)"
+                        : "(Floors count for Building, Villa, Duplex, Penthouse, Townhouse, Hotel)";
+                    subHint.style.color = '#64748b';
+                    subHint.style.fontWeight = 'normal';
+                }
+                if (floorNoInput) {
+                    floorNoInput.removeAttribute('max');
                 }
             }
         }
@@ -2112,13 +2494,52 @@
 
         function onEditUnitBuildingChange() {
             const bldId = document.getElementById('edit-building-id')?.value || '';
+            const totalFloorsInput = document.getElementById('edit-total-floors');
+            const floorNoInput = document.getElementById('edit-floor-no');
+            const subHint = document.getElementById('sub-edit-total-floors');
+            const isAr = currentLang === 'ar';
+
             if (bldId) {
-                const b = cachedBuildings.find(x => x.building_id === bldId);
+                const b = (cachedBuildings || []).find(x => x.building_id === bldId);
                 if (b && b.project_id) {
                     const prjSelect = document.getElementById('edit-project-id');
                     if (prjSelect && prjSelect.value !== b.project_id) {
                         prjSelect.value = b.project_id;
                     }
+                }
+                if (b && b.floors_count != null) {
+                    if (totalFloorsInput) {
+                        totalFloorsInput.value = b.floors_count;
+                        totalFloorsInput.readOnly = true;
+                        totalFloorsInput.style.backgroundColor = '#f1f5f9';
+                        totalFloorsInput.style.cursor = 'not-allowed';
+                    }
+                    if (subHint) {
+                        subHint.textContent = isAr 
+                            ? `(مأخوذ تلقائياً ومثبت من بيانات المبنى: ${b.floors_count} طوابق)`
+                            : `(Locked & inherited from Building: ${b.floors_count} floors)`;
+                        subHint.style.color = '#0284c7';
+                        subHint.style.fontWeight = '700';
+                    }
+                    if (floorNoInput) {
+                        floorNoInput.max = b.floors_count;
+                    }
+                }
+            } else {
+                if (totalFloorsInput) {
+                    totalFloorsInput.readOnly = false;
+                    totalFloorsInput.style.backgroundColor = '';
+                    totalFloorsInput.style.cursor = '';
+                }
+                if (subHint) {
+                    subHint.textContent = isAr
+                        ? "(عدد طوابق العمارة، الفيلا، الدوبلكس، البنتهاوس، التاون هاوس، الفندق)"
+                        : "(Floors count for Building, Villa, Duplex, Penthouse, Townhouse, Hotel)";
+                    subHint.style.color = '#64748b';
+                    subHint.style.fontWeight = 'normal';
+                }
+                if (floorNoInput) {
+                    floorNoInput.removeAttribute('max');
                 }
             }
         }
@@ -2375,6 +2796,14 @@
                                     <span style="color: var(--text-muted);">${isAr ? '🏢 المطور العقاري:' : '🏢 Developer:'}</span>
                                     <strong style="max-width: 180px; text-align: ${isAr ? 'left' : 'right'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${devName}</strong>
                                 </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? '📅 تاريخ البدء:' : '📅 Start Date:'}</span>
+                                    <strong>${p.start_date || (isAr ? 'غير محدد' : 'N/A')}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted);">${isAr ? '🏁 تاريخ الإنجاز / النهاية:' : '🏁 End Date:'}</span>
+                                    <strong>${p.completion_date || p.end_date || (isAr ? 'غير محدد' : 'N/A')}</strong>
+                                </div>
                                 <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
                                     <span>${isAr ? 'المباني المسجلة:' : 'Buildings:'} <strong style="color: #0369a1;">${bldCount}</strong></span>
                                     <span>${isAr ? 'إجمالي الوحدات:' : 'Total Units:'} <strong style="color: #166534;">${unitCount}</strong></span>
@@ -2388,6 +2817,14 @@
                             </button>
                             <button type="button" class="btn btn-sm" onclick="filterBuildingsByProject('${p.project_id}')" style="flex: 1; min-width: 125px; font-weight: 600; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
                                 🏢 ${isAr ? `المباني (${bldCount})` : `Buildings (${bldCount})`}
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                            <button type="button" class="btn btn-sm" onclick="openEditProjectModal('${p.project_id}')" style="flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">
+                                ✏️ ${isAr ? 'تعديل' : 'Edit'}
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="confirmDeleteProject('${p.project_id}')" style="flex: 1; background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; font-weight: 600;">
+                                🗑️ ${isAr ? 'حذف' : 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -2505,6 +2942,14 @@
                             </button>
                             <button type="button" class="btn btn-sm" onclick="filterUnitsByProject('${b.project_id}')" style="flex: 1; min-width: 130px; font-weight: 600; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
                                 🏗️ ${isAr ? 'كافة وحدات المشروع' : 'All Project Units'}
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                            <button type="button" class="btn btn-sm" onclick="openEditBuildingModal('${b.building_id}')" style="flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">
+                                ✏️ ${isAr ? 'تعديل' : 'Edit'}
+                            </button>
+                            <button type="button" class="btn btn-sm" onclick="confirmDeleteBuilding('${b.building_id}')" style="flex: 1; background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; font-weight: 600;">
+                                🗑️ ${isAr ? 'حذف' : 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -2646,7 +3091,9 @@
                 const matchListHtml = matches.slice(0, 3).map(m => {
                     const mPrjName = isAr ? (m.project_name_ar || m.project_name_en) : (m.project_name_en || m.project_name_ar);
                     const mName = m.building_name || m.building_code;
-                    return `• كود: <strong>${m.building_code}</strong> | الاسم: <strong>${mName}</strong> (مشروع: ${mPrjName || m.project_id})`;
+                    return isAr 
+                        ? `• كود: <strong>${m.building_code}</strong> | الاسم: <strong>${mName}</strong> (مشروع: ${mPrjName || m.project_id})`
+                        : `• Code: <strong>${m.building_code}</strong> | Name: <strong>${mName}</strong> (Project: ${mPrjName || m.project_id})`;
                 }).join('<br>');
 
                 msgEl.innerHTML = isAr
@@ -2663,6 +3110,9 @@
             document.getElementById('add-proj-name-en').value = '';
             document.getElementById('add-proj-city').value = '';
             document.getElementById('add-proj-status').value = 'ACTIVE';
+            if (document.getElementById('add-proj-developer')) document.getElementById('add-proj-developer').value = '';
+            if (document.getElementById('add-proj-start-date')) document.getElementById('add-proj-start-date').value = '';
+            if (document.getElementById('add-proj-end-date')) document.getElementById('add-proj-end-date').value = '';
             const alertBox = document.getElementById('add-proj-dup-alert');
             if (alertBox) alertBox.style.display = 'none';
             document.getElementById('add-project-modal').style.display = 'flex';
@@ -2678,6 +3128,9 @@
             const nameEn = document.getElementById('add-proj-name-en').value.trim();
             const cityId = document.getElementById('add-proj-city').value || null;
             const status = document.getElementById('add-proj-status').value || 'ACTIVE';
+            const devId = document.getElementById('add-proj-developer')?.value || null;
+            const startDate = document.getElementById('add-proj-start-date')?.value || null;
+            const endDate = document.getElementById('add-proj-end-date')?.value || null;
 
             if (!nameAr || !nameEn) {
                 alert(currentLang === 'ar' ? 'يرجى إدخال اسم المشروع بالعربية والإنجليزية' : 'Please enter project name in Arabic and English');
@@ -2688,7 +3141,16 @@
                 const res = await fetch(`${API_BASE}/api/v1/projects`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name_ar: nameAr, name_en: nameEn, city_id: cityId, status: status })
+                    body: JSON.stringify({
+                        name_ar: nameAr,
+                        name_en: nameEn,
+                        city_id: cityId,
+                        status: status,
+                        developer_customer_id: devId,
+                        start_date: startDate,
+                        completion_date: endDate,
+                        end_date: endDate
+                    })
                 });
 
                 if (!res.ok) {
@@ -2779,6 +3241,260 @@
             }
         }
 
+        // ================= EDIT & DELETE PROJECT HANDLERS =================
+        async function openEditProjectModal(projectId) {
+            let prj = (cachedProjectsDirectory || []).find(p => p.project_id === projectId) ||
+                      (cachedProjects || []).find(p => p.project_id === projectId);
+            if (!prj) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/projects`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        prj = (json.data || []).find(p => p.project_id === projectId);
+                    }
+                } catch (_) {}
+            }
+            if (!prj) {
+                alert(currentLang === 'ar' ? 'تعذر العثور على بيانات المشروع.' : 'Project not found.');
+                return;
+            }
+
+            populateSelectOptions();
+            document.getElementById('edit-proj-id').value = prj.project_id;
+            document.getElementById('edit-proj-name-ar').value = prj.name_ar || '';
+            document.getElementById('edit-proj-name-en').value = prj.name_en || '';
+            document.getElementById('edit-proj-city').value = prj.city_id || '';
+            document.getElementById('edit-proj-status').value = prj.status || 'ACTIVE';
+            if (document.getElementById('edit-proj-developer')) {
+                document.getElementById('edit-proj-developer').value = prj.developer_customer_id || '';
+            }
+            if (document.getElementById('edit-proj-start-date')) {
+                document.getElementById('edit-proj-start-date').value = prj.start_date ? String(prj.start_date).substring(0, 10) : '';
+            }
+            if (document.getElementById('edit-proj-end-date')) {
+                const ed = prj.completion_date || prj.end_date;
+                document.getElementById('edit-proj-end-date').value = ed ? String(ed).substring(0, 10) : '';
+            }
+
+            document.getElementById('edit-project-modal').style.display = 'flex';
+        }
+
+        function closeEditProjectModal() {
+            document.getElementById('edit-project-modal').style.display = 'none';
+        }
+
+        async function saveEditProject(e) {
+            e.preventDefault();
+            const projectId = document.getElementById('edit-proj-id').value;
+            const nameAr = document.getElementById('edit-proj-name-ar').value.trim();
+            const nameEn = document.getElementById('edit-proj-name-en').value.trim();
+            const cityId = document.getElementById('edit-proj-city').value || null;
+            const status = document.getElementById('edit-proj-status').value || 'ACTIVE';
+            const devId = document.getElementById('edit-proj-developer')?.value || null;
+            const startDate = document.getElementById('edit-proj-start-date')?.value || null;
+            const endDate = document.getElementById('edit-proj-end-date')?.value || null;
+
+            if (!nameAr || !nameEn) {
+                alert(currentLang === 'ar' ? 'يرجى إدخال اسم المشروع بالعربية والإنجليزية' : 'Please enter project name in Arabic and English');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name_ar: nameAr,
+                        name_en: nameEn,
+                        city_id: cityId,
+                        status: status,
+                        developer_customer_id: devId,
+                        start_date: startDate,
+                        completion_date: endDate,
+                        end_date: endDate
+                    })
+                });
+
+                if (!res.ok) {
+                    let errMsg = 'Failed to update project';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
+                }
+
+                const json = await res.json();
+                const updatedPrj = json.data;
+                showToast(currentLang === 'ar' ? `✓ تم تحديث المشروع: ${updatedPrj.name_ar || projectId}` : `✓ Project updated: ${updatedPrj.name_en || projectId}`);
+                closeEditProjectModal();
+                await loadReferenceData();
+                if (currentActiveTab === 'PROJECTS') await fetchProjectsDirectory();
+                updateTabBadges();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function confirmDeleteProject(projectId) {
+            const isAr = currentLang === 'ar';
+            const prj = (cachedProjectsDirectory || []).find(p => p.project_id === projectId) ||
+                        (cachedProjects || []).find(p => p.project_id === projectId);
+            const prjName = prj ? (isAr ? (prj.name_ar || prj.name_en) : (prj.name_en || prj.name_ar)) : projectId;
+            const confirmMsg = isAr
+                ? `هل أنت متأكد من حذف المشروع (${prjName})؟ لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to delete project (${prjName})? This action cannot be undone.`;
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const userId = localStorage.getItem('recrm_user_id') || 'user-51';
+                const res = await fetch(`${API_BASE}/api/v1/projects/${projectId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': userId }
+                });
+
+                if (!res.ok) {
+                    let errMsg = isAr ? 'فشل حذف المشروع' : 'Failed to delete project';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
+                }
+
+                showToast(isAr ? `✓ تم حذف المشروع ${prjName} بنجاح.` : `✓ Project ${prjName} deleted successfully.`);
+                await loadReferenceData();
+                if (currentActiveTab === 'PROJECTS') await fetchProjectsDirectory();
+                updateTabBadges();
+            } catch (err) {
+                alert(isAr ? `تعذر حذف المشروع:\n${err.message}` : `Delete failed:\n${err.message}`);
+            }
+        }
+
+        // ================= EDIT & DELETE BUILDING HANDLERS =================
+        async function openEditBuildingModal(buildingId) {
+            let bld = (cachedBuildingsDirectory || []).find(b => b.building_id === buildingId) ||
+                      (cachedBuildings || []).find(b => b.building_id === buildingId);
+            if (!bld) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/buildings`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        bld = (json.data || []).find(b => b.building_id === buildingId);
+                    }
+                } catch (_) {}
+            }
+            if (!bld) {
+                alert(currentLang === 'ar' ? 'تعذر العثور على بيانات المبنى.' : 'Building not found.');
+                return;
+            }
+
+            populateSelectOptions();
+            document.getElementById('edit-bld-id').value = bld.building_id;
+            document.getElementById('edit-bld-project-id').value = bld.project_id || '';
+            document.getElementById('edit-bld-code').value = bld.building_code || '';
+            document.getElementById('edit-bld-name').value = bld.building_name || bld.name || '';
+            document.getElementById('edit-bld-floors').value = bld.floors_count != null ? bld.floors_count : '';
+
+            document.getElementById('edit-building-modal').style.display = 'flex';
+        }
+
+        function closeEditBuildingModal() {
+            document.getElementById('edit-building-modal').style.display = 'none';
+        }
+
+        async function saveEditBuilding(e) {
+            e.preventDefault();
+            const buildingId = document.getElementById('edit-bld-id').value;
+            const prjId = document.getElementById('edit-bld-project-id').value;
+            const bldCode = document.getElementById('edit-bld-code').value.trim();
+            const bldName = document.getElementById('edit-bld-name').value.trim() || null;
+            const floorsVal = document.getElementById('edit-bld-floors').value;
+            const floors = floorsVal ? parseInt(floorsVal, 10) : null;
+
+            if (!prjId || !bldCode) {
+                alert(currentLang === 'ar' ? 'يرجى اختيار المشروع وإدخال كود المبنى' : 'Please select a project and enter building code');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/buildings/${buildingId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: prjId, building_code: bldCode, name: bldName, floors_count: floors })
+                });
+
+                if (!res.ok) {
+                    let errMsg = 'Failed to update building';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
+                }
+
+                const json = await res.json();
+                const updatedBld = json.data;
+                showToast(currentLang === 'ar' ? `✓ تم تحديث المبنى: ${updatedBld.building_code} (${buildingId})` : `✓ Building updated: ${updatedBld.building_code} (${buildingId})`);
+                closeEditBuildingModal();
+                await loadReferenceData();
+                if (currentActiveTab === 'BUILDINGS') await fetchBuildingsDirectory();
+                if (currentActiveTab === 'UNITS') await fetchUnits();
+                updateTabBadges();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function confirmDeleteBuilding(buildingId) {
+            const isAr = currentLang === 'ar';
+            const bld = (cachedBuildingsDirectory || []).find(b => b.building_id === buildingId) ||
+                        (cachedBuildings || []).find(b => b.building_id === buildingId);
+            const bldName = bld ? (bld.building_name || bld.building_code || buildingId) : buildingId;
+            const confirmMsg = isAr
+                ? `هل أنت متأكد من حذف المبنى (${bldName})؟ لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to delete building (${bldName})? This action cannot be undone.`;
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const userId = localStorage.getItem('recrm_user_id') || 'user-51';
+                const res = await fetch(`${API_BASE}/api/v1/buildings/${buildingId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': userId }
+                });
+
+                if (!res.ok) {
+                    let errMsg = isAr ? 'فشل حذف المبنى' : 'Failed to delete building';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {
+                        const text = await res.text();
+                        if (text) errMsg = text;
+                    }
+                    throw new Error(errMsg);
+                }
+
+                showToast(isAr ? `✓ تم حذف المبنى ${bldName} بنجاح.` : `✓ Building ${bldName} deleted successfully.`);
+                await loadReferenceData();
+                if (currentActiveTab === 'BUILDINGS') await fetchBuildingsDirectory();
+                updateTabBadges();
+            } catch (err) {
+                alert(isAr ? `تعذر حذف المبنى:\n${err.message}` : `Delete failed:\n${err.message}`);
+            }
+        }
+
         // ================= MODAL HANDLERS =================
         async function openAddUnitModal() {
             if (cachedPropertyTypes.length === 0 || cachedBuildings.length === 0) {
@@ -2789,6 +3505,7 @@
             if (document.getElementById('add-project-id')) document.getElementById('add-project-id').value = '';
             onAddUnitProjectChange();
             document.getElementById('add-building-id').value = '';
+            onAddUnitBuildingChange();
             document.getElementById('add-unit-number').value = '';
             document.getElementById('add-property-type-id').value = '';
             onPropertyTypeChange('add');
@@ -2823,14 +3540,30 @@
                 alert(currentLang === 'ar' ? 'يرجى اختيار المشروع التابع له العقار' : 'Please select a Project for this property');
                 return;
             }
+            const floorNoVal = document.getElementById('add-floor-no').value ? parseInt(document.getElementById('add-floor-no').value) : null;
+            let totalFloorsVal = document.getElementById('add-total-floors').value ? parseInt(document.getElementById('add-total-floors').value) : null;
+
+            if (bldId) {
+                const b = (cachedBuildings || []).find(x => x.building_id === bldId);
+                if (b && b.floors_count != null) {
+                    totalFloorsVal = b.floors_count;
+                    if (floorNoVal != null && floorNoVal > b.floors_count) {
+                        alert(currentLang === 'ar'
+                            ? `رقم الطابق (${floorNoVal}) لا يمكن أن يتجاوز إجمالي عدد طوابق المبنى (${b.floors_count}).`
+                            : `Floor number (${floorNoVal}) cannot exceed building total floors (${b.floors_count}).`);
+                        return;
+                    }
+                }
+            }
+
             const payload = {
                 project_id: prjId || null,
                 building_id: bldId || null,
                 unit_number: document.getElementById('add-unit-number').value.trim(),
                 property_type_id: document.getElementById('add-property-type-id').value || null,
                 status: document.getElementById('add-status').value,
-                floor_no: document.getElementById('add-floor-no').value ? parseInt(document.getElementById('add-floor-no').value) : null,
-                total_floors: document.getElementById('add-total-floors').value ? parseInt(document.getElementById('add-total-floors').value) : null,
+                floor_no: floorNoVal,
+                total_floors: totalFloorsVal,
                 area_sqm: document.getElementById('add-area-sqm').value ? parseFloat(document.getElementById('add-area-sqm').value) : null,
                 bedrooms: document.getElementById('add-bedrooms').value ? parseInt(document.getElementById('add-bedrooms').value) : null,
                 bathrooms: document.getElementById('add-bathrooms').value ? parseInt(document.getElementById('add-bathrooms').value) : null,
@@ -2893,6 +3626,7 @@
                     onEditUnitProjectChange();
                 }
                 document.getElementById('edit-building-id').value = u.building_id || '';
+                onEditUnitBuildingChange();
                 document.getElementById('edit-unit-number').value = u.unit_number || '';
                 document.getElementById('edit-property-type-id').value = u.property_type_id || '';
                 onPropertyTypeChange('edit');
@@ -2940,14 +3674,30 @@
                 alert(currentLang === 'ar' ? 'يرجى اختيار المشروع التابع له العقار' : 'Please select a Project for this property');
                 return;
             }
+            const floorNoVal = document.getElementById('edit-floor-no').value ? parseInt(document.getElementById('edit-floor-no').value) : null;
+            let totalFloorsVal = document.getElementById('edit-total-floors').value ? parseInt(document.getElementById('edit-total-floors').value) : null;
+
+            if (bldId) {
+                const b = (cachedBuildings || []).find(x => x.building_id === bldId);
+                if (b && b.floors_count != null) {
+                    totalFloorsVal = b.floors_count;
+                    if (floorNoVal != null && floorNoVal > b.floors_count) {
+                        alert(currentLang === 'ar'
+                            ? `رقم الطابق (${floorNoVal}) لا يمكن أن يتجاوز إجمالي عدد طوابق المبنى (${b.floors_count}).`
+                            : `Floor number (${floorNoVal}) cannot exceed building total floors (${b.floors_count}).`);
+                        return;
+                    }
+                }
+            }
+
             const payload = {
                 project_id: prjId || null,
                 building_id: bldId || null,
                 unit_number: document.getElementById('edit-unit-number').value.trim(),
                 property_type_id: document.getElementById('edit-property-type-id').value || null,
                 status: document.getElementById('edit-status').value,
-                floor_no: document.getElementById('edit-floor-no').value ? parseInt(document.getElementById('edit-floor-no').value) : null,
-                total_floors: document.getElementById('edit-total-floors').value ? parseInt(document.getElementById('edit-total-floors').value) : null,
+                floor_no: floorNoVal,
+                total_floors: totalFloorsVal,
                 area_sqm: document.getElementById('edit-area-sqm').value ? parseFloat(document.getElementById('edit-area-sqm').value) : null,
                 bedrooms: document.getElementById('edit-bedrooms').value ? parseInt(document.getElementById('edit-bedrooms').value) : null,
                 bathrooms: document.getElementById('edit-bathrooms').value ? parseInt(document.getElementById('edit-bathrooms').value) : null,
@@ -2988,28 +3738,53 @@
             }
         }
 
-        async function confirmDeleteCurrentUnit() {
-            const unitId = document.getElementById('edit-unit-id').value;
+        async function confirmDeleteUnitDirect(unitId) {
+            if (!unitId) return;
+            const u = (cachedUnits || []).find(x => x.unit_id === unitId) || (activeDetailsUnit && activeDetailsUnit.unit_id === unitId ? activeDetailsUnit : null);
+            const unitNumber = u ? u.unit_number : '';
             const isAr = currentLang === 'ar';
+            const displayName = unitNumber ? `${isAr ? 'الوحدة' : 'Unit'} ${unitNumber} (${unitId})` : `(${unitId})`;
             const confirmMsg = isAr
-                ? `هل أنت متأكد من رغبتك في حذف الوحدة (${unitId})؟ لا يمكن التراجع عن هذا الإجراء.`
-                : `Are you sure you want to delete unit (${unitId})? This action cannot be undone.`;
+                ? `هل أنت متأكد من رغبتك في حذف ${displayName} نهائياً من المخزون العقاري؟ لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to permanently delete ${displayName} from inventory? This action cannot be undone.`;
 
             if (!confirm(confirmMsg)) return;
 
             try {
+                const userId = localStorage.getItem('recrm_user_id') || 'user-51';
                 const res = await fetch(`${API_BASE}/api/v1/units/${unitId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': userId }
                 });
                 if (!res.ok) {
-                    const errJson = await res.json().catch(() => ({}));
-                    throw new Error(errJson.detail || 'Failed to delete unit');
+                    let errMsg = isAr ? 'فشل حذف الوحدة' : 'Failed to delete unit';
+                    try {
+                        const errJson = await res.json();
+                        errMsg = errJson.detail || errJson.message || errMsg;
+                    } catch (_) {
+                        const txt = await res.text();
+                        if (txt) errMsg = txt;
+                    }
+                    throw new Error(errMsg);
                 }
                 closeEditUnitModal();
-                showToast(`✓ Unit ${unitId} deleted successfully.`);
+                closeDetailsModal();
+                showToast(isAr ? `✓ تم حذف ${displayName} بنجاح.` : `✓ ${displayName} deleted successfully.`);
                 await fetchUnits();
+                updateTabBadges();
             } catch (err) {
-                alert(`Delete failed: ${err.message}`);
+                alert(isAr ? `تعذر حذف الوحدة العقارية:\n${err.message}` : `Delete failed:\n${err.message}`);
+            }
+        }
+
+        async function confirmDeleteCurrentUnit() {
+            const unitId = document.getElementById('edit-unit-id').value;
+            await confirmDeleteUnitDirect(unitId);
+        }
+
+        async function confirmDeleteActiveDetailsUnit() {
+            if (activeDetailsUnit && activeDetailsUnit.unit_id) {
+                await confirmDeleteUnitDirect(activeDetailsUnit.unit_id);
             }
         }
 
@@ -3056,6 +3831,14 @@
                     ? `${bldDisplay} [كود: ${u.building_code || '--'}]`
                     : (isAr ? 'عقار مستقل / أرض (بدون مبنى)' : 'Standalone / Land (No building)');
                 document.getElementById('det-building').textContent = bldText;
+
+                const detCity = document.getElementById('det-city');
+                if (detCity) {
+                    const cName = isAr
+                        ? (u.city_name_ar || u.city_name || (isAr ? 'غير محدد' : 'Unspecified'))
+                        : (u.city_name_en || u.city_name || 'Unspecified');
+                    detCity.textContent = cName;
+                }
                 
                 let pType = isAr 
                     ? (u.property_type_name_ar || propTypeMapAr[u.property_type_name] || u.property_type_name || 'شقة')

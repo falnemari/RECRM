@@ -853,6 +853,77 @@
         </div>
     </div>
 
+    <!-- Modal 4: Edit Document Details -->
+    <div id="modal-edit-doc" class="modal-overlay">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3 id="edit-doc-title">✏️ <span data-i18n="modal_edit_doc_title">تعديل بيانات المستند (Edit Document)</span></h3>
+                <button class="close-btn" onclick="closeModal('modal-edit-doc')">&times;</button>
+            </div>
+            <form id="edit-doc-form" onsubmit="handleUpdateDocument(event)">
+                <input type="hidden" id="edit-doc-id">
+                <div class="form-group">
+                    <label data-i18n="lbl_edit_file_name">اسم الملف / المستند (Document / File Name) *</label>
+                    <input type="text" id="edit-doc-file-name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_doc_type">تصنيف المستند (Document Type) *</label>
+                        <select id="edit-doc-type" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_doc_status">الحالة (Status) *</label>
+                        <select id="edit-doc-status" required>
+                            <option value="ACTIVE">ACTIVE (ساري ومعتمد)</option>
+                            <option value="ARCHIVED">ARCHIVED (مؤرشف)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_issued_at">تاريخ الإصدار (Issued Date)</label>
+                        <input type="date" id="edit-doc-issued-at">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_expires_at">تاريخ الصلاحية / الانتهاء (Expiry Date)</label>
+                        <input type="date" id="edit-doc-expires-at">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_link_unit">الوحدة العقارية المرتبطة (Linked Unit)</label>
+                        <select id="edit-doc-unit">
+                            <option value="">-- اختياري (بدون وحدة) --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_edit_link_customer">العميل المرتبط (Linked Customer)</label>
+                        <select id="edit-doc-cust">
+                            <option value="">-- اختياري (بدون عميل) --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="lbl_edit_notes">الملاحظات والشروحات (Notes & Explanations)</label>
+                    <textarea id="edit-doc-notes" rows="3" placeholder="أدخل أي ملاحظات إضافية حول الوثيقة..."></textarea>
+                </div>
+                <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <button type="button" id="btn-modal-delete-doc" class="btn" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; display: none;" onclick="deleteDocFromEditModal()">
+                            🗑️ <span data-i18n="btn_delete_doc">حذف المستند (المدير العام فقط)</span>
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit-doc')" data-i18n="btn_cancel">إلغاء (Cancel)</button>
+                        <button type="submit" class="btn" style="background: #1e3a8a; color: white;" data-i18n="btn_save_changes">حفظ التعديلات (Save)</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ============================================================== -->
     <!-- SCRIPT -->
     <!-- ============================================================== -->
@@ -1186,9 +1257,35 @@
             btnContainer.innerHTML = html;
         }
 
+        function getUserRoleInfo() {
+            let roles = [];
+            let branchId = null;
+            let userId = localStorage.getItem('recrm_user_id') || 'user-51';
+            if (window.getCurrentUserProfile && window.getCurrentUserProfile()) {
+                const profile = window.getCurrentUserProfile();
+                userId = profile.user_id || userId;
+                branchId = profile.branch_id || null;
+                roles = (profile.roles || []).map(r => (typeof r === 'string' ? r : (r.role_code || r.name || '')).toUpperCase());
+                if (profile.role_codes && Array.isArray(profile.role_codes)) {
+                    roles = roles.concat(profile.role_codes.map(rc => rc.toUpperCase()));
+                }
+            }
+            const isGM = roles.some(r => ['GENERAL_MANAGER', 'SYS_ADMIN', 'ADMIN'].includes(r));
+            const isBM = roles.some(r => ['BRANCH_MANAGER', 'SALES_MANAGER'].includes(r));
+            return {
+                isGM,
+                isBM,
+                canEdit: isGM || isBM,
+                canDelete: isGM, // Deletion strictly restricted to GM only!
+                branchId,
+                userId
+            };
+        }
+
         function renderDocuments(items) {
             const gridContainer = document.getElementById('docs-grid');
             const tbody = document.getElementById('docs-tbody');
+            const roleInfo = getUserRoleInfo();
 
             if (items.length === 0) {
                 const emptyMsg = currentLang === 'ar' ? 'لا توجد وثائق مطابقة لخيارات البحث أو الفلترة.' : 'No documents found matching the search criteria.';
@@ -1274,6 +1371,8 @@
                                     <button type="button" class="btn-icon-action" onclick="printDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">🖨️</button>
                                     <button type="button" class="btn-icon-action" onclick="downloadDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'تنزيل' : 'Download'}">⬇</button>
                                     <button type="button" class="btn-icon-action" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'سجل الأمان' : 'Audit'}">🛡️</button>
+                                    ${roleInfo.canEdit ? `<button type="button" class="btn-icon-action" style="color: #0284c7;" onclick="openEditDocModal('${d.document_id}')" title="${currentLang === 'ar' ? 'تعديل بيانات المستند' : 'Edit Document'}">✏️</button>` : ''}
+                                    ${roleInfo.canDelete ? `<button type="button" class="btn-icon-action danger" onclick="deleteDoc('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'حذف المستند (المدير العام فقط)' : 'Delete Document (GM only)'}">🗑️</button>` : ''}
                                     ${d.status === 'ACTIVE' ? `<button type="button" class="btn-icon-action danger" onclick="archiveDoc('${d.document_id}')" title="${currentLang === 'ar' ? 'أرشفة' : 'Archive'}">📦</button>` : ''}
                                 </div>
                             </div>
@@ -1347,6 +1446,8 @@
                                     <button type="button" class="btn-icon-action" onclick="printDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">🖨️</button>
                                     <button type="button" class="btn-icon-action" onclick="downloadDocument('${d.document_id}')" title="${currentLang === 'ar' ? 'تنزيل' : 'Download'}">⬇</button>
                                     <button type="button" class="btn-icon-action" onclick="viewAuditLog('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'سجل الأمان' : 'Audit'}">🛡️</button>
+                                    ${roleInfo.canEdit ? `<button type="button" class="btn-icon-action" style="color: #0284c7;" onclick="openEditDocModal('${d.document_id}')" title="${currentLang === 'ar' ? 'تعديل بيانات المستند' : 'Edit Document'}">✏️</button>` : ''}
+                                    ${roleInfo.canDelete ? `<button type="button" class="btn-icon-action danger" onclick="deleteDoc('${d.document_id}', '${d.file_name.replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'حذف المستند (المدير العام فقط)' : 'Delete Document (GM only)'}">🗑️</button>` : ''}
                                     ${d.status === 'ACTIVE' ? `<button type="button" class="btn-icon-action danger" onclick="archiveDoc('${d.document_id}')" title="${currentLang === 'ar' ? 'أرشفة' : 'Archive'}">📦</button>` : ''}
                                 </div>
                             </td>
@@ -1443,6 +1544,177 @@
                 closeModal('modal-doc-preview');
             }
         });
+
+        let cachedDocTypes = [];
+        let cachedUnitsForDoc = [];
+        let cachedCustomersForDoc = [];
+
+        async function openEditDocModal(docId) {
+            let doc = docsData.find(d => d.document_id === docId);
+            if (!doc) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/documents/${docId}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        doc = json.data;
+                    }
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
+            if (!doc) {
+                alert(currentLang === 'ar' ? 'تعذر العثور على بيانات المستند' : 'Document not found');
+                return;
+            }
+
+            const roleInfo = getUserRoleInfo();
+            const delBtn = document.getElementById('btn-modal-delete-doc');
+            if (delBtn) {
+                delBtn.style.display = roleInfo.canDelete ? 'inline-block' : 'none';
+            }
+
+            document.getElementById('edit-doc-id').value = doc.document_id;
+            document.getElementById('edit-doc-file-name').value = doc.file_name || '';
+            document.getElementById('edit-doc-status').value = doc.status || 'ACTIVE';
+            document.getElementById('edit-doc-issued-at').value = doc.issued_at || '';
+            document.getElementById('edit-doc-expires-at').value = doc.expires_at || '';
+            document.getElementById('edit-doc-notes').value = doc.notes || '';
+
+            // Load doc types if not loaded
+            if (cachedDocTypes.length === 0) {
+                try {
+                    const dtRes = await fetch(`${API_BASE}/api/v1/document-types`);
+                    if (dtRes.ok) {
+                        const dtJson = await dtRes.json();
+                        cachedDocTypes = dtJson.data || [];
+                    }
+                } catch (e) { console.warn(e); }
+            }
+            const dtSel = document.getElementById('edit-doc-type');
+            if (dtSel) {
+                dtSel.innerHTML = cachedDocTypes.map(dt => 
+                    `<option value="${dt.document_type_id}" ${dt.document_type_id === doc.document_type_id ? 'selected' : ''}>${dt.name || dt.code}</option>`
+                ).join('');
+                if (doc.document_type_id) dtSel.value = doc.document_type_id;
+            }
+
+            // Load units
+            if (cachedUnitsForDoc.length === 0) {
+                try {
+                    const uRes = await fetch(`${API_BASE}/api/v1/units?page_size=150`);
+                    if (uRes.ok) {
+                        const uJson = await uRes.json();
+                        cachedUnitsForDoc = uJson.data || [];
+                    }
+                } catch (e) { console.warn(e); }
+            }
+            const uSel = document.getElementById('edit-doc-unit');
+            if (uSel) {
+                uSel.innerHTML = '<option value="">-- اختياري (بدون وحدة) --</option>' + 
+                    cachedUnitsForDoc.map(u => `<option value="${u.unit_id}" ${u.unit_id === doc.unit_id ? 'selected' : ''}>${u.unit_id} (${u.unit_number || u.unit_id}) - ${u.city_name || ''}</option>`).join('');
+                if (doc.unit_id) uSel.value = doc.unit_id;
+            }
+
+            // Load customers
+            if (cachedCustomersForDoc.length === 0) {
+                try {
+                    const cRes = await fetch(`${API_BASE}/api/v1/customers?page_size=100`);
+                    if (cRes.ok) {
+                        const cJson = await cRes.json();
+                        cachedCustomersForDoc = cJson.data || [];
+                    }
+                } catch (e) { console.warn(e); }
+            }
+            const cSel = document.getElementById('edit-doc-cust');
+            if (cSel) {
+                cSel.innerHTML = '<option value="">-- اختياري (بدون عميل) --</option>' + 
+                    cachedCustomersForDoc.map(c => `<option value="${c.customer_id}" ${c.customer_id === doc.customer_id ? 'selected' : ''}>${c.first_name || ''} ${c.last_name || c.company_name || ''} (${c.customer_id})</option>`).join('');
+                if (doc.customer_id) cSel.value = doc.customer_id;
+            }
+
+            openModal('modal-edit-doc');
+        }
+
+        async function handleUpdateDocument(e) {
+            e.preventDefault();
+            const docId = document.getElementById('edit-doc-id').value;
+            if (!docId) return;
+
+            const payload = {
+                file_name: document.getElementById('edit-doc-file-name').value.trim(),
+                document_type_id: document.getElementById('edit-doc-type').value || null,
+                status: document.getElementById('edit-doc-status').value,
+                issued_at: document.getElementById('edit-doc-issued-at').value || null,
+                expires_at: document.getElementById('edit-doc-expires-at').value || null,
+                unit_id: document.getElementById('edit-doc-unit').value || null,
+                customer_id: document.getElementById('edit-doc-cust').value || null,
+                notes: document.getElementById('edit-doc-notes').value.trim() || null
+            };
+
+            const roleInfo = getUserRoleInfo();
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/${docId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': roleInfo.userId
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    closeModal('modal-edit-doc');
+                    loadDocuments(currentPage);
+                    loadSummary();
+                    alert(currentLang === 'ar' ? 'تم تحديث بيانات المستند بنجاح!' : 'Document updated successfully!');
+                } else {
+                    const err = await res.json();
+                    alert((currentLang === 'ar' ? 'خطأ في التحديث: ' : 'Update error: ') + (err.detail || JSON.stringify(err)));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        async function deleteDoc(docId, fileName) {
+            const roleInfo = getUserRoleInfo();
+            if (!roleInfo.canDelete) {
+                alert(currentLang === 'ar' ? 'عملية حذف المستندات محصورة بالمدير العام فقط.' : 'Document deletion is restricted to General Manager only.');
+                return;
+            }
+            const confirmMsg = currentLang === 'ar'
+                ? `هل أنت متأكد من حذف المستند نهائياً؟\n\n${fileName || docId}\n\nتحذير: لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to permanently delete this document?\n\n${fileName || docId}\n\nWarning: This action cannot be undone.`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/documents/${docId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-User-ID': roleInfo.userId
+                    }
+                });
+                if (res.ok) {
+                    loadDocuments(currentPage);
+                    loadSummary();
+                    alert(currentLang === 'ar' ? 'تم حذف المستند بنجاح.' : 'Document deleted successfully.');
+                } else {
+                    const err = await res.json();
+                    alert((currentLang === 'ar' ? 'فشل حذف المستند: ' : 'Failed to delete document: ') + (err.detail || JSON.stringify(err)));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        async function deleteDocFromEditModal() {
+            const docId = document.getElementById('edit-doc-id').value;
+            const fileName = document.getElementById('edit-doc-file-name').value;
+            closeModal('modal-edit-doc');
+            if (docId) {
+                await deleteDoc(docId, fileName);
+            }
+        }
 
         async function openUploadModal() {
             try {

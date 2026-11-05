@@ -112,10 +112,32 @@
         th { background: #f1f5f9; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
 
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 16px; background: #fff; border-top: 1px solid var(--border);
+            font-size: 0.8rem; flex-wrap: wrap; gap: 8px; border-radius: 0 0 8px 8px;
+        }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-size-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 4px 10px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-num-display { font-weight: 700; padding: 0 6px; color: var(--text-main); }
+
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, monospace;
             font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
             border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+        }
+        .btn-ref-edit {
+            background: #f1f5f9; border: 1px solid #cbd5e1; cursor: pointer;
+            font-size: 0.78em; padding: 2px 5px; border-radius: 4px; color: #475569;
+            line-height: 1; transition: all 0.15s; display: inline-flex; align-items: center;
+            vertical-align: middle; margin-inline-start: 4px;
+        }
+        .btn-ref-edit:hover {
+            background: #e2e8f0; color: #0f172a; border-color: #94a3b8; transform: scale(1.08);
         }
 
         .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; white-space: nowrap; }
@@ -240,13 +262,22 @@
         <!-- TAB 1: CONTRACTS -->
         <div id="tab-contracts">
             <div class="controls-bar">
-                <input type="text" id="contract-search" placeholder="Search by contract #, customer or unit..." style="flex-grow: 1; min-width: 250px;" oninput="fetchContracts()">
-                <select id="contract-status" onchange="fetchContracts()">
-                    <option value="">All Statuses</option>
-                    <option value="SIGNED">SIGNED</option>
-                    <option value="DRAFT">DRAFT</option>
-                    <option value="COMPLETED">COMPLETED</option>
+                <input type="text" id="contract-search" placeholder="Search by contract #, customer or unit..." style="flex-grow: 1; min-width: 250px;" oninput="contractsPage = 1; fetchContracts()">
+                <select id="contract-type" onchange="contractsPage = 1; fetchContracts()">
+                    <option value="" data-i18n="opt_all_types">All Types (كافة أنواع العقود)</option>
+                    <option value="SALE" data-i18n="opt_type_sale">SALE (عقد بيع)</option>
+                    <option value="RENT" data-i18n="opt_type_rent">RENT (عقد إيجار)</option>
+                    <option value="INVESTMENT" data-i18n="opt_type_invest">INVESTMENT (عقد استثمار)</option>
                 </select>
+                <select id="contract-status" onchange="contractsPage = 1; fetchContracts()">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses (كافة الحالات)</option>
+                    <option value="ACTIVE" data-i18n="opt_status_active">ACTIVE (ساري ومفعل)</option>
+                    <option value="SIGNED" data-i18n="opt_status_signed">SIGNED (موقع)</option>
+                    <option value="DRAFT" data-i18n="opt_status_draft">DRAFT (مسودة)</option>
+                    <option value="COMPLETED" data-i18n="opt_status_completed">COMPLETED (مكتمل)</option>
+                    <option value="CANCELLED" data-i18n="opt_status_cancelled">CANCELLED (ملغي)</option>
+                </select>
+                <button class="btn btn-sm" onclick="fetchContracts()">🔄 Refresh</button>
                 <button class="btn btn-success" onclick="openConvertModal()" data-i18n="btn_convert_res">+ Convert Reservation to Contract</button>
             </div>
 
@@ -270,6 +301,22 @@
                         <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination-bar" id="contracts-pagination-bar">
+                    <div id="contracts-pagination-info">Showing 0 of 0 contracts</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="contracts-page-size" class="page-size-select" onchange="contractsPageSize = Number(this.value); contractsPage = 1; fetchContracts()">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button class="btn-page" id="contracts-prev-btn" onclick="changeContractsPage(-1)">‹ Prev</button>
+                        <span class="page-num-display" id="contracts-page-display">1</span>
+                        <button class="btn-page" id="contracts-next-btn" onclick="changeContractsPage(1)">Next ›</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -279,16 +326,16 @@
             <div id="res-filter-banner" style="display: none; margin-bottom: 14px; padding: 10px 16px; background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 8px; color: #1e40af; font-size: 0.9em; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 1.2em;">🎯</span>
-                    <span>تم تصفية الحجوزات وعربين الحجز وفق السجل: <strong id="res-filter-banner-text" style="color: #1d4ed8; font-family: monospace; font-size: 1.05em;">--</strong></span>
+                    <span><span data-i18n="res_filter_banner_prefix">Reservations and earnest deposits filtered by record:</span> <strong id="res-filter-banner-text" style="color: #1d4ed8; font-family: monospace; font-size: 1.05em;">--</strong></span>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline" onclick="clearReservationSearchFilter()" style="font-weight: 700; color: #1e40af; border-color: #93c5fd; background: white; cursor: pointer;">
-                    ✕ إلغاء التصفية وعرض كافة الحجوزات
+                <button type="button" class="btn btn-sm btn-outline" id="res-filter-clear-btn" onclick="clearReservationSearchFilter()" style="font-weight: 700; color: #1e40af; border-color: #93c5fd; background: white; cursor: pointer;" data-i18n="btn_clear_res_filter">
+                    ✕ Clear Filter & Show All Reservations
                 </button>
             </div>
 
             <div class="controls-bar">
-                <input type="text" id="res-search" placeholder="Search by reservation #, ID, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="fetchReservations()">
-                <select id="res-status" onchange="fetchReservations()">
+                <input type="text" id="res-search" placeholder="Search by reservation #, ID, buyer, unit #..." style="flex-grow: 1; min-width: 250px;" oninput="reservationsPage = 1; fetchReservations()">
+                <select id="res-status" onchange="reservationsPage = 1; fetchReservations()">
                     <option value="" data-i18n="opt_all_statuses">All Statuses</option>
                     <option value="ACTIVE" data-i18n="opt_status_active">ACTIVE</option>
                     <option value="CONVERTED" data-i18n="opt_status_converted">CONVERTED</option>
@@ -319,13 +366,30 @@
                         <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination-bar" id="reservations-pagination-bar">
+                    <div id="reservations-pagination-info">Showing 0 of 0 reservations</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="reservations-page-size" class="page-size-select" onchange="reservationsPageSize = Number(this.value); reservationsPage = 1; fetchReservations()">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button class="btn-page" id="reservations-prev-btn" onclick="changeReservationsPage(-1)">‹ Prev</button>
+                        <span class="page-num-display" id="reservations-page-display">1</span>
+                        <button class="btn-page" id="reservations-next-btn" onclick="changeReservationsPage(1)">Next ›</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- TAB 2: PAYMENTS -->
         <div id="tab-payments" style="display: none;">
             <div class="controls-bar">
-                <select id="payment-status" onchange="fetchPayments()">
+                <input type="text" id="payment-search" placeholder="Search by payment ref, contract #, customer or unit..." style="flex-grow: 1; min-width: 250px;" oninput="paymentsPage = 1; fetchPayments()">
+                <select id="payment-status" onchange="paymentsPage = 1; fetchPayments()">
                     <option value="" data-i18n="opt_all_pay_statuses">All Payment Statuses</option>
                     <option value="DUE" data-i18n="opt_pay_due">DUE</option>
                     <option value="PARTIAL" data-i18n="opt_pay_partial">PARTIAL</option>
@@ -333,6 +397,7 @@
                     <option value="OVERDUE" data-i18n="opt_pay_overdue">OVERDUE</option>
                     <option value="CANCELLED" data-i18n="opt_pay_cancelled">CANCELLED</option>
                 </select>
+                <button class="btn btn-sm" onclick="fetchPayments()">🔄 Refresh</button>
             </div>
 
             <div class="table-wrap">
@@ -354,19 +419,37 @@
                         <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination-bar" id="payments-pagination-bar">
+                    <div id="payments-pagination-info">Showing 0 of 0 payments</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="payments-page-size" class="page-size-select" onchange="paymentsPageSize = Number(this.value); paymentsPage = 1; fetchPayments()">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button class="btn-page" id="payments-prev-btn" onclick="changePaymentsPage(-1)">‹ Prev</button>
+                        <span class="page-num-display" id="payments-page-display">1</span>
+                        <button class="btn-page" id="payments-next-btn" onclick="changePaymentsPage(1)">Next ›</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- TAB 3: COMMISSIONS -->
         <div id="tab-commissions" style="display: none;">
             <div class="controls-bar">
-                <select id="commission-status" onchange="fetchCommissions()">
+                <input type="text" id="commission-search" placeholder="Search by agent, contract, or ID..." style="flex-grow: 1; min-width: 250px;" oninput="commissionsPage = 1; fetchCommissions()">
+                <select id="commission-status" onchange="commissionsPage = 1; fetchCommissions()">
                     <option value="" data-i18n="opt_all_comm_statuses">All Commission Statuses</option>
                     <option value="PENDING" data-i18n="opt_comm_pending">PENDING</option>
                     <option value="APPROVED" data-i18n="opt_comm_approved">APPROVED</option>
                     <option value="PAID" data-i18n="opt_comm_paid">PAID</option>
                     <option value="CANCELLED" data-i18n="opt_comm_cancelled">CANCELLED</option>
                 </select>
+                <button class="btn btn-sm" onclick="fetchCommissions()">🔄 Refresh</button>
             </div>
 
             <div class="table-wrap">
@@ -387,19 +470,46 @@
                         <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination-bar" id="commissions-pagination-bar">
+                    <div id="commissions-pagination-info">Showing 0 of 0 commissions</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="commissions-page-size" class="page-size-select" onchange="commissionsPageSize = Number(this.value); commissionsPage = 1; fetchCommissions()">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button class="btn-page" id="commissions-prev-btn" onclick="changeCommissionsPage(-1)">‹ Prev</button>
+                        <span class="page-num-display" id="commissions-page-display">1</span>
+                        <button class="btn-page" id="commissions-next-btn" onclick="changeCommissionsPage(1)">Next ›</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- TAB 5: SAUDI STATUTORY FEE INVOICES -->
         <div id="tab-invoices" style="display: none;">
+            <!-- Active Search & Context Filter Banner -->
+            <div id="inv-filter-banner" style="display: none; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 10px 16px; margin-bottom: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.3em;">🎯</span>
+                    <span id="inv-filter-banner-text" style="color: #1e40af; font-weight: 600; font-size: 0.9em;"></span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline" id="inv-filter-clear-btn" onclick="clearInvoiceFilter()" style="font-weight: 700; color: #1e40af; border-color: #93c5fd; background: white; cursor: pointer;">
+                    ✕ إلغاء التصفية وعرض كافة الفواتير
+                </button>
+            </div>
+
             <div class="controls-bar" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;">
-                <input type="text" id="invoice-search" placeholder="Search by invoice #, customer/owner, unit..." style="flex-grow: 1; min-width: 250px;" oninput="fetchInvoices()">
-                <select id="invoice-payer-filter" onchange="fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                <input type="text" id="invoice-search" placeholder="Search by invoice #, customer/owner, unit..." style="flex-grow: 1; min-width: 250px;" oninput="invoicesPage = 1; fetchInvoices()">
+                <select id="invoice-payer-filter" onchange="invoicesPage = 1; fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
                     <option value="" data-i18n="opt_all_payers">All Payers (كافة الأطراف - عميل ومالك)</option>
                     <option value="CUSTOMER" data-i18n="opt_payer_cust">👤 Customer / Tenant / Buyer (العميل - مشتري/مستأجر)</option>
                     <option value="OWNER" data-i18n="opt_payer_owner">🏢 Owner / Seller / Lessor (المالك - بائع/مؤجر)</option>
                 </select>
-                <select id="invoice-status-filter" onchange="fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                <select id="invoice-status-filter" onchange="invoicesPage = 1; fetchInvoices()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
                     <option value="" data-i18n="opt_all_statuses">All Statuses (كافة الحالات)</option>
                     <option value="PENDING">⏳ PENDING (بانتظار التحصيل)</option>
                     <option value="PAID">✅ PAID (تم التحصيل)</option>
@@ -441,6 +551,27 @@
                         </tr>
                     </thead>
                     <tbody id="invoices-tbody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
+                    </tbody>
+                </table>
+                <div class="pagination-bar" id="invoices-pagination-bar">
+                    <div id="invoices-pagination-info">Showing 0 of 0 invoices</div>
+                    <div class="pagination-controls">
+                        <label style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="lbl_rows_per_page">Rows per page:</label>
+                        <select id="invoices-page-size" class="page-size-select" onchange="invoicesPageSize = Number(this.value); invoicesPage = 1; fetchInvoices()">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <button class="btn-page" id="invoices-prev-btn" onclick="changeInvoicesPage(-1)">‹ Prev</button>
+                        <span class="page-num-display" id="invoices-page-display">1</span>
+                        <button class="btn-page" id="invoices-next-btn" onclick="changeInvoicesPage(1)">Next ›</button>
+                    </div>
+                </div>
+            </div>
+        </div>
                         <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
                     </tbody>
                 </table>
@@ -828,6 +959,80 @@
         </div>
     </div>
 
+    <!-- ================= EDIT REFERENCE NUMBER MODAL ================= -->
+    <div class="modal-overlay" id="edit-reference-modal">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e3a8a, #1e293b); color: white;">
+                <h3 style="margin: 0; font-size: 1.1em;" id="edit-ref-modal-title">✏️ تعديل الرقم المرجعي والمعاملة</h3>
+                <button class="close-btn" onclick="closeEditReferenceModal()" style="color: white;">&times;</button>
+            </div>
+            <form onsubmit="submitEditReference(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-ref-entity-type">
+                    <input type="hidden" id="edit-ref-entity-id">
+
+                    <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.88em; border-inline-start: 4px solid var(--secondary);">
+                        <span id="edit-ref-entity-desc" style="font-weight: 700;">المعاملة: --</span>
+                    </div>
+
+                    <div class="form-group" id="edit-ref-primary-group">
+                        <label id="edit-ref-primary-label">الرقم المرجعي الأساسي (Reference Number):</label>
+                        <input type="text" id="edit-ref-primary-val" placeholder="أدخل الرقم المرجعي" required style="font-family: monospace; font-weight: 600;">
+                    </div>
+
+                    <div class="form-group" id="edit-ref-secondary-group" style="display: none;">
+                        <label id="edit-ref-secondary-label">المرجع الثانوي / رقم فاتورة سداد / رقم الحوالة:</label>
+                        <input type="text" id="edit-ref-secondary-val" placeholder="رقم سداد أو مرجع التحويل" style="font-family: monospace;">
+                    </div>
+
+                    <div class="form-group" id="edit-ref-method-group" style="display: none;">
+                        <label id="edit-ref-method-label">طريقة الدفع / التحصيل:</label>
+                        <select id="edit-ref-method-val">
+                            <option value="BANK_TRANSFER">تحويل بنكي / سريع (Bank Transfer)</option>
+                            <option value="SADAD">سداد للمدفوعات الحكومية (SADAD)</option>
+                            <option value="CERTIFIED_CHECK">شيك مصرفي مصدق (Certified Check)</option>
+                            <option value="MADA">مدى / بطاقة بنكية (Mada POS)</option>
+                            <option value="CASH">نقدي (Cash)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="edit-ref-notes-group">
+                        <label id="edit-ref-notes-label">الملاحظات وسند القيد:</label>
+                        <textarea id="edit-ref-notes-val" rows="2" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" style="background: #64748b;" onclick="closeEditReferenceModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-success" id="btn-save-ref">💾 حفظ التعديل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: INVOICE HTML PREVIEW (معاينة وطباعة الفاتورة الضريبية) -->
+    <div class="modal-overlay" id="modal-invoice-preview">
+        <div class="modal" style="max-width: 900px; width: 95%; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e3a8a, #0f172a); color: white; flex-shrink: 0; padding: 12px 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4em;">🧾</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1em; color: white;" id="invoice-preview-title">معاينة الفاتورة الضريبية الرسمية</h3>
+                        <div style="font-size: 0.78em; color: #93c5fd;" id="invoice-preview-subtitle">الهيئة العامة للعقار & هيئة الزكاة والضريبة والجمارك</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" class="btn btn-sm" onclick="printCurrentInvoice()" style="background: #2563eb; color: white; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                        🖨️ <span data-i18n="btn_print">طباعة الفاتورة</span>
+                    </button>
+                    <button class="close-btn" onclick="closeInvoicePreviewModal()" style="color: white; font-size: 1.6em; line-height: 1; border: none; background: transparent; cursor: pointer;">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="flex: 1; padding: 0; overflow: hidden; background: #f8fafc;">
+                <iframe id="invoice-preview-iframe" style="width: 100%; height: 100%; border: none;" title="Invoice Preview"></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = (() => {
             if (window.location.protocol === 'file:') return 'http://localhost:8000';
@@ -873,6 +1078,8 @@
                 lbl_reserved_at: "Booking Date:", lbl_expires_at: "Expiry Date:",
                 lbl_assigned_broker: "Handling Broker / Agent:", lbl_linked_deal: "Opportunity / Contract:",
                 btn_print_receipt: "Print Notice", btn_convert_contract: "Convert to Contract", btn_close: "Close",
+                res_filter_banner_prefix: "Reservations and earnest deposits filtered by record:",
+                btn_clear_res_filter: "✕ Clear Filter & Show All Reservations",
                 nav_brand: "Muath Khidr Al-Nemari Real Estate Office",
                 font_label: "🔤 Font:",
                 font_cairo: "Cairo",
@@ -965,6 +1172,8 @@
                 lbl_reserved_at: "تاريخ الحجز:", lbl_expires_at: "تاريخ انتهاء الحجز:",
                 lbl_assigned_broker: "الوسيط المسؤول:", lbl_linked_deal: "الصفقة / العقد المرتبط:",
                 btn_print_receipt: "طباعة إشعار الحجز", btn_convert_contract: "تحويل إلى عقد رسمي", btn_close: "إغلاق",
+                res_filter_banner_prefix: "تم تصفية الحجوزات وعربين الحجز وفق السجل:",
+                btn_clear_res_filter: "✕ إلغاء التصفية وعرض كافة الحجوزات",
                 nav_brand: "مكتب معاذ خضر النمري للخدمات العقارية",
                 font_label: "🔤 الخط:",
                 font_cairo: "كايرو",
@@ -1047,6 +1256,9 @@
                 lbl.textContent = i18nData[currentLang].lang_label;
             }
             localStorage.setItem('recrm_lang', currentLang);
+            if (typeof cachedReservations !== 'undefined' && cachedReservations && cachedReservations.length > 0) {
+                fetchReservations();
+            }
         }
 
         function toggleLanguage() {
@@ -1100,22 +1312,108 @@
             } catch (e) {}
         }
 
+        // Pagination State
+        let contractsPage = 1, contractsPageSize = 50, contractsTotal = 0;
+        let paymentsPage = 1, paymentsPageSize = 50, paymentsTotal = 0;
+        let commissionsPage = 1, commissionsPageSize = 50, commissionsTotal = 0;
+        let invoicesPage = 1, invoicesPageSize = 50, invoicesTotal = 0;
+        let reservationsPage = 1, reservationsPageSize = 50, reservationsTotal = 0;
+
+        function updatePaginationUI(prefix, page, pageSize, total, itemNameAr, itemNameEn) {
+            const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
+            const endIdx = Math.min(page * pageSize, total);
+            const totalPages = Math.ceil(total / pageSize) || 1;
+
+            const infoEl = document.getElementById(`${prefix}-pagination-info`);
+            if (infoEl) {
+                infoEl.textContent = currentLang === 'ar'
+                    ? `عرض ${startIdx} - ${endIdx} من إجمالي ${total} ${itemNameAr}`
+                    : `Showing ${startIdx} - ${endIdx} of ${total} ${itemNameEn}`;
+            }
+
+            const pageDisplay = document.getElementById(`${prefix}-page-display`);
+            if (pageDisplay) {
+                pageDisplay.textContent = currentLang === 'ar'
+                    ? `صفحة ${page} من ${totalPages}`
+                    : `Page ${page} of ${totalPages}`;
+            }
+
+            const prevBtn = document.getElementById(`${prefix}-prev-btn`);
+            if (prevBtn) {
+                prevBtn.disabled = page <= 1;
+            }
+
+            const nextBtn = document.getElementById(`${prefix}-next-btn`);
+            if (nextBtn) {
+                nextBtn.disabled = page >= totalPages;
+            }
+        }
+
+        function changeContractsPage(delta) {
+            const totalPages = Math.ceil(contractsTotal / contractsPageSize) || 1;
+            const newPage = contractsPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                contractsPage = newPage;
+                fetchContracts();
+            }
+        }
+
+        function changeReservationsPage(delta) {
+            const totalPages = Math.ceil(reservationsTotal / reservationsPageSize) || 1;
+            const newPage = reservationsPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                reservationsPage = newPage;
+                fetchReservations();
+            }
+        }
+
+        function changePaymentsPage(delta) {
+            const totalPages = Math.ceil(paymentsTotal / paymentsPageSize) || 1;
+            const newPage = paymentsPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                paymentsPage = newPage;
+                fetchPayments();
+            }
+        }
+
+        function changeCommissionsPage(delta) {
+            const totalPages = Math.ceil(commissionsTotal / commissionsPageSize) || 1;
+            const newPage = commissionsPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                commissionsPage = newPage;
+                fetchCommissions();
+            }
+        }
+
+        function changeInvoicesPage(delta) {
+            const totalPages = Math.ceil(invoicesTotal / invoicesPageSize) || 1;
+            const newPage = invoicesPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                invoicesPage = newPage;
+                fetchInvoices();
+            }
+        }
+
         async function fetchContracts() {
             const search = document.getElementById('contract-search')?.value || '';
             const status = document.getElementById('contract-status')?.value || '';
+            const type = document.getElementById('contract-type')?.value || '';
 
-            let url = `${API_BASE}/api/v1/contracts?page_size=50`;
+            let url = `${API_BASE}/api/v1/contracts?page=${contractsPage}&page_size=${contractsPageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (type) url += `&contract_type=${encodeURIComponent(type)}`;
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 const items = json.data || [];
+                contractsTotal = json.meta?.total !== undefined ? json.meta.total : items.length;
+                updatePaginationUI('contracts', contractsPage, contractsPageSize, contractsTotal, 'عقد', 'contracts');
 
                 const tbody = document.getElementById('contracts-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No contracts found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 24px;">No contracts found.</td></tr>';
                     return;
                 }
 
@@ -1142,7 +1440,10 @@
 
                     return `
                     <tr>
-                        <td><span class="id-badge">${c.contract_number}</span></td>
+                        <td>
+                            <span class="id-badge">${c.contract_number}</span>
+                            <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace; margin-top:2px;">${c.contract_id}</div>
+                        </td>
                         <td><span class="badge" style="background: #e2e8f0;">${c.contract_type}</span></td>
                         <td>
                             <strong>${c.customer_name || 'N/A'}</strong>
@@ -1158,8 +1459,10 @@
                         <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
                         <td><span class="badge ${stBadge}">${c.status}</span></td>
                         <td>
-                            <button class="btn btn-sm" onclick="viewContractDetail('${c.contract_id}')">👁️ View Detail</button>
-                            ${actionBtn}
+                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="viewContractDetail('${c.contract_id}')">👁️ ${currentLang === 'ar' ? 'معاينة العقد' : 'View Contract'}</button>
+                                ${actionBtn}
+                            </div>
                         </td>
                     </tr>
                     `;
@@ -1171,13 +1474,22 @@
 
         async function fetchPayments() {
             const status = document.getElementById('payment-status')?.value || '';
-            let url = `${API_BASE}/api/v1/payments?page_size=50`;
+            const search = document.getElementById('payment-search')?.value || '';
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadId = urlParams.get('lead_id') || '';
+            const oppId = urlParams.get('opportunity_id') || '';
+            let url = `${API_BASE}/api/v1/payments?page=${paymentsPage}&page_size=${paymentsPageSize}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (leadId) url += `&lead_id=${encodeURIComponent(leadId)}`;
+            if (oppId) url += `&opportunity_id=${encodeURIComponent(oppId)}`;
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 const items = json.data || [];
+                paymentsTotal = json.meta?.total !== undefined ? json.meta.total : items.length;
+                updatePaginationUI('payments', paymentsPage, paymentsPageSize, paymentsTotal, 'دفعة', 'payments');
 
                 const tbody = document.getElementById('payments-tbody');
                 if (items.length === 0) {
@@ -1190,7 +1502,10 @@
                     const conStatusBadge = p.contract_status === 'CANCELLED' ? `<span class="badge badge-cancelled" style="font-size:0.68em; margin-inline-start:4px;">${currentLang === 'ar' ? 'عقد ملغي' : 'CANCELLED'}</span>` : '';
                     return `
                         <tr>
-                            <td><span class="id-badge">${p.payment_reference || p.payment_id || 'PAY-REF'}</span></td>
+                            <td>
+                                <span class="id-badge">${p.payment_reference || p.payment_id || 'PAY-REF'}</span>
+                                <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace; margin-top:2px;">${p.payment_id}</div>
+                            </td>
                             <td>
                                 <strong>${p.contract_number || '--'}</strong>${conStatusBadge}
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${p.unit_number ? '🏠 ' + p.unit_number : ''} ${p.customer_name ? '• ' + p.customer_name : ''}</div>
@@ -1202,7 +1517,14 @@
                             <td>${p.method || 'PENDING'}</td>
                             <td><span class="badge ${stBadge}">${p.status}</span></td>
                             <td>
-                                ${p.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : (p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">${currentLang === 'ar' ? 'سند قبض' : 'Record Receipt'}</button>` : `<span style="color: green;">✓ ${currentLang === 'ar' ? 'مسددة' : 'Settled'}</span>`)}
+                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                    ${Number(p.amount_paid || 0) > 0 ? `
+                                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewPayment('${p.payment_id}')">
+                                            👁️ ${currentLang === 'ar' ? 'معاينة سند القبض' : 'View Receipt'}
+                                        </button>
+                                    ` : ''}
+                                    ${p.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : (p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" style="padding: 4px 8px; font-size: 0.78em; font-weight: 700; cursor: pointer;" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">${currentLang === 'ar' ? 'سند قبض' : 'Record Receipt'}</button>` : `<span style="color: #15803d; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مسددة' : 'Settled'}</span>`)}
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -1214,13 +1536,17 @@
 
         async function fetchCommissions() {
             const status = document.getElementById('commission-status')?.value || '';
-            let url = `${API_BASE}/api/v1/commissions?page_size=50`;
+            const search = document.getElementById('commission-search')?.value || '';
+            let url = `${API_BASE}/api/v1/commissions?page=${commissionsPage}&page_size=${commissionsPageSize}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
 
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 const items = json.data || [];
+                commissionsTotal = json.meta?.total !== undefined ? json.meta.total : items.length;
+                updatePaginationUI('commissions', commissionsPage, commissionsPageSize, commissionsTotal, 'عمولة', 'commissions');
 
                 const tbody = document.getElementById('commissions-tbody');
                 if (items.length === 0) {
@@ -1254,7 +1580,8 @@
                     return `
                         <tr ${notesTooltip}>
                             <td>
-                                <strong>${c.user_name || 'Agent'}</strong>
+                                <strong style="font-family:monospace;">#${c.commission_id}</strong>
+                                <div style="font-weight:600; margin-top:2px;">${c.user_name || 'Agent'}</div>
                                 <div style="font-size: 0.76em; color: var(--text-muted);">${c.user_id || ''}</div>
                             </td>
                             <td>
@@ -1275,11 +1602,18 @@
                             <td>${amountDisplay}</td>
                             <td><span class="badge ${stBadge}">${c.status}</span></td>
                             <td>
-                                ${c.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : ''}
-                                ${isExempt ? `<span style="color: #475569; font-size: 0.82em;">✓ ${currentLang === 'ar' ? 'مسجل بالراتب' : 'Salaried'}</span>` : ''}
-                                ${c.status === 'PENDING' && !isExempt ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
-                                ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
-                                ${c.status === 'PAID' ? `<span style="color: green; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مصروفة' : 'Paid Out'}</span>` : ''}
+                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                    ${(c.status === 'PAID' || c.status === 'APPROVED') ? `
+                                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewCommission('${c.commission_id}')">
+                                            👁️ ${currentLang === 'ar' ? 'معاينة سند الصرف' : 'View Voucher'}
+                                        </button>
+                                    ` : ''}
+                                    ${c.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : ''}
+                                    ${isExempt ? `<span style="color: #475569; font-size: 0.82em;">✓ ${currentLang === 'ar' ? 'مسجل بالراتب' : 'Salaried'}</span>` : ''}
+                                    ${c.status === 'PENDING' && !isExempt ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
+                                    ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
+                                    ${c.status === 'PAID' ? `<span style="color: #15803d; font-size: 0.85em; font-weight: 700;">✓ ${currentLang === 'ar' ? 'مصروفة' : 'Paid Out'}</span>` : ''}
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -1402,14 +1736,145 @@
             }
         }
 
+        function openEditReferenceModal(entityType, entityId, currentRef, secRef = '', notes = '', method = '') {
+            document.getElementById('edit-ref-entity-type').value = entityType;
+            document.getElementById('edit-ref-entity-id').value = entityId;
+            document.getElementById('edit-ref-primary-val').value = currentRef || '';
+            document.getElementById('edit-ref-secondary-val').value = secRef || '';
+            document.getElementById('edit-ref-notes-val').value = notes || '';
+            if (method && document.getElementById('edit-ref-method-val')) {
+                document.getElementById('edit-ref-method-val').value = method;
+            }
+
+            const isAr = currentLang === 'ar';
+            let desc = '';
+            let primaryLabel = isAr ? 'الرقم المرجعي الأساسي:' : 'Primary Reference:';
+            let showSec = false;
+            let showMethod = false;
+
+            if (entityType === 'contract') {
+                desc = isAr ? `العقد: #${entityId} (${currentRef})` : `Contract: #${entityId} (${currentRef})`;
+                primaryLabel = isAr ? 'رقم العقد الرسمي (Contract Number):' : 'Official Contract Number:';
+            } else if (entityType === 'payment') {
+                desc = isAr ? `الدفعة المالية: #${entityId}` : `Payment Milestone: #${entityId}`;
+                primaryLabel = isAr ? 'الرقم المرجعي للدفعة / سند القبض (Payment Reference):' : 'Payment Reference:';
+                showMethod = true;
+            } else if (entityType === 'commission') {
+                desc = isAr ? `عمولة الوسيط: #${entityId}` : `Broker Commission: #${entityId}`;
+                primaryLabel = isAr ? 'معرف العمولة / السند:' : 'Commission Ref:';
+                document.getElementById('edit-ref-primary-group').style.display = 'none';
+            } else if (entityType === 'invoice') {
+                desc = isAr ? `الفاتورة الضريبية: #${entityId}` : `Tax Invoice: #${entityId}`;
+                primaryLabel = isAr ? 'رقم الفاتورة الرسمية (Invoice Number):' : 'Official Invoice Number:';
+                showSec = true;
+                showMethod = true;
+            } else if (entityType === 'reservation') {
+                desc = isAr ? `سند الحجز: #${entityId}` : `Reservation: #${entityId}`;
+                primaryLabel = isAr ? 'رقم الحجز الرسمي (Reservation Number):' : 'Reservation Number:';
+                showSec = true;
+                showMethod = true;
+            }
+
+            if (entityType !== 'commission') {
+                document.getElementById('edit-ref-primary-group').style.display = 'block';
+            }
+            document.getElementById('edit-ref-primary-label').textContent = primaryLabel;
+            document.getElementById('edit-ref-entity-desc').textContent = desc;
+            document.getElementById('edit-ref-secondary-group').style.display = showSec ? 'block' : 'none';
+            document.getElementById('edit-ref-method-group').style.display = showMethod ? 'block' : 'none';
+
+            document.getElementById('edit-reference-modal').style.display = 'flex';
+        }
+
+        function closeEditReferenceModal() {
+            document.getElementById('edit-reference-modal').style.display = 'none';
+        }
+
+        async function submitEditReference(e) {
+            e.preventDefault();
+            const entityType = document.getElementById('edit-ref-entity-type').value;
+            const entityId = document.getElementById('edit-ref-entity-id').value;
+            const primaryVal = document.getElementById('edit-ref-primary-val').value;
+            const secVal = document.getElementById('edit-ref-secondary-val').value;
+            const notesVal = document.getElementById('edit-ref-notes-val').value;
+            const methodVal = document.getElementById('edit-ref-method-val')?.value;
+
+            const payload = {
+                reference_number: primaryVal || null,
+                secondary_reference: secVal || null,
+                payment_method: methodVal || null,
+                notes: notesVal || null
+            };
+
+            const btn = document.getElementById('btn-save-ref');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/finance/reference/${entityType}/${entityId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': localStorage.getItem('recrm_user_id') || 'user-19'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to update reference');
+                }
+
+                closeEditReferenceModal();
+                alert(currentLang === 'ar' ? '✅ تم تحديث الرقم المرجعي وبيانات المعاملة بنجاح.' : '✅ Reference updated successfully.');
+
+                // Refresh active tab
+                if (entityType === 'contract') fetchContracts();
+                else if (entityType === 'payment') fetchPayments();
+                else if (entityType === 'commission') fetchCommissions();
+                else if (entityType === 'invoice') fetchInvoices();
+                else if (entityType === 'reservation') fetchReservations();
+                loadSummary();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        }
+
         async function fetchInvoices() {
             const payer = document.getElementById('invoice-payer-filter')?.value || '';
             const status = document.getElementById('invoice-status-filter')?.value || '';
-            const search = document.getElementById('invoice-search')?.value || '';
-            let url = `${API_BASE}/api/v1/invoices?page_size=50`;
+            const searchInput = document.getElementById('invoice-search');
+            let search = searchInput?.value || '';
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const oppParam = urlParams.get('opportunity_id');
+            const leadParam = urlParams.get('lead_id');
+            const invParam = urlParams.get('invoice_id');
+
+            const offset = (invoicesPage - 1) * invoicesPageSize;
+            let url = `${API_BASE}/api/v1/invoices?page_size=${invoicesPageSize}&offset=${offset}`;
             if (payer) url += `&payer_type=${encodeURIComponent(payer)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (oppParam) url += `&opportunity_id=${encodeURIComponent(oppParam)}`;
+            if (leadParam) url += `&lead_id=${encodeURIComponent(leadParam)}`;
+            if (invParam && !search) url += `&search=${encodeURIComponent(invParam)}`;
+
+            // Update banner
+            const banner = document.getElementById('inv-filter-banner');
+            const bannerText = document.getElementById('inv-filter-banner-text');
+            const activeFilter = oppParam ? `الصفقة: ${oppParam}` : (leadParam ? `الطلب: ${leadParam}` : (invParam ? `الفاتورة: ${invParam}` : (search ? `بحث: ${search}` : '')));
+            if (banner && bannerText) {
+                if (activeFilter) {
+                    banner.style.display = 'flex';
+                    bannerText.innerHTML = `<strong>${currentLang === 'ar' ? 'تصفية نشطة:' : 'Active Filter:'}</strong> ${activeFilter}`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
 
             try {
                 const res = await fetch(url, {
@@ -1417,10 +1882,12 @@
                 });
                 const json = await res.json();
                 const items = json.data || [];
+                invoicesTotal = json.meta?.total !== undefined ? json.meta.total : items.length;
+                updatePaginationUI('invoices', invoicesPage, invoicesPageSize, invoicesTotal, 'فاتورة', 'invoices');
 
                 const badgeEl = document.getElementById('inv-count-badge');
                 if (badgeEl) {
-                    badgeEl.textContent = `${items.length} ${currentLang === 'ar' ? 'فواتير نظامية' : 'Invoices'}`;
+                    badgeEl.textContent = `${invoicesTotal} ${currentLang === 'ar' ? 'فواتير نظامية' : 'Invoices'}`;
                 }
 
                 const tbody = document.getElementById('invoices-tbody');
@@ -1439,11 +1906,21 @@
                         : `<span style="background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">🏢 ${currentLang === 'ar' ? 'البائع / المؤجر' : 'Owner (Seller/Lessor)'}</span>`;
 
                     const lineItemsDesc = (inv.line_items && inv.line_items.length > 0)
-                        ? inv.line_items.map(item => `<div>• ${item.description || ''}: <strong>${Number(item.total_amount || item.amount || 0).toLocaleString()} SAR</strong></div>`).join('')
+                        ? inv.line_items.map(item => {
+                            const title = currentLang === 'ar' ? (item.item_ar || item.description || '') : (item.item_en || item.description || item.item_ar || '');
+                            const tot = Number(item.total || item.total_amount || item.amount || 0).toLocaleString();
+                            return `<div>• ${title}: <strong>${tot} SAR</strong></div>`;
+                        }).join('')
                         : (inv.notes ? `<div>${inv.notes}</div>` : '--');
 
+                    const previewBtn = `
+                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewInvoice('${inv.invoice_id}', '${inv.invoice_number}')">
+                            👁️ ${currentLang === 'ar' ? 'معاينة' : 'View'}
+                        </button>
+                    `;
+
                     const collectBtn = (!isPaid && inv.status !== 'CANCELLED') ? `
-                        <button class="btn btn-sm btn-success" onclick="openInvoicePayModal('${inv.invoice_id}', '${inv.invoice_number}', ${Number(inv.total_amount || 0)})" style="font-weight: 700;">
+                        <button class="btn btn-sm btn-success" onclick="openInvoicePayModal('${inv.invoice_id}', '${inv.invoice_number}', ${Number(inv.total_amount || 0)})" style="font-weight: 700; padding: 4px 8px; font-size: 0.78em; cursor: pointer;">
                             💵 ${currentLang === 'ar' ? 'تحصيل الفاتورة' : 'Collect Fee'}
                         </button>
                     ` : (isPaid ? `<span style="color: #166534; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'تم التحصيل' : 'Settled'}</span>` : `<span style="color: #64748b;">--</span>`);
@@ -1452,7 +1929,7 @@
                         <tr>
                             <td>
                                 <strong style="font-family: monospace;">${inv.invoice_number}</strong>
-                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${inv.invoice_id}</div>
+                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace; margin-top:2px;">${inv.invoice_id} ${inv.payment_reference ? '• سداد: ' + inv.payment_reference : ''}</div>
                             </td>
                             <td>
                                 <strong>${inv.transaction_type || 'SALE'}</strong>
@@ -1460,8 +1937,8 @@
                             </td>
                             <td>
                                 ${payerBadge}
-                                <div style="font-weight: 600; margin-top: 2px;">${inv.payer_name || '--'}</div>
-                                ${inv.payer_mobile ? `<div style="font-size: 0.76em; color: var(--text-muted);">📞 ${inv.payer_mobile}</div>` : ''}
+                                <div style="font-weight: 600; margin-top: 2px;">${inv.payer_customer_name || inv.payer_name || '--'}</div>
+                                ${(inv.payer_customer_mobile || inv.payer_mobile) ? `<div style="font-size: 0.76em; color: var(--text-muted);">📞 ${inv.payer_customer_mobile || inv.payer_mobile}</div>` : ''}
                             </td>
                             <td style="font-size: 0.84em; line-height: 1.4;">
                                 ${lineItemsDesc}
@@ -1473,13 +1950,109 @@
                                 <span class="badge ${stBadge}">${inv.status}</span>
                                 ${inv.paid_at ? `<div style="font-size: 0.72em; color: #166534; margin-top: 2px;">${inv.paid_at.slice(0, 10)}</div>` : ''}
                             </td>
-                            <td>${collectBtn}</td>
+                            <td>
+                                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+                                    ${previewBtn}
+                                    ${collectBtn}
+                                </div>
+                            </td>
                         </tr>
                     `;
                 }).join('');
             } catch (e) {
                 document.getElementById('invoices-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load invoices.</td></tr>';
             }
+        }
+
+        let currentPreviewInvoiceId = null;
+
+        function previewInvoice(invoiceId, invoiceNumber) {
+            currentPreviewInvoiceId = invoiceId;
+            const modal = document.getElementById('modal-invoice-preview');
+            const iframe = document.getElementById('invoice-preview-iframe');
+            const titleEl = document.getElementById('invoice-preview-title');
+            const subEl = document.getElementById('invoice-preview-subtitle');
+            if (titleEl) {
+                titleEl.textContent = `${currentLang === 'ar' ? 'معاينة الفاتورة الضريبية:' : 'Invoice Preview:'} ${invoiceNumber || invoiceId}`;
+            }
+            if (subEl) {
+                subEl.textContent = `${currentLang === 'ar' ? 'الهيئة العامة للعقار & هيئة الزكاة والضريبة والجمارك' : 'Official Tax & Statutory Fee Invoice'}`;
+            }
+            if (iframe) {
+                iframe.src = `${API_BASE}/api/v1/invoices/${encodeURIComponent(invoiceId)}/html`;
+            }
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function previewCommission(commissionId) {
+            const modal = document.getElementById('modal-invoice-preview');
+            const iframe = document.getElementById('invoice-preview-iframe');
+            const titleEl = document.getElementById('invoice-preview-title');
+            const subEl = document.getElementById('invoice-preview-subtitle');
+            if (titleEl) {
+                titleEl.textContent = `${currentLang === 'ar' ? 'معاينة سند صرف العمولة:' : 'Commission Voucher Preview:'} #${commissionId}`;
+            }
+            if (subEl) {
+                subEl.textContent = `${currentLang === 'ar' ? 'سند صرف واعتماد عمولة الوسيط المرخص فال (الهيئة العامة للعقار)' : 'Official FAL Licensed Broker Commission Voucher'}`;
+            }
+            if (iframe) {
+                iframe.src = `${API_BASE}/api/v1/commissions/${encodeURIComponent(commissionId)}/html`;
+            }
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function previewPayment(paymentId) {
+            const modal = document.getElementById('modal-invoice-preview');
+            const iframe = document.getElementById('invoice-preview-iframe');
+            const titleEl = document.getElementById('invoice-preview-title');
+            const subEl = document.getElementById('invoice-preview-subtitle');
+            if (titleEl) {
+                titleEl.textContent = `${currentLang === 'ar' ? 'معاينة سند القبض المالي:' : 'Payment Receipt Preview:'} ${paymentId}`;
+            }
+            if (subEl) {
+                subEl.textContent = `${currentLang === 'ar' ? 'سند إلكتروني رسمي لتحصيل الدفعة المالية المعتمدة' : 'Official Verified Payment Receipt Voucher'}`;
+            }
+            if (iframe) {
+                iframe.src = `${API_BASE}/api/v1/payments/${encodeURIComponent(paymentId)}/html`;
+            }
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeInvoicePreviewModal() {
+            const modal = document.getElementById('modal-invoice-preview');
+            const iframe = document.getElementById('invoice-preview-iframe');
+            if (modal) modal.style.display = 'none';
+            if (iframe) iframe.src = 'about:blank';
+            currentPreviewInvoiceId = null;
+        }
+
+        function printCurrentInvoice() {
+            const iframe = document.getElementById('invoice-preview-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }
+        }
+
+        function clearInvoiceFilter() {
+            const url = new URL(window.location);
+            url.searchParams.delete('opportunity_id');
+            url.searchParams.delete('lead_id');
+            url.searchParams.delete('invoice_id');
+            url.searchParams.delete('search');
+            window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+            const searchInput = document.getElementById('invoice-search');
+            if (searchInput) searchInput.value = '';
+            const banner = document.getElementById('inv-filter-banner');
+            if (banner) banner.style.display = 'none';
+            invoicesPage = 1;
+            fetchInvoices();
         }
 
         let cachedReservations = [];
@@ -1494,7 +2067,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const resIdParam = urlParams.get('reservation_id');
 
-            let url = `${API_BASE}/api/v1/reservations?page_size=50`;
+            let url = `${API_BASE}/api/v1/reservations?page=${reservationsPage}&page_size=${reservationsPageSize}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (resIdParam && !search) url += `&reservation_id=${encodeURIComponent(resIdParam)}`;
@@ -1516,6 +2089,8 @@
                 const res = await fetch(url);
                 const json = await res.json();
                 cachedReservations = json.data || [];
+                reservationsTotal = json.meta?.total !== undefined ? json.meta.total : cachedReservations.length;
+                updatePaginationUI('reservations', reservationsPage, reservationsPageSize, reservationsTotal, 'حجز', 'reservations');
 
                 const tbody = document.getElementById('reservations-tbody');
                 if (!tbody) return;
@@ -1535,7 +2110,7 @@
                         ? 'background: #eff6ff; border-inline-start: 4px solid #2563eb;' 
                         : '';
                     const matchBadge = isMatch 
-                        ? '<span class="badge" style="background:#2563eb; color:white; font-size:0.75em; padding:1px 6px; border-radius:4px; margin-inline-start:4px;">🎯 الحجز المطلوب</span>' 
+                        ? `<span class="badge" style="background:#2563eb; color:white; font-size:0.75em; padding:1px 6px; border-radius:4px; margin-inline-start:4px;">${currentLang === 'ar' ? '🎯 الحجز المطلوب' : '🎯 Target Reservation'}</span>` 
                         : '';
 
                     const exp = r.expires_at ? new Date(r.expires_at) : null;
@@ -2135,8 +2710,56 @@
                 const ownerName = c.unit_owner_name || (currentLang === 'ar' ? 'الوكالة / الإدارة' : 'Direct Agency');
                 const ownerMobile = c.unit_owner_mobile ? `(${c.unit_owner_mobile})` : '';
 
+                const freqMap = {
+                    'MONTHLY': currentLang === 'ar' ? 'شهري (12 دفعة)' : 'Monthly (12 installments)',
+                    'QUARTERLY': currentLang === 'ar' ? 'ربع سنوي (4 دفعات)' : 'Quarterly (4 installments)',
+                    'SEMI_ANNUAL': currentLang === 'ar' ? 'نصف سنوي (دفعتان)' : 'Semi-Annual (2 installments)',
+                    'ANNUAL': currentLang === 'ar' ? 'سنوي (دفعة واحدة)' : 'Annual (1 installment)'
+                };
+                const freqLabel = freqMap[(c.payment_frequency || '').toUpperCase()] || c.payment_frequency || (currentLang === 'ar' ? 'سنوي' : 'Annual');
+
+                let bankBlock = '';
+                if (c.bank_name || c.bank_iban) {
+                    bankBlock = `
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 700; color: #166534; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                <span>🏦</span> <span>${currentLang === 'ar' ? 'بيانات الحساب البنكي المعتمد لسداد الدفعات:' : 'Approved Bank Account for Payments:'}</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 0.85em;">
+                                <div><span style="color: #64748b;">${currentLang === 'ar' ? 'اسم البنك:' : 'Bank Name:'}</span> <strong>${c.bank_name || '--'}</strong></div>
+                                <div><span style="color: #64748b;">${currentLang === 'ar' ? 'رقم الآيبان (IBAN):' : 'IBAN:'}</span> <strong style="font-family: monospace; color: #0f172a;">${c.bank_iban || '--'}</strong></div>
+                                <div><span style="color: #64748b;">${currentLang === 'ar' ? 'المستفيد المعتمد:' : 'Beneficiary:'}</span> <strong>${c.bank_beneficiary || '--'}</strong></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let maintenanceBlock = '';
+                if (c.maintenance_terms) {
+                    maintenanceBlock = `
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 700; color: #1e40af; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                <span>🛠️</span> <span>${currentLang === 'ar' ? 'شروط والتزامات الصيانة المعتمدة (شبكة إيجار):' : 'Approved Maintenance Terms:'}</span>
+                            </div>
+                            <div style="font-size: 0.86em; color: #1e293b; line-height: 1.5;">${c.maintenance_terms}</div>
+                        </div>
+                    `;
+                }
+
+                let notesBlock = '';
+                if (c.notes) {
+                    notesBlock = `
+                        <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 700; color: #854d0e; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                <span>📝</span> <span>${currentLang === 'ar' ? 'الشروط والأحكام الخاصة المعتمدة في العقد:' : 'Special Contract Conditions & Terms:'}</span>
+                            </div>
+                            <div style="font-size: 0.86em; color: #422006; line-height: 1.5;">${c.notes}</div>
+                        </div>
+                    `;
+                }
+
                 let html = `
-                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.88em;">
                         <div>
                             <span style="display:block; color:var(--text-muted); font-size:0.82em;">Customer / Client:</span>
                             <strong>${c.customer_name || 'N/A'}</strong> ${c.customer_mobile ? `(${c.customer_mobile})` : ''}
@@ -2155,10 +2778,28 @@
                             <span class="badge badge-signed" style="margin-inline-start:4px;">${c.status}</span>
                         </div>
                         <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">${currentLang === 'ar' ? 'سريان العقد:' : 'Contract Term:'}</span>
+                            <strong>${c.start_date || '--'} → ${c.end_date || '--'}</strong>
+                        </div>
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">${currentLang === 'ar' ? 'دورية السداد:' : 'Payment Frequency:'}</span>
+                            <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${freqLabel}</span>
+                        </div>
+                        <div>
                             <span style="display:block; color:var(--text-muted); font-size:0.82em;">Origin Reservation:</span>
                             ${c.reservation_number ? `<span class="id-badge" style="cursor:pointer;" onclick="closeContractDetailModal(); viewReservationDetail('${c.reservation_id}')">🔗 #${c.reservation_number}</span>` : 'Direct Contract'}
                         </div>
+                        ${c.ejar_contract_number ? `
+                        <div>
+                            <span style="display:block; color:var(--text-muted); font-size:0.82em;">${currentLang === 'ar' ? 'رقم شبكة إيجار:' : 'Ejar Number:'}</span>
+                            <span class="id-badge" style="color:#0f172a; font-weight:700;">${c.ejar_contract_number}</span>
+                        </div>
+                        ` : ''}
                     </div>
+
+                    ${bankBlock}
+                    ${maintenanceBlock}
+                    ${notesBlock}
 
                     <!-- Financial Summary Cards -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
@@ -2470,12 +3111,20 @@
                     if (resInput) resInput.value = resFilter;
                 }
                 switchTab('reservations');
-            } else if (tabParam === 'invoices' || tabParam === 'payments' || hash === '#invoices' || hash === '#payments') {
-                if (searchParam) {
+            } else if (tabParam === 'invoices' || hash === '#invoices' || urlParams.get('invoice_id')) {
+                const invFilter = searchParam || urlParams.get('invoice_id');
+                if (invFilter) {
                     const invInput = document.getElementById('invoice-search');
-                    if (invInput) invInput.value = searchParam;
+                    if (invInput) invInput.value = invFilter;
                 }
-                switchTab(tabParam === 'invoices' ? 'invoices' : 'payments');
+                switchTab('invoices');
+            } else if (tabParam === 'payments' || hash === '#payments' || urlParams.get('payment_id')) {
+                const payFilter = searchParam || urlParams.get('payment_id');
+                if (payFilter) {
+                    const payInput = document.getElementById('payment-search');
+                    if (payInput) payInput.value = payFilter;
+                }
+                switchTab('payments');
             } else if (tabParam === 'commissions' || hash === '#commissions') {
                 switchTab('commissions');
             } else {

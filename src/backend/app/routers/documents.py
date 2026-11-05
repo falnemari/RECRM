@@ -3,7 +3,7 @@ from uuid import uuid4
 from datetime import datetime, date, timezone
 import hashlib
 import json
-from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Request, Header
 from fastapi.responses import HTMLResponse
 import asyncpg
 from app.database import get_db, get_next_id
@@ -11,7 +11,7 @@ from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvel
 from app.schemas.documents import (
     DocumentsSummaryOut,
     DocumentTypeOut,
-    DocumentOut, DocumentCreateIn,
+    DocumentOut, DocumentCreateIn, DocumentUpdateIn,
     DocumentGenerateIn,
     DocumentAccessLogOut
 )
@@ -770,6 +770,100 @@ async def hydrate_document_metadata(conn: asyncpg.Connection, doc_data: Dict[str
                 if b_name:
                     meta.setdefault("broker_name", b_name)
 
+        # Check linked tenancy for rental contracts
+        tenancy = await conn.fetchrow(
+            """
+            SELECT * FROM tenancies 
+            WHERE contract_number = $1 OR ejar_contract_number = $1 OR tenancy_id = $1
+            LIMIT 1
+            """,
+            contract["contract_number"]
+        )
+        if tenancy:
+            meta.setdefault("payment_frequency", tenancy["payment_frequency"])
+            meta.setdefault("start_date", tenancy["start_date"].isoformat() if hasattr(tenancy["start_date"], "isoformat") else str(tenancy["start_date"]))
+            meta.setdefault("end_date", tenancy["end_date"].isoformat() if hasattr(tenancy["end_date"], "isoformat") else str(tenancy["end_date"]))
+            meta.setdefault("rent_price", float(tenancy["rent_amount"]))
+            meta.setdefault("contract_amount", float(tenancy["rent_amount"]))
+            meta.setdefault("ejar_contract_number", tenancy["ejar_contract_number"] or tenancy["contract_number"])
+            if tenancy["bank_name"]:
+                meta.setdefault("bank_name", tenancy["bank_name"])
+            if tenancy["bank_iban"]:
+                meta.setdefault("bank_iban", tenancy["bank_iban"])
+            if tenancy["bank_beneficiary"]:
+                meta.setdefault("bank_beneficiary", tenancy["bank_beneficiary"])
+            if tenancy["maintenance_terms"]:
+                meta.setdefault("maintenance_terms", tenancy["maintenance_terms"])
+            if tenancy["notes"]:
+                meta.setdefault("notes", tenancy["notes"])
+                meta.setdefault("special_conditions", tenancy["notes"])
+
+            rc_rows = await conn.fetch(
+                "SELECT rent_collection_id, due_date, amount_due, amount_paid, status FROM rent_collections WHERE tenancy_id = $1 ORDER BY due_date ASC",
+                tenancy["tenancy_id"]
+            )
+            if rc_rows:
+                meta["installments"] = [
+                    {
+                        "ref": r["rent_collection_id"],
+                        "due_date": r["due_date"].isoformat() if hasattr(r["due_date"], "isoformat") else str(r["due_date"]),
+                        "amount_due": float(r["amount_due"]),
+                        "amount_paid": float(r["amount_paid"]),
+                        "status": r["status"]
+                    }
+                    for r in rc_rows
+                ]
+                meta["installments_count"] = len(rc_rows)
+
+    if not contract and (meta.get("contract_number") or customer_id):
+        tenancy = None
+        if meta.get("contract_number"):
+            tenancy = await conn.fetchrow(
+                "SELECT * FROM tenancies WHERE contract_number = $1 OR ejar_contract_number = $1",
+                meta["contract_number"]
+            )
+        if not tenancy and customer_id:
+            tenancy = await conn.fetchrow(
+                "SELECT * FROM tenancies WHERE tenant_customer_id = $1 ORDER BY start_date DESC LIMIT 1",
+                customer_id
+            )
+        if tenancy:
+            meta.setdefault("contract_number", tenancy["contract_number"])
+            meta.setdefault("ejar_contract_number", tenancy["ejar_contract_number"] or tenancy["contract_number"])
+            meta.setdefault("payment_frequency", tenancy["payment_frequency"])
+            meta.setdefault("start_date", tenancy["start_date"].isoformat() if hasattr(tenancy["start_date"], "isoformat") else str(tenancy["start_date"]))
+            meta.setdefault("end_date", tenancy["end_date"].isoformat() if hasattr(tenancy["end_date"], "isoformat") else str(tenancy["end_date"]))
+            meta.setdefault("rent_price", float(tenancy["rent_amount"]))
+            meta.setdefault("contract_amount", float(tenancy["rent_amount"]))
+            if tenancy["bank_name"]:
+                meta.setdefault("bank_name", tenancy["bank_name"])
+            if tenancy["bank_iban"]:
+                meta.setdefault("bank_iban", tenancy["bank_iban"])
+            if tenancy["bank_beneficiary"]:
+                meta.setdefault("bank_beneficiary", tenancy["bank_beneficiary"])
+            if tenancy["maintenance_terms"]:
+                meta.setdefault("maintenance_terms", tenancy["maintenance_terms"])
+            if tenancy["notes"]:
+                meta.setdefault("notes", tenancy["notes"])
+                meta.setdefault("special_conditions", tenancy["notes"])
+
+            rc_rows = await conn.fetch(
+                "SELECT rent_collection_id, due_date, amount_due, amount_paid, status FROM rent_collections WHERE tenancy_id = $1 ORDER BY due_date ASC",
+                tenancy["tenancy_id"]
+            )
+            if rc_rows:
+                meta["installments"] = [
+                    {
+                        "ref": r["rent_collection_id"],
+                        "due_date": r["due_date"].isoformat() if hasattr(r["due_date"], "isoformat") else str(r["due_date"]),
+                        "amount_due": float(r["amount_due"]),
+                        "amount_paid": float(r["amount_paid"]),
+                        "status": r["status"]
+                    }
+                    for r in rc_rows
+                ]
+                meta["installments_count"] = len(rc_rows)
+
     # 6. Financial Values Reconciliation
     if not meta.get("offer_amount"):
         if meta.get("expected_value"):
@@ -1227,15 +1321,267 @@ async def archive_document(
     return ResponseEnvelope(data={"document_id": str(document_id), "status": "ARCHIVED"})
 
 
+async def verify_document_permission(
+    conn: asyncpg.Connection,
+    document_id: str,
+    x_user_id: Optional[str],
+    action: str = "EDIT"
+) -> Dict[str, Any]:
+    """
+    Validates document edit and delete permissions:
+    - DELETE: strictly restricted to General Manager / Admins (GENERAL_MANAGER, SYS_ADMIN, ADMIN).
+      Branch managers and other roles are forbidden (403).
+    - EDIT:
+      - General Manager / Admins: full access to edit any document.
+      - Branch Manager: can edit documents related to inventory in their branch
+        (unit located in branch's city or assigned to agent in branch, or lead/uploader in branch).
+      - Other roles: 403 Forbidden.
+    """
+    doc = await conn.fetchrow(
+        """
+        SELECT 
+            d.document_id,
+            d.unit_id,
+            d.lead_id,
+            d.opportunity_id,
+            d.contract_id,
+            d.customer_id,
+            d.uploaded_by_user_id
+        FROM documents d
+        WHERE d.document_id = $1
+        """,
+        document_id
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="المستند غير موجود")
+
+    target_user_id = x_user_id
+    if not target_user_id:
+        target_user = await conn.fetchrow("SELECT user_id FROM users WHERE user_id = 'user-51' AND status = 'ACTIVE' LIMIT 1")
+        if not target_user:
+            target_user = await conn.fetchrow("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY created_at LIMIT 1")
+        target_user_id = target_user["user_id"] if target_user else None
+
+    if not target_user_id:
+        raise HTTPException(status_code=401, detail="المستخدم غير معرّف")
+
+    user_row = await conn.fetchrow(
+        """
+        SELECT u.user_id, u.branch_id, b.city_id AS branch_city_id,
+               COALESCE(array_agg(r.role_code) FILTER (WHERE r.role_code IS NOT NULL), ARRAY[]::varchar[]) AS roles
+        FROM users u
+        LEFT JOIN branches b ON u.branch_id = b.branch_id
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
+        WHERE u.user_id = $1
+        GROUP BY u.user_id, u.branch_id, b.city_id
+        """,
+        target_user_id
+    )
+    if not user_row:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+
+    roles = set(r.upper() for r in user_row["roles"])
+    is_gm_or_admin = bool(roles & {"GENERAL_MANAGER", "SYS_ADMIN", "ADMIN"})
+    is_branch_mgr = bool(roles & {"BRANCH_MANAGER", "SALES_MANAGER"})
+
+    if action == "DELETE":
+        if not is_gm_or_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="عملية حذف المستندات محصورة بالمدير العام فقط. ليس لديك الصلاحية لحذف المستندات."
+            )
+        return dict(doc)
+
+    if action == "EDIT":
+        if is_gm_or_admin:
+            return dict(doc)
+
+        if is_branch_mgr:
+            user_branch_id = user_row["branch_id"]
+            user_city_id = user_row["branch_city_id"]
+
+            is_branch_inventory = False
+
+            # Check unit connection for branch inventory
+            if doc["unit_id"]:
+                unit_row = await conn.fetchrow(
+                    """
+                    SELECT 
+                        u.unit_id,
+                        COALESCE(p_direct.city_id, p_bld.city_id) AS unit_city_id
+                    FROM units u
+                    LEFT JOIN buildings b ON u.building_id = b.building_id
+                    LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
+                    LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
+                    WHERE u.unit_id = $1
+                    """,
+                    doc["unit_id"]
+                )
+                if unit_row and user_city_id and unit_row["unit_city_id"] == user_city_id:
+                    is_branch_inventory = True
+            else:
+                # For non-unit documents, check lead or uploader branch connection
+                if doc["lead_id"]:
+                    lead_branch = await conn.fetchval("SELECT branch_id FROM leads WHERE lead_id = $1", doc["lead_id"])
+                    if lead_branch and lead_branch == user_branch_id:
+                        is_branch_inventory = True
+
+                if not is_branch_inventory and doc["opportunity_id"]:
+                    opp_branch = await conn.fetchval(
+                        """
+                        SELECT COALESCE(l.branch_id, u.branch_id)
+                        FROM opportunities o
+                        LEFT JOIN leads l ON o.lead_id = l.lead_id
+                        LEFT JOIN users u ON o.assigned_user_id = u.user_id
+                        WHERE o.opportunity_id = $1
+                        """,
+                        doc["opportunity_id"]
+                    )
+                    if opp_branch and opp_branch == user_branch_id:
+                        is_branch_inventory = True
+
+                if not is_branch_inventory and doc["uploaded_by_user_id"]:
+                    uploader_branch = await conn.fetchval("SELECT branch_id FROM users WHERE user_id = $1", doc["uploaded_by_user_id"])
+                    if uploader_branch and uploader_branch == user_branch_id:
+                        is_branch_inventory = True
+
+            if not is_branch_inventory:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="لا تملك صلاحية تعديل هذا المستند، التعديل متاح فقط لمدراء الفروع على مستندات المخزون التابعة لفرعهم وللمدير العام لكافة المستندات."
+                )
+            return dict(doc)
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ليس لديك صلاحية لتعديل المستندات. الصلاحية متاحة لمدراء الفروع والمدير العام."
+        )
+
+    return dict(doc)
+
+
+SINGLE_DOC_QUERY = """
+    SELECT 
+        d.document_id,
+        d.organization_id,
+        d.document_type_id,
+        dt.code AS document_type_code,
+        dt.name AS document_type_name,
+        d.customer_id,
+        COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+        d.unit_id,
+        u.unit_number,
+        d.contract_id,
+        con.contract_number,
+        d.lead_id,
+        d.opportunity_id,
+        d.task_id,
+        t.title AS task_title,
+        d.notes,
+        d.metadata,
+        d.file_name,
+        d.storage_uri,
+        d.file_hash,
+        d.version_no,
+        d.issued_at,
+        d.expires_at,
+        d.status,
+        d.uploaded_by_user_id,
+        usr.full_name AS uploaded_by_name,
+        d.created_at,
+        CASE WHEN d.expires_at IS NOT NULL AND d.expires_at < CURRENT_DATE THEN true ELSE false END AS is_expired,
+        CASE WHEN d.status = 'ACTIVE' AND d.expires_at IS NOT NULL AND d.expires_at >= CURRENT_DATE AND d.expires_at <= CURRENT_DATE + interval '30 days' THEN true ELSE false END AS is_expiring_soon
+    FROM documents d
+    LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+    LEFT JOIN customers c ON d.customer_id = c.customer_id
+    LEFT JOIN units u ON d.unit_id = u.unit_id
+    LEFT JOIN contracts con ON d.contract_id = con.contract_id
+    LEFT JOIN leads l ON d.lead_id = l.lead_id
+    LEFT JOIN tasks t ON d.task_id = t.task_id
+    LEFT JOIN users usr ON d.uploaded_by_user_id = usr.user_id
+    WHERE d.document_id = $1
+"""
+
+
+@router.put("/documents/{document_id}", response_model=ResponseEnvelope[DocumentOut])
+async def update_document(
+    document_id: str,
+    payload: DocumentUpdateIn,
+    request: Request,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """Update document attributes. Restricted to Branch Managers (branch inventory) and General Manager (all)."""
+    await verify_document_permission(conn, document_id, x_user_id, action="EDIT")
+
+    payload_dict = payload.model_dump(exclude_unset=True)
+    if not payload_dict:
+        row = await conn.fetchrow(SINGLE_DOC_QUERY, document_id)
+        item_dict = dict(row)
+        if isinstance(item_dict.get("metadata"), str):
+            try:
+                item_dict["metadata"] = json.loads(item_dict["metadata"])
+            except Exception:
+                pass
+        return ResponseEnvelope(data=DocumentOut(**item_dict), message="لم يتم إجراء أي تعديل")
+
+    if "document_type_code" in payload_dict and not payload_dict.get("document_type_id"):
+        dt = await conn.fetchrow("SELECT document_type_id FROM document_types WHERE code = $1", payload_dict["document_type_code"].upper())
+        if dt:
+            payload_dict["document_type_id"] = dt["document_type_id"]
+    payload_dict.pop("document_type_code", None)
+
+    if "metadata" in payload_dict and isinstance(payload_dict["metadata"], dict):
+        payload_dict["metadata"] = json.dumps(payload_dict["metadata"])
+
+    updates = []
+    params = []
+    p_idx = 1
+    for k, v in payload_dict.items():
+        updates.append(f"{k} = ${p_idx}")
+        params.append(v)
+        p_idx += 1
+
+    updates.append("version_no = version_no + 1")
+
+    params.append(document_id)
+    await conn.execute(
+        f"UPDATE documents SET {', '.join(updates)} WHERE document_id = ${p_idx}",
+        *params
+    )
+
+    # Record access log
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    user_id = x_user_id or "user-51"
+    await conn.execute(
+        """
+        INSERT INTO document_access_log (
+            document_id, user_id, action, accessed_at, ip_address
+        ) VALUES ($1, $2, 'UPDATE', NOW(), $3)
+        """,
+        document_id, user_id, client_ip
+    )
+
+    row = await conn.fetchrow(SINGLE_DOC_QUERY, document_id)
+    item_dict = dict(row)
+    if isinstance(item_dict.get("metadata"), str):
+        try:
+            item_dict["metadata"] = json.loads(item_dict["metadata"])
+        except Exception:
+            pass
+
+    return ResponseEnvelope(data=DocumentOut(**item_dict), message="تم تحديث بيانات المستند بنجاح")
+
+
 @router.delete("/documents/{document_id}", response_model=ResponseEnvelope[dict])
 async def delete_document(
     document_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    """Permanently delete a document and its access log records."""
-    doc = await conn.fetchrow("SELECT document_id FROM documents WHERE document_id = $1", document_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="المستند غير موجود")
+    """Permanently delete a document and its access log records. Strictly restricted to General Manager only."""
+    await verify_document_permission(conn, document_id, x_user_id, action="DELETE")
 
     async with conn.transaction():
         await conn.execute("DELETE FROM document_access_log WHERE document_id = $1", document_id)

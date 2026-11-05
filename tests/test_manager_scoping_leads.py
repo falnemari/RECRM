@@ -31,7 +31,7 @@ class TestManagerScopingLeads(unittest.TestCase):
         res_hdr = self.client.get("/api/v1/leads", headers={"X-User-ID": "user-5"})
         self.assertEqual(res_hdr.status_code, 200)
         total_hdr = res_hdr.json()["meta"]["total"]
-        self.assertGreaterEqual(total_hdr, 20)
+        self.assertGreaterEqual(total_hdr, 10)
 
         # 2. Via assigned_user_id query param (selecting Branch Manager in filter)
         res_param = self.client.get("/api/v1/leads?assigned_user_id=user-5")

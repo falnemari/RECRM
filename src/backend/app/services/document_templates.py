@@ -1529,27 +1529,110 @@ def render_tax_zakat_clearance(doc: Dict[str, Any], meta: Dict[str, Any]) -> str
 
 
 def render_invoice_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
-    """Renders Official ZATCA Compliant Brokerage Tax Invoice (فاتورة ضريبية رسمية)."""
+    """Renders Official ZATCA Compliant Brokerage Tax Invoice & Statutory Fee Notice (فاتورة ضريبية رسمية)."""
     base_deal_val = float(meta.get("offer_amount") or meta.get("asking_price") or 0.0)
-    subtotal = float(meta.get("subtotal") or (base_deal_val * 0.025 if base_deal_val > 0 else 0.0))
-    vat = subtotal * 0.15
-    total = subtotal + vat
-    cust_name = meta.get("customer_name") or doc.get("customer_name") or "العميل المستفيد"
+    subtotal = float(doc.get("subtotal") or meta.get("subtotal") or (base_deal_val * 0.025 if base_deal_val > 0 else 0.0))
+    vat = float(doc.get("vat_amount") or meta.get("vat_amount") or (subtotal * 0.15))
+    total = float(doc.get("total_amount") or meta.get("total_amount") or (subtotal + vat))
+    cust_name = doc.get("payer_customer_name") or doc.get("payer_name") or meta.get("customer_name") or doc.get("customer_name") or "الطرف الملزم بالسداد"
+    inv_num = doc.get("invoice_number") or doc.get("file_name") or "INV-2026-001"
+    payer_type = doc.get("payer_type") or meta.get("payer_type") or "CUSTOMER"
+    payer_role = "المشتري / المستأجر" if payer_type == "CUSTOMER" else "البائع / المؤجر (المالك)"
+    tx_type = doc.get("transaction_type") or meta.get("transaction_type") or "SALE"
+    unit_num = doc.get("unit_number") or meta.get("unit_number") or "--"
+    due_date = str(doc.get("due_date") or meta.get("due_date") or date.today())[:10]
+    inv_status = doc.get("status") or meta.get("status") or "PENDING"
+    status_label = "✅ تم التحصيل والتوريد (PAID)" if inv_status == "PAID" else "⏳ بانتظار السداد والتحصيل (PENDING)"
+
+    # Determine dynamic title based on transaction type and payer
+    if tx_type == "RENT" and payer_type == "OWNER":
+        main_title = "فاتورة رسوم توثيق العقد عبر شبكة إيجار الوطنية"
+        sub_title = "National Ejar Network Contract Documentation Fee Invoice"
+    elif tx_type == "SALE" and payer_type == "OWNER":
+        main_title = "إشعار وفاتورة ضريبة التصرفات العقارية RETT (5%)"
+        sub_title = "Real Estate Transaction Tax Invoice — ZATCA Statutory Compliance"
+    else:
+        main_title = "فاتورة ضريبية رسمية (سعي الوساطة العقارية وضريبة القيمة المضافة)"
+        sub_title = "Official Tax Invoice — Real Estate Brokerage Commission & VAT"
+
+    line_items = doc.get("line_items") or meta.get("line_items") or []
+    if isinstance(line_items, str):
+        import json
+        try:
+            line_items = json.loads(line_items)
+        except Exception:
+            line_items = []
+
+    table_rows = ""
+    if line_items and len(line_items) > 0:
+        for itm in line_items:
+            itm_desc = itm.get("item_ar") or itm.get("description") or "رسوم نظامية"
+            itm_amt = float(itm.get("amount") or 0.0)
+            itm_vr = float(itm.get("vat_rate") or 0.0)
+            itm_va = float(itm.get("vat_amount") or 0.0)
+            itm_tot = float(itm.get("total") or (itm_amt + itm_va))
+            table_rows += f"""
+            <tr>
+                <td>{itm_desc}</td>
+                <td>{itm_amt:,.2f}</td>
+                <td>{itm_vr:.0f}%</td>
+                <td>{itm_va:,.2f}</td>
+                <td style="font-weight:bold; color:#16a34a;">{itm_tot:,.2f}</td>
+            </tr>
+            """
+    else:
+        table_rows = f"""
+        <tr>
+            <td>أتعاب وسعي الوساطة العقارية المعتمدة (ترخيص فال 1200000000)</td>
+            <td>{subtotal:,.2f}</td>
+            <td>15%</td>
+            <td>{vat:,.2f}</td>
+            <td style="font-weight:bold; color:#16a34a;">{total:,.2f}</td>
+        </tr>
+        """
+
     return f"""
     <div class="doc-title-block">
-        <h3>فاتورة ضريبية رسمية (وساطة وتسويق عقاري)</h3>
-        <div class="doc-subtitle">Official Tax Invoice - ZATCA E-Invoicing Phase 2</div>
+        <h3>{main_title}</h3>
+        <div class="doc-subtitle">{sub_title}</div>
     </div>
+
+    <div class="kpi-row" style="margin-bottom: 20px;">
+        <div class="kpi-box" style="border-top: 3px solid #1e3a8a;">
+            <div class="kpi-txt">رقم الفاتورة الضريبية</div>
+            <div class="kpi-num" style="font-size:1.05em; color:#1e3a8a; font-family:monospace;">{inv_num}</div>
+            <div class="kpi-txt">منصة الفوترة الإلكترونية</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #16a34a;">
+            <div class="kpi-txt">المبلغ الإجمالي شامل الضريبة</div>
+            <div class="kpi-num" style="color:#16a34a; font-size:1.3em;">{total:,.2f} ر.س</div>
+            <div class="kpi-txt">المبلغ المستحق نظاماً</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #0284c7;">
+            <div class="kpi-txt">المبلغ الصافي الخاضع</div>
+            <div class="kpi-num" style="color:#0284c7; font-size:1.05em;">{subtotal:,.2f} ر.س</div>
+            <div class="kpi-txt">القيمة قبل الضريبة</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #d97706;">
+            <div class="kpi-txt">قيمة الضريبة (VAT)</div>
+            <div class="kpi-num" style="color:#d97706; font-size:1.05em;">{vat:,.2f} ر.س</div>
+            <div class="kpi-txt">ضريبة القيمة المضافة 15%</div>
+        </div>
+    </div>
+
     <div class="info-grid">
-        <div class="info-item"><span class="info-label">رقم الفاتورة:</span><span class="info-val">{doc.get("file_name", "INV-2026-001")}</span></div>
-        <div class="info-item"><span class="info-label">العميل المستفيد:</span><span class="info-val">{cust_name}</span></div>
-        <div class="info-item"><span class="info-label">الرقم الضريبي للمكتب (VAT ID):</span><span class="info-val">300984920100003</span></div>
-        <div class="info-item"><span class="info-label">الرقم الضريبي للعميل:</span><span class="info-val">{meta.get("customer_vat", "310029384700003")}</span></div>
+        <div class="info-item"><span class="info-label">الطرف الملزم بالسداد:</span><span class="info-val" style="font-weight:700;">{cust_name} ({payer_role})</span></div>
+        <div class="info-item"><span class="info-label">الوحدة والصفقة:</span><span class="info-val">وحدة #{unit_num} ({tx_type})</span></div>
+        <div class="info-item"><span class="info-label">الرقم الضريبي للمنشأة (VAT ID):</span><span class="info-val" style="font-family:monospace;">300984920100003</span></div>
+        <div class="info-item"><span class="info-label">رقم رخصة فال العقارية:</span><span class="info-val" style="font-family:monospace;">1200018890</span></div>
+        <div class="info-item"><span class="info-label">تاريخ الاستحقاق:</span><span class="info-val">{due_date}</span></div>
+        <div class="info-item"><span class="info-label">حالة الفاتورة:</span><span class="info-val" style="font-weight:700; color:{'#15803d' if inv_status == 'PAID' else '#b45309'};">{status_label}</span></div>
     </div>
-    <table class="data-table">
+
+    <table class="data-table" style="margin-top:20px;">
         <thead>
             <tr>
-                <th>الوصف والخدمة العقارية</th>
+                <th>الوصف والخدمة والرسوم المقررة</th>
                 <th>المبلغ الخاضع للضريبة (SAR)</th>
                 <th>نسبة الضريبة (VAT)</th>
                 <th>قيمة الضريبة (SAR)</th>
@@ -1557,19 +1640,17 @@ def render_invoice_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>أتعاب وسعي الوساطة العقارية المعتمدة (ترخيص فال 1200000000)</td>
-                <td>{subtotal:,.2f}</td>
-                <td>15%</td>
-                <td>{vat:,.2f}</td>
-                <td style="font-weight:bold; color:#16a34a;">{total:,.2f}</td>
-            </tr>
+            {table_rows}
             <tr style="font-weight:bold; background:#f8fafc;">
                 <td colspan="4" style="text-align:left;">المبلغ الإجمالي المستحق للسداد (Total Due):</td>
                 <td style="color:#1e3a8a; font-size:1.15em;">{total:,.2f} ر.س</td>
             </tr>
         </tbody>
     </table>
+
+    <div class="notice-box" style="margin-top:20px;">
+        <strong>إشعار نظامي وفق متطلبات هيئة الزكاة والضريبة والجمارك (ZATCA):</strong> تم إصدار هذه الفاتورة وتوثيق الرمز الإلكتروني المشفر QR Code والختم الرقمي بموجب نظام الفوترة الإلكترونية ولائحته التنفيذية بالمملكة العربية السعودية.
+    </div>
     """
 
 
@@ -1600,6 +1681,74 @@ def render_contract_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
         <div class="info-item"><span class="info-label">مبلغ الضمان / التأمين:</span><span class="info-val">{float(meta.get("deposit_amount") or 0.0):,.2f} ريال</span></div>
         """
 
+    bank_info = ""
+    if meta.get("bank_name") or meta.get("bank_iban"):
+        bank_info = f"""
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:12px; margin-top:14px;">
+            <div style="font-weight:700; color:#166534; font-size:0.92em; margin-bottom:8px;">🏦 بيانات الحساب البنكي المعتمد لسداد الدفعات:</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px; font-size:0.86em;">
+                <div><span style="color:#64748b;">اسم البنك:</span> <strong>{meta.get('bank_name', '--')}</strong></div>
+                <div><span style="color:#64748b;">رقم الآيبان (IBAN):</span> <strong style="font-family:monospace; font-size:1.05em; color:#0f172a;">{meta.get('bank_iban', '--')}</strong></div>
+                <div><span style="color:#64748b;">المستفيد المعتمد:</span> <strong>{meta.get('bank_beneficiary', '--')}</strong></div>
+            </div>
+        </div>
+        """
+
+    maintenance_info = ""
+    if meta.get("maintenance_terms"):
+        maintenance_info = f"""
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px; margin-top:14px;">
+            <div style="font-weight:700; color:#1e40af; font-size:0.92em; margin-bottom:6px;">🛠️ شروط والتزامات الصيانة المعتمدة (معيار شبكة إيجار):</div>
+            <div style="font-size:0.86em; color:#1e293b; line-height:1.5;">{meta.get('maintenance_terms')}</div>
+        </div>
+        """
+
+    notes_val = meta.get("special_conditions") or meta.get("notes") or doc.get("notes")
+    notes_info = ""
+    if notes_val:
+        notes_info = f"""
+        <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:12px; margin-top:14px;">
+            <div style="font-weight:700; color:#854d0e; font-size:0.92em; margin-bottom:6px;">📝 الشروط والأحكام الخاصة المعتمدة:</div>
+            <div style="font-size:0.86em; color:#422006; line-height:1.5;">{notes_val}</div>
+        </div>
+        """
+
+    installments_table = ""
+    if meta.get("installments") and len(meta["installments"]) > 0:
+        inst_rows = "".join([
+            f"""
+            <tr>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-family:monospace;">{inst.get('ref', f'INST-{idx+1}')}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">الدفعة {idx+1} من {len(meta['installments'])}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">{inst.get('due_date', '--')}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700;">{float(inst.get('amount_due', 0.0)):,.2f} ر.س</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; color:#16a34a;">{float(inst.get('amount_paid', 0.0)):,.2f} ر.س</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;"><span style="background:{'#dcfce7' if inst.get('status') == 'PAID' else '#fffbeb'}; color:{'#15803d' if inst.get('status') == 'PAID' else '#b45309'}; padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.85em;">{inst.get('status', 'DUE')}</span></td>
+            </tr>
+            """
+            for idx, inst in enumerate(meta["installments"])
+        ])
+        installments_table = f"""
+        <div style="margin-top:16px;">
+            <div style="font-weight:700; color:#0f172a; font-size:0.92em; margin-bottom:8px;">📅 جدول دفعات وأقساط العقد المعتمد:</div>
+            <table style="width:100%; border-collapse:collapse; font-size:0.84em; background:#fff; border:1px solid #e2e8f0; border-radius:6px; overflow:hidden;">
+                <thead>
+                    <tr style="background:#f8fafc; color:#64748b; font-weight:600; text-align:right;">
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">الرقم المرجعي</th>
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">الدفعة</th>
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">تاريخ الاستحقاق</th>
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">المبلغ المستحق</th>
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">المسدد</th>
+                        <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {inst_rows}
+                </tbody>
+            </table>
+        </div>
+        """
+
     return f"""
     <div class="doc-title-block">
         <h3>{doc_title}</h3>
@@ -1614,7 +1763,11 @@ def render_contract_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
         <div class="info-item"><span class="info-label">القيمة المالية الإجمالية للعقد:</span><span class="info-val">{price:,.2f} ريال سعودي</span></div>
         {lease_extra}
     </div>
-    <div class="notice-box">
+    {bank_info}
+    {maintenance_info}
+    {notes_info}
+    {installments_table}
+    <div class="notice-box" style="margin-top:16px;">
         <strong>حجية العقد:</strong> يعتبر هذا العقد سنداً تنفيذياً ملزماً لطرفيه طبقاً للأنظمة واللوائح الصادرة عن الهيئة العامة للعقار ووزارة العدل بالمملكة العربية السعودية.
     </div>
     """
@@ -1622,32 +1775,96 @@ def render_contract_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
 
 def render_commission_settlement(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
     """Renders Official Licensed Broker Commission Settlement Voucher (سند صرف واعتماد عمولة الوسيط المرخص فال)."""
-    comm_amount = float(meta.get("commission_amount") or doc.get("amount") or 0.0)
-    deal_value = float(meta.get("contract_amount") or meta.get("offer_amount") or meta.get("gross_deal_value") or (comm_amount / 0.0075 if comm_amount > 0 else 0.0))
-    broker_name = meta.get("broker_name") or doc.get("broker_name") or "الوسيط المعتمد"
+    comm_amount = float(meta.get("commission_amount") or meta.get("amount") or doc.get("amount") or 0.0)
+    deal_value = float(meta.get("contract_amount") or meta.get("offer_amount") or meta.get("gross_deal_value") or doc.get("gross_deal_value") or (comm_amount / 0.0075 if comm_amount > 0 else 0.0))
+    broker_name = meta.get("user_name") or meta.get("broker_name") or doc.get("broker_name") or doc.get("user_name") or "الوسيط المعتمد"
     fal_no = meta.get("fal_license_number") or "1200018890"
     iban = meta.get("iban") or "SA0380000000608010167519"
-    contract_ref = meta.get("contract_number") or "عقد موثق"
-    unit_ref = meta.get("unit_number") or "--"
-    approved_date = str(meta.get("approved_at") or doc.get("issued_at") or date.today())[:10]
+    contract_ref = meta.get("contract_number") or doc.get("contract_number") or "عقد موثق"
+    unit_ref = meta.get("unit_number") or doc.get("unit_number") or "--"
+    comm_id = meta.get("commission_id") or doc.get("commission_id") or doc.get("document_id") or "--"
+    rate = meta.get("rate") or meta.get("commission_rate")
+    rate_str = f"{float(rate):g}%" if rate is not None else "--"
+    gross_brokerage = float(meta.get("gross_brokerage_amount") or 0.0)
+    gov_fees = float(meta.get("gov_fees_deducted") or 0.0)
+    net_base = float(meta.get("net_commission_base") or (gross_brokerage - gov_fees if gross_brokerage > 0 else comm_amount))
+    status = (meta.get("status") or doc.get("status") or "PAID").upper()
+    status_ar = "مصروفة ومسددة بالبنك" if status == "PAID" else ("معتمدة للصرف" if status == "APPROVED" else status)
+    paid_date = str(meta.get("paid_at") or meta.get("approved_at") or doc.get("issued_at") or date.today())[:10]
+    calc_notes = meta.get("calculation_notes") or doc.get("notes") or ""
+
+    # Harmonize mathematical labels: if net_base equals gross_brokerage, the 15% VAT was added on top in customer invoicing
+    if abs(net_base - gross_brokerage) < 0.01 and gov_fees > 0:
+        row1_label = "إجمالي السعي والرسوم المحصلة من العميل (شامل ضريبة القيمة المضافة)"
+        row1_amount = gross_brokerage + gov_fees
+        row2_label = "يستبعد: ضريبة القيمة المضافة (15%) الموردة للزكاة والضريبة"
+        row2_amount = gov_fees
+        row3_label = "صافي وعاء سعي المنشأة المعتمد للتقاسم"
+        row3_amount = net_base
+    else:
+        row1_label = "إجمالي سعي الوساطة المحصل لحساب المنشأة"
+        row1_amount = gross_brokerage
+        row2_label = "يستبعد: ضريبة القيمة المضافة (15%) والرسوم الحكومية"
+        row2_amount = gov_fees
+        row3_label = "صافي وعاء العمولة المعتمد للتقاسم"
+        row3_amount = net_base
 
     return f"""
     <div class="doc-title-block">
-        <h3>سند صرف واعتماد عمولة وسيط عقاري معتمد</h3>
-        <div class="doc-subtitle">Official REGA Fal-Licensed Broker Commission Disbursement Voucher</div>
+        <div style="display:inline-block; background:#dcfce7; color:#166534; font-weight:700; font-size:0.85em; padding:4px 12px; border-radius:20px; margin-bottom:6px;">
+            ✓ سند صرف معتمد — الهيئة العامة للعقار (رخصة فال)
+        </div>
+        <h3 style="margin:4px 0 6px 0;">سند صرف واعتماد عمولة وسيط عقاري مرخص</h3>
+        <div class="doc-subtitle">Official REGA Fal-Licensed Broker Commission Disbursement Voucher • {comm_id}</div>
     </div>
+
     <div class="info-grid">
-        <div class="info-item"><span class="info-label">اسم الوسيط المستحق:</span><span class="info-val">{broker_name}</span></div>
-        <div class="info-item"><span class="info-label">رقم رخصة فال العقارية:</span><span class="info-val">{fal_no}</span></div>
-        <div class="info-item"><span class="info-label">رقم العقد المرتبط:</span><span class="info-val">{contract_ref}</span></div>
+        <div class="info-item"><span class="info-label">اسم الوسيط المستحق:</span><span class="info-val"><strong>{broker_name}</strong></span></div>
+        <div class="info-item"><span class="info-label">رقم رخصة فال العقارية:</span><span class="info-val" style="font-family:monospace; font-weight:700;">{fal_no}</span></div>
+        <div class="info-item"><span class="info-label">رقم العقد المعتمد:</span><span class="info-val" style="font-family:monospace; font-weight:700; color:#1e40af;">{contract_ref}</span></div>
         <div class="info-item"><span class="info-label">الوحدة العقارية:</span><span class="info-val">{unit_ref}</span></div>
         <div class="info-item"><span class="info-label">إجمالي قيمة الصفقة:</span><span class="info-val">{deal_value:,.2f} ريال سعودي</span></div>
-        <div class="info-item"><span class="info-label">صافي العمولة المستحقة:</span><span class="info-val" style="color:#15803d; font-weight:800;">{comm_amount:,.2f} ريال سعودي</span></div>
-        <div class="info-item"><span class="info-label">الحساب البنكي (IBAN):</span><span class="info-val">{iban}</span></div>
-        <div class="info-item"><span class="info-label">تاريخ التدقيق والاعتماد:</span><span class="info-val">{approved_date}</span></div>
+        <div class="info-item"><span class="info-label">حالة الصرف البنكي:</span><span class="info-val" style="color:#15803d; font-weight:700;">{status_ar}</span></div>
+        <div class="info-item"><span class="info-label">الحساب البنكي (IBAN):</span><span class="info-val" style="font-family:monospace; font-size:0.9em;">{iban}</span></div>
+        <div class="info-item"><span class="info-label">تاريخ الاعتماد والصرف:</span><span class="info-val">📅 {paid_date}</span></div>
     </div>
-    <div class="notice-box">
-        <strong>إشعار الصرف المحاسبي:</strong> تم تدقيق سريان رخصة فال للوسيط واستيفاء شروط تسليم العقار وتحصيل سعي الوساطة لحساب الشركة، واعتماد قيد الصرف المحاسبي نظاماً.
+
+    <!-- تفاصيل الاحتساب المحاسبي المعتمد -->
+    <table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:0.9em; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; overflow:hidden;">
+        <thead>
+            <tr style="background:#f8fafc; border-bottom:2px solid #cbd5e1; text-align:start;">
+                <th style="padding:10px 12px; color:#334155;">بيان الاحتساب المالي</th>
+                <th style="padding:10px 12px; text-align:end; color:#334155;">المبلغ (ريال سعودي)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 12px;">{row1_label}</td>
+                <td style="padding:10px 12px; text-align:end; font-weight:600;">{row1_amount:,.2f} ر.س</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; color:#b91c1c;">
+                <td style="padding:10px 12px;">{row2_label}</td>
+                <td style="padding:10px 12px; text-align:end; font-weight:600;">- {row2_amount:,.2f} ر.س</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:10px 12px; font-weight:700; color:#0f172a;">{row3_label}</td>
+                <td style="padding:10px 12px; text-align:end; font-weight:700; color:#0f172a;">{row3_amount:,.2f} ر.س</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 12px;">نسبة مشاركة الوسيط المستحقة</td>
+                <td style="padding:10px 12px; text-align:end; font-weight:700; color:#2563eb;">{rate_str}</td>
+            </tr>
+            <tr style="background:#ecfdf5; font-size:1.05em; font-weight:800; color:#166534;">
+                <td style="padding:12px;">صافي مبلغ العمولة المصروف للوسيط</td>
+                <td style="padding:12px; text-align:end;">{comm_amount:,.2f} ريال سعودي</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {f'<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; margin-top:14px; font-size:0.85em; color:#475569;"><strong>ملاحظات التسوية:</strong> {calc_notes}</div>' if calc_notes else ''}
+
+    <div class="notice-box" style="margin-top:16px;">
+        <strong>إشعار الصرف والاعتماد المحاسبي:</strong> تم تدقيق سريان رخصة فال للوسيط واستيفاء شروط العقد وتحصيل سعي الوساطة كاملاً في الحساب البنكي المعتمد، وجرى صرف العمولة وقيدها محاسبياً طبقاً للائحة الوساطة العقارية وضوابط هيئة الزكاة والضريبة والجمارك.
     </div>
     """
 
@@ -1663,6 +1880,128 @@ def render_soil_report(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
         <div class="info-item"><span class="info-label">قدرة التحمل:</span><span class="info-val">{meta.get('bearing_capacity', '300 kPa')}</span></div>
         <div class="info-item"><span class="info-label">النطاق الزلزالي:</span><span class="info-val">{meta.get('seismic_zone', 'Zone 2B')}</span></div>
         <div class="info-item"><span class="info-label">الملاحظات الإنشائية:</span><span class="info-val">{meta.get('structural_notes', 'مطابق للاشتراطات الفنية')}</span></div>
+    </div>
+    """
+
+
+def render_payment_receipt_document(doc: Dict[str, Any], meta: Dict[str, Any]) -> str:
+    """Renders Official Real Estate Payment & Rent Collection Receipt Voucher (سند قبض مالي رسمي — تحصيل دفعة إيجارية)."""
+    receipt_no = meta.get("receipt_number") or doc.get("file_name") or f"REC-{doc.get('document_id', '001')}"
+    if receipt_no.endswith(".pdf"):
+        receipt_no = receipt_no[:-4]
+
+    amount_paid = float(meta.get("amount_paid") or meta.get("amount") or doc.get("amount") or 0.0)
+    amount_due = float(meta.get("amount_due") or amount_paid)
+    remaining_balance = float(meta.get("remaining_balance", 0.0) or (amount_due - amount_paid if amount_due > amount_paid else 0.0))
+    contract_number = meta.get("contract_number") or doc.get("contract_number") or meta.get("contract_ref") or "عقد إيجار موحد"
+    unit_number = meta.get("unit_number") or doc.get("unit_number") or "--"
+    property_name = meta.get("property_name") or meta.get("building_name") or meta.get("project_name") or f"الوحدة {unit_number}"
+    tenant_name = meta.get("customer_name") or meta.get("tenant_name") or doc.get("customer_name") or "المستأجر المستفيد"
+    owner_name = meta.get("owner_name") or meta.get("landlord_name") or meta.get("bank_beneficiary") or "المؤجر / مالك العقار"
+    
+    payment_method = meta.get("payment_method") or "EJAR_ONLINE"
+    if payment_method == "EJAR_ONLINE":
+        payment_method_label = "بوابة إيجار الإلكترونية (مدى / سداد)"
+    elif payment_method == "BANK_TRANSFER":
+        payment_method_label = "تحويل بنكي مباشر لحساب المالك"
+    elif payment_method == "CHEQUE":
+        payment_method_label = "شيك مصرفي معتمد"
+    else:
+        payment_method_label = payment_method
+
+    payment_ref = meta.get("payment_reference") or meta.get("ref_no") or f"EJR-{meta.get('rent_collection_id', '998811').replace('rent_collection-', '')}"
+    bank_name = meta.get("bank_name") or "مصرف الراجحي"
+    bank_iban = meta.get("bank_iban") or "SA0380000000608010167890"
+    installment_label = meta.get("installment_label") or "الدفعة 1 من 2"
+    due_date = str(meta.get("due_date", ""))[:10] or "2026-11-05"
+    paid_at = str(meta.get("paid_at") or meta.get("payment_date") or doc.get("issued_at") or doc.get("created_at") or date.today())[:19].replace("T", " ")
+
+    return f"""
+    <div class="doc-title-block">
+        <h3>سند قبض مالي رسمي — تحصيل دفعة إيجارية</h3>
+        <div class="doc-subtitle">Official Rent Payment Receipt Voucher — Ejari / Tenancy Network Compliant</div>
+    </div>
+
+    <div class="kpi-row" style="margin-bottom: 20px;">
+        <div class="kpi-box" style="border-top: 3px solid #1e3a8a;">
+            <div class="kpi-txt">رقم سند القبض</div>
+            <div class="kpi-num" style="font-size:1.05em; color:#1e3a8a;">{receipt_no}</div>
+            <div class="kpi-txt">سجل المقبوضات المالية</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #16a34a;">
+            <div class="kpi-txt">المبلغ المحصل والمسدد</div>
+            <div class="kpi-num" style="color:#16a34a; font-size:1.3em;">{amount_paid:,.2f} ر.س</div>
+            <div class="kpi-txt">تم التسليم والمطابقة بنكياً</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #0284c7;">
+            <div class="kpi-txt">الدفعة الإيجارية المستحقة</div>
+            <div class="kpi-num" style="color:#0284c7; font-size:1.05em;">{amount_due:,.2f} ر.س</div>
+            <div class="kpi-txt">{installment_label}</div>
+        </div>
+        <div class="kpi-box" style="border-top: 3px solid #64748b;">
+            <div class="kpi-txt">الرصيد المتبقي على الدفعة</div>
+            <div class="kpi-num" style="color:{'#dc2626' if remaining_balance > 0 else '#16a34a'}; font-size:1.05em;">{remaining_balance:,.2f} ر.س</div>
+            <div class="kpi-txt">{'متبقٍ بذمة المستأجر' if remaining_balance > 0 else 'خالصة ومسواة بالكامل'}</div>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item"><span class="info-label">اسم المستأجر (المسدد):</span><span class="info-val" style="font-weight:700;">{tenant_name}</span></div>
+        <div class="info-item"><span class="info-label">المؤجر / المستفيد:</span><span class="info-val">{owner_name}</span></div>
+        <div class="info-item"><span class="info-label">رقم عقد الإيجار الموحد:</span><span class="info-val" style="color:#1e3a8a; font-weight:700;">{contract_number}</span></div>
+        <div class="info-item"><span class="info-label">الوحدة العقارية:</span><span class="info-val">{unit_number} ({property_name})</span></div>
+        <div class="info-item"><span class="info-label">تاريخ الاستحقاق النظامي:</span><span class="info-val">{due_date}</span></div>
+        <div class="info-item"><span class="info-label">تاريخ وساعة التحصيل الفعلي:</span><span class="info-val" style="color:#15803d; font-weight:700;">{paid_at}</span></div>
+        <div class="info-item"><span class="info-label">طريقة السداد المعتمدة:</span><span class="info-val">{payment_method_label}</span></div>
+        <div class="info-item"><span class="info-label">رقم العملية / المرجع:</span><span class="info-val" style="font-family:monospace; font-weight:700;">{payment_ref}</span></div>
+        <div class="info-item"><span class="info-label">الحساب البنكي المودع به:</span><span class="info-val">{bank_name}</span></div>
+        <div class="info-item"><span class="info-label">الآيبان البنكي (IBAN):</span><span class="info-val" style="font-family:monospace; font-size:0.9em;">{bank_iban}</span></div>
+    </div>
+
+    <table class="data-table" style="margin-top:20px;">
+        <thead>
+            <tr>
+                <th>بيان المستحقات والدفعات</th>
+                <th>رقم العقد / المرجع</th>
+                <th>تاريخ الاستحقاق</th>
+                <th>المبلغ المطلوب (SAR)</th>
+                <th>المبلغ المسدد (SAR)</th>
+                <th>الرصيد المتبقي (SAR)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>{installment_label}</strong> — إيجار وحدة رقم {unit_number}</td>
+                <td>{contract_number}</td>
+                <td>{due_date}</td>
+                <td>{amount_due:,.2f}</td>
+                <td style="color:#16a34a; font-weight:bold; font-size:1.05em;">{amount_paid:,.2f}</td>
+                <td style="color:{'#dc2626' if remaining_balance > 0 else '#16a34a'}; font-weight:bold;">{remaining_balance:,.2f}</td>
+            </tr>
+            <tr style="background:#f8fafc; font-weight:bold;">
+                <td colspan="4" style="text-align:left;">إجمالي المبلغ المقبوض بموجب هذا السند:</td>
+                <td colspan="2" style="color:#15803d; font-size:1.15em;">{amount_paid:,.2f} ر.س</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="notice-box" style="margin-top:20px;">
+        <strong>إشعار وتأكيد مالي:</strong> يعتبر هذا السند إشعاراً رسمياً ومخالصة مالية نهائية باستلام الدفعة الموضحة أعلاه والمستحقة بموجب عقد الإيجار الإلكتروني الموحد الموثق، ومثبتة بقيود الحسابات المصرفية المعتمدة.
+    </div>
+
+    <div style="margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed var(--border); padding-top:20px;">
+        <div style="text-align:center;">
+            <div style="font-size:0.85em; color:var(--text-muted); margin-bottom:40px;">المحاسب المستلم / أمين الصندوق</div>
+            <div style="font-weight:700; border-top:1px solid #94a3b8; padding-top:4px; min-width:180px;">قسم المالية والحسابات</div>
+        </div>
+        <div style="text-align:center; border:2px dashed #16a34a; border-radius:8px; padding:10px 18px; background:#f0fdf4;">
+            <div style="color:#15803d; font-weight:800; font-size:0.95em;">✓ معتمد ومسدد إلكترونياً</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:2px;">منصة RECRM — إدارة الأملاك</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:0.85em; color:var(--text-muted); margin-bottom:40px;">المدير المالي والعمليات</div>
+            <div style="font-weight:700; border-top:1px solid #94a3b8; padding-top:4px; min-width:180px;">الاعتماد والتدقيق</div>
+        </div>
     </div>
     """
 
@@ -1859,7 +2198,9 @@ def render_document_html(doc_row: Dict[str, Any]) -> str:
         content = render_taqeem_valuation(doc_row, meta)
     elif "TAX" in code or "ZAKAT" in code or "RETT" in code:
         content = render_tax_zakat_clearance(doc_row, meta)
-    elif "INVOICE" in code or "RECEIPT" in code:
+    elif "PAYMENT_RECEIPT" in code or meta.get("doc_type") == "PAYMENT_RECEIPT" or "سند_قبض" in (doc_row.get("file_name") or "") or ("RECEIPT" in code and "INVOICE" not in code):
+        content = render_payment_receipt_document(doc_row, meta)
+    elif "INVOICE" in code:
         content = render_invoice_document(doc_row, meta)
     elif "CONTRACT" in code or "LEASE" in code or "SALE" in code:
         content = render_contract_document(doc_row, meta)

@@ -613,7 +613,10 @@
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="sel-banner-completion-btn" class="btn btn-outline btn-sm" style="display:none; font-size: 0.82em; padding: 5px 12px; border-color: #10b981; color: #065f46; font-weight: 700; background: #f0fdf4;" onclick="if(window.selectedTaskId) viewTaskCompletionDetails(window.selectedTaskId)">
+                        👁️ <span id="sel-banner-completion-text">بيانات الإنجاز</span>
+                    </button>
                     <button type="button" class="btn" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 14px; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="insertTaskForSelectedRow()">
                         <span>➕</span> <span id="sel-banner-btn-text">إدراج مهمة للمسار لهذه المعاملة</span>
                     </button>
@@ -1752,6 +1755,28 @@
         </div>
     </div>
 
+    <!-- Modal: Task Completion Details & Approved Inputs -->
+    <div id="modal-task-completion-detail" class="modal-overlay" onclick="if(event.target === this) closeModal('modal-task-completion-detail')">
+        <div class="modal" style="max-width: 880px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 14px 22px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                    <span style="font-size: 1.4em;">👁️</span>
+                    <div>
+                        <h3 id="task-completion-title" style="margin: 0; font-size: 1.1em; color: white; font-weight: 700;">مدخلات وبيانات إنجاز المهمة المعتمدة</h3>
+                        <div id="task-completion-subtitle" style="font-size: 0.8em; color: #a7f3d0; margin-top: 2px;">سجل التوثيق والنتائج والبيانات المعتمدة للمهمة</div>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" style="color: white; font-size: 1.4em;" onclick="closeModal('modal-task-completion-detail')">&times;</button>
+            </div>
+            <div id="task-completion-body" style="flex: 1; padding: 20px; overflow-y: auto; background: #f8fafc; font-size: 0.9em; color: #1e293b; line-height: 1.6;">
+                <!-- Populated dynamically via viewTaskCompletionDetails -->
+            </div>
+            <div class="modal-footer" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-task-completion-detail')">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================================== -->
     <!-- SCRIPT -->
     <!-- ============================================================== -->
@@ -2604,8 +2629,11 @@
                                     🚫 ${isAr ? 'إلغاء' : 'Cancel'}
                                 </button>
                             ` : `
-                                <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                                     <span style="color:var(--success); font-size:0.85em; font-weight:600;">${isAr ? '✔ منجز' : '✔ Done'}</span>
+                                    <button class="btn btn-sm" onclick="event.stopPropagation(); viewTaskCompletionDetails('${t.task_id}')" style="font-size: 0.75em; padding: 3px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 4px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="${isAr ? 'عرض كافة المدخلات والبيانات المعتمدة للمهمة' : 'View Approved Task Inputs'}">
+                                        👁️ ${isAr ? 'بيانات الإنجاز' : 'Inputs'}
+                                    </button>
                                     <button class="btn btn-sm" onclick="event.stopPropagation(); promptReopenTask('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="font-size: 0.75em; padding: 3px 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'" title="${isAr ? 'إعادة فتح المهمة والتراجع الذكي عن العمليات التابعة' : 'Reopen task and smartly undo downstream actions'}">
                                         ${isAr ? '↩️ تراجع / إعادة فتح' : '↩️ Undo / Reopen'}
                                     </button>
@@ -4751,6 +4779,7 @@
                 `;
             } else if (templateId === 'TASK_RENT_COLLECTION_MONITORING') {
                 container.innerHTML = `
+                    <div id="comp-rent-col-alert" style="display:none; margin-bottom:12px;"></div>
                     <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
                         <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💳 بيانات تدقيق سداد الدفعة الإيجارية:</div>
                         <div class="form-row">
@@ -4970,6 +4999,77 @@
                 const sadadEl = document.getElementById('comp-fees-sadad');
                 if (sadadEl && !sadadEl.value) {
                     sadadEl.value = '9028' + Math.floor(100000 + Math.random() * 900000);
+                }
+            } else if (templateId === 'TASK_RENT_COLLECTION_MONITORING') {
+                const amtEl = document.getElementById('comp-rent-col-amount');
+                const dateEl = document.getElementById('comp-rent-col-date');
+                const refEl = document.getElementById('comp-rent-col-ref');
+                const alertEl = document.getElementById('comp-rent-col-alert');
+
+                let targetAmount = '';
+                const tTitle = (t && t.title) ? t.title : '';
+                const titleAmtMatch = tTitle.match(/([\d,]+(\.\d{1,2})?)\s*ر\.س/);
+                if (titleAmtMatch) {
+                    targetAmount = titleAmtMatch[1].replace(/,/g, '');
+                } else if (taskOpp && taskOpp.expected_value) {
+                    targetAmount = taskOpp.expected_value;
+                } else if (taskLead && taskLead.budget_max) {
+                    targetAmount = taskLead.budget_max;
+                }
+
+                let defaultDate = new Date().toISOString().substring(0, 10);
+                let defaultRef = 'EJR-' + (taskId ? taskId.replace('task-', '') : Math.floor(100000 + Math.random() * 900000));
+
+                if (amtEl && targetAmount) amtEl.value = targetAmount;
+                if (dateEl) dateEl.value = defaultDate;
+                if (refEl && !refEl.value) refEl.value = defaultRef;
+
+                const cMatch = tTitle.match(/(TEN-[\w\-]+)/i);
+                const contractNum = cMatch ? cMatch[1] : '';
+                const queryTerm = contractNum || (t && t.lead_id) || '';
+
+                if (queryTerm) {
+                    apiRequest(`${API_BASE}/api/v1/rent-collections?search=${encodeURIComponent(queryTerm)}`)
+                        .then(res => {
+                            if (res && res.data && res.data.length > 0) {
+                                const instMatch = tTitle.match(/الدفعة\s*(\d+)/);
+                                const instIdx = instMatch ? parseInt(instMatch[1], 10) : 1;
+                                const matchingInst = (instIdx <= res.data.length) ? res.data[instIdx - 1] : res.data[0];
+
+                                if (matchingInst) {
+                                    if (matchingInst.amount_paid > 0) {
+                                        if (amtEl) amtEl.value = matchingInst.amount_paid;
+                                    } else if (matchingInst.amount_due > 0 && !amtEl.value) {
+                                        if (amtEl) amtEl.value = matchingInst.amount_due;
+                                    }
+                                    if (matchingInst.paid_at) {
+                                        if (dateEl) dateEl.value = matchingInst.paid_at.substring(0, 10);
+                                    }
+                                    if (matchingInst.payment_reference) {
+                                        if (refEl) refEl.value = matchingInst.payment_reference;
+                                    }
+
+                                    if (matchingInst.status === 'PAID' || matchingInst.amount_paid > 0) {
+                                        if (alertEl) {
+                                            alertEl.style.display = 'block';
+                                            alertEl.innerHTML = `
+                                                <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:12px; display:flex; align-items:center; gap:12px;">
+                                                    <span style="font-size:1.6em;">🟢</span>
+                                                    <div style="font-size:0.86em; color:#14532d; line-height:1.5;">
+                                                        <strong style="font-size:1.0em;">تم رصد واستلام سداد هذه الدفعة مسبقاً عبر إدارة الأملاك:</strong>
+                                                        <div>تاريخ التحصيل الفعلي: <strong>${(matchingInst.paid_at || '').substring(0, 10)}</strong> | المبلغ المحصل: <strong style="color:#15803d;">${Number(matchingInst.amount_paid).toLocaleString()} ر.س</strong> | الحالة: <strong>مسدد ومطابق بنكياً (PAID)</strong></div>
+                                                        <div style="margin-top:4px; color:#475569;">سند القبض متوفر وجاهز للمعاينة ضمن الوثائق أدناه لتوثيق إغلاق المهمة.</div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }
+                                        const rad = document.querySelector('input[name="comp_outcome"][value="PAID"]');
+                                        if (rad) rad.checked = true;
+                                    }
+                                }
+                            }
+                        })
+                        .catch(() => {});
                 }
             }
 
@@ -5269,7 +5369,10 @@
             let viewings = [];
             let invoices = [];
 
-            const param = oppId ? `opportunity_id=${encodeURIComponent(oppId)}` : `lead_id=${encodeURIComponent(leadId)}`;
+            const paramParts = [];
+            if (oppId) paramParts.push(`opportunity_id=${encodeURIComponent(oppId)}`);
+            if (leadId) paramParts.push(`lead_id=${encodeURIComponent(leadId)}`);
+            const param = paramParts.join('&') || `lead_id=${encodeURIComponent(leadId)}`;
 
             try {
                 const [docsRes, resRes, viewRes, invRes] = await Promise.allSettled([
@@ -5295,19 +5398,22 @@
                 console.warn("Parallel fetch error in decision records:", e);
             }
 
-            // Fallback contract search
+            // Fallback contract & related document search
             const cMatch = taskTitle.match(/(TEN-[\w\-]+|CON-[\w\-]+)/i);
             if (cMatch && cMatch[1]) {
                 const cNum = cMatch[1].toUpperCase();
-                const hasContractDoc = docs.some(d => (d.file_name || '').toUpperCase().includes(cNum) || (d.contract_number || '').toUpperCase().includes(cNum));
-                if (!hasContractDoc) {
-                    try {
-                        const cRes = await apiRequest(`${API_BASE}/api/v1/documents?search=${encodeURIComponent(cNum)}`);
-                        if (cRes && cRes.data && cRes.data.length > 0) {
-                            docs = [...cRes.data, ...docs.filter(d => !cRes.data.some(cd => cd.document_id === d.document_id))];
+                try {
+                    const cRes = await apiRequest(`${API_BASE}/api/v1/documents?search=${encodeURIComponent(cNum)}`);
+                    if (cRes && cRes.data && cRes.data.length > 0) {
+                        const existingIds = new Set(docs.map(d => d.document_id));
+                        for (const d of cRes.data) {
+                            if (!existingIds.has(d.document_id)) {
+                                docs.push(d);
+                                existingIds.add(d.document_id);
+                            }
                         }
-                    } catch (_) {}
-                }
+                    }
+                } catch (_) {}
             }
 
             // Update badge counters
@@ -5840,9 +5946,11 @@
                 const amt = document.getElementById('comp-rent-col-amount')?.value;
                 const ref = document.getElementById('comp-rent-col-ref')?.value;
                 const mthd = document.getElementById('comp-rent-col-method')?.value;
+                const colDate = document.getElementById('comp-rent-col-date')?.value;
                 if (amt) payload.amount_collected = parseFloat(amt);
                 if (ref) payload.payment_reference = ref;
                 if (mthd) payload.payment_method = mthd;
+                if (colDate) payload.actual_collection_date = colDate;
             }
 
             if (templateId === 'TASK_COMMISSION_SETTLEMENT') {
@@ -7794,6 +7902,8 @@
             document.querySelectorAll('.task-row').forEach(r => r.classList.remove('selected-task-row'));
             const banner = document.getElementById('selected-task-banner');
             if (banner) banner.style.display = 'none';
+            const compBtn = document.getElementById('sel-banner-completion-btn');
+            if (compBtn) compBtn.style.display = 'none';
             const mainInsertBtn = document.getElementById('btn-insert-workflow-task');
             if (mainInsertBtn) {
                 const isAr = currentLang === 'ar';
@@ -7852,7 +7962,310 @@
                 btnText.textContent = isAr ? `إدراج مهمة للمسار (${task.task_id})` : `Insert Workflow Task (${task.task_id})`;
             }
 
+            const compBtn = document.getElementById('sel-banner-completion-btn');
+            if (compBtn) {
+                if (task.status === 'COMPLETED') {
+                    compBtn.style.display = 'inline-flex';
+                    const compText = document.getElementById('sel-banner-completion-text');
+                    if (compText) compText.textContent = isAr ? '👁️ بيانات الإنجاز والمدخلات' : '👁️ Completion Inputs';
+                } else {
+                    compBtn.style.display = 'none';
+                }
+            }
+
             banner.style.display = 'flex';
+        }
+
+        async function viewTaskCompletionDetails(taskId) {
+            if (!taskId) return;
+            openModal('modal-task-completion-detail');
+            const titleEl = document.getElementById('task-completion-title');
+            const subtitleEl = document.getElementById('task-completion-subtitle');
+            const bodyEl = document.getElementById('task-completion-body');
+            const isAr = currentLang === 'ar';
+
+            bodyEl.innerHTML = `<div style="text-align:center; padding: 40px; color:#64748b;"><span style="font-size: 2em; display:block; margin-bottom:10px;">⏳</span>${isAr ? 'جاري استرجاع بيانات ومدخلات المهمة المعتمدة...' : 'Loading task completion details...'}</div>`;
+
+            try {
+                const res = await apiRequest(`${API_BASE}/api/v1/tasks/${taskId}/completion-details`);
+                if (!res || !res.data) {
+                    bodyEl.innerHTML = `<div style="text-align:center; padding: 30px; color:#ef4444;">${isAr ? 'تعذر جلب تفاصيل إنجاز المهمة' : 'Failed to load task details'}</div>`;
+                    return;
+                }
+
+                const { task, activity, documents, tenancy, contract, installments, viewing, offer, commission } = res.data;
+                const displayTitle = getLocalizedTaskTitle(task.title, task.template_id);
+                titleEl.textContent = `${displayTitle} (${task.task_id})`;
+                subtitleEl.textContent = isAr ? `مهمة مكتملة وموثقة — المنفذ: ${activity?.agent_name || task.assigned_user_name || 'النظام'}` : `Completed Task Details — By ${activity?.agent_name || task.assigned_user_name || 'System'}`;
+
+                let html = '';
+
+                // 1. Meta / Status Bar
+                html += `
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'الحالة العامة' : 'Status'}</div>
+                            <div style="margin-top: 2px;"><span class="badge badge-completed">${isAr ? '✔ مكتملة ومعتمدة' : 'COMPLETED'}</span></div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'تاريخ وساعة الإنجاز' : 'Completed At'}</div>
+                            <div style="font-weight: 700; color: #1e293b; margin-top: 2px;">📅 ${task.completed_at ? new Date(task.completed_at).toLocaleString('ar-SA') : (activity?.completed_at ? new Date(activity.completed_at).toLocaleString('ar-SA') : 'N/A')}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'الوسيط / الموظف المنفذ' : 'Executed By'}</div>
+                            <div style="font-weight: 700; color: #0284c7; margin-top: 2px;">👤 ${activity?.agent_name || task.assigned_user_name || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'العميل المرتبط' : 'Customer'}</div>
+                            <div style="font-weight: 700; color: #1e293b; margin-top: 2px;">👥 ${task.customer_name || 'N/A'}</div>
+                        </div>
+                        ${task.lead_id ? `
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'معرف الطلب (Lead)' : 'Lead ID'}</div>
+                            <div style="margin-top: 2px;"><a href="leads.html?search=${encodeURIComponent(task.lead_id)}" target="_blank" style="color: #0284c7; text-decoration: none; font-weight: 700;">🎯 ${task.lead_id}</a></div>
+                        </div>` : ''}
+                        ${task.opportunity_id ? `
+                        <div>
+                            <div style="font-size: 0.75em; color: #64748b; font-weight: 600;">${isAr ? 'معرف الصفقة (Opp)' : 'Opportunity ID'}</div>
+                            <div style="margin-top: 2px;"><a href="sales.html?opportunity_id=${encodeURIComponent(task.opportunity_id)}" target="_blank" style="color: #16a34a; text-decoration: none; font-weight: 700;">📊 ${task.opportunity_id}</a></div>
+                        </div>` : ''}
+                    </div>
+                `;
+
+                // 2. Activity / Result Log
+                if (activity || task.outcome || task.notes) {
+                    html += `
+                        <div style="background: #ffffff; border: 1px solid #bbf7d0; border-right: 4px solid #10b981; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 10px 0; color: #065f46; font-size: 0.95em; display: flex; align-items: center; gap: 8px;">
+                                <span>📋</span> <span>${isAr ? 'بيانات التوثيق وسجل إنجاز النشاط' : 'Execution Activity Log'}</span>
+                            </h4>
+                            ${activity?.subject ? `<div style="font-weight: 700; color: #1e293b; margin-bottom: 6px;">${activity.subject}</div>` : ''}
+                            ${activity?.description ? `<div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 6px; padding: 10px 14px; color: #166534; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">${activity.description}</div>` : ''}
+                            ${task.outcome ? `<div><b>${isAr ? 'النتيجة المعتمدة:' : 'Outcome:'}</b> <span class="badge badge-completed">${task.outcome}</span></div>` : ''}
+                            ${task.notes ? `<div style="margin-top: 6px;"><b>${isAr ? 'ملاحظات الإنجاز:' : 'Notes:'}</b> <span style="color:#475569;">${task.notes}</span></div>` : ''}
+                        </div>
+                    `;
+                }
+
+                // 3. Tenancy & Contract Details (if present)
+                if (tenancy || contract) {
+                    const rentVal = tenancy?.rent_amount || contract?.amount || 0;
+                    const freq = tenancy?.payment_frequency || 'ANNUAL';
+                    const freqLabel = (freq === 'SEMI_ANNUAL') ? (isAr ? 'نصف سنوي (دفعتان)' : 'Semi-Annual (2 Installments)') :
+                                      (freq === 'QUARTERLY') ? (isAr ? 'ربع سنوي (4 دفعات)' : 'Quarterly (4 Installments)') :
+                                      (freq === 'MONTHLY') ? (isAr ? 'شهري (12 دفعة)' : 'Monthly (12 Installments)') :
+                                      (isAr ? 'سنوي (دفعة واحدة)' : 'Annual (1 Installment)');
+
+                    html += `
+                        <div style="background: #ffffff; border: 1.5px solid #93c5fd; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 14px 0; color: #1e40af; font-size: 0.98em; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; flex-wrap:wrap; gap:8px;">
+                                <span style="display:flex; align-items:center; gap:8px;">
+                                    <span>📑</span> <span>${isAr ? 'البيانات المالية والتعاقدية المعتمدة للعقد' : 'Approved Contract Terms'}</span>
+                                </span>
+                                <span style="font-size:0.85em; font-family:monospace; background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:4px; font-weight:700;">
+                                    ${contract?.contract_number || tenancy?.ejar_contract_number || 'TEN-CONTRACT'}
+                                </span>
+                            </h4>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'القيمة الإجمالية للعقد' : 'Contract / Rent Amount'}</div>
+                                    <div style="font-size:1.15em; font-weight:800; color:#15803d; margin-top:2px;">${Number(rentVal).toLocaleString()} <span style="font-size:0.75em;">ر.س</span></div>
+                                </div>
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'نمط الدفعات والأقساط' : 'Payment Frequency'}</div>
+                                    <div style="font-size:0.95em; font-weight:700; color:#1e293b; margin-top:2px;">📅 ${freqLabel}</div>
+                                </div>
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'تاريخ بداية العقد' : 'Start Date'}</div>
+                                    <div style="font-size:0.95em; font-weight:700; color:#1e293b; margin-top:2px;">🛫 ${tenancy?.start_date || contract?.start_date || 'N/A'}</div>
+                                </div>
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'تاريخ نهاية العقد' : 'End Date'}</div>
+                                    <div style="font-size:0.95em; font-weight:700; color:#1e293b; margin-top:2px;">🏁 ${tenancy?.end_date || contract?.end_date || 'N/A'}</div>
+                                </div>
+                            </div>
+
+                            <!-- Bank Account Info -->
+                            ${(tenancy?.bank_name || tenancy?.bank_iban || contract?.bank_name || contract?.bank_iban) ? `
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;">
+                                <div style="font-weight: 700; color: #1e40af; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                    <span>🏦</span> <span>${isAr ? 'بيانات الحساب البنكي لتحويل المستحقات:' : 'Bank Account Details:'}</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 0.88em;">
+                                    <div><b>${isAr ? 'اسم البنك:' : 'Bank:'}</b> ${tenancy?.bank_name || contract?.bank_name || 'N/A'}</div>
+                                    <div><b>${isAr ? 'المستفيد:' : 'Beneficiary:'}</b> ${tenancy?.bank_beneficiary || contract?.bank_beneficiary || 'N/A'}</div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <b>${isAr ? 'رقم الآيبان (IBAN):' : 'IBAN:'}</b> 
+                                        <span style="font-family: monospace; font-weight: 700; background: #ffffff; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; color: #1d4ed8; letter-spacing: 0.5px;">${tenancy?.bank_iban || contract?.bank_iban || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>` : ''}
+
+                            <!-- Maintenance Terms -->
+                            ${(tenancy?.maintenance_terms || contract?.maintenance_terms) ? `
+                            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;">
+                                <div style="font-weight: 700; color: #92400e; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <span>🛠️</span> <span>${isAr ? 'شروط ومعيار الصيانة المعتمد (وفق شبكة إيجار):' : 'Maintenance Terms:'}</span>
+                                </div>
+                                <div style="color: #78350f; font-size: 0.88em; line-height: 1.5;">${tenancy?.maintenance_terms || contract?.maintenance_terms}</div>
+                            </div>` : ''}
+
+                            <!-- Notes / Special Conditions -->
+                            ${(tenancy?.notes || contract?.notes) ? `
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
+                                <div style="font-weight: 700; color: #334155; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <span>📝</span> <span>${isAr ? 'الشروط والملاحظات الخاصة بالعقد:' : 'Special Notes & Terms:'}</span>
+                                </div>
+                                <div style="color: #475569; font-size: 0.88em; line-height: 1.5;">${tenancy?.notes || contract?.notes}</div>
+                            </div>` : ''}
+                        </div>
+                    `;
+                }
+
+                // 4. Installments Schedule
+                if (installments && installments.length > 0) {
+                    html += `
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 0.95em; display: flex; align-items: center; gap: 8px;">
+                                <span>🗓️</span> <span>${isAr ? 'جدول الدفعات والأقساط المستحقة المتولدة' : 'Generated Rent Installments'}</span>
+                                <span style="font-size:0.75em; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px;">${installments.length} ${isAr ? 'دفعات' : 'Installments'}</span>
+                            </h4>
+                            <div class="table-responsive">
+                                <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #f1f5f9; text-align: start;">
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">#</th>
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">${isAr ? 'المعرف' : 'ID'}</th>
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">${isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</th>
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">${isAr ? 'المبلغ المستحق (ر.س)' : 'Due Amount (SAR)'}</th>
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">${isAr ? 'المسدد' : 'Paid Amount'}</th>
+                                            <th style="padding: 8px 10px; border-bottom: 1px solid #cbd5e1;">${isAr ? 'الحالة' : 'Status'}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${installments.map((inst, idx) => `
+                                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                <td style="padding: 8px 10px; font-weight:700;">${idx + 1}</td>
+                                                <td style="padding: 8px 10px; font-family:monospace; color:#64748b;">${inst.rent_collection_id}</td>
+                                                <td style="padding: 8px 10px; font-weight:600;">📅 ${inst.due_date}</td>
+                                                <td style="padding: 8px 10px; font-weight:700; color:#166534;">${Number(inst.amount_due).toLocaleString()} SAR</td>
+                                                <td style="padding: 8px 10px; color:${Number(inst.amount_paid) > 0 ? '#166534' : '#64748b'};">${Number(inst.amount_paid || 0).toLocaleString()} SAR</td>
+                                                <td style="padding: 8px 10px;"><span class="badge ${inst.status === 'PAID' ? 'badge-completed' : 'badge-open'}">${inst.status}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 4.5. Commission Settlement Details
+                if (commission) {
+                    const cPaid = (commission.status === 'PAID');
+                    const cStBadge = cPaid ? 'badge-completed' : (commission.status === 'APPROVED' ? 'badge-open' : 'badge-pending');
+                    const cStText = cPaid ? (isAr ? 'مصروفة ومسددة' : 'Paid Out') : (commission.status === 'APPROVED' ? (isAr ? 'معتمدة للصرف' : 'Approved') : (isAr ? 'قيد المراجعة' : 'Pending'));
+
+                    html += `
+                        <div style="background: #ffffff; border: 1.5px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 14px 0; color: #166534; font-size: 0.98em; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dcfce7; padding-bottom: 8px; flex-wrap:wrap; gap:8px;">
+                                <span style="display:flex; align-items:center; gap:8px;">
+                                    <span>💰</span> <span>${isAr ? 'بيانات استحقاق وصرف عمولة الوسيط المعتمد (رخصة فال)' : 'Broker Commission Settlement & Payout'}</span>
+                                </span>
+                                <span style="font-size:0.85em; font-family:monospace; background:#ecfdf5; color:#15803d; padding:3px 8px; border-radius:4px; font-weight:700;">
+                                    #${commission.commission_id}
+                                </span>
+                            </h4>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                                <div style="background:#f0fdf4; padding:8px 12px; border-radius:6px; border:1px solid #bbf7d0;">
+                                    <div style="font-size:0.75em; color:#166534;">${isAr ? 'الوسيط المستحق' : 'Broker / Agent'}</div>
+                                    <div style="font-size:1.05em; font-weight:800; color:#0f172a; margin-top:2px;">👤 ${commission.user_name || 'الوسيط'}</div>
+                                    <div style="font-size:0.75em; color:#64748b; font-family:monospace;">${commission.user_id || ''}</div>
+                                </div>
+                                <div style="background:#f0fdf4; padding:8px 12px; border-radius:6px; border:1px solid #bbf7d0;">
+                                    <div style="font-size:0.75em; color:#166534;">${isAr ? 'صافي العمولة المستحقة' : 'Commission Amount'}</div>
+                                    <div style="font-size:1.2em; font-weight:800; color:#15803d; margin-top:2px;">${Number(commission.amount || 0).toLocaleString()} <span style="font-size:0.75em;">ر.س</span></div>
+                                    <div style="font-size:0.75em; color:#166534;">${commission.rate ? (isAr ? 'نسبة الاستحقاق: ' : 'Rate: ') + commission.rate + '%' : ''}</div>
+                                </div>
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'قيمة الصفقة الإجمالية' : 'Deal Value'}</div>
+                                    <div style="font-size:1.05em; font-weight:700; color:#1e293b; margin-top:2px;">${Number(commission.gross_deal_value || 0).toLocaleString()} ر.س</div>
+                                    <div style="font-size:0.75em; color:#64748b;">${commission.contract_number ? (isAr ? 'عقد: ' : 'Contract: ') + commission.contract_number : ''}</div>
+                                </div>
+                                <div style="background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'حالة الاعتماد والصرف' : 'Status'}</div>
+                                    <div style="margin-top:2px;"><span class="badge ${cStBadge}">✓ ${cStText}</span></div>
+                                    <div style="font-size:0.75em; color:#64748b; margin-top:2px;">📅 ${commission.paid_at ? commission.paid_at.slice(0, 10) : (commission.approved_at ? commission.approved_at.slice(0, 10) : '--')}</div>
+                                </div>
+                            </div>
+
+                            ${commission.calculation_notes ? `
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; font-size:0.86em; color:#475569;">
+                                <strong>${isAr ? 'آلية الحسبة والاشتراطات:' : 'Calculation Formula:'}</strong> ${commission.calculation_notes}
+                            </div>` : ''}
+                        </div>
+                    `;
+                }
+
+                // 5. Official Documents
+                if (documents && documents.length > 0) {
+                    html += `
+                        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 0.95em; display: flex; align-items: center; gap: 8px;">
+                                <span>📑</span> <span>${isAr ? 'المستندات والوثائق المؤرشفة الصادرة عن المهمة' : 'Archived Official Documents'}</span>
+                            </h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                ${documents.map(doc => `
+                                    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; gap: 12px; flex-wrap: wrap;">
+                                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                            <span style="font-size: 1.3em;">📄</span>
+                                            <div>
+                                                <div style="font-weight: 700; color: #1e293b; font-size: 0.92em;">${doc.file_name || doc.document_type_name || 'وثيقة رسمية'}</div>
+                                                <div style="font-size: 0.75em; color: #64748b; margin-top: 2px;">
+                                                    <span style="font-family: monospace; background: #e2e8f0; padding: 1px 5px; border-radius: 3px;">${doc.document_id}</span>
+                                                    ${doc.issued_at ? ` • 📅 ${doc.issued_at}` : ''}
+                                                    ${doc.notes ? ` • <span>${doc.notes}</span>` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="openDocumentPreview('${doc.document_id}', '${(doc.file_name || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: #ffffff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>👁️</span> <span>${isAr ? 'معاينة المستند الرسمي' : 'Live Document Preview'}</span>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 6. Viewing or Offer Details (if present)
+                if (viewing) {
+                    html += `
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                            <h4 style="margin: 0 0 10px 0; color: #0284c7; font-size: 0.95em;">🏠 ${isAr ? 'معلومات معاينة الوحدة' : 'Viewing Details'}</h4>
+                            <div><b>${isAr ? 'حالة المعاينة:' : 'Status:'}</b> ${viewing.status || 'N/A'}</div>
+                            <div><b>${isAr ? 'التقييم والملاحظات:' : 'Feedback:'}</b> ${viewing.feedback || 'N/A'}</div>
+                        </div>
+                    `;
+                }
+                if (offer) {
+                    html += `
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                            <h4 style="margin: 0 0 10px 0; color: #0284c7; font-size: 0.95em;">💰 ${isAr ? 'معلومات العرض المقدم' : 'Offer Details'}</h4>
+                            <div><b>${isAr ? 'قيمة العرض:' : 'Amount:'}</b> ${Number(offer.amount || 0).toLocaleString()} SAR</div>
+                            <div><b>${isAr ? 'الحالة:' : 'Status:'}</b> ${offer.status || 'N/A'}</div>
+                        </div>
+                    `;
+                }
+
+                bodyEl.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error loading task completion details:', err);
+                bodyEl.innerHTML = `<div style="text-align:center; padding: 30px; color:#ef4444;">${isAr ? 'حدث خطأ أثناء تحميل بيانات المهمة: ' + (err.message || '') : 'Error loading completion details: ' + (err.message || '')}</div>`;
+            }
         }
 
         function onInsertWorkflowTaskClick() {

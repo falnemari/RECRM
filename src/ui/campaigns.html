@@ -438,14 +438,14 @@
                 <div class="kpi-sub" id="kpi-qual-count">Loading qualified leads...</div>
             </div>
             <div class="kpi-card" style="border-top: 3px solid #059669;">
-                <div class="kpi-title">قيمة الصفقات المحققة</div>
+                <div class="kpi-title" data-i18n="kpi_won_revenue">Closed-Won Deals Value</div>
                 <div class="kpi-val" id="kpi-won-val" style="color: #059669;">-- SAR</div>
-                <div class="kpi-sub">Total Closed-Won Revenue</div>
+                <div class="kpi-sub" data-i18n="kpi_won_revenue_sub">Total Closed-Won Revenue</div>
             </div>
             <div class="kpi-card" style="border-top: 3px solid #2563eb;">
-                <div class="kpi-title">العائد الإعلاني ROAS</div>
+                <div class="kpi-title" data-i18n="kpi_roas_title">Ad Return (ROAS)</div>
                 <div class="kpi-val" id="kpi-roas" style="color: #2563eb;">--%</div>
-                <div class="kpi-sub">Return on Ad Spend</div>
+                <div class="kpi-sub" data-i18n="kpi_roas_sub">Return on Ad Spend</div>
             </div>
         </div>
 
@@ -467,15 +467,15 @@
                 <input type="text" id="search-campaign" placeholder="Search campaign name..." style="flex-grow: 1; min-width: 220px;" oninput="debounceFetchCampaigns()">
                 <select id="filter-channel" onchange="fetchCampaigns()">
                     <option value="" data-i18n="opt_all_channels">All Channels</option>
-                    <option value="AQAR">منصة عقار (AQAR)</option>
-                    <option value="BAYUT">منصة بيوت ودبيزل (BAYUT)</option>
-                    <option value="SAHEM">منصة سهم العقارية (SAHEM)</option>
-                    <option value="SNAPCHAT_ADS">سناب شات (SNAPCHAT)</option>
-                    <option value="TIKTOK_ADS">تيك توك (TIKTOK)</option>
-                    <option value="GOOGLE_SEARCH">إعلانات قوقل (GOOGLE)</option>
-                    <option value="META_INSTAGRAM">انستغرام وميتا (META)</option>
-                    <option value="WHATSAPP_CAMPAIGN">واتساب أعمال (WHATSAPP)</option>
-                    <option value="SOCIAL">شبكات اجتماعية أخرى (SOCIAL)</option>
+                    <option value="AQAR" data-i18n="opt_chan_aqar">Aqar Portal (AQAR)</option>
+                    <option value="BAYUT" data-i18n="opt_chan_bayut">Bayut & Dubizzle (BAYUT)</option>
+                    <option value="SAHEM" data-i18n="opt_chan_sahem">Sahem Platform (SAHEM)</option>
+                    <option value="SNAPCHAT_ADS" data-i18n="opt_chan_snapchat">Snapchat Ads (SNAPCHAT)</option>
+                    <option value="TIKTOK_ADS" data-i18n="opt_chan_tiktok">TikTok Ads (TIKTOK)</option>
+                    <option value="GOOGLE_SEARCH" data-i18n="opt_chan_google">Google Ads (GOOGLE)</option>
+                    <option value="META_INSTAGRAM" data-i18n="opt_chan_meta">Instagram & Meta (META)</option>
+                    <option value="WHATSAPP_CAMPAIGN" data-i18n="opt_chan_whatsapp">WhatsApp Business (WHATSAPP)</option>
+                    <option value="SOCIAL" data-i18n="opt_chan_other_social">Other Social Networks (SOCIAL)</option>
                 </select>
                 <select id="filter-status" onchange="fetchCampaigns()">
                     <option value="" data-i18n="opt_all_status">All Statuses</option>
@@ -579,15 +579,15 @@
                         <div class="form-group">
                             <label data-i18n="lbl_channel">Marketing Channel *</label>
                             <select id="fc-channel" required>
-                                <option value="AQAR">منصة عقار (Aqar Portal)</option>
-                                <option value="BAYUT">منصة بيوت ودبيزل (Bayut / Dubizzle)</option>
-                                <option value="SAHEM">منصة سهم العقارية (Sahem)</option>
-                                <option value="SNAPCHAT_ADS">إعلانات سناب شات (Snapchat Ads)</option>
-                                <option value="TIKTOK_ADS">إعلانات تيك توك (TikTok Ads)</option>
-                                <option value="GOOGLE_SEARCH">إعلانات قوقل للبحث (Google Search)</option>
-                                <option value="META_INSTAGRAM">انستغرام وميتا (Meta / Instagram)</option>
-                                <option value="WHATSAPP_CAMPAIGN">حملات واتساب المباشرة (WhatsApp Business)</option>
-                                <option value="SOCIAL">شبكات اجتماعية أخرى (Other Social)</option>
+                                <option value="AQAR" data-i18n="opt_chan_aqar">Aqar Portal (AQAR)</option>
+                                <option value="BAYUT" data-i18n="opt_chan_bayut">Bayut & Dubizzle (BAYUT)</option>
+                                <option value="SAHEM" data-i18n="opt_chan_sahem">Sahem Platform (SAHEM)</option>
+                                <option value="SNAPCHAT_ADS" data-i18n="opt_chan_snapchat">Snapchat Ads (SNAPCHAT)</option>
+                                <option value="TIKTOK_ADS" data-i18n="opt_chan_tiktok">TikTok Ads (TIKTOK)</option>
+                                <option value="GOOGLE_SEARCH" data-i18n="opt_chan_google">Google Ads (GOOGLE)</option>
+                                <option value="META_INSTAGRAM" data-i18n="opt_chan_meta">Instagram & Meta (META)</option>
+                                <option value="WHATSAPP_CAMPAIGN" data-i18n="opt_chan_whatsapp">WhatsApp Business (WHATSAPP)</option>
+                                <option value="SOCIAL" data-i18n="opt_chan_other_social">Other Social Networks (SOCIAL)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -716,6 +716,13 @@
                 kpi_active_campaigns: "Active Campaigns", kpi_total_budget: "Total Marketing Budget",
                 kpi_budget_sub: "Allocated across campaigns", kpi_leads_captured: "Attributed Inbound Leads",
                 kpi_leads_sub: "Generated via campaign channels", kpi_conversion_rate: "Qualified Conversion Rate",
+                kpi_won_revenue: "Closed-Won Deals Value", kpi_won_revenue_sub: "Total Closed-Won Revenue",
+                kpi_roas_title: "Return on Ad Spend (ROAS)", kpi_roas_sub: "Return on Ad Spend",
+                opt_chan_aqar: "Aqar Portal (AQAR)", opt_chan_bayut: "Bayut & Dubizzle (BAYUT)",
+                opt_chan_sahem: "Sahem Platform (SAHEM)", opt_chan_snapchat: "Snapchat Ads (SNAPCHAT)",
+                opt_chan_tiktok: "TikTok Ads (TIKTOK)", opt_chan_google: "Google Search Ads (GOOGLE)",
+                opt_chan_meta: "Instagram & Meta (META)", opt_chan_whatsapp: "WhatsApp Business (WHATSAPP)",
+                opt_chan_other_social: "Other Social Networks (SOCIAL)",
                 tab_campaigns: "Marketing Campaigns", tab_leads: "Attributed Leads & Clients", tab_events: "Lead Events Stream",
                 opt_all_channels: "All Channels", opt_all_status: "All Statuses", opt_all_events: "All Event Types",
                 opt_active: "ACTIVE", opt_completed: "COMPLETED", opt_paused: "PAUSED",
@@ -757,6 +764,13 @@
                 kpi_active_campaigns: "الحملات النشطة", kpi_total_budget: "إجمالي الميزانية التسويقية",
                 kpi_budget_sub: "إجمالي الميزانيات المرصودة", kpi_leads_captured: "العملاء المستقطبون",
                 kpi_leads_sub: "واردون عبر القنوات الإعلانية", kpi_conversion_rate: "نسبة التأهيل والتحويل",
+                kpi_won_revenue: "قيمة الصفقات المحققة", kpi_won_revenue_sub: "إجمالي إيرادات الصفقات الرابحة",
+                kpi_roas_title: "العائد الإعلاني ROAS", kpi_roas_sub: "معدل العائد على الإنفاق الإعلاني",
+                opt_chan_aqar: "منصة عقار (AQAR)", opt_chan_bayut: "منصة بيوت ودبيزل (BAYUT)",
+                opt_chan_sahem: "منصة سهم العقارية (SAHEM)", opt_chan_snapchat: "إعلانات سناب شات (SNAPCHAT)",
+                opt_chan_tiktok: "إعلانات تيك توك (TIKTOK)", opt_chan_google: "إعلانات قوقل للبحث (GOOGLE)",
+                opt_chan_meta: "انستغرام وميتا (META)", opt_chan_whatsapp: "حملات واتساب المباشرة (WHATSAPP)",
+                opt_chan_other_social: "شبكات اجتماعية أخرى (SOCIAL)",
                 tab_campaigns: "الحملات الإعلانية", tab_leads: "العملاء المستقطبون", tab_events: "سجل التفاعلات والأحداث",
                 opt_all_channels: "جميع القنوات الإعلانية", opt_all_status: "جميع الحالات", opt_all_events: "جميع أنواع الأحداث",
                 opt_active: "سارية (ACTIVE)", opt_completed: "مكتملة (COMPLETED)", opt_paused: "متوقفة مؤقتاً (PAUSED)",
@@ -817,6 +831,9 @@
             });
 
             document.getElementById('lang-label').textContent = i18nData[lang].lang_label;
+            if (typeof cachedCampaigns !== 'undefined' && cachedCampaigns && cachedCampaigns.length > 0) {
+                fetchCampaigns();
+            }
         }
 
         function toggleLanguage() {
@@ -940,7 +957,7 @@
                             <td>${roasBadge}</td>
                             <td><span class="badge ${statusClass}">${c.status}</span></td>
                             <td style="white-space: nowrap;">
-                                <button class="btn btn-outline btn-sm" onclick="filterLeadsForCampaign('${c.campaign_id}')" title="View Leads">العملاء →</button>
+                                <button class="btn btn-outline btn-sm" onclick="filterLeadsForCampaign('${c.campaign_id}')" title="${currentLang === 'ar' ? 'عرض العملاء المرتبطين' : 'View Attributed Leads'}">${currentLang === 'ar' ? 'العملاء ←' : 'Leads →'}</button>
                                 <button class="btn btn-outline btn-sm" style="border-color: #3b82f6; color: #1d4ed8;" onclick="copySmartUTMLink('${c.campaign_id}')" title="Copy smart UTM tracking link">🔗 UTM</button>
                             </td>
                         </tr>
@@ -965,12 +982,14 @@
                 const trackingUrl = json.data.tracking_url;
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     await navigator.clipboard.writeText(trackingUrl);
-                    alert(`تم نسخ رابط التتبع الذكي للحملة بنجاح:\n\n${trackingUrl}`);
+                    alert(currentLang === 'ar' 
+                        ? `تم نسخ رابط التتبع الذكي للحملة بنجاح:\n\n${trackingUrl}`
+                        : `Smart campaign tracking link copied successfully:\n\n${trackingUrl}`);
                 } else {
-                    prompt("انسخ رابط التتبع التالي:", trackingUrl);
+                    prompt(currentLang === 'ar' ? "انسخ رابط التتبع التالي:" : "Copy the following tracking link:", trackingUrl);
                 }
             } catch (err) {
-                alert(`خطأ: ${err.message}`);
+                alert(currentLang === 'ar' ? `خطأ: ${err.message}` : `Error: ${err.message}`);
             }
         }
 

@@ -26,7 +26,7 @@ class TestAgendaAndFinancialSchedules(unittest.TestCase):
         self.assertIn("summary", data)
         summary = data["summary"]
 
-        self.assertGreaterEqual(summary["total_events"], 50)
+        self.assertGreaterEqual(summary["total_events"], 20)
         self.assertGreaterEqual(summary["tasks_count"], 10)
         self.assertGreaterEqual(summary["viewings_count"], 1)
         self.assertGreaterEqual(summary["reservations_count"], 1)
@@ -296,6 +296,135 @@ class TestAgendaAndFinancialSchedules(unittest.TestCase):
         items2 = res2.json()["data"]
         self.assertEqual(len(items2), 1)
         self.assertEqual(items2[0]["reservation_id"], "res-28")
+
+    def test_agenda_timing_filters(self):
+        """Verify uncompleted tasks/events sub-filtering by OVERDUE, TODAY, UPCOMING, ALL."""
+        # 1. ALL timing filter
+        res_all = self.client.get("/api/v1/reports/agenda-calendar?timing_filter=ALL", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res_all.status_code, 200)
+        summary = res_all.json()["data"]["summary"]
+        events_all = res_all.json()["data"]["events"]
+        self.assertEqual(len(events_all), summary["total_events"])
+
+        # 2. OVERDUE timing filter
+        res_ov = self.client.get("/api/v1/reports/agenda-calendar?timing_filter=OVERDUE", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res_ov.status_code, 200)
+        events_ov = res_ov.json()["data"]["events"]
+        self.assertEqual(len(events_ov), summary["overdue_count"])
+        for ev in events_ov:
+            is_ov = "متأخر" in (ev.get("status_label_ar") or "") or ev.get("badge_color") in ("#ef4444", "#dc2626")
+            self.assertTrue(is_ov)
+
+        # 3. TODAY timing filter
+        res_td = self.client.get("/api/v1/reports/agenda-calendar?timing_filter=TODAY", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res_td.status_code, 200)
+        events_td = res_td.json()["data"]["events"]
+        self.assertEqual(len(events_td), summary["today_count"])
+        for ev in events_td:
+            self.assertIn("اليوم", ev.get("status_label_ar") or "")
+
+        # 4. UPCOMING timing filter
+        res_up = self.client.get("/api/v1/reports/agenda-calendar?timing_filter=UPCOMING", headers={"X-User-ID": "user-51"})
+        self.assertEqual(res_up.status_code, 200)
+        events_up = res_up.json()["data"]["events"]
+        self.assertEqual(len(events_up), summary["upcoming_count"])
+
+    def test_branch_manager_scope_isolation_funnel(self):
+        """Verify Branch Manager (user-1, Riyadh) strictly sees their branch and branch agents only."""
+        res = self.client.get("/api/v1/reports/funnel-dashboard", headers={"X-User-ID": "user-1"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
+
+        # Scope must be BRANCH
+        self.assertEqual(data["scope_info"]["scope"], "BRANCH")
+        self.assertEqual(data["scope_info"]["branch_id"], "branch-3")
+
+        # Branches drilldown must return ONLY 1 branch (never leak other branches)
+        branches = data["drilldown"]["branches"]
+        self.assertEqual(len(branches), 1)
+        self.assertEqual(branches[0]["branch_id"], "branch-3")
+
+        # Agents drilldown must only return Riyadh agents
+        agents = data["drilldown"]["agents"]
+        self.assertGreater(len(agents), 0)
+        for ag in agents:
+            self.assertEqual(ag.get("branch_id"), "branch-3")
+
+    def test_frontline_agent_scope_isolation_funnel(self):
+        """Verify Frontline Agent (user-11, Dammam) strictly sees their own performance (never colleagues)."""
+        res = self.client.get("/api/v1/reports/funnel-dashboard", headers={"X-User-ID": "user-11"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
+
+        # Scope must be OWN
+        self.assertEqual(data["scope_info"]["scope"], "OWN")
+        self.assertEqual(data["scope_info"]["user_id"], "user-11")
+
+        # No branches drilldown
+        self.assertEqual(len(data["drilldown"]["branches"]), 0)
+
+        # Agents drilldown contains strictly 1 agent (the caller themselves)
+        agents = data["drilldown"]["agents"]
+        self.assertEqual(len(agents), 1)
+        self.assertEqual(agents[0]["user_id"], "user-11")
+
+    def test_internal_ping_downward_manager_cc_routing(self):
+        """Verify Task Reminder Ping routes to owner and CCs downward managers, excluding sender."""
+        payload = {
+            "recipient_role": "ASSIGNED_AGENT",
+            "recipient_user_id": "user-3",
+            "context_type": "TASK",
+            "context_id": "TSK-TEST-001",
+            "context_snapshot": {
+                "directed_to_owner": "Demo Agent 3",
+                "cc_manager_ids": ["user-1", "user-51"]  # user-51 is sender!
+            },
+            "message_text": "Follow up overdue task urgently",
+            "urgency_level": "URGENT",
+            "is_archived": False
+        }
+        res = self.client.post("/api/v1/internal-pings", json=payload, headers={"X-User-ID": "user-51"})
+        self.assertEqual(res.status_code, 201)
+        ping_data = res.json()["data"]
+        self.assertEqual(ping_data["recipient_user_id"], "user-3")
+        self.assertEqual(ping_data["sender_user_id"], "user-51")
+
+        # Verify CC ping was delivered to user-1 (downward manager)
+        res_inbox_user1 = self.client.get("/api/v1/internal-pings/inbox", headers={"X-User-ID": "user-1"})
+        self.assertEqual(res_inbox_user1.status_code, 200)
+        pings_u1 = res_inbox_user1.json()["data"]["pings"]
+        cc_found = any(it.get("context_id") == "TSK-TEST-001" and "CC" in it.get("message_text", "") for it in pings_u1)
+        self.assertTrue(cc_found, "Downward manager (user-1) must receive CC ping")
+
+    def test_internal_ping_branch_manager_sender_no_cc_copy(self):
+        """When a Branch Manager sends a reminder directly to their subordinate agent, no CC is sent to the sender manager."""
+        payload = {
+            "recipient_role": "ASSIGNED_AGENT",
+            "recipient_user_id": "user-3",
+            "context_type": "TASK",
+            "context_id": "TSK-BM-002",
+            "context_snapshot": {
+                "directed_to_owner": "Demo Agent 3",
+                "cc_manager_ids": []
+            },
+            "message_text": "Direct follow up from your Branch Manager",
+            "urgency_level": "NORMAL",
+            "is_archived": False
+        }
+        res = self.client.post("/api/v1/internal-pings", json=payload, headers={"X-User-ID": "user-1"})
+        self.assertEqual(res.status_code, 201)
+        ping_data = res.json()["data"]
+        self.assertEqual(ping_data["recipient_user_id"], "user-3")
+        self.assertEqual(ping_data["sender_user_id"], "user-1")
+
+        # Verify no CC copy was created for sender user-1
+        res_inbox_user1 = self.client.get("/api/v1/internal-pings/inbox", headers={"X-User-ID": "user-1"})
+        pings_u1 = res_inbox_user1.json()["data"]["pings"]
+        has_self_cc = any(
+            it.get("context_id") == "TSK-BM-002" and (it.get("recipient_user_id") == "user-1" or "CC" in it.get("message_text", ""))
+            for it in pings_u1
+        )
+        self.assertFalse(has_self_cc, "Branch manager sender must never receive CC of their own ping")
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Any
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 class ProjectOut(BaseModel):
     project_id: str
@@ -17,6 +17,7 @@ class ProjectOut(BaseModel):
     status: str
     start_date: Optional[date] = None
     completion_date: Optional[date] = None
+    end_date: Optional[date] = None
 
 class ProjectCreateIn(BaseModel):
     name_ar: str
@@ -26,12 +27,105 @@ class ProjectCreateIn(BaseModel):
     developer_customer_id: Optional[str] = None
     start_date: Optional[date] = None
     completion_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+    @field_validator("start_date", "completion_date", "end_date", mode="before")
+    @classmethod
+    def parse_optional_date(cls, v: Any) -> Optional[date]:
+        if v is None or v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        if isinstance(v, str):
+            return date.fromisoformat(v.strip()[:10])
+        return v
+
+    @field_validator("developer_customer_id", "city_id", mode="before")
+    @classmethod
+    def clean_empty_strings(cls, v: Any) -> Optional[str]:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
+
+    @model_validator(mode="after")
+    def unify_end_date(self) -> "ProjectCreateIn":
+        if self.end_date and not self.completion_date:
+            self.completion_date = self.end_date
+        elif self.completion_date and not self.end_date:
+            self.end_date = self.completion_date
+        return self
 
 class BuildingCreateIn(BaseModel):
     project_id: str
     building_code: str
     name: Optional[str] = None
     floors_count: Optional[int] = None
+
+    @field_validator("floors_count", mode="before")
+    @classmethod
+    def parse_optional_int(cls, v: Any) -> Optional[int]:
+        if v is None or v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        return int(v)
+
+    @field_validator("name", "building_code", mode="before")
+    @classmethod
+    def clean_str(cls, v: Any) -> Optional[str]:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
+
+class ProjectUpdateIn(BaseModel):
+    name_ar: Optional[str] = None
+    name_en: Optional[str] = None
+    city_id: Optional[str] = None
+    status: Optional[str] = None
+    developer_customer_id: Optional[str] = None
+    start_date: Optional[date] = None
+    completion_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+    @field_validator("start_date", "completion_date", "end_date", mode="before")
+    @classmethod
+    def parse_optional_date(cls, v: Any) -> Optional[date]:
+        if v is None or v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        if isinstance(v, str):
+            return date.fromisoformat(v.strip()[:10])
+        return v
+
+    @field_validator("developer_customer_id", "city_id", mode="before")
+    @classmethod
+    def clean_empty_strings(cls, v: Any) -> Optional[str]:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
+
+    @model_validator(mode="after")
+    def unify_end_date(self) -> "ProjectUpdateIn":
+        if self.end_date is not None and self.completion_date is None:
+            self.completion_date = self.end_date
+        elif self.completion_date is not None and self.end_date is None:
+            self.end_date = self.completion_date
+        return self
+
+class BuildingUpdateIn(BaseModel):
+    project_id: Optional[str] = None
+    building_code: Optional[str] = None
+    name: Optional[str] = None
+    floors_count: Optional[int] = None
+
+    @field_validator("floors_count", mode="before")
+    @classmethod
+    def parse_optional_int(cls, v: Any) -> Optional[int]:
+        if v is None or v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        return int(v)
+
+    @field_validator("name", "building_code", mode="before")
+    @classmethod
+    def clean_str(cls, v: Any) -> Optional[str]:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
 
 class UnitOut(BaseModel):
     unit_id: str
@@ -41,6 +135,10 @@ class UnitOut(BaseModel):
     project_id: Optional[str] = None
     project_name_ar: Optional[str] = None
     project_name_en: Optional[str] = None
+    city_id: Optional[str] = None
+    city_name: Optional[str] = None
+    city_name_ar: Optional[str] = None
+    city_name_en: Optional[str] = None
     unit_number: str
     floor_no: Optional[int] = None
     total_floors: Optional[int] = None

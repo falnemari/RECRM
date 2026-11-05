@@ -33,13 +33,60 @@ class TestUnitMatchingInquiry(unittest.TestCase):
         self.assertEqual(opp_77["expected_value"], 35000.0)
 
     def test_opportunity_units_endpoint_fields(self):
-        """Verify opportunity units endpoint returns rich properties including owner, asking and rent prices."""
+        """Verify opportunity units endpoint returns rich properties including owner, asking and rent prices, city, and listing purpose."""
         # Check opp-498 (lead-62)
         res = self.client.get("/api/v1/sales/opportunities/opportunity-498/units")
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertIn("data", data)
         self.assertIsInstance(data["data"], list)
+        if len(data["data"]) > 0:
+            u0 = data["data"][0]
+            self.assertIn("city_name_ar", u0)
+            self.assertIn("city_name_en", u0)
+            self.assertIn("listing_purpose", u0)
+
+    def test_deal_and_lead_target_city_and_purpose_compatibility(self):
+        """Verify deal and lead endpoints return requested target city (AR/EN), and units match city and listing purpose."""
+        # 1. Check opportunity has city info
+        opp_res = self.client.get("/api/v1/opportunities?page_size=5")
+        self.assertEqual(opp_res.status_code, 200)
+        opps = opp_res.json()["data"]
+        opp_with_city = next((o for o in opps if o.get("preferred_city_id")), None)
+        if opp_with_city:
+            self.assertIn("preferred_city_name", opp_with_city)
+            self.assertIn("preferred_city_name_ar", opp_with_city)
+
+        # 2. Check lead has city info
+        lead_res = self.client.get("/api/v1/leads?page_size=5")
+        self.assertEqual(lead_res.status_code, 200)
+        leads = lead_res.json()["data"]
+        lead_with_city = next((l for l in leads if l.get("preferred_city_id")), None)
+        if lead_with_city:
+            self.assertIn("preferred_city_name", lead_with_city)
+            self.assertIn("preferred_city_name_ar", lead_with_city)
+
+        # 3. Units filtering by city
+        units_city_res = self.client.get("/api/v1/units?city_id=city-10")
+        self.assertEqual(units_city_res.status_code, 200)
+        units_city = units_city_res.json()["data"]
+        self.assertGreater(len(units_city), 0)
+        for u in units_city:
+            self.assertEqual(u["city_id"], "city-10")
+
+        # 4. Units filtering by SALE listing purpose (matches SALE or ALL, rejects pure RENT)
+        sale_res = self.client.get("/api/v1/units?listing_purpose=SALE")
+        self.assertEqual(sale_res.status_code, 200)
+        sale_units = sale_res.json()["data"]
+        for u in sale_units:
+            self.assertIn(u.get("listing_purpose"), ("SALE", "ALL", None))
+
+        # 5. Units filtering by RENT listing purpose (matches RENT or ALL, rejects pure SALE)
+        rent_res = self.client.get("/api/v1/units?listing_purpose=RENT")
+        self.assertEqual(rent_res.status_code, 200)
+        rent_units = rent_res.json()["data"]
+        for u in rent_units:
+            self.assertIn(u.get("listing_purpose"), ("RENT", "ALL", None))
 
     def test_units_endpoint_has_owner_info(self):
         """Verify units endpoint includes owner_name and owner_mobile."""
@@ -78,7 +125,7 @@ class TestUnitMatchingInquiry(unittest.TestCase):
         contracts = res.json()["data"]
         self.assertTrue(any(c["contract_number"] == "TEN-202610-8328" and c["contract_type"] == "RENT" for c in contracts))
 
-        res_comm = self.client.get("/api/v1/commissions", headers={"X-User-ID": "user-19"})
+        res_comm = self.client.get("/api/v1/commissions?search=TEN-202610-8328", headers={"X-User-ID": "user-19"})
         self.assertEqual(res_comm.status_code, 200)
         comms = res_comm.json()["data"]
         comm_77 = next((cm for cm in comms if cm["contract_number"] == "TEN-202610-8328"), None)

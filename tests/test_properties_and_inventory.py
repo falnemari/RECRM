@@ -466,7 +466,8 @@ class TestPropertiesAndInventory(unittest.IsolatedAsyncioTestCase):
             pent_id = pent_data["unit_id"]
             self.assertEqual(pent_data["building_id"], building_id)
             self.assertEqual(pent_data["floor_no"], 11)
-            self.assertEqual(pent_data["total_floors"], 2)
+            # When unit belongs to a building, total_floors is inherited from building.floors_count (12)
+            self.assertEqual(pent_data["total_floors"], 12)
             self.assertEqual(pent_data["building_floors_count"], 12)
 
             # 6. Test Updating total_floors on Villa
@@ -484,5 +485,290 @@ class TestPropertiesAndInventory(unittest.IsolatedAsyncioTestCase):
                 await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
             finally:
                 await conn.close()
+
+    async def test_07_floor_inheritance_and_validation(self):
+        """
+        Verify:
+        - When a unit belongs to a building, total_floors inherits building.floors_count.
+        - If floor_no > building.floors_count, HTTP 400 error is raised.
+        """
+        with TestClient(app) as client:
+            p_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع أبراج النزهة",
+                "name_en": "Nozha Towers Project",
+                "status": "ACTIVE"
+            })
+            self.assertEqual(p_res.status_code, 201)
+            p_id = p_res.json()["data"]["project_id"]
+
+            b_res = client.post("/api/v1/buildings", json={
+                "project_id": p_id,
+                "building_code": "BLD-NOZ-01",
+                "floors_count": 8
+            })
+            self.assertEqual(b_res.status_code, 201)
+            b_id = b_res.json()["data"]["building_id"]
+
+            # Floor exceeding building floors count -> 400
+            err_res = client.post("/api/v1/units", json={
+                "project_id": p_id,
+                "building_id": b_id,
+                "unit_number": "APT-901",
+                "property_type_id": "property_type-3",
+                "floor_no": 11,
+                "total_floors": 11
+            })
+            self.assertEqual(err_res.status_code, 400)
+            self.assertIn("لا يمكن أن يتجاوز", err_res.json()["detail"])
+
+            # Valid floor -> total_floors auto-set to building.floors_count (8)
+            ok_res = client.post("/api/v1/units", json={
+                "project_id": p_id,
+                "building_id": b_id,
+                "unit_number": "APT-701",
+                "property_type_id": "property_type-3",
+                "floor_no": 7,
+                "total_floors": 11  # Sent 11, but should be overwritten with 8
+            })
+            self.assertEqual(ok_res.status_code, 201)
+            u_data = ok_res.json()["data"]
+            self.assertEqual(u_data["floor_no"], 7)
+            self.assertEqual(u_data["total_floors"], 8)
+            u_id = u_data["unit_id"]
+
+            # Cleanup
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                await conn.execute("DELETE FROM units WHERE unit_id = $1", u_id)
+                await conn.execute("DELETE FROM buildings WHERE building_id = $1", b_id)
+                await conn.execute("DELETE FROM projects WHERE project_id = $1", p_id)
+            finally:
+                await conn.close()
+
+    async def test_08_property_type_floor(self):
+        """Verify 'دور' / 'Floor' exists in property types catalog."""
+        with TestClient(app) as client:
+            res = client.get("/api/v1/property-types")
+            self.assertEqual(res.status_code, 200)
+            types = res.json()["data"]
+            floor_item = next((t for t in types if t.get("name_ar") == "دور" or t.get("name_en") == "Floor"), None)
+            self.assertIsNotNone(floor_item)
+            self.assertEqual(floor_item["name_ar"], "دور")
+            self.assertEqual(floor_item["name_en"], "Floor")
+
+    async def test_09_project_building_edit_and_role_gated_delete(self):
+        """Verify editing projects and buildings, and role-gated deletion with dependency protection."""
+        with TestClient(app) as client:
+            # 1. Create Project
+            p_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع للاختبار والتعديل",
+                "name_en": "Test Edit Project",
+                "status": "ACTIVE"
+            })
+            self.assertEqual(p_res.status_code, 201)
+            p_id = p_res.json()["data"]["project_id"]
+
+            # 2. Update Project
+            upd_p = client.put(f"/api/v1/projects/{p_id}", json={
+                "name_ar": "مشروع معدل للاختبار",
+                "status": "COMPLETED"
+            })
+            self.assertEqual(upd_p.status_code, 200)
+            self.assertEqual(upd_p.json()["data"]["name_ar"], "مشروع معدل للاختبار")
+            self.assertEqual(upd_p.json()["data"]["status"], "COMPLETED")
+
+            # 3. Create Building
+            b_res = client.post("/api/v1/buildings", json={
+                "project_id": p_id,
+                "building_code": "BLD-EDIT-01",
+                "floors_count": 5
+            })
+            self.assertEqual(b_res.status_code, 201)
+            b_id = b_res.json()["data"]["building_id"]
+
+            # 4. Update Building (change floors to 6)
+            upd_b = client.put(f"/api/v1/buildings/{b_id}", json={
+                "name": "مبنى تجريبي محدث",
+                "floors_count": 6
+            })
+            self.assertEqual(upd_b.status_code, 200)
+            self.assertEqual(upd_b.json()["data"]["floors_count"], 6)
+
+            # 5. Create Unit under Building
+            u_res = client.post("/api/v1/units", json={
+                "project_id": p_id,
+                "building_id": b_id,
+                "unit_number": "U-EDIT-01",
+                "property_type_id": "property_type-3",
+                "floor_no": 3
+            })
+            self.assertEqual(u_res.status_code, 201)
+            u_id = u_res.json()["data"]["unit_id"]
+            self.assertEqual(u_res.json()["data"]["total_floors"], 6)
+
+            # 6. Delete Project while Building and Unit exist -> blocked 400
+            del_p_blocked = client.delete(f"/api/v1/projects/{p_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(del_p_blocked.status_code, 400)
+            self.assertIn("مبنى / عمارة تابعة", del_p_blocked.json()["detail"])
+
+            # 7. Delete Building while Unit exists -> blocked 400
+            del_b_blocked = client.delete(f"/api/v1/buildings/{b_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(del_b_blocked.status_code, 400)
+            self.assertIn("وحدة عقارية مسجلة", del_b_blocked.json()["detail"])
+
+            # 8. Non-manager role deleting Unit -> HTTP 403 Forbidden
+            # Find an agent user
+            conn = await asyncpg.connect(settings.asyncpg_dsn)
+            try:
+                agent_id = await conn.fetchval("""
+                    SELECT ur.user_id 
+                    FROM user_roles ur 
+                    JOIN roles r ON ur.role_id = r.role_id 
+                    WHERE r.role_code IN ('AGENT', 'BROKER') 
+                    LIMIT 1
+                """)
+            finally:
+                await conn.close()
+
+            if agent_id:
+                agent_del = client.delete(f"/api/v1/units/{u_id}", headers={"X-User-ID": agent_id})
+                self.assertEqual(agent_del.status_code, 403)
+
+            # 9. Authorized delete unit (user-51 is admin/manager)
+            ok_del_u = client.delete(f"/api/v1/units/{u_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(ok_del_u.status_code, 204)
+
+            # 10. Now building has no units -> delete building succeeds
+            ok_del_b = client.delete(f"/api/v1/buildings/{b_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(ok_del_b.status_code, 204)
+
+            # 11. Now project has no buildings -> delete project succeeds
+            ok_del_p = client.delete(f"/api/v1/projects/{p_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(ok_del_p.status_code, 204)
+
+    async def test_10_project_developer_and_dates_update(self):
+        """Verify project developer, start_date, and end_date/completion_date editing and empty-string resilience."""
+        with TestClient(app) as client:
+            # 1. Create project with developer and dates
+            p_res = client.post("/api/v1/projects", json={
+                "name_ar": "مشروع أبراج البساتين",
+                "name_en": "Basateen Towers Project",
+                "developer_customer_id": "customer-10",
+                "start_date": "2024-03-01",
+                "end_date": "2026-06-30",
+                "status": "UNDER_CONSTRUCTION"
+            })
+            self.assertEqual(p_res.status_code, 201)
+            p_data = p_res.json()["data"]
+            p_id = p_data["project_id"]
+            self.assertEqual(p_data["developer_customer_id"], "customer-10")
+            self.assertIsNotNone(p_data["developer_name"])
+            self.assertEqual(p_data["start_date"], "2024-03-01")
+            self.assertEqual(p_data["completion_date"], "2026-06-30")
+            self.assertEqual(p_data["end_date"], "2026-06-30")
+
+            # 2. Update dates and developer using end_date
+            upd1 = client.put(f"/api/v1/projects/{p_id}", json={
+                "developer_customer_id": "customer-7",
+                "start_date": "2024-05-15",
+                "end_date": "2027-01-01"
+            })
+            self.assertEqual(upd1.status_code, 200)
+            upd1_data = upd1.json()["data"]
+            self.assertEqual(upd1_data["developer_customer_id"], "customer-7")
+            self.assertEqual(upd1_data["start_date"], "2024-05-15")
+            self.assertEqual(upd1_data["completion_date"], "2027-01-01")
+            self.assertEqual(upd1_data["end_date"], "2027-01-01")
+
+            # 3. Update with empty string dates or clear developer (should safely set to None)
+            upd2 = client.put(f"/api/v1/projects/{p_id}", json={
+                "developer_customer_id": "",
+                "start_date": "",
+                "end_date": ""
+            })
+            self.assertEqual(upd2.status_code, 200)
+            upd2_data = upd2.json()["data"]
+            self.assertIsNone(upd2_data["developer_customer_id"])
+            self.assertIsNone(upd2_data["start_date"])
+            self.assertIsNone(upd2_data["completion_date"])
+
+            # 4. Clean up
+            del_res = client.delete(f"/api/v1/projects/{p_id}", headers={"X-User-ID": "user-51"})
+            self.assertEqual(del_res.status_code, 204)
+
+    async def test_11_units_property_type_and_city_search_and_filter(self):
+        """
+        Verify search and filtering of units by Property Type and City:
+        1. Filtering by property_type_id and property_type name (Arabic / English).
+        2. Filtering by city_id and city name.
+        3. Combining Property Type and City filters.
+        4. Text search matching property type names and city names.
+        5. Verification that UnitOut schema includes city_id, city_name_ar, city_name_en.
+        6. Verification of single unit detail (/api/v1/units/{unit_id}) including city and property type.
+        """
+        with TestClient(app) as client:
+            # 1. Filter by property_type_id (Villa)
+            res_pt = client.get("/api/v1/units?property_type_id=property_type-8")
+            self.assertEqual(res_pt.status_code, 200)
+            data_pt = res_pt.json()["data"]
+            self.assertGreater(len(data_pt), 0)
+            for u in data_pt:
+                self.assertEqual(u["property_type_id"], "property_type-8")
+                self.assertIsNotNone(u["city_id"])
+                self.assertIsNotNone(u["city_name_ar"])
+
+            # 2. Filter by property_type name (فيلا)
+            res_pt_ar = client.get("/api/v1/units?property_type=فيلا")
+            self.assertEqual(res_pt_ar.status_code, 200)
+            data_pt_ar = res_pt_ar.json()["data"]
+            self.assertEqual(len(data_pt), len(data_pt_ar))
+
+            # 3. Filter by city_id (Makkah city-10)
+            res_city = client.get("/api/v1/units?city_id=city-10")
+            self.assertEqual(res_city.status_code, 200)
+            data_city = res_city.json()["data"]
+            self.assertGreater(len(data_city), 0)
+            for u in data_city:
+                self.assertEqual(u["city_id"], "city-10")
+                self.assertEqual(u["city_name_ar"], "مكة المكرمة")
+
+            # 4. Filter by city name (الرياض)
+            res_riyadh = client.get("/api/v1/units?city=الرياض")
+            self.assertEqual(res_riyadh.status_code, 200)
+            data_riyadh = res_riyadh.json()["data"]
+            self.assertGreater(len(data_riyadh), 0)
+            for u in data_riyadh:
+                self.assertEqual(u["city_name_ar"], "الرياض")
+
+            # 5. Combined filter: Property Type + City
+            res_comb = client.get("/api/v1/units?property_type_id=property_type-8&city_id=city-10")
+            self.assertEqual(res_comb.status_code, 200)
+            data_comb = res_comb.json()["data"]
+            self.assertGreater(len(data_comb), 0)
+            for u in data_comb:
+                self.assertEqual(u["property_type_id"], "property_type-8")
+                self.assertEqual(u["city_id"], "city-10")
+
+            # 6. Text search matching property type
+            res_s_pt = client.get("/api/v1/units?search=فيلا")
+            self.assertEqual(res_s_pt.status_code, 200)
+            data_s_pt = res_s_pt.json()["data"]
+            self.assertGreater(len(data_s_pt), 0)
+
+            # 7. Text search matching city name
+            res_s_city = client.get("/api/v1/units?search=مكة")
+            self.assertEqual(res_s_city.status_code, 200)
+            data_s_city = res_s_city.json()["data"]
+            self.assertGreater(len(data_s_city), 0)
+
+            # 8. Single unit detail includes city fields
+            unit_id = data_city[0]["unit_id"]
+            res_single = client.get(f"/api/v1/units/{unit_id}")
+            self.assertEqual(res_single.status_code, 200)
+            single_data = res_single.json()["data"]
+            self.assertEqual(single_data["city_id"], "city-10")
+            self.assertEqual(single_data["city_name_ar"], "مكة المكرمة")
+            self.assertIsNotNone(single_data["property_type_name_ar"])
+
 
 

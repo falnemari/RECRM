@@ -604,6 +604,333 @@ class TestWorkflowStage3(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_viewing_report_outcome_requests_another_viewing(self):
+        """
+        Rule: When TASK_VIEWING_REPORT is completed with outcome 'REQUESTS_ANOTHER_VIEWING':
+          - Opportunity retains stage 'VIEWING'
+          - A new TASK_VIEWING_SCHEDULE task is automatically spawned with priority 'HIGH'
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-another-viewing"
+            cust_id = "test-cust-another-viewing"
+            opp_id = "test-opp-another-viewing"
+
+            await self.conn.execute("DELETE FROM viewings WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Nasser', 'Al-Qahtani', '+966577889900', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, branch_id, status, priority, inquiry_type, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'HIGH', 'BUY', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id, self.branch_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'VIEWING', 1500000, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO viewings (
+                    viewing_id, opportunity_id, lead_id, unit_id, customer_id, agent_user_id,
+                    scheduled_start, scheduled_end, status, created_at, updated_at
+                ) VALUES ('viewing-another-01', $1, $2, $3, $4, $5, NOW() - INTERVAL '1 hour', NOW(), 'SCHEDULED', NOW(), NOW())
+                """,
+                opp_id, lead_id, self.unit_id, cust_id, self.agent_id
+            )
+
+            rep_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_VIEWING_REPORT",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=rep_task["task_id"],
+                user_id=self.agent_id,
+                outcome="REQUESTS_ANOTHER_VIEWING",
+                notes="العميل طلب زيارة معاينة أخرى لمراجعة تفاصيل العقار"
+            )
+
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["new_stage"], "VIEWING")
+            self.assertEqual(res["business_transition"]["next_action"]["type"], "VIEWING_TASK_SPAWNED")
+
+            # Verify new TASK_VIEWING_SCHEDULE was spawned
+            next_task = await self.conn.fetchrow(
+                "SELECT task_id, template_id, status, priority FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_VIEWING_SCHEDULE' AND status IN ('PENDING', 'OPEN')",
+                opp_id
+            )
+            self.assertIsNotNone(next_task, "TASK_VIEWING_SCHEDULE must be auto-spawned for another viewing")
+            self.assertEqual(next_task["priority"], "HIGH")
+
+        finally:
+            await tr.rollback()
+
+    async def test_viewing_report_multi_unit_selection(self):
+        """
+        Rule: When multiple units are presented, selecting a specific unit in TASK_VIEWING_REPORT:
+          - Promotes that unit to is_primary = TRUE in opportunity_units
+          - Validates and enforces offer ceiling against that selected unit's price
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-multi-unit"
+            cust_id = "test-cust-multi-unit"
+            opp_id = "test-opp-multi-unit"
+            unit_1 = "unit-test-m1"
+            unit_2 = "unit-test-m2"
+
+            await self.conn.execute("DELETE FROM viewings WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM units WHERE unit_id IN ($1, $2)", unit_1, unit_2)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, unit_number, property_type_id, status, asking_price, created_at, updated_at)
+                VALUES ($1, 'U-M1', 'property_type-8', 'AVAILABLE', 1200000, NOW(), NOW()),
+                       ($2, 'U-M2', 'property_type-8', 'AVAILABLE', 750000, NOW(), NOW())
+                """,
+                unit_1, unit_2
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Sami', 'Al-Harbi', '+966566112233', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, branch_id, status, priority, inquiry_type, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'HIGH', 'BUY', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id, self.branch_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'VIEWING', 1200000, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            # Link both units: unit_1 as primary initially
+            await self.conn.execute(
+                """
+                INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary)
+                VALUES ($1, $2, TRUE), ($1, $3, FALSE)
+                """,
+                opp_id, unit_1, unit_2
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO viewings (
+                    viewing_id, opportunity_id, lead_id, unit_id, customer_id, agent_user_id,
+                    scheduled_start, scheduled_end, status, created_at, updated_at
+                ) VALUES ('viewing-multi-01', $1, $2, $3, $4, $5, NOW() - INTERVAL '1 hour', NOW(), 'SCHEDULED', NOW(), NOW())
+                """,
+                opp_id, lead_id, unit_1, cust_id, self.agent_id
+            )
+
+            rep_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_VIEWING_REPORT",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+
+            # Completing task with unit_2 selected and offer exceeding unit_2 price (750k) must fail
+            with self.assertRaises(ValueError):
+                await WorkflowEngine.complete_task_with_outcome(
+                    conn=self.conn,
+                    task_id=rep_task["task_id"],
+                    user_id=self.agent_id,
+                    outcome="INTERESTED",
+                    viewing_data={"unit_id": unit_2, "offer_amount": 900000}
+                )
+
+            # Completing task with unit_2 selected and valid offer (700k) succeeds
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=rep_task["task_id"],
+                user_id=self.agent_id,
+                outcome="INTERESTED",
+                viewing_data={"unit_id": unit_2, "offer_amount": 700000}
+            )
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["new_stage"], "NEGOTIATION")
+
+            # Check that unit_2 is now primary
+            is_u2_prim = await self.conn.fetchval(
+                "SELECT is_primary FROM opportunity_units WHERE opportunity_id = $1 AND unit_id = $2",
+                opp_id, unit_2
+            )
+            self.assertTrue(is_u2_prim, "Selected unit_2 must be promoted to is_primary = TRUE")
+
+            is_u1_prim = await self.conn.fetchval(
+                "SELECT is_primary FROM opportunity_units WHERE opportunity_id = $1 AND unit_id = $2",
+                opp_id, unit_1
+            )
+            self.assertFalse(is_u1_prim, "Previous unit_1 must no longer be primary")
+
+            # Opportunity expected value updated to 700k
+            exp_val = await self.conn.fetchval("SELECT expected_value FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(float(exp_val), 700000.0)
+
+        finally:
+            await tr.rollback()
+
+    async def test_stage3_offer_followup_counter_and_negotiate_concessions(self):
+        """
+        Verify that completing TASK_OFFER_FOLLOWUP with outcome 'COUNTER' (and synonyms):
+        1. Does not raise ValueError('Unknown decision COUNTER')
+        2. Sets offer status to 'COUNTERED'
+        3. Advances/keeps opportunity stage in 'NEGOTIATION' with counter amount
+        4. Auto-spawns TASK_SALE_NEGOTIATE_CONCESSIONS with HIGH priority
+        5. Completing TASK_SALE_NEGOTIATE_CONCESSIONS with 'CONCESSION_AGREED' updates offer to 'ACCEPTED'
+           and auto-spawns TASK_RESERVATION_VERIFY_AVAILABILITY (Stage F transition).
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            now_dt = datetime.now(timezone.utc)
+            cust_id = "cust-test-counter-01"
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, email, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'سعود', 'العتيبي', '0509998877', 'saud@test.com', 'ACTIVE', NOW(), NOW())
+                ON CONFLICT (customer_id) DO NOTHING
+                """,
+                cust_id, self.org_id
+            )
+
+            lead_id = "lead-test-counter-01"
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, branch_id, assigned_user_id, status, inquiry_type, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'CONTACTED', 'BUY', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.branch_id, self.agent_id
+            )
+
+            opp_id = "opp-test-counter-01"
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'OFFER', 2000000.0, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            await self.conn.execute(
+                """
+                INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary)
+                VALUES ($1, $2, TRUE)
+                """,
+                opp_id, self.unit_id
+            )
+
+            offer_id = "offer-test-counter-01"
+            await self.conn.execute(
+                """
+                INSERT INTO offers (offer_id, opportunity_id, unit_id, offer_amount, submitted_at, valid_until, status)
+                VALUES ($1, $2, $3, 2000000.0, NOW(), NOW() + INTERVAL '2 days', 'SUBMITTED')
+                """,
+                offer_id, opp_id, self.unit_id
+            )
+
+            # Spawn TASK_OFFER_FOLLOWUP
+            fup_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_OFFER_FOLLOWUP",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+            self.assertIsNotNone(fup_task)
+
+            # Complete TASK_OFFER_FOLLOWUP with outcome='COUNTER' and counter_amount=1850000.0
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=fup_task["task_id"],
+                user_id=self.agent_id,
+                outcome="COUNTER",
+                notes="العميل يرغب بتقديم عرض مضاد بمبلغ 1,850,000 ريال",
+                viewing_data={"offer_id": offer_id, "counter_amount": 1850000.0}
+            )
+
+            self.assertEqual(res["status"], "COMPLETED")
+            offer_st = await self.conn.fetchval("SELECT status FROM offers WHERE offer_id = $1", offer_id)
+            self.assertEqual(offer_st, "COUNTERED", "Offer status must be updated to COUNTERED")
+
+            opp_st = await self.conn.fetchrow("SELECT stage, expected_value FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(opp_st["stage"], "NEGOTIATION", "Opportunity stage must be NEGOTIATION")
+            self.assertEqual(float(opp_st["expected_value"]), 1850000.0, "Opportunity expected value must match counter amount")
+
+            # Check that TASK_SALE_NEGOTIATE_CONCESSIONS was auto-spawned
+            concess_task = await self.conn.fetchrow(
+                "SELECT * FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_SALE_NEGOTIATE_CONCESSIONS' ORDER BY created_at DESC LIMIT 1",
+                opp_id
+            )
+            self.assertIsNotNone(concess_task, "TASK_SALE_NEGOTIATE_CONCESSIONS must be auto-spawned for COUNTER outcome")
+            self.assertEqual(concess_task["priority"], "HIGH")
+
+            # Complete TASK_SALE_NEGOTIATE_CONCESSIONS with CONCESSION_AGREED
+            res_concess = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=concess_task["task_id"],
+                user_id=self.agent_id,
+                outcome="CONCESSION_AGREED",
+                notes="تم الاتفاق مع المالك والمشتري على السعر 1,850,000 ريال",
+                viewing_data={"negotiated_price": 1850000.0}
+            )
+            self.assertEqual(res_concess["status"], "COMPLETED")
+
+            # Verify latest offer is now ACCEPTED
+            offer_st2 = await self.conn.fetchval("SELECT status FROM offers WHERE offer_id = $1", offer_id)
+            self.assertEqual(offer_st2, "ACCEPTED", "Offer status must be promoted to ACCEPTED after concession agreement")
+
+            # Verify TASK_RESERVATION_VERIFY_AVAILABILITY was auto-spawned for Stage F
+            reserv_task = await self.conn.fetchrow(
+                "SELECT * FROM tasks WHERE opportunity_id = $1 AND template_id = 'TASK_RESERVATION_VERIFY_AVAILABILITY' ORDER BY created_at DESC LIMIT 1",
+                opp_id
+            )
+            self.assertIsNotNone(reserv_task, "TASK_RESERVATION_VERIFY_AVAILABILITY must be auto-spawned to transition to Stage F")
+            self.assertEqual(reserv_task["priority"], "URGENT")
+
+        finally:
+            await tr.rollback()
+
 
 if __name__ == "__main__":
     unittest.main()

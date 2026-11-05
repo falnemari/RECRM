@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 import asyncpg
 from app.database import get_db
 from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvelope, BaseMeta
@@ -38,8 +38,32 @@ async def list_lead_sources(conn: asyncpg.Connection = Depends(get_db)):
 async def list_users(
     city_id: Optional[str] = None,
     branch_id: Optional[str] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
+    effective_branch_id = branch_id
+
+    # If x_user_id is provided, check if user is a branch manager without GM/Admin privileges
+    if x_user_id and not effective_branch_id:
+        user_row = await conn.fetchrow(
+            """
+            SELECT u.branch_id,
+                   COALESCE(array_agg(r.role_code) FILTER (WHERE r.role_code IS NOT NULL), ARRAY[]::varchar[]) AS roles
+            FROM users u
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.role_id
+            WHERE u.user_id = $1
+            GROUP BY u.branch_id
+            """,
+            x_user_id
+        )
+        if user_row:
+            roles = set(r.upper() for r in user_row["roles"])
+            is_gm_or_admin = bool(roles & {"SYS_ADMIN", "ADMIN", "GENERAL_MANAGER", "AUDITOR"})
+            is_branch_mgr = bool(roles & {"BRANCH_MANAGER", "SALES_MANAGER"})
+            if is_branch_mgr and not is_gm_or_admin and user_row["branch_id"]:
+                effective_branch_id = user_row["branch_id"]
+
     conditions = ["u.status = 'ACTIVE'"]
     params = []
     p_idx = 1
@@ -47,9 +71,9 @@ async def list_users(
         conditions.append(f"b.city_id = ${p_idx}")
         params.append(city_id)
         p_idx += 1
-    if branch_id:
+    if effective_branch_id:
         conditions.append(f"u.branch_id = ${p_idx}")
-        params.append(branch_id)
+        params.append(effective_branch_id)
         p_idx += 1
 
     where_clause = " AND ".join(conditions)
@@ -67,7 +91,7 @@ async def list_users(
         LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE {where_clause}
         GROUP BY u.user_id, u.employee_no, u.full_name, u.email, u.mobile, u.status, u.branch_id, b.name, b.city_id
-        ORDER BY u.full_name
+        ORDER BY COALESCE(b.name, ' الإدارة العامة'), u.full_name
     """
     rows = await conn.fetch(query, *params)
     data = [dict(row) for row in rows]

@@ -699,6 +699,22 @@ class WorkflowEngine:
                 if k.strip().upper() == norm_outcome:
                     return v
 
+            # Fallback synonym resolution for negotiation and offer outcomes
+            synonyms = []
+            if norm_outcome in ("COUNTER", "COUNTERED", "COUNTER_OFFER"):
+                synonyms = ["COUNTER_OFFER", "COUNTER", "COUNTERED", "NEGOTIATION"]
+            elif norm_outcome in ("AGREED", "CONCESSION_AGREED"):
+                synonyms = ["AGREED", "CONCESSION_AGREED"]
+            elif norm_outcome in ("ACCEPTED", "OFFER_ACCEPTED"):
+                synonyms = ["ACCEPTED", "OFFER_ACCEPTED"]
+
+            for syn in synonyms:
+                if syn in outcomes:
+                    return outcomes[syn]
+                for k, v in outcomes.items():
+                    if k.strip().upper() == syn:
+                        return v
+
         return next_tmpl
 
     @staticmethod
@@ -1334,7 +1350,8 @@ class WorkflowEngine:
         user_id: str,
         outcome: str,
         feedback_notes: Optional[str] = None,
-        offer_amount: Optional[float] = None
+        offer_amount: Optional[float] = None,
+        selected_unit_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Stage 3 Post-Viewing Inspection Report Completion:
@@ -1385,6 +1402,27 @@ class WorkflowEngine:
                 opportunity_id, lead_id
             )
 
+        # If user explicitly selected a unit during viewing report completion:
+        if selected_unit_id:
+            if opportunity_id:
+                await conn.execute(
+                    "UPDATE opportunity_units SET is_primary = FALSE WHERE opportunity_id = $1",
+                    opportunity_id
+                )
+                await conn.execute(
+                    """
+                    INSERT INTO opportunity_units (opportunity_id, unit_id, is_primary)
+                    VALUES ($1, $2, TRUE)
+                    ON CONFLICT (opportunity_id, unit_id) DO UPDATE SET is_primary = TRUE
+                    """,
+                    opportunity_id, selected_unit_id
+                )
+            if viewing:
+                await conn.execute(
+                    "UPDATE viewings SET unit_id = $1 WHERE viewing_id = $2",
+                    selected_unit_id, viewing["viewing_id"]
+                )
+
         is_rent = False
         if lead_id:
             inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", lead_id)
@@ -1397,7 +1435,7 @@ class WorkflowEngine:
             is_rent = (inq or "").upper() == "RENT"
 
         # Resolve targeted unit and unit asking/rent price
-        target_unit_id = viewing["unit_id"] if viewing and viewing["unit_id"] else None
+        target_unit_id = selected_unit_id or (viewing["unit_id"] if viewing and viewing["unit_id"] else None)
         if not target_unit_id and opportunity_id:
             target_unit_id = await conn.fetchval(
                 "SELECT unit_id FROM opportunity_units WHERE opportunity_id = $1 ORDER BY is_primary DESC LIMIT 1",
@@ -1589,6 +1627,23 @@ class WorkflowEngine:
                 parent_task_id=task_id
             )
             next_action = {"type": "RESCHEDULE_TASK_SPAWNED", "task": resched_task}
+
+        elif outcome in ("REQUESTS_ANOTHER_VIEWING", "ANOTHER_VIEWING"):
+            new_stage = "VIEWING"
+            curr_view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_REPORT"
+            db_next = await WorkflowEngine.resolve_next_task_template(conn, curr_view_tmpl, outcome="REQUESTS_ANOTHER_VIEWING")
+            sched_tmpl = db_next or ("TASK_RENT_VIEWING_SCHEDULE" if is_rent else "TASK_VIEWING_SCHEDULE")
+            sched_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=conn,
+                template_id=sched_tmpl,
+                lead_id=lead_id,
+                opportunity_id=opportunity_id,
+                customer_id=customer_id,
+                assigned_user_id=agent_user_id,
+                priority="HIGH",
+                parent_task_id=task_id
+            )
+            next_action = {"type": "VIEWING_TASK_SPAWNED", "task": sched_task}
 
         elif outcome in ("NOT_INTERESTED", "DISQUALIFIED"):
             new_stage = "LOST_INTEREST"
@@ -1845,7 +1900,18 @@ class WorkflowEngine:
             raise ValueError(f"Offer '{offer_id}' not found.")
 
         agent_id = user_id or offer["assigned_user_id"]
-        norm_decision = decision.strip().upper()
+        raw_decision = (decision or "").strip().upper()
+        if raw_decision in ("COUNTER", "COUNTERED", "COUNTER_OFFER"):
+            norm_decision = "COUNTERED"
+        elif raw_decision in ("ACCEPT", "ACCEPTED"):
+            norm_decision = "ACCEPTED"
+        elif raw_decision in ("APPROVE", "APPROVED"):
+            norm_decision = "APPROVED"
+        elif raw_decision in ("REJECT", "REJECTED"):
+            norm_decision = "REJECTED"
+        else:
+            raise ValueError(f"Unknown decision '{decision}'. Expected APPROVED, ACCEPTED, COUNTERED, or REJECTED.")
+
         next_task = None
         new_opp_stage = None
 
@@ -1857,6 +1923,10 @@ class WorkflowEngine:
             await conn.execute(
                 "UPDATE opportunities SET stage = 'OFFER', expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2",
                 offer["offer_amount"], offer["opportunity_id"]
+            )
+            await conn.execute(
+                "UPDATE opportunity_units SET offered_price = $1 WHERE opportunity_id = $2 AND (is_primary = TRUE OR unit_id = $3)",
+                offer["offer_amount"], offer["opportunity_id"], offer["unit_id"]
             )
             comm_id = await get_next_id(conn, "communications", "comm")
             cust_name = f"{offer['first_name'] or ''} {offer['last_name'] or ''}".strip() or offer["company_name"] or "العميل"
@@ -1904,6 +1974,10 @@ class WorkflowEngine:
                 "UPDATE opportunities SET stage = 'NEGOTIATION', expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2",
                 offer["offer_amount"], offer["opportunity_id"]
             )
+            await conn.execute(
+                "UPDATE opportunity_units SET offered_price = $1 WHERE opportunity_id = $2 AND (is_primary = TRUE OR unit_id = $3)",
+                offer["offer_amount"], offer["opportunity_id"], offer["unit_id"]
+            )
             comm_id = await get_next_id(conn, "communications", "comm")
             cust_name = f"{offer['first_name'] or ''} {offer['last_name'] or ''}".strip() or offer["company_name"] or "العميل"
             await conn.execute(
@@ -1942,12 +2016,34 @@ class WorkflowEngine:
                 "UPDATE offers SET status = 'COUNTERED' WHERE offer_id = $1",
                 offer_id
             )
+            new_opp_stage = "NEGOTIATION"
+            if counter_amount:
+                await conn.execute(
+                    "UPDATE opportunities SET stage = 'NEGOTIATION', expected_value = $1, updated_at = NOW() WHERE opportunity_id = $2",
+                    float(counter_amount), offer["opportunity_id"]
+                )
+            else:
+                await conn.execute(
+                    "UPDATE opportunities SET stage = 'NEGOTIATION', updated_at = NOW() WHERE opportunity_id = $1",
+                    offer["opportunity_id"]
+                )
+
             c_amt_text = f"{counter_amount:,.2f} ريال" if counter_amount else "معدل"
-            activity_notes = notes or f"تم تقديم عرض مالي مقابل من قبل العميل بمبلغ {c_amt_text}."
-            db_cntr_next = await WorkflowEngine.resolve_next_task_template(conn, "TASK_OFFER_FOLLOWUP", outcome="COUNTER_OFFER")
+            activity_notes = notes or f"تم تقديم عرض مالي مقابل من قبل العميل بمبلغ {c_amt_text} والانتقال لمرحلة التفاوض على التخفيض وشروط السداد."
+
+            lead_inq = await conn.fetchval("SELECT inquiry_type FROM leads WHERE lead_id = $1", offer["lead_id"]) if offer["lead_id"] else None
+            inq_norm = (lead_inq or "").upper()
+            if inq_norm == "RENT":
+                counter_tmpl = "TASK_RENT_SPECIAL_CONDITIONS_NEGOTIATION"
+            elif inq_norm in ("INVEST", "INVESTMENT"):
+                counter_tmpl = "TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT"
+            else:
+                db_cntr_next = await WorkflowEngine.resolve_next_task_template(conn, "TASK_OFFER_FOLLOWUP", outcome="COUNTER_OFFER")
+                counter_tmpl = db_cntr_next or "TASK_SALE_NEGOTIATE_CONCESSIONS"
+
             next_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
-                template_id=db_cntr_next or "TASK_OFFER_PREPARE",
+                template_id=counter_tmpl,
                 lead_id=offer["lead_id"],
                 opportunity_id=offer["opportunity_id"],
                 customer_id=offer["customer_id"],
@@ -2066,7 +2162,13 @@ class WorkflowEngine:
         generate_installments: bool = True,
         installments_count: int = 1,
         parent_task_id: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        first_due_date: Optional[Any] = None,
+        bank_name: Optional[str] = None,
+        bank_iban: Optional[str] = None,
+        bank_beneficiary: Optional[str] = None,
+        maintenance_terms: Optional[str] = None,
+        ejar_contract_number: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Rental Pipeline Execution Gateway:
@@ -2107,6 +2209,16 @@ class WorkflowEngine:
         else:
             e_date = s_date + timedelta(days=365)
 
+        # Normalize first_due_date
+        if isinstance(first_due_date, datetime):
+            f_due_date = first_due_date.date()
+        elif isinstance(first_due_date, str) and first_due_date.strip():
+            f_due_date = date.fromisoformat(first_due_date.strip()[:10])
+        elif isinstance(first_due_date, date):
+            f_due_date = first_due_date
+        else:
+            f_due_date = s_date
+
         # 1. Lock unit with FOR UPDATE
         unit = await conn.fetchrow(
             "SELECT unit_id, unit_number, status, rent_price, asking_price FROM units WHERE unit_id = $1 FOR UPDATE",
@@ -2136,8 +2248,11 @@ class WorkflowEngine:
 
         # 3. Contract number & ID
         if not contract_number:
-            rnd = random.randint(1000, 9999)
-            contract_number = f"TEN-{s_date.strftime('%Y%m')}-{rnd}"
+            if ejar_contract_number:
+                contract_number = ejar_contract_number
+            else:
+                rnd = random.randint(1000, 9999)
+                contract_number = f"TEN-{s_date.strftime('%Y%m')}-{rnd}"
 
         tenancy_id = await get_next_id(conn, "tenancies", "tenancy")
         final_rent = float(rent_amount) if rent_amount and float(rent_amount) > 0 else float(unit["rent_price"] or 30000.0)
@@ -2149,12 +2264,16 @@ class WorkflowEngine:
             INSERT INTO tenancies (
                 tenancy_id, unit_id, tenant_customer_id, contract_number,
                 start_date, end_date, rent_amount, payment_frequency,
-                deposit_amount, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE')
+                deposit_amount, status, ejar_contract_number,
+                bank_name, bank_iban, bank_beneficiary, maintenance_terms, notes,
+                lead_id, opportunity_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE', $10, $11, $12, $13, $14, $15, $16, $17)
             """,
             tenancy_id, unit_id, tenant_customer_id, contract_number,
             s_date, e_date, final_rent, payment_frequency or "ANNUAL",
-            final_deposit
+            final_deposit, ejar_contract_number or contract_number,
+            bank_name, bank_iban, bank_beneficiary, maintenance_terms, notes,
+            lead_id, opportunity_id
         )
 
         # 5. Atomically update unit status to RENTED
@@ -2187,8 +2306,15 @@ class WorkflowEngine:
             else:
                 days_step = max(1, int(365 / count))
 
-            cur_due = s_date
+            cur_due = f_due_date
+            total_allocated = 0.0
             for i in range(count):
+                if i == count - 1:
+                    inst_amount = round(final_rent - total_allocated, 2)
+                else:
+                    inst_amount = amount_per_installment
+                    total_allocated += inst_amount
+
                 due_d = cur_due + timedelta(days=i * days_step) if (i > 0 and days_step > 0) else cur_due
                 rc_id = await get_next_id(conn, "rent_collections", "rent_collection")
                 await conn.execute(
@@ -2197,13 +2323,13 @@ class WorkflowEngine:
                         rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status
                     ) VALUES ($1, $2, $3, $4, 0, 'DUE')
                     """,
-                    rc_id, tenancy_id, due_d, amount_per_installment
+                    rc_id, tenancy_id, due_d, inst_amount
                 )
                 installments.append({
                     "rent_collection_id": rc_id,
                     "tenancy_id": tenancy_id,
                     "due_date": due_d.isoformat(),
-                    "amount_due": amount_per_installment,
+                    "amount_due": inst_amount,
                     "amount_paid": 0.0,
                     "status": "DUE"
                 })
@@ -2230,7 +2356,13 @@ class WorkflowEngine:
         )
 
         # 8. Record Activity ACT_TENANCY_ACTIVATED
-        act_notes = notes or f"تم إبرام وتفعيل عقد الإيجار {contract_number} للوحدة #{unit['unit_number']} بقيمة إيجارية {final_rent:,.2f} ريال."
+        act_notes = notes or (
+            f"تم إبرام وتفعيل عقد الإيجار {contract_number} للوحدة #{unit['unit_number']} "
+            f"بقيمة إيجارية {final_rent:,.2f} ريال سنوياً "
+            f"({len(installments) if installments else 1} دفعات - {payment_frequency or 'ANNUAL'}). "
+            f"الحساب البنكي: {bank_name or 'معتمد'} (IBAN: {bank_iban or 'مسجل'}). "
+            f"شروط الصيانة: {maintenance_terms[:80] + '...' if maintenance_terms and len(maintenance_terms) > 80 else (maintenance_terms or 'معيار إيجار الموحد')}."
+        )
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
             template_id="ACT_TENANCY_ACTIVATED",
@@ -2267,10 +2399,11 @@ class WorkflowEngine:
                 """
                 INSERT INTO contracts (
                     contract_id, reservation_id, contract_number, contract_type,
-                    start_date, end_date, contract_value, signed_at, status
-                ) VALUES ($1, NULL, $2, 'RENT', $3, $4, $5, $6, 'ACTIVE')
+                    start_date, end_date, contract_value, signed_at, status,
+                    lead_id, opportunity_id
+                ) VALUES ($1, NULL, $2, 'RENT', $3, $4, $5, $6, 'ACTIVE', $7, $8)
                 """,
-                linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt
+                linked_contract_id, contract_number, s_date, e_date, final_rent, now_dt, lead_id, opportunity_id
             )
 
         owner_name = await conn.fetchval(
@@ -2297,6 +2430,7 @@ class WorkflowEngine:
             metadata={
                 "contract_id": linked_contract_id,
                 "contract_number": contract_number,
+                "ejar_contract_number": ejar_contract_number or contract_number,
                 "contract_amount": final_rent,
                 "rent_price": final_rent,
                 "inquiry_type": "RENT",
@@ -2307,8 +2441,14 @@ class WorkflowEngine:
                 "owner_name": owner_name,
                 "start_date": s_date.isoformat(),
                 "end_date": e_date.isoformat(),
+                "first_due_date": f_due_date.isoformat(),
                 "payment_frequency": payment_frequency or "ANNUAL",
                 "deposit_amount": final_deposit,
+                "installments_count": len(installments) if installments else 1,
+                "bank_name": bank_name,
+                "bank_iban": bank_iban,
+                "bank_beneficiary": bank_beneficiary,
+                "maintenance_terms": maintenance_terms,
                 "signed_at": now_dt.isoformat()
             }
         )
@@ -2368,6 +2508,14 @@ class WorkflowEngine:
                 )
 
         # 9. Spawn Recurring Monitoring Task TASK_RENT_COLLECTION_MONITORING for Finance/Accountant
+        if installments and len(installments) > 1:
+            first_inst = installments[0]
+            mon_task_title = f"المالية — متابعة وتحصيل الدفعة 1 من {len(installments)} (عقد {contract_number} — {float(first_inst['amount_due']):,.2f} ر.س)"
+            mon_due_dt = datetime.combine(f_due_date, datetime.min.time(), tzinfo=timezone.utc)
+        else:
+            mon_task_title = f"المالية — متابعة وتحصيل دفعة الإيجار (عقد {contract_number} — {final_rent:,.2f} ر.س)"
+            mon_due_dt = datetime.combine(f_due_date, datetime.min.time(), tzinfo=timezone.utc)
+
         monitoring_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
             template_id="TASK_RENT_COLLECTION_MONITORING",
@@ -2376,10 +2524,28 @@ class WorkflowEngine:
             customer_id=tenant_customer_id,
             assigned_user_id=accountant_user_id,
             priority="NORMAL",
+            custom_title=mon_task_title,
+            custom_due_at=mon_due_dt,
             parent_task_id=parent_task_id
         )
 
-        # 10. Update Lead and Opportunity to WON
+        # 10. Automatically Generate Saudi Statutory Invoices (Brokerage 2.5% + 15% VAT on Tenant & Ejar Platform Fee on Owner)
+        try:
+            await WorkflowEngine.generate_saudi_fee_invoices(
+                conn=conn,
+                opportunity_id=opportunity_id,
+                lead_id=lead_id,
+                unit_id=unit_id,
+                contract_id=linked_contract_id,
+                transaction_type="RENT",
+                deal_value=final_rent,
+                security_deposit=deposit_amt,
+                user_id=effective_user_id
+            )
+        except Exception as ex_fees:
+            logger.warning(f"Error auto-generating Saudi fee invoices during tenancy execution: {ex_fees}")
+
+        # 11. Update Lead and Opportunity to WON
         if opportunity_id:
             await conn.execute(
                 "UPDATE opportunities SET stage = 'WON', updated_at = NOW() WHERE opportunity_id = $1",
@@ -2398,12 +2564,18 @@ class WorkflowEngine:
                 "unit_id": unit_id,
                 "tenant_customer_id": tenant_customer_id,
                 "contract_number": contract_number,
+                "ejar_contract_number": ejar_contract_number or contract_number,
                 "start_date": s_date,
                 "end_date": e_date,
                 "rent_amount": final_rent,
                 "payment_frequency": payment_frequency or "ANNUAL",
                 "deposit_amount": final_deposit,
-                "status": "ACTIVE"
+                "status": "ACTIVE",
+                "bank_name": bank_name,
+                "bank_iban": bank_iban,
+                "bank_beneficiary": bank_beneficiary,
+                "maintenance_terms": maintenance_terms,
+                "notes": notes
             },
             "unit_number": unit["unit_number"],
             "tenant_name": tenant_name,
@@ -2650,10 +2822,35 @@ class WorkflowEngine:
         if not res:
             raise ValueError(f"Reservation '{reservation_id}' not found.")
 
+        # Extract or generate receipt number
+        receipt_num = None
+        if notes:
+            import re
+            m = re.search(r'RV-[0-9\-]+', notes)
+            if m:
+                receipt_num = m.group(0)
+        if not receipt_num:
+            cnt = await conn.fetchval("SELECT count(*) + 1 FROM activities WHERE outcome = 'DEPOSIT_VERIFIED'")
+            receipt_num = f"RV-{now_dt.year}-{cnt:04d}"
+
         await conn.execute(
-            "UPDATE reservations SET status = 'CONFIRMED' WHERE reservation_id = $1",
-            reservation_id
+            """
+            UPDATE reservations 
+            SET status = 'CONFIRMED',
+                payment_method = $1,
+                payment_ref = $2,
+                receipt_number = COALESCE(receipt_number, $3),
+                deposit_paid_at = COALESCE(deposit_paid_at, $4)
+            WHERE reservation_id = $5
+            """,
+            payment_method, payment_ref, receipt_num, now_dt, reservation_id
         )
+
+        if res["opportunity_id"]:
+            await conn.execute(
+                "UPDATE opportunities SET stage = 'CONTRACT', updated_at = NOW() WHERE opportunity_id = $1",
+                res["opportunity_id"]
+            )
 
         agent_id = user_id or res["assigned_user_id"]
         v_notes = notes or f"تم التحقق من استلام العربون بمبلغ {amount_received:,.2f} ريال عبر {payment_method} (مرجع: {payment_ref or 'مؤكد'})."
@@ -4259,7 +4456,8 @@ class WorkflowEngine:
                     user_id=user_id,
                     outcome=outcome,
                     feedback_notes=notes or v_data.get("location_notes"),
-                    offer_amount=v_data.get("offer_amount")
+                    offer_amount=v_data.get("offer_amount"),
+                    selected_unit_id=v_data.get("unit_id") or v_data.get("selected_unit_id")
                 )
             except Exception:
                 await conn.execute(
@@ -4412,6 +4610,135 @@ class WorkflowEngine:
                 "activity": res["activity"],
                 "business_transition": res
             }
+
+        if tmpl_id == "TASK_SALE_NEGOTIATE_CONCESSIONS":
+            v_data = viewing_data or {}
+            final_price = v_data.get("negotiated_price") or v_data.get("offer_amount") or v_data.get("purchase_price")
+            opp_id = task["opportunity_id"]
+            agent_id = task["assigned_user_id"] or user_id
+            norm_outcome = (outcome or "").strip().upper()
+
+            if norm_outcome in ("CONCESSION_AGREED", "AGREED", "ACCEPTED"):
+                if final_price and opp_id:
+                    await conn.execute(
+                        "UPDATE opportunities SET expected_value = $1, stage = 'NEGOTIATION', updated_at = NOW() WHERE opportunity_id = $2",
+                        float(final_price), opp_id
+                    )
+                if opp_id:
+                    latest_offer_id = await conn.fetchval(
+                        "SELECT offer_id FROM offers WHERE opportunity_id = $1 ORDER BY submitted_at DESC LIMIT 1",
+                        opp_id
+                    )
+                    if latest_offer_id:
+                        if final_price:
+                            await conn.execute(
+                                "UPDATE offers SET status = 'ACCEPTED', offer_amount = $1 WHERE offer_id = $2",
+                                float(final_price), latest_offer_id
+                            )
+                        else:
+                            await conn.execute(
+                                "UPDATE offers SET status = 'ACCEPTED' WHERE offer_id = $1",
+                                latest_offer_id
+                            )
+
+                db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_SALE_NEGOTIATE_CONCESSIONS", outcome="AGREED")
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id=db_next_tmpl or "TASK_RESERVATION_VERIFY_AVAILABILITY",
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    customer_id=task["customer_id"],
+                    assigned_user_id=agent_id,
+                    priority="URGENT",
+                    custom_due_at=now_dt + timedelta(hours=2),
+                    parent_task_id=task_id
+                )
+                act_notes = notes or (f"تم اعتماد الاتفاق السعري النهائي بمبلغ {float(final_price):,.2f} ريال وشروط السداد، والانتقال لإجراءات الحجز الفني وقفل الوحدة." if final_price else "تم اعتماد الاتفاق السعري وشروط السداد، والانتقال لإجراءات الحجز الفني وقفل الوحدة.")
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_OFFER_DECISION",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    task_id=task_id,
+                    outcome="CONCESSION_AGREED",
+                    notes=act_notes,
+                    completed_at=now_dt
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"opportunity_id": opp_id, "next_task": next_task, "stage": "NEGOTIATION"}
+                }
+
+            elif norm_outcome in ("COUNTER_PREPARED", "REVISE_OFFER"):
+                db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_SALE_NEGOTIATE_CONCESSIONS", outcome="COUNTER_PREPARED")
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id=db_next_tmpl or "TASK_OFFER_PREPARE",
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    customer_id=task["customer_id"],
+                    assigned_user_id=agent_id,
+                    priority="HIGH",
+                    custom_due_at=now_dt + timedelta(hours=12),
+                    parent_task_id=task_id
+                )
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_OFFER_DECISION",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    task_id=task_id,
+                    outcome="COUNTER_PREPARED",
+                    notes=notes or "طلب إعداد وتجهيز مسودة عرض رسمي محدث وفق شروط التفاوض.",
+                    completed_at=now_dt
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"opportunity_id": opp_id, "next_task": next_task}
+                }
+
+            elif norm_outcome in ("FAILED", "REJECTED"):
+                db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_SALE_NEGOTIATE_CONCESSIONS", outcome="FAILED")
+                next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id=db_next_tmpl or "TASK_OPPORTUNITY_MATCH_PROPERTIES",
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    customer_id=task["customer_id"],
+                    assigned_user_id=agent_id,
+                    priority="NORMAL",
+                    custom_due_at=now_dt + timedelta(hours=24),
+                    parent_task_id=task_id
+                )
+                activity = await WorkflowEngine.record_activity_from_template(
+                    conn=conn,
+                    template_id="ACT_OFFER_DECISION",
+                    user_id=user_id,
+                    customer_id=task["customer_id"],
+                    lead_id=task["lead_id"],
+                    opportunity_id=opp_id,
+                    task_id=task_id,
+                    outcome="FAILED",
+                    notes=notes or "تعثر التفاوض على السعر مع المالك، والعودة لمطابقة عقارات بديلة للعميل.",
+                    completed_at=now_dt
+                )
+                return {
+                    "task_id": task_id,
+                    "status": "COMPLETED",
+                    "completed_at": now_dt.isoformat(),
+                    "activity": activity,
+                    "business_transition": {"opportunity_id": opp_id, "next_task": next_task}
+                }
 
         # 6. Stage F Handling: Reservation & Financial Coordination
         if tmpl_id == "TASK_RESERVATION_VERIFY_AVAILABILITY":
@@ -4912,7 +5239,14 @@ class WorkflowEngine:
                 freq = v_data.get("payment_frequency") or "ANNUAL"
                 dep = float(v_data.get("deposit_amount") or 0.0)
                 inst_cnt = int(v_data.get("installments_count") or 1)
-                c_num = v_data.get("contract_number")
+                c_num = v_data.get("contract_number") or v_data.get("ejar_contract_number")
+                f_due_date = v_data.get("first_due_date")
+                b_name = v_data.get("bank_name")
+                b_iban = v_data.get("bank_iban")
+                b_beneficiary = v_data.get("bank_beneficiary")
+                m_terms = v_data.get("maintenance_terms")
+                ejar_num = v_data.get("ejar_contract_number") or c_num
+                rent_notes = v_data.get("notes") or notes
 
                 res = await WorkflowEngine.execute_tenancy_agreement(
                     conn=conn,
@@ -4930,7 +5264,13 @@ class WorkflowEngine:
                     generate_installments=True,
                     installments_count=inst_cnt,
                     parent_task_id=task_id,
-                    notes=notes
+                    notes=rent_notes,
+                    first_due_date=f_due_date,
+                    bank_name=b_name,
+                    bank_iban=b_iban,
+                    bank_beneficiary=b_beneficiary,
+                    maintenance_terms=m_terms,
+                    ejar_contract_number=ejar_num
                 )
                 return {
                     "task_id": task_id,
@@ -4972,6 +5312,186 @@ class WorkflowEngine:
 
         # Rental Pipeline Handling: TASK_RENT_COLLECTION_MONITORING
         if tmpl_id == "TASK_RENT_COLLECTION_MONITORING":
+            # Match tenancy by contract number from task title or notes, or via customer_id
+            c_num_match = re.search(r'(TEN-\d{4,6}-\d+)', (task.get("title") or "") + " " + (notes or ""))
+            matched_contract_number = c_num_match.group(1) if c_num_match else None
+
+            tenancy = None
+            if matched_contract_number:
+                tenancy = await conn.fetchrow(
+                    "SELECT t.*, u.unit_number FROM tenancies t JOIN units u ON t.unit_id = u.unit_id WHERE t.contract_number = $1 LIMIT 1",
+                    matched_contract_number
+                )
+            if not tenancy and task.get("customer_id"):
+                tenancy = await conn.fetchrow(
+                    """
+                    SELECT t.*, u.unit_number 
+                    FROM tenancies t 
+                    JOIN units u ON t.unit_id = u.unit_id 
+                    WHERE t.tenant_customer_id = $1 
+                    ORDER BY t.start_date DESC, t.tenancy_id DESC 
+                    LIMIT 1
+                    """,
+                    task["customer_id"]
+                )
+
+            all_installments = []
+            paid_installment = None
+            next_installment = None
+            spawned_next_task = None
+            installment_num = 1
+
+            if tenancy:
+                all_installments = await conn.fetch(
+                    """
+                    SELECT rent_collection_id, tenancy_id, due_date, amount_due, amount_paid, status, paid_at
+                    FROM rent_collections
+                    WHERE tenancy_id = $1
+                    ORDER BY due_date ASC, rent_collection_id ASC
+                    """,
+                    tenancy["tenancy_id"]
+                )
+                inst_match = re.search(r'الدفعة\s*(\d+)', (task.get("title") or "") + " " + (notes or ""))
+                target_inst_idx = int(inst_match.group(1)) if inst_match else None
+
+                target_inst = None
+                if target_inst_idx and 1 <= target_inst_idx <= len(all_installments):
+                    target_inst = all_installments[target_inst_idx - 1]
+                    installment_num = target_inst_idx
+                else:
+                    unpaid_list = [inst for inst in all_installments if inst["status"] != "PAID"]
+                    if unpaid_list:
+                        target_inst = unpaid_list[0]
+                        installment_num = all_installments.index(target_inst) + 1
+                    elif all_installments:
+                        target_inst = all_installments[0]
+                        installment_num = 1
+
+                if target_inst:
+                    if target_inst["status"] == "PAID":
+                        paid_installment = dict(target_inst)
+                    else:
+                        await conn.execute(
+                            """
+                            UPDATE rent_collections
+                            SET amount_paid = amount_due,
+                                paid_at = $1,
+                                status = 'PAID'
+                            WHERE rent_collection_id = $2
+                            """,
+                            now_dt, target_inst["rent_collection_id"]
+                        )
+                        paid_installment = dict(target_inst)
+                        paid_installment["amount_paid"] = target_inst["amount_due"]
+                        paid_installment["status"] = "PAID"
+                        paid_installment["paid_at"] = now_dt
+
+                    # Ensure official receipt voucher is archived
+                    doc_exists = await conn.fetchval(
+                        """
+                        SELECT document_id FROM documents 
+                        WHERE metadata->>'rent_collection_id' = $1 
+                           OR (metadata->>'contract_number' = $2 AND metadata->>'due_date' = $3::text)
+                        """,
+                        target_inst["rent_collection_id"], tenancy["contract_number"], str(target_inst["due_date"])
+                    )
+                    if not doc_exists:
+                        receipt_no = f"REC-{now_dt.strftime('%Y%m')}-{target_inst['rent_collection_id'].replace('rent_collection-', '')}"
+                        file_name = f"سند_قبض_إيجار_{tenancy['contract_number']}_{target_inst['rent_collection_id']}.pdf"
+                        inst_label = f"الدفعة {installment_num} من {len(all_installments)}"
+                        await WorkflowEngine.archive_workflow_document(
+                            conn=conn,
+                            doc_type_code="PAYMENT_RECEIPT",
+                            file_name=file_name,
+                            lead_id=lead_id,
+                            opportunity_id=task.get("opportunity_id"),
+                            task_id=task_id,
+                            unit_id=tenancy.get("unit_id"),
+                            customer_id=task.get("customer_id") or tenancy.get("tenant_customer_id"),
+                            contract_id=tenancy.get("contract_id"),
+                            notes=f"سند قبض إلكتروني رسمي للدفعة الإيجارية ({inst_label}) للعقد {tenancy['contract_number']} بمبلغ {float(target_inst['amount_due']):,.2f} ر.س.",
+                            metadata={
+                                "doc_type": "PAYMENT_RECEIPT",
+                                "receipt_number": receipt_no,
+                                "rent_collection_id": target_inst["rent_collection_id"],
+                                "tenancy_id": tenancy["tenancy_id"],
+                                "contract_number": tenancy["contract_number"],
+                                "contract_id": tenancy.get("contract_id"),
+                                "unit_id": tenancy.get("unit_id"),
+                                "unit_number": tenancy.get("unit_number"),
+                                "customer_id": task.get("customer_id") or tenancy.get("tenant_customer_id"),
+                                "tenant_name": task.get("customer_name") or "المستأجر",
+                                "owner_name": tenancy.get("bank_beneficiary") or "المؤجر / مالك العقار",
+                                "bank_name": tenancy.get("bank_name") or "مصرف الراجحي",
+                                "bank_iban": tenancy.get("bank_iban") or "SA0380000000608010167890",
+                                "installment_label": inst_label,
+                                "due_date": target_inst["due_date"].isoformat() if target_inst["due_date"] else None,
+                                "amount_due": float(target_inst["amount_due"]),
+                                "amount_paid": float(target_inst["amount_due"]),
+                                "total_paid": float(target_inst["amount_due"]),
+                                "remaining_balance": 0.0,
+                                "payment_method": "EJAR_ONLINE",
+                                "payment_reference": f"EJR-{target_inst['rent_collection_id'].replace('rent_collection-', '')}",
+                                "paid_at": now_dt.isoformat(),
+                                "payment_date": now_dt.isoformat(),
+                                "notes": f"سداد الدفعة الإيجارية ({inst_label}) للعقد {tenancy['contract_number']}"
+                            },
+                            user_id=user_id
+                        )
+
+                    # If another installment exists in schedule, spawn a monitoring task for it (e.g. 6 months later)
+                    if installment_num < len(all_installments):
+                        next_installment = all_installments[installment_num]
+                        next_idx = installment_num + 1
+                        total_cnt = len(all_installments)
+                        existing_next_task = await conn.fetchval(
+                            """
+                            SELECT task_id FROM tasks 
+                            WHERE template_id = 'TASK_RENT_COLLECTION_MONITORING'
+                              AND (opportunity_id = $1 OR lead_id = $2)
+                              AND title LIKE $3
+                            """,
+                            task.get("opportunity_id"), lead_id, f"%الدفعة {next_idx}%"
+                        )
+                        if not existing_next_task:
+                            next_task_title = (
+                                f"المالية — متابعة وتحصيل الدفعة {next_idx} من {total_cnt} "
+                                f"(عقد {tenancy['contract_number']} — {float(next_installment['amount_due']):,.2f} ر.س)"
+                            )
+                            next_due_dt = datetime.combine(next_installment["due_date"], datetime.min.time(), tzinfo=timezone.utc)
+                            accountant_user_id = await conn.fetchval(
+                                """
+                                SELECT u.user_id FROM users u
+                                JOIN user_roles ur ON u.user_id = ur.user_id
+                                JOIN roles r ON ur.role_id = r.role_id
+                                WHERE r.role_code = 'ACCOUNTANT'
+                                ORDER BY u.created_at ASC
+                                LIMIT 1
+                                """
+                            ) or task["assigned_user_id"] or "user-19"
+
+                            spawned_next_task, _ = await WorkflowEngine.spawn_task_from_template(
+                                conn=conn,
+                                template_id="TASK_RENT_COLLECTION_MONITORING",
+                                lead_id=lead_id,
+                                opportunity_id=task["opportunity_id"],
+                                customer_id=task["customer_id"],
+                                assigned_user_id=accountant_user_id,
+                                priority="NORMAL",
+                                custom_title=next_task_title,
+                                custom_due_at=next_due_dt,
+                                parent_task_id=task_id
+                            )
+
+            total_num = len(all_installments) if all_installments else 1
+            paid_amt = float(paid_installment["amount_due"]) if paid_installment else float(tenancy["rent_amount"] if tenancy else 0.0)
+
+            act_desc = notes or (
+                f"تم تأكيد تحصيل دفعة الإيجار (الدفعة {installment_num} من {total_num}) بمبلغ {paid_amt:,.2f} ر.س "
+                f"لعقد الإيجار {tenancy['contract_number'] if tenancy else ''} (وحدة #{tenancy['unit_number'] if tenancy else ''})."
+                + (f" تم جدولة مهمة تحصيل الدفعة القادمة المستحقة بتاريخ {next_installment['due_date']}." if next_installment else " اكتمل سداد كافة دفعات العقد بنجاح.")
+            )
+
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_RENT_PAYMENT_COLLECTED",
@@ -4980,8 +5500,8 @@ class WorkflowEngine:
                 lead_id=lead_id,
                 opportunity_id=task["opportunity_id"],
                 task_id=task_id,
-                outcome=outcome,
-                notes=notes or "تمت مراجعة ومتابعة جدول دفعات الإيجار المستحقة.",
+                outcome=outcome or "COLLECTED",
+                notes=act_desc,
                 completed_at=now_dt
             )
             return {
@@ -4989,7 +5509,12 @@ class WorkflowEngine:
                 "status": "COMPLETED",
                 "completed_at": now_dt.isoformat(),
                 "activity": activity,
-                "business_transition": {"status": "MONITORED"}
+                "paid_installment": paid_installment,
+                "next_task": spawned_next_task,
+                "business_transition": {
+                    "status": "COLLECTED",
+                    "next_installment_due": next_installment["due_date"].isoformat() if next_installment else None
+                }
             }
 
         # =========================================================================
@@ -8283,9 +8808,9 @@ class WorkflowEngine:
         target_stage_code = "NEW"
         if opp_stage == "CLOSED_WON" or (contract_list and contract_list[0].get("status") in ("ACTIVE", "SIGNED", "COMPLETED")):
             target_stage_code = "CLOSED_WON"
-        elif opp_stage == "CONTRACT" or (res_list and res_list[0].get("deposit_status") == "VERIFIED"):
+        elif opp_stage == "CONTRACT" or (res_list and (res_list[0].get("status") in ("CONFIRMED", "CONVERTED", "PAID") or res_list[0].get("deposit_status") == "VERIFIED" or bool(res_list[0].get("deposit_paid_at")) or bool(res_list[0].get("receipt_number")))):
             target_stage_code = "CONTRACT"
-        elif opp_stage == "RESERVATION" or (res_list and res_list[0].get("status") == "ACTIVE"):
+        elif opp_stage == "RESERVATION" or (res_list and res_list[0].get("status") in ("ACTIVE", "PENDING")):
             target_stage_code = "RESERVATION"
         elif opp_stage in ("OFFER", "NEGOTIATION") or offer_list:
             target_stage_code = "OFFER"
@@ -8352,10 +8877,15 @@ class WorkflowEngine:
                 active_res = res_list[0]
                 res_no = active_res.get("reservation_number") or "--"
                 dep_val = float(active_res.get("deposit_amount") or 0)
+                is_res_paid = (active_res.get("status") in ("CONFIRMED", "CONVERTED", "PAID")) or bool(active_res.get("deposit_paid_at")) or bool(active_res.get("receipt_number"))
                 active_guidance["stage_name_ar"] = f"الحجز المالي والعربون (رقم الحجز: {res_no})"
                 active_guidance["stage_name_en"] = f"Unit Reservation & Deposit (Ref: {res_no})"
-                active_guidance["required_now_ar"] = f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة"
-                active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
+                if is_res_paid:
+                    active_guidance["required_now_ar"] = f"العربون ({dep_val:,.2f} ر.س) مسدد ومثبت بسند قبض، الحجز مؤكد وجاهز لصياغة العقد"
+                    active_guidance["required_now_en"] = f"Earnest deposit ({dep_val:,.2f} SAR) paid and verified; reservation confirmed"
+                else:
+                    active_guidance["required_now_ar"] = f"بانتظار سداد العربون ({dep_val:,.2f} ر.س) وتدقيق المحاسبة"
+                    active_guidance["required_now_en"] = f"Awaiting earnest deposit payment ({dep_val:,.2f} SAR) & accounting audit"
             for f in ("execution_steps_ar", "execution_steps_en"):
                 val = active_guidance.get(f)
                 while isinstance(val, str):

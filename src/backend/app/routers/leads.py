@@ -58,8 +58,10 @@ LEAD_SELECT_QUERY = """
         CAST(l.budget_max AS FLOAT) AS budget_max,
         l.preferred_city_id,
         ci.name_en AS preferred_city_name,
+        ci.name_ar AS preferred_city_name_ar,
         l.preferred_property_type_id,
         pt.name_en AS preferred_property_type_name,
+        pt.name_ar AS preferred_property_type_name_ar,
         l.bedrooms_min,
         CAST(l.area_min_sqm AS FLOAT) AS area_min_sqm,
         l.unit_id,
@@ -90,6 +92,7 @@ async def list_leads(
     priority: Optional[str] = None,
     inquiry_type: Optional[str] = None,
     assigned_user_id: Optional[str] = None,
+    branch_id: Optional[str] = None,
     customer_id: Optional[str] = None,
     search: Optional[str] = None,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
@@ -138,6 +141,11 @@ async def list_leads(
     elif scope_info["scope_type"] == "GLOBAL" and scope_info.get("organization_id"):
         conditions.append(f"l.organization_id = ${p_idx}")
         params.append(scope_info["organization_id"])
+        p_idx += 1
+
+    if scope_info["scope_type"] == "GLOBAL" and branch_id and branch_id.strip():
+        conditions.append(f"(l.branch_id = ${p_idx} OR l.assigned_user_id IN (SELECT user_id FROM users WHERE branch_id = ${p_idx}))")
+        params.append(branch_id.strip())
         p_idx += 1
 
     if customer_id and customer_id.strip():
@@ -836,4 +844,90 @@ async def add_lead_note(lead_id: str, payload: LeadNoteCreate, conn: asyncpg.Con
     """
     row = await conn.fetchrow(query, note_id)
     return ResponseEnvelope(data=LeadNoteOut(**dict(row)), meta=BaseMeta())
+
+
+@router.delete("/{lead_id}", response_model=ResponseEnvelope[dict])
+async def delete_lead(
+    lead_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Delete a lead and its dependent records (activities, tasks, lead_events, communications, lead_units, lead_notes).
+    Permissions:
+    - GENERAL_MANAGER, SYS_ADMIN, ADMIN: can delete any lead.
+    - BRANCH_MANAGER, SALES_MANAGER: can delete leads belonging to their branch.
+    - Other roles: 403 Forbidden.
+    """
+    lead = await conn.fetchrow(
+        "SELECT lead_id, branch_id, status FROM leads WHERE lead_id = $1",
+        lead_id
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود (Lead not found)")
+
+    target_user_id = x_user_id
+    if not target_user_id:
+        target_user = await conn.fetchrow("SELECT user_id FROM users WHERE user_id = 'user-51' AND status = 'ACTIVE' LIMIT 1")
+        if not target_user:
+            target_user = await conn.fetchrow("SELECT user_id FROM users WHERE status = 'ACTIVE' ORDER BY created_at LIMIT 1")
+        target_user_id = target_user["user_id"] if target_user else None
+
+    if not target_user_id:
+        raise HTTPException(status_code=401, detail="المستخدم غير معرّف")
+
+    user_row = await conn.fetchrow(
+        """
+        SELECT u.user_id, u.branch_id,
+               COALESCE(array_agg(r.role_code) FILTER (WHERE r.role_code IS NOT NULL), ARRAY[]::varchar[]) AS roles
+        FROM users u
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
+        WHERE u.user_id = $1
+        GROUP BY u.user_id, u.branch_id
+        """,
+        target_user_id
+    )
+    if not user_row:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+
+    roles = set(r.upper() for r in user_row["roles"])
+    is_gm_or_admin = bool(roles & {"GENERAL_MANAGER", "SYS_ADMIN", "ADMIN"})
+    is_branch_mgr = bool(roles & {"BRANCH_MANAGER", "SALES_MANAGER"})
+
+    if not is_gm_or_admin and not is_branch_mgr:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="عملية حذف الطلبات محصورة بمدراء الفروع والمدير العام فقط."
+        )
+
+    if is_branch_mgr and not is_gm_or_admin:
+        if lead["branch_id"] and user_row["branch_id"] and lead["branch_id"] != user_row["branch_id"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="لا تملك صلاحية حذف هذا الطلب، الحذف متاح فقط لطلبات فرعك."
+            )
+
+    opp_count = await conn.fetchval("SELECT count(*) FROM opportunities WHERE lead_id = $1", lead_id) or 0
+    inv_count = await conn.fetchval("SELECT count(*) FROM invoices WHERE lead_id = $1", lead_id) or 0
+    if opp_count > 0 or inv_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="لا يمكن حذف الطلب لوجود صفقات بيعية أو فواتير مالية مرتبطة به. يرجى إلغاء أو معالجة السجلات المرتبطة أولاً."
+        )
+
+    async with conn.transaction():
+        await conn.execute("DELETE FROM lead_events WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM lead_notes WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM lead_units WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM campaign_leads WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM communications WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM activities WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM tasks WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+
+    return ResponseEnvelope(
+        data={"deleted": True, "lead_id": lead_id},
+        message="تم حذف الطلب بنجاح"
+    )
 

@@ -137,6 +137,7 @@ class AgendaCalendarItem(BaseModel):
     priority: Optional[str] = None
     status: str
     status_label_ar: str
+    status_label_en: Optional[str] = None
     badge_color: str
     amount: Optional[float] = None
 
@@ -164,6 +165,7 @@ class FinancialScheduleItem(BaseModel):
     item_id: str
     category: str  # 'DEALS_LEADS', 'PROPERTY_MANAGEMENT', 'MARKETING'
     category_label_ar: str
+    category_label_en: Optional[str] = None
     item_type_code: str  # 'RESERVATION_DEPOSIT', 'INVOICE', 'RENT_COLLECTION', 'MAINTENANCE_ORDER', 'CAMPAIGN_BUDGET'
     item_type: Optional[str] = None  # Alias for item_type_code for frontend compatibility
     item_type_label_ar: str
@@ -181,6 +183,7 @@ class FinancialScheduleItem(BaseModel):
     amount_remaining: float
     collection_status: str  # 'COLLECTED', 'PENDING', 'OVERDUE', 'CANCELLED'
     collection_status_ar: str
+    collection_status_en: Optional[str] = None
     badge_color: str
     due_date: Optional[Any] = None
     collected_at: Optional[Any] = None
@@ -204,5 +207,81 @@ class FinancialScheduleResponse(BaseModel):
     summary: FinancialScheduleSummary
     scope_info: ScopeInfo
     items: List[FinancialScheduleItem]
+
+# =====================================================================
+# FINANCE & ACCOUNTING DASHBOARD SCHEMAS (لوحة التحكم المالية والمحاسبية)
+# =====================================================================
+class FinanceDashboardKPIs(BaseModel):
+    actual_collected_cash: float
+    pending_receivables: float
+    audited_araboun_amount: float
+    audited_araboun_count: int
+    brokerage_fees_invoiced: float
+    rental_inflows: float
+    vat_amount: float
+    rett_amount: float
+    payable_broker_commissions: float
+    disbursed_broker_commissions: float
+    overdue_collections_amount: float
+    overdue_collections_count: int
+
+class FinanceInvoiceItem(BaseModel):
+    invoice_id: str
+    invoice_number: str
+    invoice_type: str
+    payer_type: str
+    payer_name: Optional[str] = None
+    payer_mobile: Optional[str] = None
+    transaction_type: Optional[str] = None
+    subtotal: float
+    vat_amount: float
+    total_amount: float
+    amount_paid: float
+    status: str
+    due_date: Optional[str] = None
+    unit_number: Optional[str] = None
+    contract_number: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+
+class FinanceCommissionItem(BaseModel):
+    commission_id: str
+    contract_id: str
+    contract_number: Optional[str] = None
+    user_id: str
+    user_name: Optional[str] = None
+    amount: float
+    status: str
+    gross_deal_value: Optional[float] = 0.0
+    gross_brokerage_amount: Optional[float] = 0.0
+    net_commission_base: Optional[float] = 0.0
+    compensation_type: Optional[str] = None
+    calculation_notes: Optional[str] = None
+
+class FinancePaymentItem(BaseModel):
+    payment_id: str
+    contract_id: Optional[str] = None
+    contract_number: Optional[str] = None
+    customer_name: Optional[str] = None
+    payment_reference: Optional[str] = None
+    due_date: Optional[str] = None
+    amount_due: float
+    amount_paid: float
+    remaining_balance: float
+    method: Optional[str] = None
+    status: str
+    unit_number: Optional[str] = None
+
+class FinanceLedgersData(BaseModel):
+    invoices: List[FinanceInvoiceItem] = []
+    commissions: List[FinanceCommissionItem] = []
+    payments: List[FinancePaymentItem] = []
+
+class FinanceDashboardOut(BaseModel):
+    kpis: FinanceDashboardKPIs
+    scope_info: ScopeInfo
+    ledgers: FinanceLedgersData
+    live_pulse: List[LivePulseEvent]
+
 
 

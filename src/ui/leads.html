@@ -697,6 +697,23 @@
                                 <input type="text" id="lead-unit-filter-keyword" placeholder="Search..." oninput="filterLeadUnitsList()" onkeydown="if(event.key==='Enter'){event.preventDefault(); filterLeadUnitsList();}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
                             </div>
                             <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_city">City</label>
+                                <select id="lead-unit-filter-city" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                    <option value="" data-i18n="opt_any_city">-- All Cities --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_purpose">Listing Purpose</label>
+                                <select id="lead-unit-filter-purpose" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
+                                    <option value="" data-i18n="opt_purpose_compatible">-- Compatible with Inquiry --</option>
+                                    <option value="SALE" data-i18n="opt_purpose_sale">Sale (SALE)</option>
+                                    <option value="RENT" data-i18n="opt_purpose_rent">Rent (RENT)</option>
+                                    <option value="INVESTMENT" data-i18n="opt_purpose_investment">Investment (INVESTMENT)</option>
+                                    <option value="ALL" data-i18n="opt_purpose_all">Multi-purpose (ALL)</option>
+                                    <option value="ANY" data-i18n="opt_purpose_any">-- Any Purpose --</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);" data-i18n="lbl_unit_search_type">Property Type</label>
                                 <select id="lead-unit-filter-type" onchange="filterLeadUnitsList()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em;">
                                     <option value="" data-i18n="opt_any_prop_type">-- All Types --</option>
@@ -752,9 +769,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm" onclick="closeEditLeadModal()" data-i18n="btn_cancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_changes">Save Changes</button>
+                <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <button type="button" id="btn-edit-delete-lead" class="btn btn-sm" onclick="deleteCurrentEditingLead()" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; display: none;">
+                            🗑️ <span data-i18n="btn_delete_lead">حذف الطلب (Delete Lead)</span>
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-sm" onclick="closeEditLeadModal()" data-i18n="btn_cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_changes">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -951,9 +975,18 @@
                 btn_automatch_criteria: "Auto-Match Lead Criteria",
                 btn_reset_filters: "Reset Filters",
                 lbl_unit_search_kw: "Keyword / Unit # / Project",
+                lbl_unit_search_city: "City",
+                lbl_unit_search_purpose: "Listing Purpose",
                 lbl_unit_search_type: "Property Type",
                 lbl_unit_search_beds: "Bedrooms (Min)",
                 lbl_unit_search_maxprice: "Max Price (SAR)",
+                opt_any_city: "-- All Cities --",
+                opt_purpose_compatible: "-- Compatible with Inquiry --",
+                opt_purpose_sale: "Sale (SALE)",
+                opt_purpose_rent: "Rent (RENT)",
+                opt_purpose_investment: "Investment (INVESTMENT)",
+                opt_purpose_all: "Multi-purpose (ALL)",
+                opt_purpose_any: "-- Any Purpose --",
                 lbl_matching_units: "Select Matching Unit:",
                 btn_attach_unit: "Attach Unit",
                 btn_remove_unit: "Unlink",
@@ -1061,9 +1094,18 @@
                 btn_automatch_criteria: "مطابقة تلقائية لطلب العميل",
                 btn_reset_filters: "إلغاء الفلاتر",
                 lbl_unit_search_kw: "بحث بالرقم / المشروع / المبنى",
+                lbl_unit_search_city: "المدينة",
+                lbl_unit_search_purpose: "غرض الوحدة / نوع الطرح",
                 lbl_unit_search_type: "نوع العقار",
                 lbl_unit_search_beds: "عدد الغرف الأدنى",
                 lbl_unit_search_maxprice: "أقصى سعر / ميزانية (ريال)",
+                opt_any_city: "-- كافة المدن --",
+                opt_purpose_compatible: "-- المتوافق تلقائياً مع العملية --",
+                opt_purpose_sale: "بيع (SALE)",
+                opt_purpose_rent: "إيجار (RENT)",
+                opt_purpose_investment: "استثمار (INVESTMENT)",
+                opt_purpose_all: "شامل لكافة الأغراض (ALL)",
+                opt_purpose_any: "-- أي طرح دون استثناء --",
                 lbl_matching_units: "اختر الوحدة المطابقة من المخزون:",
                 btn_attach_unit: "ربط الوحدة بالطلب",
                 btn_remove_unit: "إلغاء الربط",
@@ -1241,6 +1283,12 @@
                 editCity.innerHTML = cityOpts;
                 if (cur) editCity.value = cur;
             }
+            const unitFilterCity = document.getElementById('lead-unit-filter-city');
+            if (unitFilterCity) {
+                const cur = unitFilterCity.value;
+                unitFilterCity.innerHTML = cityOpts;
+                if (cur) unitFilterCity.value = cur;
+            }
 
             // Property Types
             const ptDefault = isAr ? '-- أي نوع عقار --' : '-- Any Property Type --';
@@ -1298,49 +1346,54 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
                 const cur = filterUser.value || urlAgent || '';
+                const isAr = currentLang === 'ar';
 
-                const gmUsers = [];
-                const bmUsers = [];
-                const salesAgents = [];
-                const otherStaff = [];
+                // Resolve current user profile & role
+                const currentUser = (window.getCurrentUserProfile && window.getCurrentUserProfile()) || {};
+                let currentRoles = (currentUser.roles || []).map(r => (typeof r === 'string' ? r : (r.role_code || r.name || '')).toUpperCase());
+                if (currentUser.role_codes && Array.isArray(currentUser.role_codes)) {
+                    currentRoles = currentRoles.concat(currentUser.role_codes.map(rc => rc.toUpperCase()));
+                }
+                const isGM = currentRoles.some(r => ['SYS_ADMIN', 'ADMIN', 'GENERAL_MANAGER', 'AUDITOR'].includes(r));
+                const isBM = currentRoles.some(r => ['BRANCH_MANAGER', 'SALES_MANAGER'].includes(r));
 
-                refUsers.forEach(u => {
-                    const rCode = (u.role_code || (u.roles && u.roles[0]?.role_code) || '').toUpperCase();
-                    if (rCode === 'SYS_ADMIN' || rCode === 'GENERAL_MANAGER') {
-                        gmUsers.push(u);
-                    } else if (rCode === 'SALES_MANAGER' || rCode === 'BRANCH_MANAGER') {
-                        bmUsers.push(u);
-                    } else if (rCode === 'SALES_AGENT' || rCode === 'LEASING_AGENT') {
-                        salesAgents.push(u);
-                    } else {
-                        otherStaff.push(u);
+                let usersToShow = refUsers;
+                // If branch manager and not GM: show only brokers in their branch
+                if (isBM && !isGM && currentUser.branch_id) {
+                    usersToShow = refUsers.filter(u => u.branch_id === currentUser.branch_id);
+                }
+
+                let html = `<option value="">${isAr ? '🌐 جميع الوسطاء' : '🌐 All Agents'}</option>`;
+
+                if (isBM && !isGM && currentUser.branch_id) {
+                    // For Branch Manager: show branch brokers only
+                    const branchName = currentUser.branch_name || (usersToShow[0]?.branch_name) || (isAr ? 'الفرع' : 'Branch');
+                    html += `<optgroup label="🏢 ${branchName} (${isAr ? 'وسطاء الفرع فقط' : 'Branch Brokers Only'})">`;
+                    html += usersToShow.map(u => {
+                        const rTitle = isAr ? (u.role_titles_ar || '') : (u.role_names_en?.join(', ') || '');
+                        const rSuffix = rTitle ? ` - ${rTitle}` : '';
+                        return `<option value="${u.user_id}">👤 ${u.full_name}${rSuffix}</option>`;
+                    }).join('');
+                    html += `</optgroup>`;
+                } else {
+                    // For General Manager & staff under GM: show all brokers, grouped and sorted by branch
+                    const branchGroups = {};
+                    usersToShow.forEach(u => {
+                        const bName = u.branch_name || (isAr ? 'الإدارة العامة والمركز الرئيسي' : 'Headquarters / Corporate Office');
+                        if (!branchGroups[bName]) branchGroups[bName] = [];
+                        branchGroups[bName].push(u);
+                    });
+
+                    const sortedBranches = Object.keys(branchGroups).sort((a, b) => a.localeCompare(b, isAr ? 'ar' : 'en'));
+                    for (const bName of sortedBranches) {
+                        html += `<optgroup label="🏢 ${bName}">`;
+                        html += branchGroups[bName].map(u => {
+                            const rTitle = isAr ? (u.role_titles_ar || '') : (u.role_names_en?.join(', ') || '');
+                            const rSuffix = rTitle ? ` - ${rTitle}` : '';
+                            return `<option value="${u.user_id}">👤 ${u.full_name}${rSuffix}</option>`;
+                        }).join('');
+                        html += `</optgroup>`;
                     }
-                });
-
-                let html = `<option value="">${isAr ? '🌐 جميع الوسطاء والفروع' : '🌐 All Agents & Branches'}</option>`;
-
-                if (gmUsers.length > 0) {
-                    html += `<optgroup label="${isAr ? 'الإدارة العامة' : 'General Management'}">`;
-                    html += gmUsers.map(u => `<option value="${u.user_id}">🌐 ${u.full_name} (${isAr ? 'المدير العام' : 'General Manager'})</option>`).join('');
-                    html += `</optgroup>`;
-                }
-
-                if (bmUsers.length > 0) {
-                    html += `<optgroup label="${isAr ? 'مدراء الفروع' : 'Branch Managers'}">`;
-                    html += bmUsers.map(u => `<option value="${u.user_id}">🏢 ${u.full_name} (${isAr ? 'مدير فرع' : 'Branch Manager'}${u.branch_name ? ' - ' + u.branch_name : ''})</option>`).join('');
-                    html += `</optgroup>`;
-                }
-
-                if (salesAgents.length > 0) {
-                    html += `<optgroup label="${isAr ? 'وسطاء المبيعات والتأجير' : 'Sales & Leasing Agents'}">`;
-                    html += salesAgents.map(u => `<option value="${u.user_id}">👤 ${u.full_name}${u.branch_name ? ' (' + u.branch_name + ')' : ''}</option>`).join('');
-                    html += `</optgroup>`;
-                }
-
-                if (otherStaff.length > 0) {
-                    html += `<optgroup label="${isAr ? 'الكادر التشغيلي' : 'Operations & Support'}">`;
-                    html += otherStaff.map(u => `<option value="${u.user_id}">👤 ${u.full_name}</option>`).join('');
-                    html += `</optgroup>`;
                 }
 
                 filterUser.innerHTML = html;
@@ -1668,7 +1721,9 @@
                     return;
                 }
 
+                const roleInfo = getLeadUserRoleInfo();
                 tbody.innerHTML = leads.map(l => {
+                    const canDelRow = roleInfo.isGM || (roleInfo.isBM && (!l.branch_id || !roleInfo.branchId || l.branch_id === roleInfo.branchId));
                     const bMin = l.budget_min != null ? Number(l.budget_min) : null;
                     const bMax = l.budget_max != null ? Number(l.budget_max) : null;
                     let budget = '--';
@@ -1739,6 +1794,7 @@
                                 <div style="display: flex; gap: 4px; align-items: center;">
                                     <button class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey / مسار المعاملة">📍 ${currentLang === 'ar' ? 'مسار المعاملة' : 'Situation'}</button>
                                     <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details">✏️ ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                                    ${canDelRow ? `<button class="btn btn-sm" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 7px;" onclick="deleteLead('${l.lead_id}', '${(l.customer_name || l.lead_id).replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'حذف الطلب' : 'Delete Lead'}">🗑️</button>` : ''}
                                     ${l.status === 'NEW' 
                                         ? `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;" onclick="markContacted('${l.lead_id}')" title="Mark as Contacted (records first contact time)">📞 Contacted</button>` 
                                         : ''}
@@ -2344,6 +2400,8 @@
             const inq = (document.getElementById('edit-lead-inquiry')?.value || currentEditingLead?.inquiry_type || 'BUY').toUpperCase();
             const isInquiryRent = inq === 'RENT';
             const kw = (document.getElementById('lead-unit-filter-keyword')?.value || '').toLowerCase().trim();
+            const cityId = document.getElementById('lead-unit-filter-city')?.value || '';
+            const purposeVal = document.getElementById('lead-unit-filter-purpose')?.value || '';
             const typeId = document.getElementById('lead-unit-filter-type')?.value || '';
             const minBeds = document.getElementById('lead-unit-filter-beds')?.value;
             const maxPrice = parseFloat(document.getElementById('lead-unit-filter-maxprice')?.value) || 0;
@@ -2353,6 +2411,46 @@
                 if (st === 'SOLD' || st === 'RENTED') return false;
                 const isAlreadySelected = selectedUnitsForLead.some(su => su.unit_id === u.unit_id);
                 if (st === 'RESERVED' && !isAlreadySelected) return false;
+
+                // 1. City Filter
+                if (cityId) {
+                    if (u.city_id !== cityId) {
+                        const selCity = refCities.find(c => c.city_id === cityId);
+                        const targetCityAr = (selCity?.name_ar || '').toLowerCase();
+                        const targetCityEn = (selCity?.name_en || '').toLowerCase();
+                        const uCityAr = (u.city_name_ar || '').toLowerCase();
+                        const uCityEn = (u.city_name_en || '').toLowerCase();
+                        if (!targetCityAr || (!uCityAr.includes(targetCityAr) && !uCityEn.includes(targetCityEn))) {
+                            return false;
+                        }
+                    }
+                }
+
+                // 2. Listing Purpose Compatibility
+                const uPurpose = (u.listing_purpose || 'ALL').toUpperCase();
+                if (purposeVal === 'ANY') {
+                    // No restriction
+                } else if (purposeVal && purposeVal !== '') {
+                    if (purposeVal === 'SALE') {
+                        if (uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    } else if (purposeVal === 'RENT') {
+                        if (uPurpose !== 'RENT' && uPurpose !== 'ALL') return false;
+                    } else if (purposeVal === 'INVESTMENT') {
+                        if (uPurpose !== 'INVESTMENT' && uPurpose !== 'ALL' && uPurpose !== 'SALE') return false;
+                    } else if (purposeVal === 'ALL') {
+                        if (uPurpose !== 'ALL') return false;
+                    }
+                } else {
+                    // Automatic compatibility with inquiry_type
+                    if (isInquiryRent) {
+                        if (uPurpose !== 'RENT' && uPurpose !== 'ALL') return false;
+                    } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                        if (uPurpose !== 'INVESTMENT' && uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    } else {
+                        // BUY
+                        if (uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    }
+                }
 
                 if (typeId && u.property_type_id !== typeId) return false;
                 if (minBeds !== '' && minBeds !== undefined && u.bedrooms < parseInt(minBeds)) return false;
@@ -2367,7 +2465,9 @@
                     const matchPrjEn = (u.project_name_en || '').toLowerCase().includes(kw);
                     const matchPrjAr = (u.project_name_ar || '').toLowerCase().includes(kw);
                     const matchOwner = (u.owner_name || u.unit_owner_name || '').toLowerCase().includes(kw);
-                    if (!matchNum && !matchUid && !matchBld && !matchPrjEn && !matchPrjAr && !matchOwner) return false;
+                    const matchCityAr = (u.city_name_ar || '').toLowerCase().includes(kw);
+                    const matchCityEn = (u.city_name_en || '').toLowerCase().includes(kw);
+                    if (!matchNum && !matchUid && !matchBld && !matchPrjEn && !matchPrjAr && !matchOwner && !matchCityAr && !matchCityEn) return false;
                 }
                 return true;
             });
@@ -2386,7 +2486,7 @@
             if (!sel) return;
 
             if (filtered.length === 0) {
-                sel.innerHTML = `<option value="">-- ${isAr ? 'لا توجد وحدات مطابقة للمعايير' : 'No matching units found'} --</option>`;
+                sel.innerHTML = `<option value="">-- ${isAr ? 'لا توجد وحدات مطابقة للمعايير والمدينة ونوع العملية' : 'No matching units found'} --</option>`;
                 return;
             }
 
@@ -2396,48 +2496,73 @@
                     const isAlreadyAdded = selectedUnitsForLead.some(su => su.unit_id === u.unit_id);
                     const suffix = isAlreadyAdded ? ` [${isAr ? 'مضافة بالفعل' : 'Added'}]` : '';
 
+                    const city = isAr 
+                        ? (u.city_name_ar || u.city_name_en || u.city_name || (isAr ? 'غير محدد' : 'N/A'))
+                        : (u.city_name_en || u.city_name_ar || u.city_name || 'N/A');
+                    const cityTag = `[📍 ${city}]`;
+
+                    const purpVal = (u.listing_purpose || 'ALL').toUpperCase();
+                    let purpTag = `[${isAr ? 'طرح: شامل' : 'Purpose: ALL'}]`;
+                    if (purpVal === 'SALE') purpTag = `[${isAr ? 'طرح: بيع' : 'Purpose: SALE'}]`;
+                    else if (purpVal === 'RENT') purpTag = `[${isAr ? 'طرح: إيجار' : 'Purpose: RENT'}]`;
+                    else if (purpVal === 'INVESTMENT') purpTag = `[${isAr ? 'طرح: استثماري' : 'Purpose: INVEST'}]`;
+
                     if (inq === 'RENT') {
                         const rentPrice = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : (isAr ? 'غير محدد' : 'N/A');
-                        return `<option value="${u.unit_id}">[${u.unit_id}] #${u.unit_number} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'إيجار:' : 'Rent:'} ${rentPrice} | ${u.bedrooms || 0} Beds [${u.status}]${suffix}</option>`;
+                        return `<option value="${u.unit_id}">${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'إيجار:' : 'Rent:'} ${rentPrice} | ${u.bedrooms || 0} Beds [${u.status}]${suffix}</option>`;
                     } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
                         const sellPrice = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : (isAr ? 'غير محدد' : 'N/A');
                         let roiStr = '';
                         if (u.asking_price && u.rent_price && u.asking_price > 0) {
                             roiStr = ` (ROI: ${((u.rent_price / u.asking_price) * 100).toFixed(1)}%)`;
                         }
-                        return `<option value="${u.unit_id}">[${u.unit_id}] #${u.unit_number} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'بيع استثماري:' : 'Sell:'} ${sellPrice}${roiStr} | ${u.area_sqm || '--'} m² [${u.status}]${suffix}</option>`;
+                        return `<option value="${u.unit_id}">${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'بيع استثماري:' : 'Sell:'} ${sellPrice}${roiStr} | ${u.area_sqm || '--'} m² [${u.status}]${suffix}</option>`;
                     } else {
                         // BUY
                         const buyPrice = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : (isAr ? 'غير محدد' : 'N/A');
-                        return `<option value="${u.unit_id}">[${u.unit_id}] #${u.unit_number} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'شراء:' : 'Buy:'} ${buyPrice} | ${u.bedrooms || 0} Beds [${u.status}]${suffix}</option>`;
+                        return `<option value="${u.unit_id}">${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${ownerName}) | ${isAr ? 'شراء:' : 'Buy:'} ${buyPrice} | ${u.bedrooms || 0} Beds [${u.status}]${suffix}</option>`;
                     }
                 }).join('');
         }
 
         function autoMatchLeadUnitCriteria() {
+            const editCity = document.getElementById('edit-lead-city')?.value;
+            const editInq = (document.getElementById('edit-lead-inquiry')?.value || 'BUY').toUpperCase();
             const editPt = document.getElementById('edit-lead-prop-type')?.value;
             const editBeds = document.getElementById('edit-lead-bedrooms')?.value;
             const editMaxPrice = document.getElementById('edit-lead-budget-max')?.value;
 
+            const filterCity = document.getElementById('lead-unit-filter-city');
+            const filterPurpose = document.getElementById('lead-unit-filter-purpose');
             const filterType = document.getElementById('lead-unit-filter-type');
             const filterBeds = document.getElementById('lead-unit-filter-beds');
             const filterMaxPrice = document.getElementById('lead-unit-filter-maxprice');
 
+            if (filterCity && editCity) filterCity.value = editCity;
+            if (filterPurpose) {
+                if (editInq === 'RENT') filterPurpose.value = 'RENT';
+                else if (editInq === 'INVESTMENT' || editInq === 'INVEST') filterPurpose.value = 'INVESTMENT';
+                else filterPurpose.value = 'SALE';
+            }
             if (filterType && editPt) filterType.value = editPt;
             if (filterBeds && editBeds) filterBeds.value = editBeds;
             if (filterMaxPrice && editMaxPrice) filterMaxPrice.value = editMaxPrice;
 
             filterLeadUnitsList();
-            showToast(currentLang === 'ar' ? 'تمت مطابقة معايير العميل وتصفية الوحدات المتوفرة!' : 'Auto-matched lead criteria against inventory!');
+            showToast(currentLang === 'ar' ? 'تمت مطابقة معايير العميل (المدينة، نوع العملية، نوع العقار والميزانية) وتصفية الوحدات المتوفرة!' : 'Auto-matched lead criteria (City, Inquiry Type, Property Type & Budget) against inventory!');
         }
 
         function resetLeadUnitSearchFilters() {
             const kw = document.getElementById('lead-unit-filter-keyword');
+            const city = document.getElementById('lead-unit-filter-city');
+            const purpose = document.getElementById('lead-unit-filter-purpose');
             const type = document.getElementById('lead-unit-filter-type');
             const beds = document.getElementById('lead-unit-filter-beds');
             const maxPrice = document.getElementById('lead-unit-filter-maxprice');
 
             if (kw) kw.value = '';
+            if (city) city.value = '';
+            if (purpose) purpose.value = 'ANY';
             if (type) type.value = '';
             if (beds) beds.value = '';
             if (maxPrice) maxPrice.value = '';
@@ -2516,6 +2641,72 @@
             showToast(currentLang === 'ar' ? 'تم إفراغ قائمة الوحدات' : 'All units cleared from shortlist');
         }
 
+        function getLeadUserRoleInfo() {
+            let roles = [];
+            let branchId = null;
+            let userId = localStorage.getItem('recrm_user_id') || 'user-51';
+            if (window.getCurrentUserProfile && window.getCurrentUserProfile()) {
+                const profile = window.getCurrentUserProfile();
+                userId = profile.user_id || userId;
+                branchId = profile.branch_id || null;
+                roles = (profile.roles || []).map(r => (typeof r === 'string' ? r : (r.role_code || r.name || '')).toUpperCase());
+                if (profile.role_codes && Array.isArray(profile.role_codes)) {
+                    roles = roles.concat(profile.role_codes.map(rc => rc.toUpperCase()));
+                }
+            }
+            const isGM = roles.some(r => ['GENERAL_MANAGER', 'SYS_ADMIN', 'ADMIN'].includes(r));
+            const isBM = roles.some(r => ['BRANCH_MANAGER', 'SALES_MANAGER'].includes(r));
+            return { isGM, isBM, branchId, userId };
+        }
+
+        async function deleteLead(leadId, custName) {
+            const roleInfo = getLeadUserRoleInfo();
+            if (!roleInfo.isGM && !roleInfo.isBM) {
+                alert(currentLang === 'ar' ? 'عملية حذف الطلبات محصورة بمدراء الفروع والمدير العام فقط.' : 'Deleting leads is restricted to Branch Managers and General Manager.');
+                return;
+            }
+
+            const isAr = currentLang === 'ar';
+            const confirmMsg = isAr
+                ? `هل أنت متأكد من حذف هذا الطلب نهائياً وكافة مهامه وأنشطته؟\n\nالطلب: ${leadId} (${custName || ''})\n\nتحذير: لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to permanently delete this lead and its activities/tasks?\n\nLead: ${leadId} (${custName || ''})\n\nWarning: This action cannot be undone.`;
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-User-ID': roleInfo.userId
+                    }
+                });
+                if (res.ok) {
+                    showToast(isAr ? 'تم حذف الطلب بنجاح' : 'Lead deleted successfully');
+                    closeEditLeadModal();
+                    fetchLeads(currentLeadsPage);
+                } else {
+                    let errDetail = 'Unknown error';
+                    try {
+                        const err = await res.json();
+                        errDetail = err.detail || (err.error && err.error.message) || JSON.stringify(err);
+                    } catch (_) {
+                        errDetail = await res.text();
+                    }
+                    alert(`${isAr ? 'فشل حذف الطلب: ' : 'Failed to delete lead: '} ${errDetail}`);
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        async function deleteCurrentEditingLead() {
+            const leadId = document.getElementById('edit-lead-id')?.value;
+            const custName = document.getElementById('edit-lead-cust-name')?.textContent || '';
+            if (leadId) {
+                await deleteLead(leadId, custName);
+            }
+        }
+
         async function openEditLeadModal(leadId) {
             if (!refDataLoaded) await initReferenceData();
             await loadInventoryUnitsIfNeeded();
@@ -2538,6 +2729,13 @@
             }
 
             currentEditingLead = lead;
+
+            const roleInfo = getLeadUserRoleInfo();
+            const delBtn = document.getElementById('btn-edit-delete-lead');
+            if (delBtn) {
+                const canDel = roleInfo.isGM || (roleInfo.isBM && (!lead.branch_id || !roleInfo.branchId || lead.branch_id === roleInfo.branchId));
+                delBtn.style.display = canDel ? 'inline-block' : 'none';
+            }
 
             const isAr = currentLang === 'ar';
             document.getElementById('edit-lead-id').value = lead.lead_id;
@@ -2595,6 +2793,17 @@
 
             // Populate filters and matching list
             populateReferenceSelects();
+            const filterCity = document.getElementById('lead-unit-filter-city');
+            if (filterCity && lead.preferred_city_id) {
+                filterCity.value = lead.preferred_city_id;
+            }
+            const filterPurpose = document.getElementById('lead-unit-filter-purpose');
+            if (filterPurpose) {
+                const inq = (lead.inquiry_type || 'BUY').toUpperCase();
+                if (inq === 'RENT') filterPurpose.value = 'RENT';
+                else if (inq === 'INVESTMENT' || inq === 'INVEST') filterPurpose.value = 'INVESTMENT';
+                else filterPurpose.value = 'SALE';
+            }
             const filterType = document.getElementById('lead-unit-filter-type');
             if (filterType && lead.preferred_property_type_id) {
                 filterType.value = lead.preferred_property_type_id;

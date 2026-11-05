@@ -1,7 +1,7 @@
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
+from typing import Optional, Any, Dict, Union, List
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class TasksSummaryOut(BaseModel):
     open_tasks: int
@@ -38,6 +38,8 @@ class TaskOut(BaseModel):
     opp_stage: Optional[str] = None
 
 class TaskCompleteIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     outcome: Optional[str] = "CONNECTED"
     notes: Optional[str] = None
     assigned_user_id: Optional[str] = None
@@ -58,14 +60,25 @@ class TaskCompleteIn(BaseModel):
     location_notes: Optional[str] = None
     feedback_rating: Optional[str] = None
     offer_amount: Optional[float] = None
+    # Stage E Offer & Negotiation fields
+    counter_amount: Optional[float] = None
+    negotiated_price: Optional[float] = None
+    payment_terms: Optional[str] = None
     # Rental agreement / tenancy fields
     rent_amount: Optional[float] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: Optional[Union[date, datetime, str]] = None
+    end_date: Optional[Union[date, datetime, str]] = None
+    first_due_date: Optional[Union[date, datetime, str]] = None
     payment_frequency: Optional[str] = "ANNUAL"
     deposit_amount: Optional[float] = None
     installments_count: Optional[int] = 1
     contract_number: Optional[str] = None
+    ejar_contract_number: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_iban: Optional[str] = None
+    bank_beneficiary: Optional[str] = None
+    maintenance_terms: Optional[str] = None
+    viewing_data: Optional[Dict[str, Any]] = None
     # Investment criteria, baseline & return fields
     target_yield_percent: Optional[float] = None
     investment_horizon_years: Optional[int] = None

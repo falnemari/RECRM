@@ -474,7 +474,17 @@ async def list_viewings(
         LEFT JOIN customers c ON v.customer_id = c.customer_id
         LEFT JOIN users ag ON v.agent_user_id = ag.user_id
         WHERE {where_clause}
-        ORDER BY v.scheduled_start DESC
+        ORDER BY 
+            CASE 
+                WHEN v.outcome = 'INTERESTED' THEN 1
+                WHEN v.outcome IN ('RECOMMENDED', 'ACCEPTED') THEN 2
+                WHEN v.outcome = 'SCHEDULED' THEN 3
+                WHEN v.outcome = 'REQUESTS_ANOTHER_VIEWING' THEN 4
+                WHEN v.outcome = 'NEEDS_ANOTHER_UNIT' THEN 5
+                WHEN v.outcome = 'REJECTED' THEN 6
+                ELSE 7
+            END ASC,
+            v.scheduled_start DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -621,7 +631,11 @@ RESERVATION_SELECT_QUERY = """
         ag.full_name AS assigned_agent_name,
         con.contract_id,
         con.contract_number,
-        CAST(con.contract_value AS FLOAT) AS contract_value
+        CAST(con.contract_value AS FLOAT) AS contract_value,
+        r.payment_method,
+        COALESCE(r.payment_ref, act_dep.payment_ref) AS payment_ref,
+        COALESCE(r.receipt_number, act_dep.receipt_number) AS receipt_number,
+        COALESCE(r.deposit_paid_at, act_dep.completed_at) AS deposit_paid_at
     FROM reservations r
     LEFT JOIN units u ON r.unit_id = u.unit_id
     LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
@@ -631,6 +645,16 @@ RESERVATION_SELECT_QUERY = """
     LEFT JOIN customers c ON r.customer_id = c.customer_id
     LEFT JOIN opportunities opp ON r.opportunity_id = opp.opportunity_id
     LEFT JOIN users ag ON opp.assigned_user_id = ag.user_id
+    LEFT JOIN (
+        SELECT DISTINCT ON (opportunity_id)
+            opportunity_id,
+            completed_at,
+            substring(description from 'RV-[0-9\\-]+') AS receipt_number,
+            substring(description from 'TXN-[0-9\\-]+') AS payment_ref
+        FROM activities
+        WHERE outcome = 'DEPOSIT_VERIFIED'
+        ORDER BY opportunity_id, completed_at DESC
+    ) act_dep ON r.opportunity_id = act_dep.opportunity_id
     LEFT JOIN (
         SELECT DISTINCT ON (opportunity_id)
             opportunity_id,
@@ -655,7 +679,7 @@ RESERVATION_SELECT_QUERY = """
 @router.get("/reservations", response_model=CollectionEnvelope[ReservationOut])
 async def list_reservations(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
+    page_size: int = Query(50, ge=1, le=1000),
     status_filter: Optional[str] = Query(None, alias="status"),
     reservation_id: Optional[str] = Query(None),
     opportunity_id: Optional[str] = None,
@@ -724,7 +748,7 @@ async def list_reservations(
     query = f"""
         {RESERVATION_SELECT_QUERY}
         WHERE {where_clause}
-        ORDER BY r.reserved_at DESC
+        ORDER BY CAST(substring(r.reservation_id from '[0-9]+') AS INTEGER) DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -1044,11 +1068,19 @@ async def list_opportunity_units(opp_id: str, conn: asyncpg.Connection = Depends
             u.bathrooms,
             CAST(u.area_sqm AS FLOAT) AS area_sqm,
             pt.name_ar AS property_type_name_ar,
-            pt.name_en AS property_type_name_en
+            pt.name_en AS property_type_name_en,
+            COALESCE(p_direct.city_id, p_bld.city_id) AS city_id,
+            c.name_ar AS city_name_ar,
+            c.name_en AS city_name_en,
+            COALESCE(u.listing_purpose, 'ALL') AS listing_purpose
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
         LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+        LEFT JOIN buildings b ON u.building_id = b.building_id
+        LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
+        LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
+        LEFT JOIN cities c ON COALESCE(p_direct.city_id, p_bld.city_id) = c.city_id
         WHERE ou.opportunity_id = $1
         ORDER BY ou.is_primary DESC, u.unit_number ASC
     """, opp_id)
@@ -1084,11 +1116,19 @@ async def add_opportunity_unit(opp_id: str, payload: OpportunityUnitCreateIn, co
             u.bathrooms,
             CAST(u.area_sqm AS FLOAT) AS area_sqm,
             pt.name_ar AS property_type_name_ar,
-            pt.name_en AS property_type_name_en
+            pt.name_en AS property_type_name_en,
+            COALESCE(p_direct.city_id, p_bld.city_id) AS city_id,
+            c.name_ar AS city_name_ar,
+            c.name_en AS city_name_en,
+            COALESCE(u.listing_purpose, 'ALL') AS listing_purpose
         FROM opportunity_units ou
         JOIN units u ON ou.unit_id = u.unit_id
         LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
         LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+        LEFT JOIN buildings b ON u.building_id = b.building_id
+        LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
+        LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
+        LEFT JOIN cities c ON COALESCE(p_direct.city_id, p_bld.city_id) = c.city_id
         WHERE ou.opportunity_id = $1 AND ou.unit_id = $2
     """, opp_id, payload.unit_id)
     return ResponseEnvelope(data=OpportunityUnitOut(**dict(row)), meta=BaseMeta())

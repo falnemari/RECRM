@@ -66,6 +66,23 @@ class DocumentCreateIn(BaseModel):
     uploaded_by_user_id: Optional[str] = None
     status: Optional[str] = "ACTIVE"
 
+class DocumentUpdateIn(BaseModel):
+    file_name: Optional[str] = None
+    document_type_id: Optional[str] = None
+    document_type_code: Optional[str] = None
+    customer_id: Optional[str] = None
+    unit_id: Optional[str] = None
+    contract_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
+    task_id: Optional[str] = None
+    notes: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    storage_uri: Optional[str] = None
+    issued_at: Optional[date] = None
+    expires_at: Optional[date] = None
+    status: Optional[str] = None
+
 class DocumentGenerateIn(BaseModel):
     document_type_code: str
     lead_id: Optional[str] = None

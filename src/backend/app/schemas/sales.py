@@ -111,6 +111,10 @@ class ReservationOut(BaseModel):
     contract_id: Optional[str] = None
     contract_number: Optional[str] = None
     contract_value: Optional[float] = None
+    payment_method: Optional[str] = None
+    payment_ref: Optional[str] = None
+    receipt_number: Optional[str] = None
+    deposit_paid_at: Optional[datetime] = None
 
 class OfferOut(BaseModel):
     offer_id: str
@@ -175,6 +179,10 @@ class OpportunityUnitOut(BaseModel):
     area_sqm: Optional[float] = None
     property_type_name_ar: Optional[str] = None
     property_type_name_en: Optional[str] = None
+    city_id: Optional[str] = None
+    city_name_ar: Optional[str] = None
+    city_name_en: Optional[str] = None
+    listing_purpose: Optional[str] = "ALL"
 
 class OpportunityUnitCreateIn(BaseModel):
     unit_id: str

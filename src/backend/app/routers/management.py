@@ -2,6 +2,7 @@ from typing import Optional, List
 from uuid import UUID, uuid4
 from datetime import datetime, date, timezone, timedelta
 import random
+import json
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 from fastapi.responses import HTMLResponse
 import asyncpg
@@ -193,7 +194,14 @@ async def create_tenancy(
                 opportunity_id=payload.opportunity_id,
                 user_id=x_user_id,
                 generate_installments=payload.generate_installments if payload.generate_installments is not None else True,
-                installments_count=payload.installments_count or 1
+                installments_count=payload.installments_count or 1,
+                notes=payload.notes,
+                first_due_date=payload.first_due_date,
+                bank_name=payload.bank_name,
+                bank_iban=payload.bank_iban,
+                bank_beneficiary=payload.bank_beneficiary,
+                maintenance_terms=payload.maintenance_terms,
+                ejar_contract_number=payload.ejar_contract_number
             )
             tenancy = res["tenancy"]
             if payload.ejar_contract_number or payload.contract_type or payload.security_deposit_status or payload.ejar_status:
@@ -262,19 +270,6 @@ async def get_tenancy_detail(tenancy_id: str, conn: asyncpg.Connection = Depends
         FROM tenancies t
         LEFT JOIN units u ON t.unit_id = u.unit_id
         LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
-            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name,
-            c.mobile AS tenant_mobile,
-            c.email AS tenant_email,
-            t.contract_number,
-            t.start_date,
-            t.end_date,
-            CAST(t.rent_amount AS FLOAT) AS rent_amount,
-            t.payment_frequency,
-            CAST(t.deposit_amount AS FLOAT) AS deposit_amount,
-            t.status
-        FROM tenancies t
-        LEFT JOIN units u ON t.unit_id = u.unit_id
-        LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
         WHERE t.tenancy_id = $1
         """,
         tenancy_id
@@ -299,9 +294,63 @@ async def get_tenancy_detail(tenancy_id: str, conn: asyncpg.Connection = Depends
         tenancy_id
     )
 
+    invoices = await conn.fetch(
+        """
+        SELECT 
+            inv.invoice_id,
+            inv.invoice_number,
+            inv.invoice_type,
+            inv.payer_type,
+            inv.payer_customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS payer_name,
+            c.mobile AS payer_mobile,
+            inv.opportunity_id,
+            inv.lead_id,
+            inv.contract_id,
+            inv.unit_id,
+            u.unit_number,
+            inv.transaction_type,
+            CAST(COALESCE(inv.subtotal, 0) AS FLOAT) AS subtotal,
+            CAST(COALESCE(inv.vat_rate, 0) AS FLOAT) AS vat_rate,
+            CAST(COALESCE(inv.vat_amount, 0) AS FLOAT) AS vat_amount,
+            CAST(COALESCE(inv.total_amount, 0) AS FLOAT) AS total_amount,
+            CAST(COALESCE(inv.amount_paid, 0) AS FLOAT) AS amount_paid,
+            inv.status,
+            inv.line_items,
+            inv.due_date,
+            inv.paid_at,
+            inv.payment_method,
+            inv.payment_reference,
+            inv.notes,
+            inv.created_at
+        FROM invoices inv
+        LEFT JOIN customers c ON inv.payer_customer_id = c.customer_id
+        LEFT JOIN units u ON inv.unit_id = u.unit_id
+        WHERE inv.unit_id = $1 OR inv.contract_id = $2 OR inv.contract_id = $3
+        ORDER BY inv.created_at ASC
+        """,
+        row["unit_id"],
+        row["tenancy_id"],
+        row["contract_number"]
+    )
+
+    parsed_invoices = []
+    for inv in invoices:
+        d = dict(inv)
+        items = d.get("line_items")
+        if isinstance(items, str):
+            try:
+                d["line_items"] = json.loads(items)
+            except Exception:
+                d["line_items"] = []
+        elif not isinstance(items, list):
+            d["line_items"] = []
+        parsed_invoices.append(d)
+
     return ResponseEnvelope(data={
         "tenancy": dict(row),
-        "collections": [dict(c) for c in collections]
+        "collections": [dict(c) for c in collections],
+        "invoices": parsed_invoices
     })
 
 @router.patch("/tenancies/{tenancy_id}", response_model=ResponseEnvelope[dict])
@@ -339,6 +388,8 @@ async def list_rent_collections(
     status_filter: Optional[str] = Query(None, alias="status"),
     tenancy_id: Optional[str] = None,
     collection_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
     search: Optional[str] = None,
     is_overdue: Optional[bool] = None,
     conn: asyncpg.Connection = Depends(get_db)
@@ -365,6 +416,16 @@ async def list_rent_collections(
         params.append(collection_id)
         p_idx += 1
 
+    if lead_id:
+        conditions.append(f"(t.lead_id = ${p_idx} OR opp.lead_id = ${p_idx})")
+        params.append(lead_id)
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"(t.opportunity_id = ${p_idx} OR opp.opportunity_id = ${p_idx})")
+        params.append(opportunity_id)
+        p_idx += 1
+
     if search:
         s = f"%{search.strip()}%"
         conditions.append(f"""(
@@ -387,6 +448,7 @@ async def list_rent_collections(
         SELECT count(*) 
         FROM rent_collections rc
         LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+        LEFT JOIN opportunities opp ON t.opportunity_id = opp.opportunity_id
         LEFT JOIN units u ON t.unit_id = u.unit_id
         LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
         WHERE {where_clause}
@@ -405,11 +467,26 @@ async def list_rent_collections(
             CAST(rc.amount_due AS FLOAT) AS amount_due,
             CAST(rc.amount_paid AS FLOAT) AS amount_paid,
             rc.paid_at,
-            rc.status
+            rc.status,
+            doc.document_id,
+            doc.payment_method,
+            doc.payment_reference
         FROM rent_collections rc
         LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
+        LEFT JOIN opportunities opp ON t.opportunity_id = opp.opportunity_id
         LEFT JOIN units u ON t.unit_id = u.unit_id
         LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
+        LEFT JOIN LATERAL (
+            SELECT 
+                d.document_id,
+                d.metadata->>'payment_method' AS payment_method,
+                d.metadata->>'payment_reference' AS payment_reference
+            FROM documents d
+            WHERE d.metadata->>'rent_collection_id' = rc.rent_collection_id
+               OR (d.metadata->>'contract_number' = t.contract_number AND d.metadata->>'due_date' = rc.due_date::text)
+            ORDER BY d.created_at DESC
+            LIMIT 1
+        ) doc ON true
         WHERE {where_clause}
         ORDER BY rc.due_date ASC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -479,12 +556,21 @@ async def record_rent_payment(
             CAST(rc.amount_due AS FLOAT) AS amount_due,
             CAST(rc.amount_paid AS FLOAT) AS amount_paid,
             rc.status,
-            t.contract_number, u.unit_number, t.tenant_customer_id,
-            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name
+            t.contract_number, t.unit_id, t.tenant_customer_id,
+            t.lead_id, t.opportunity_id,
+            t.bank_name, t.bank_iban, t.bank_beneficiary,
+            t.payment_frequency, t.rent_amount,
+            u.unit_number, u.owner_customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS tenant_name,
+            c.mobile AS tenant_mobile,
+            COALESCE(c_own.first_name || ' ' || c_own.last_name, c_own.company_name) AS owner_name,
+            con.contract_id
         FROM rent_collections rc
         LEFT JOIN tenancies t ON rc.tenancy_id = t.tenancy_id
         LEFT JOIN units u ON t.unit_id = u.unit_id
         LEFT JOIN customers c ON t.tenant_customer_id = c.customer_id
+        LEFT JOIN customers c_own ON u.owner_customer_id = c_own.customer_id
+        LEFT JOIN contracts con ON con.contract_number = t.contract_number
         WHERE rc.rent_collection_id = $1
         """,
         rent_collection_id
@@ -501,6 +587,40 @@ async def record_rent_payment(
 
     now = datetime.now(timezone.utc)
     new_status = "PAID" if new_paid >= rc["amount_due"] else "PARTIAL"
+    rem_balance = round(rc["amount_due"] - new_paid, 2)
+
+    # Determine installment index and total count
+    all_rcs = await conn.fetch(
+        "SELECT rent_collection_id FROM rent_collections WHERE tenancy_id = $1 ORDER BY due_date ASC, rent_collection_id ASC",
+        rc["tenancy_id"]
+    )
+    rc_ids = [r["rent_collection_id"] for r in all_rcs]
+    inst_idx = (rc_ids.index(rent_collection_id) + 1) if rent_collection_id in rc_ids else 1
+    inst_total = len(all_rcs) if all_rcs else 1
+    installment_label = f"الدفعة {inst_idx} من {inst_total}"
+
+    # Search for pending monitoring task for this deal / contract
+    task_id = await conn.fetchval(
+        """
+        SELECT task_id FROM tasks 
+        WHERE template_id = 'TASK_RENT_COLLECTION_MONITORING' 
+          AND status = 'PENDING'
+          AND (
+              opportunity_id = $1 
+              OR lead_id = $2 
+              OR title LIKE $3
+          )
+        ORDER BY created_at DESC 
+        LIMIT 1
+        """,
+        rc["opportunity_id"], rc["lead_id"], f"%{rc['contract_number']}%"
+    )
+
+    pay_method = payload.payment_method or "EJAR_ONLINE"
+    pay_ref = payload.payment_reference or f"EJR-{rc['rent_collection_id'].replace('rent_collection-', '')}"
+    pay_time = payload.paid_at or now
+    receipt_no = f"REC-{now.strftime('%Y%m')}-{rc['rent_collection_id'].replace('rent_collection-', '')}"
+    file_name = f"سند_قبض_إيجار_{rc['contract_number']}_{rc['rent_collection_id']}.pdf"
 
     async with conn.transaction():
         await conn.execute(
@@ -509,19 +629,65 @@ async def record_rent_payment(
             SET amount_paid = $1, paid_at = $2, status = $3
             WHERE rent_collection_id = $4
             """,
-            new_paid, now, new_status, rent_collection_id
+            new_paid, pay_time, new_status, rent_collection_id
+        )
+
+        # Archive Official Payment Receipt Voucher in Document Vault
+        meta_snapshot = {
+            "doc_type": "PAYMENT_RECEIPT",
+            "receipt_number": receipt_no,
+            "rent_collection_id": rent_collection_id,
+            "tenancy_id": rc["tenancy_id"],
+            "contract_number": rc["contract_number"],
+            "contract_id": rc["contract_id"],
+            "unit_id": rc["unit_id"],
+            "unit_number": rc["unit_number"],
+            "customer_id": rc["tenant_customer_id"],
+            "customer_name": rc["tenant_name"],
+            "tenant_name": rc["tenant_name"],
+            "owner_name": rc["owner_name"] or rc["bank_beneficiary"] or "المؤجر / مالك العقار",
+            "bank_name": rc["bank_name"] or "مصرف الراجحي",
+            "bank_iban": rc["bank_iban"] or "SA0380000000608010167890",
+            "installment_label": installment_label,
+            "due_date": rc["due_date"].isoformat() if rc["due_date"] else None,
+            "amount_due": rc["amount_due"],
+            "amount_paid": payload.amount_paid,
+            "total_paid": new_paid,
+            "remaining_balance": rem_balance,
+            "payment_method": pay_method,
+            "payment_reference": pay_ref,
+            "paid_at": pay_time.isoformat(),
+            "payment_date": pay_time.isoformat(),
+            "notes": payload.notes or f"سداد الدفعة الإيجارية ({installment_label}) للعقد {rc['contract_number']}"
+        }
+
+        doc_id = await WorkflowEngine.archive_workflow_document(
+            conn=conn,
+            doc_type_code="PAYMENT_RECEIPT",
+            file_name=file_name,
+            lead_id=rc["lead_id"],
+            opportunity_id=rc["opportunity_id"],
+            task_id=task_id,
+            unit_id=rc["unit_id"],
+            customer_id=rc["tenant_customer_id"],
+            contract_id=rc["contract_id"],
+            notes=f"سند قبض إلكتروني رسمي للدفعة الإيجارية ({installment_label}) للعقد {rc['contract_number']} بمبلغ {payload.amount_paid:,.2f} ر.س.",
+            metadata=meta_snapshot,
+            user_id=x_user_id or "user-51"
         )
 
         # Record Activity ACT_RENT_PAYMENT_COLLECTED
-        rem_balance = round(rc["amount_due"] - new_paid, 2)
         await WorkflowEngine.record_activity_from_template(
             conn=conn,
             template_id="ACT_RENT_PAYMENT_COLLECTED",
             user_id=x_user_id or "user-51",
             customer_id=rc["tenant_customer_id"],
+            lead_id=rc["lead_id"],
+            opportunity_id=rc["opportunity_id"],
+            task_id=task_id,
             outcome="PAID" if new_status == "PAID" else "PARTIAL",
-            notes=f"تم استلام دفعة إيجارية بمبلغ {payload.amount_paid:,.2f} ريال للعقد {rc['contract_number']}. الرصيد المتبقي: {rem_balance:,.2f} ريال.",
-            completed_at=now
+            notes=f"تم استلام دفعة إيجارية بمبلغ {payload.amount_paid:,.2f} ريال للعقد {rc['contract_number']} ({installment_label}) بموجب سند قبض رقم {receipt_no}. الرصيد المتبقي: {rem_balance:,.2f} ريال.",
+            completed_at=pay_time
         )
 
     out = RentCollectionOut(
@@ -533,8 +699,11 @@ async def record_rent_payment(
         due_date=rc["due_date"],
         amount_due=rc["amount_due"],
         amount_paid=new_paid,
-        paid_at=now,
-        status=new_status
+        paid_at=pay_time,
+        status=new_status,
+        document_id=doc_id,
+        payment_method=pay_method,
+        payment_reference=pay_ref
     )
     return ResponseEnvelope(data=out)
 

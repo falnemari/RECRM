@@ -575,6 +575,144 @@ class TestRentalWorkflow(unittest.IsolatedAsyncioTestCase):
         await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
         await self.conn.execute("UPDATE units SET status = 'AVAILABLE' WHERE unit_id = $1", self.test_unit_id)
 
+    async def test_08_rent_collection_monitoring_completion_and_installment_advancement(self):
+        """
+        8. Rent Collection Monitoring Lifecycle:
+           - Completing TASK_RENT_COLLECTION_MONITORING for installment 1 marks it as PAID.
+           - Spawns subsequent TASK_RENT_COLLECTION_MONITORING for installment 2 (due in 6 months).
+           - Completing installment 2 marks it PAID and does not spawn further tasks (all settled).
+        """
+        lead_id = f"lead-rent-mon-{int(datetime.now(timezone.utc).timestamp())}"
+        await self.conn.execute(
+            """
+            INSERT INTO leads (
+                lead_id, organization_id, customer_id, assigned_user_id,
+                status, priority, inquiry_type, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, 'QUALIFIED', 'HIGH', 'RENT', NOW(), NOW())
+            """,
+            lead_id, self.org_id, self.test_customer_id, self.agent_id
+        )
+
+        opp_id = f"opp-rent-mon-{int(datetime.now(timezone.utc).timestamp())}"
+        await self.conn.execute(
+            """
+            INSERT INTO opportunities (
+                opportunity_id, lead_id, customer_id, assigned_user_id,
+                stage, expected_value, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, 'WON', 30000, NOW(), NOW())
+            """,
+            opp_id, lead_id, self.test_customer_id, self.agent_id
+        )
+
+        start_d = date.today()
+        c_number = f"TEN-MON-{int(datetime.now(timezone.utc).timestamp())}"
+
+        exec_res = await WorkflowEngine.execute_tenancy_agreement(
+            conn=self.conn,
+            unit_id=self.test_unit_id,
+            tenant_customer_id=self.test_customer_id,
+            start_date=start_d,
+            rent_amount=24000.0,
+            payment_frequency="SEMI_ANNUAL",
+            contract_number=c_number,
+            lead_id=lead_id,
+            opportunity_id=opp_id,
+            user_id=self.agent_id,
+            generate_installments=True,
+            installments_count=2
+        )
+        tenancy_id = exec_res["tenancy_id"]
+
+        # 1. Fetch initial monitoring task (installment 1 of 2)
+        task1 = await self.conn.fetchrow(
+            """
+            SELECT * FROM tasks
+            WHERE opportunity_id = $1 AND template_id = 'TASK_RENT_COLLECTION_MONITORING'
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            opp_id
+        )
+        self.assertIsNotNone(task1)
+        self.assertIn("الدفعة 1 من 2", task1["title"])
+        self.assertIn("12,000.00", task1["title"])
+
+        # 2. Complete task 1
+        complete_res1 = await WorkflowEngine.complete_task_with_outcome(
+            conn=self.conn,
+            task_id=task1["task_id"],
+            outcome="COLLECTED",
+            notes="تم تحصيل الدفعة الإيجارية الأولى عبر التحويل البنكي لحساب المؤجر.",
+            user_id=self.agent_id
+        )
+
+        # 3. Verify installment 1 is marked as PAID
+        rc1 = await self.conn.fetchrow(
+            """
+            SELECT * FROM rent_collections
+            WHERE tenancy_id = $1
+            ORDER BY due_date ASC LIMIT 1
+            """,
+            tenancy_id
+        )
+        self.assertEqual(rc1["status"], "PAID")
+        self.assertEqual(float(rc1["amount_paid"]), 12000.0)
+        self.assertIsNotNone(rc1["paid_at"])
+
+        # 4. Verify spawned next task for installment 2
+        task2 = await self.conn.fetchrow(
+            """
+            SELECT * FROM tasks
+            WHERE opportunity_id = $1 
+              AND template_id = 'TASK_RENT_COLLECTION_MONITORING'
+              AND task_id != $2
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            opp_id, task1["task_id"]
+        )
+        self.assertIsNotNone(task2)
+        self.assertIn("الدفعة 2 من 2", task2["title"])
+        self.assertIn("12,000.00", task2["title"])
+
+        # 5. Complete task 2
+        complete_res2 = await WorkflowEngine.complete_task_with_outcome(
+            conn=self.conn,
+            task_id=task2["task_id"],
+            outcome="COLLECTED",
+            notes="تم تحصيل الدفعة الإيجارية الثانية والأخيرة.",
+            user_id=self.agent_id
+        )
+
+        # 6. Verify installment 2 is marked as PAID and no task 3 is spawned
+        rc2 = await self.conn.fetchrow(
+            """
+            SELECT * FROM rent_collections
+            WHERE tenancy_id = $1
+            ORDER BY due_date DESC LIMIT 1
+            """,
+            tenancy_id
+        )
+        self.assertEqual(rc2["status"], "PAID")
+        self.assertEqual(float(rc2["amount_paid"]), 12000.0)
+
+        total_mon_tasks = await self.conn.fetchval(
+            """
+            SELECT count(*) FROM tasks
+            WHERE opportunity_id = $1 AND template_id = 'TASK_RENT_COLLECTION_MONITORING'
+            """,
+            opp_id
+        )
+        self.assertEqual(total_mon_tasks, 2)
+
+        # Cleanup
+        await self.conn.execute("DELETE FROM documents WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+        await self.conn.execute("DELETE FROM rent_collections WHERE tenancy_id = $1", tenancy_id)
+        await self.conn.execute("DELETE FROM tenancies WHERE tenancy_id = $1", tenancy_id)
+        await self.conn.execute("DELETE FROM tasks WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM activities WHERE opportunity_id = $1 OR lead_id = $2", opp_id, lead_id)
+        await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+        await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+        await self.conn.execute("UPDATE units SET status = 'AVAILABLE' WHERE unit_id = $1", self.test_unit_id)
+
 
 if __name__ == "__main__":
     unittest.main()

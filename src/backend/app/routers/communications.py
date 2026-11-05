@@ -1,6 +1,8 @@
 from typing import Optional, List
 from uuid import uuid4
 from datetime import datetime, timezone
+import json
+import re
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Header
 import asyncpg
@@ -387,6 +389,275 @@ async def get_task(
             raise HTTPException(status_code=403, detail="Access denied: Task belongs to another agent")
     return ResponseEnvelope(data=TaskOut(**dict(row)))
 
+@router.get("/tasks/{task_id}/completion-details", response_model=ResponseEnvelope[dict])
+async def get_task_completion_details(
+    task_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Returns rich, comprehensive completion details, inputs, decisions, 
+    linked activities, documents, and business objects for an executed task.
+    """
+    row = await conn.fetchrow(
+        """
+        SELECT 
+            t.task_id,
+            t.template_id,
+            t.title,
+            t.due_at,
+            t.created_at,
+            t.completed_at,
+            t.priority,
+            t.status,
+            t.assigned_user_id,
+            u.full_name AS assigned_user_name,
+            t.customer_id,
+            COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name,
+            c.mobile AS customer_mobile,
+            t.lead_id,
+            t.opportunity_id,
+            t.parent_task_id
+        FROM tasks t
+        LEFT JOIN users u ON t.assigned_user_id = u.user_id
+        LEFT JOIN customers c ON t.customer_id = c.customer_id
+        WHERE t.task_id = $1
+        """,
+        task_id
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task_data = dict(row)
+
+    # 1. Fetch linked Activity
+    activity_row = await conn.fetchrow(
+        """
+        SELECT a.*, u.full_name AS agent_name
+        FROM activities a
+        LEFT JOIN users u ON a.user_id = u.user_id
+        WHERE a.task_id = $1
+        ORDER BY a.created_at DESC
+        LIMIT 1
+        """,
+        task_id
+    )
+    activity_data = dict(activity_row) if activity_row else None
+
+    # 2. Fetch linked Documents
+    doc_rows = await conn.fetch(
+        """
+        SELECT d.document_id, d.file_name, d.notes, d.metadata, d.issued_at, d.created_at, dt.code AS document_type_code, dt.name AS document_type_name
+        FROM documents d
+        LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+        WHERE d.task_id = $1
+        ORDER BY d.created_at DESC
+        """,
+        task_id
+    )
+    if not doc_rows and (task_data.get("opportunity_id") or task_data.get("lead_id")):
+        doc_rows = await conn.fetch(
+            """
+            SELECT d.document_id, d.file_name, d.notes, d.metadata, d.issued_at, d.created_at, dt.code AS document_type_code, dt.name AS document_type_name
+            FROM documents d
+            LEFT JOIN document_types dt ON d.document_type_id = dt.document_type_id
+            WHERE (d.opportunity_id = $1 OR d.lead_id = $2)
+            ORDER BY d.created_at DESC
+            LIMIT 5
+            """,
+            task_data.get("opportunity_id"), task_data.get("lead_id")
+        )
+
+    documents = []
+    for d in doc_rows:
+        dd = dict(d)
+        if isinstance(dd.get("metadata"), str):
+            try:
+                dd["metadata"] = json.loads(dd["metadata"])
+            except Exception:
+                pass
+        documents.append(dd)
+
+    # 3. Check for linked Contract / Tenancy
+    tenancy = None
+    contract = None
+    installments = []
+
+    c_num_match = re.search(r'(TEN-\d{4,6}-\d+|CON-\d{4,6})', (task_data.get("title") or "") + " " + ((activity_data or {}).get("description") or ""))
+    c_num = c_num_match.group(1) if c_num_match else None
+
+    if not c_num and documents:
+        for d in documents:
+            if isinstance(d.get("metadata"), dict) and d["metadata"].get("contract_number"):
+                c_num = d["metadata"]["contract_number"]
+                break
+
+    if c_num:
+        tenancy_row = await conn.fetchrow(
+            """
+            SELECT t.*, u.unit_number 
+            FROM tenancies t 
+            JOIN units u ON t.unit_id = u.unit_id 
+            WHERE t.contract_number = $1 OR t.ejar_contract_number = $1 
+            LIMIT 1
+            """,
+            c_num
+        )
+        if tenancy_row:
+            tenancy = dict(tenancy_row)
+
+        contract_row = await conn.fetchrow(
+            """
+            SELECT c.*, u.unit_number 
+            FROM contracts c 
+            LEFT JOIN units u ON c.contract_id = u.unit_id 
+            WHERE c.contract_number = $1 
+            LIMIT 1
+            """,
+            c_num
+        )
+        if contract_row:
+            contract = dict(contract_row)
+
+    if not tenancy and task_data.get("customer_id") and "RENT" in (task_data.get("template_id") or ""):
+        tenancy_row = await conn.fetchrow(
+            """
+            SELECT t.*, u.unit_number 
+            FROM tenancies t 
+            JOIN units u ON t.unit_id = u.unit_id 
+            WHERE t.tenant_customer_id = $1 
+            ORDER BY t.start_date DESC, t.tenancy_id DESC 
+            LIMIT 1
+            """,
+            task_data["customer_id"]
+        )
+        if tenancy_row:
+            tenancy = dict(tenancy_row)
+
+    if tenancy:
+        rcs = await conn.fetch(
+            """
+            SELECT rent_collection_id, due_date, amount_due, amount_paid, paid_at, status 
+            FROM rent_collections 
+            WHERE tenancy_id = $1 
+            ORDER BY due_date ASC
+            """,
+            tenancy["tenancy_id"]
+        )
+        installments = [dict(r) for r in rcs]
+
+    # 4. Check for linked Viewing
+    viewing = None
+    if "VIEWING" in (task_data.get("template_id") or ""):
+        v_row = await conn.fetchrow(
+            """
+            SELECT v.*, u.unit_number, COALESCE(c.first_name || ' ' || c.last_name, c.company_name) AS customer_name
+            FROM viewings v
+            LEFT JOIN units u ON v.unit_id = u.unit_id
+            LEFT JOIN customers c ON v.customer_id = c.customer_id
+            WHERE (v.opportunity_id = $1 OR v.lead_id = $2)
+            ORDER BY v.scheduled_at DESC, v.created_at DESC
+            LIMIT 1
+            """,
+            task_data.get("opportunity_id"), task_data.get("lead_id")
+        )
+        if v_row:
+            viewing = dict(v_row)
+
+    # 5. Check for linked Offer
+    offer = None
+    if "OFFER" in (task_data.get("template_id") or "") or "NEGOTIAT" in (task_data.get("template_id") or ""):
+        o_row = await conn.fetchrow(
+            """
+            SELECT o.*, u.unit_number
+            FROM offers o
+            LEFT JOIN units u ON o.unit_id = u.unit_id
+            WHERE o.opportunity_id = $1
+            ORDER BY o.submitted_at DESC
+            LIMIT 1
+            """,
+            task_data.get("opportunity_id")
+        )
+        if o_row:
+            offer = dict(o_row)
+
+    # 6. Check for linked Commission
+    commission = None
+    if "COMMISSION" in (task_data.get("template_id") or "") or "عمولة" in (task_data.get("title") or "") or "Commission" in (task_data.get("title") or ""):
+        c_row = None
+        if c_num:
+            c_row = await conn.fetchrow(
+                """
+                SELECT 
+                    c.commission_id, c.contract_id, c.user_id,
+                    u.full_name AS user_name, c.commission_type,
+                    CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
+                    c.status, c.approved_at, c.paid_at,
+                    c.compensation_type,
+                    CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+                    CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+                    CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+                    CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+                    c.calculation_notes,
+                    COALESCE(con.contract_number, ten.contract_number, c.contract_id) AS contract_number,
+                    COALESCE(un.unit_number, un2.unit_number) AS unit_number
+                FROM commissions c
+                LEFT JOIN users u ON c.user_id = u.user_id
+                LEFT JOIN contracts con ON (c.contract_id = con.contract_id OR c.contract_id = con.contract_number)
+                LEFT JOIN tenancies ten ON (con.contract_number = ten.contract_number OR c.contract_id = ten.tenancy_id OR c.contract_id = ten.contract_number)
+                LEFT JOIN units un ON COALESCE(con.contract_id, ten.unit_id) = un.unit_id
+                LEFT JOIN units un2 ON c.contract_id = un2.unit_id
+                WHERE con.contract_number = $1 OR ten.contract_number = $1 OR c.contract_id = $1
+                ORDER BY CAST(substring(c.commission_id from '[0-9]+') AS INTEGER) DESC
+                LIMIT 1
+                """,
+                c_num
+            )
+        if not c_row and (task_data.get("opportunity_id") or task_data.get("lead_id")):
+            c_row = await conn.fetchrow(
+                """
+                SELECT 
+                    c.commission_id, c.contract_id, c.user_id,
+                    u.full_name AS user_name, c.commission_type,
+                    CAST(c.rate AS FLOAT) AS rate, CAST(c.amount AS FLOAT) AS amount,
+                    c.status, c.approved_at, c.paid_at,
+                    c.compensation_type,
+                    CAST(c.gross_deal_value AS FLOAT) AS gross_deal_value,
+                    CAST(c.gross_brokerage_amount AS FLOAT) AS gross_brokerage_amount,
+                    CAST(c.gov_fees_deducted AS FLOAT) AS gov_fees_deducted,
+                    CAST(c.net_commission_base AS FLOAT) AS net_commission_base,
+                    c.calculation_notes,
+                    COALESCE(con.contract_number, ten.contract_number, c.contract_id) AS contract_number,
+                    COALESCE(un.unit_number, un2.unit_number) AS unit_number
+                FROM commissions c
+                LEFT JOIN users u ON c.user_id = u.user_id
+                LEFT JOIN contracts con ON (c.contract_id = con.contract_id OR c.contract_id = con.contract_number)
+                LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+                LEFT JOIN tenancies ten ON (con.contract_number = ten.contract_number OR c.contract_id = ten.tenancy_id OR c.contract_id = ten.contract_number)
+                LEFT JOIN units un ON COALESCE(con.contract_id, ten.unit_id) = un.unit_id
+                LEFT JOIN units un2 ON c.contract_id = un2.unit_id
+                WHERE (r.opportunity_id = $1 OR con.opportunity_id = $1 OR con.lead_id = $2 OR (con.contract_number IN (SELECT contract_number FROM tenancies WHERE tenant_customer_id = $3)))
+                ORDER BY CAST(substring(c.commission_id from '[0-9]+') AS INTEGER) DESC
+                LIMIT 1
+                """,
+                task_data.get("opportunity_id"), task_data.get("lead_id"), task_data.get("customer_id")
+            )
+        if c_row:
+            commission = dict(c_row)
+
+    result = {
+        "task": task_data,
+        "activity": activity_data,
+        "documents": documents,
+        "tenancy": tenancy,
+        "contract": contract,
+        "installments": installments,
+        "viewing": viewing,
+        "offer": offer,
+        "commission": commission
+    }
+    return ResponseEnvelope(data=result)
+
 @router.patch("/tasks/{task_id}", response_model=ResponseEnvelope[dict])
 async def update_task(task_id: str, payload: TaskUpdateIn, conn: asyncpg.Connection = Depends(get_db)):
     t = await conn.fetchrow("SELECT task_id, status FROM tasks WHERE task_id = $1", task_id)
@@ -461,6 +732,9 @@ async def complete_task(
             "location_notes": payload.location_notes,
             "feedback_rating": payload.feedback_rating,
             "offer_amount": payload.offer_amount,
+            "counter_amount": payload.counter_amount,
+            "negotiated_price": payload.negotiated_price,
+            "payment_terms": payload.payment_terms,
             "rent_amount": payload.rent_amount,
             "start_date": payload.start_date,
             "end_date": payload.end_date,
@@ -506,8 +780,18 @@ async def complete_task(
             "commercial_notes": payload.commercial_notes,
             "recommendation": payload.recommendation,
             "suggested_price_adjustment_sar": payload.suggested_price_adjustment_sar,
-            "final_verdict_summary": payload.final_verdict_summary
+            "final_verdict_summary": payload.final_verdict_summary,
+            "first_due_date": payload.first_due_date,
+            "bank_name": payload.bank_name,
+            "bank_iban": payload.bank_iban,
+            "bank_beneficiary": payload.bank_beneficiary,
+            "maintenance_terms": payload.maintenance_terms,
+            "ejar_contract_number": payload.ejar_contract_number
         }
+        if payload.viewing_data and isinstance(payload.viewing_data, dict):
+            for k, v in payload.viewing_data.items():
+                if v is not None:
+                    viewing_data[k] = v
 
     async with conn.transaction():
         try:
@@ -1111,6 +1395,26 @@ async def create_internal_ping(
         recipient_id, recipient_name, payload.context_type.upper(),
         payload.context_id, snapshot_json, payload.message_text,
         payload.urgency_level.upper(), payload.is_archived, archived_at, now)
+
+    # Deliver CC copies to downward managers hierarchically (excluding the sending manager)
+    cc_manager_ids = payload.context_snapshot.get("cc_manager_ids", []) if isinstance(payload.context_snapshot, dict) else []
+    if isinstance(cc_manager_ids, list):
+        for cc_uid in cc_manager_ids:
+            if cc_uid and str(cc_uid) != str(sender_id) and str(cc_uid) != str(recipient_id):
+                cc_row = await conn.fetchrow("SELECT full_name FROM users WHERE user_id = $1", str(cc_uid))
+                if cc_row:
+                    cc_ping_id = f"PNG-{now.strftime('%Y%m%d')}-{uuid4().hex[:6].upper()}"
+                    await conn.execute("""
+                        INSERT INTO internal_task_pings (
+                            ping_id, sender_user_id, sender_name, recipient_role,
+                            recipient_user_id, recipient_name, context_type, context_id,
+                            context_snapshot, message_text, urgency_level, is_read,
+                            is_archived, archived_at, created_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, FALSE, $12, $13, $14)
+                    """, cc_ping_id, sender_id, sender_name, "CC_MANAGER",
+                        str(cc_uid), cc_row["full_name"], payload.context_type.upper(),
+                        payload.context_id, snapshot_json, f"[نسخة إشعار للمدير / CC Manager] {payload.message_text}",
+                        payload.urgency_level.upper(), payload.is_archived, archived_at, now)
 
     out = InternalPingOut(
         ping_id=ping_id,

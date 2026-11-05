@@ -259,6 +259,89 @@ class TestWorkflowStagesEFG(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_stage_e_offer_followup_counter_and_concessions(self):
+        """
+        Stage E Negotiation Flow:
+          When TASK_OFFER_FOLLOWUP is completed with outcome 'COUNTER':
+          - Accepts decision 'COUNTER' without raising ValueError
+          - Updates offer status to 'COUNTERED'
+          - Advances opportunity to 'NEGOTIATION'
+          - Auto-spawns TASK_SALE_NEGOTIATE_CONCESSIONS
+          - Completing TASK_SALE_NEGOTIATE_CONCESSIONS with 'CONCESSION_AGREED' advances to Stage F
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            cust_id = "test-cust-e-counter"
+            opp_id = "test-opp-e-counter"
+            unit_id = "test-unit-e-counter"
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'خالد', 'الغامدي', '+966500112233', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, building_id, unit_number, property_type_id, asking_price, status, created_at, updated_at)
+                VALUES ($1, $2, 'U-ECOUNTER', $3, 900000.0, 'AVAILABLE', NOW(), NOW())
+                """,
+                unit_id, self.building_id, self.property_type_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, 'OFFER', 900000.0, NOW(), NOW())
+                """,
+                opp_id, cust_id, self.agent_id
+            )
+
+            res = await WorkflowEngine.submit_commercial_offer(
+                conn=self.conn,
+                opportunity_id=opp_id,
+                unit_id=unit_id,
+                offer_amount=880000.0,
+                user_id=self.agent_id
+            )
+            offer_id = res["offer_id"]
+
+            # Record customer counter offer with outcome='COUNTER'
+            dec_res = await WorkflowEngine.record_offer_decision(
+                conn=self.conn,
+                offer_id=offer_id,
+                decision="COUNTER",
+                counter_amount=850000.0,
+                notes="طلب العميل تخفيض السعر إلى 850,000 ريال",
+                user_id=self.agent_id
+            )
+
+            self.assertEqual(dec_res["decision"], "COUNTERED")
+            concess_task = dec_res["next_task"]
+            self.assertIsNotNone(concess_task)
+            self.assertEqual(concess_task["template_id"], "TASK_SALE_NEGOTIATE_CONCESSIONS")
+
+            # Complete concession task with CONCESSION_AGREED
+            concess_res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=concess_task["task_id"],
+                user_id=self.agent_id,
+                outcome="CONCESSION_AGREED",
+                viewing_data={"negotiated_price": 850000.0}
+            )
+            self.assertEqual(concess_res["status"], "COMPLETED")
+            f_next_task = concess_res["business_transition"]["next_task"]
+            self.assertIsNotNone(f_next_task)
+            self.assertEqual(f_next_task["template_id"], "TASK_RESERVATION_VERIFY_AVAILABILITY")
+
+            # Check that offer was marked ACCEPTED
+            st = await self.conn.fetchval("SELECT status FROM offers WHERE offer_id = $1", offer_id)
+            self.assertEqual(st, "ACCEPTED")
+
+        finally:
+            await tr.rollback()
+
     async def test_stage_f_atomic_reservation_and_concurrency_locking(self):
         """
         Stage F Research Rule:
@@ -772,6 +855,124 @@ class TestWorkflowStagesEFG(unittest.IsolatedAsyncioTestCase):
             # Verify unit status restored to AVAILABLE
             u_status = await self.conn.fetchval("SELECT status FROM units WHERE unit_id = $1", unit_id)
             self.assertEqual(u_status, "AVAILABLE")
+
+        finally:
+            await tr.rollback()
+
+    async def test_lead_reservation_paid_and_viewing_priority_ordering(self):
+        """
+        Verify that for a verified reservation deposit:
+        1. reservations query exposes payment_method, payment_ref, receipt_number, deposit_paid_at.
+        2. Opportunity stage advances to CONTRACT.
+        3. Viewings query prioritizes viewing with outcome = 'INTERESTED' at the top (index 0).
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            cust_id = "test-cust-res-verify"
+            opp_id = "test-opp-res-verify"
+            lead_id = "test-lead-res-verify"
+            unit_a = "test-unit-res-a"
+            unit_b = "test-unit-res-b"
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Tariq', 'Al-Shehri', '+966500889900', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO units (unit_id, building_id, unit_number, property_type_id, asking_price, status, created_at, updated_at)
+                VALUES ($1, $2, 'U-VWA', $3, 1000000.0, 'AVAILABLE', NOW(), NOW()),
+                       ($4, $2, 'U-VWB', $3, 1200000.0, 'AVAILABLE', NOW(), NOW())
+                """,
+                unit_a, self.building_id, self.property_type_id, unit_b
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, inquiry_type, assigned_user_id, status, created_at, updated_at)
+                VALUES ($1, $2, $3, 'BUY', $4, 'QUALIFIED', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'RESERVATION', 1000000.0, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            # Insert viewings: unit_a was rejected, unit_b was INTERESTED
+            await self.conn.execute(
+                """
+                INSERT INTO viewings (viewing_id, opportunity_id, lead_id, unit_id, customer_id, agent_user_id, scheduled_start, status, outcome, created_at, updated_at)
+                VALUES ('vw-test-1', $1, $2, $3, $4, $5, NOW() - INTERVAL '1 day', 'COMPLETED', 'REJECTED', NOW() - INTERVAL '1 day', NOW()),
+                       ('vw-test-2', $1, $2, $6, $4, $5, NOW(), 'COMPLETED', 'INTERESTED', NOW(), NOW())
+                """,
+                opp_id, lead_id, unit_a, cust_id, self.agent_id, unit_b
+            )
+
+            # Create reservation for unit_b
+            res = await WorkflowEngine.create_unit_reservation(
+                conn=self.conn,
+                opportunity_id=opp_id,
+                unit_id=unit_b,
+                customer_id=cust_id,
+                deposit_amount=50000.0,
+                user_id=self.agent_id
+            )
+            res_id = res["reservation_id"]
+
+            # Verify deposit
+            v_res = await WorkflowEngine.verify_reservation_deposit(
+                conn=self.conn,
+                reservation_id=res_id,
+                amount_received=50000.0,
+                payment_method="BANK_TRANSFER",
+                payment_ref="TXN-TEST-999",
+                notes="تم تدقيق وقيد حوالة العربون بمصرف الراجحي مرجع TXN-TEST-999 وسند قبض RV-2026-9999",
+                user_id=self.agent_id
+            )
+            self.assertEqual(v_res["status"], "CONFIRMED")
+
+            # Check reservations query
+            from app.routers.sales import RESERVATION_SELECT_QUERY
+            res_row = await self.conn.fetchrow(f"{RESERVATION_SELECT_QUERY} WHERE r.reservation_id = $1", res_id)
+            self.assertIsNotNone(res_row)
+            self.assertEqual(res_row["status"], "CONFIRMED")
+            self.assertEqual(res_row["payment_ref"], "TXN-TEST-999")
+            self.assertEqual(res_row["receipt_number"], "RV-2026-9999")
+            self.assertIsNotNone(res_row["deposit_paid_at"])
+
+            # Check opportunity stage advanced to CONTRACT
+            opp_stage = await self.conn.fetchval("SELECT stage FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(opp_stage, "CONTRACT")
+
+            # Check viewings query ordering - INTERESTED must be on top
+            vw_rows = await self.conn.fetch(
+                """
+                SELECT viewing_id, outcome, unit_id
+                FROM viewings
+                WHERE opportunity_id = $1
+                ORDER BY 
+                    CASE 
+                        WHEN outcome = 'INTERESTED' THEN 1
+                        WHEN outcome IN ('RECOMMENDED', 'ACCEPTED') THEN 2
+                        WHEN outcome = 'SCHEDULED' THEN 3
+                        WHEN outcome = 'REQUESTS_ANOTHER_VIEWING' THEN 4
+                        WHEN outcome = 'NEEDS_ANOTHER_UNIT' THEN 5
+                        WHEN outcome = 'REJECTED' THEN 6
+                        ELSE 7
+                    END ASC,
+                    scheduled_start DESC
+                """,
+                opp_id
+            )
+            self.assertEqual(vw_rows[0]["viewing_id"], "vw-test-2")
+            self.assertEqual(vw_rows[0]["outcome"], "INTERESTED")
 
         finally:
             await tr.rollback()

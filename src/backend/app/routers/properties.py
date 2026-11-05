@@ -6,7 +6,7 @@ from app.schemas.common import CollectionEnvelope, CollectionMeta, ResponseEnvel
 from app.routers.auth import check_user_scope_override
 from app.schemas.properties import (
     ProjectOut, UnitOut, UnitStatusUpdate, UnitCreateIn, UnitUpdateIn,
-    BuildingOut, ProjectCreateIn, BuildingCreateIn
+    BuildingOut, ProjectCreateIn, BuildingCreateIn, ProjectUpdateIn, BuildingUpdateIn
 )
 
 router = APIRouter(tags=["Properties & Inventory"])
@@ -20,6 +20,10 @@ UNIT_SELECT_QUERY = """
         COALESCE(u.project_id, b.project_id) AS project_id,
         COALESCE(p_direct.name_ar, p_bld.name_ar) AS project_name_ar,
         COALESCE(p_direct.name_en, p_bld.name_en) AS project_name_en,
+        COALESCE(p_direct.city_id, p_bld.city_id) AS city_id,
+        c.name_ar AS city_name_ar,
+        c.name_en AS city_name_en,
+        COALESCE(c.name_ar, c.name_en) AS city_name,
         u.unit_number,
         u.floor_no,
         u.total_floors,
@@ -54,7 +58,66 @@ UNIT_SELECT_QUERY = """
     LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
     LEFT JOIN customers oc ON u.owner_customer_id = oc.customer_id
     LEFT JOIN users usr ON u.assigned_user_id = usr.user_id
+    LEFT JOIN cities c ON COALESCE(p_direct.city_id, p_bld.city_id) = c.city_id
 """
+
+SINGLE_PROJECT_QUERY = """
+    SELECT 
+        p.project_id,
+        p.organization_id,
+        p.name_ar,
+        p.name_en,
+        p.developer_customer_id,
+        COALESCE(dev.first_name || ' ' || dev.last_name, dev.company_name) AS developer_name,
+        c.name_en AS city_name,
+        c.name_ar AS city_name_ar,
+        p.status,
+        p.start_date,
+        p.completion_date,
+        p.completion_date AS end_date,
+        (SELECT COUNT(*) FROM buildings b WHERE b.project_id = p.project_id)::int AS buildings_count,
+        (SELECT COUNT(*) FROM units u WHERE u.project_id = p.project_id OR u.building_id IN (SELECT b.building_id FROM buildings b WHERE b.project_id = p.project_id))::int AS units_count
+    FROM projects p
+    LEFT JOIN cities c ON p.city_id = c.city_id
+    LEFT JOIN customers dev ON p.developer_customer_id = dev.customer_id
+    WHERE p.project_id = $1
+"""
+
+SINGLE_BUILDING_QUERY = """
+    SELECT 
+        b.building_id,
+        b.project_id,
+        p.name_ar AS project_name_ar,
+        p.name_en AS project_name_en,
+        b.building_code,
+        b.name AS building_name,
+        b.floors_count,
+        (SELECT count(*) FROM units u WHERE u.building_id = b.building_id)::int AS units_count
+    FROM buildings b
+    LEFT JOIN projects p ON b.project_id = p.project_id
+    WHERE b.building_id = $1
+"""
+
+async def verify_management_delete_permission(conn: asyncpg.Connection, x_user_id: Optional[str]):
+    if not x_user_id:
+        return
+    roles = await conn.fetch(
+        """
+        SELECT r.role_code 
+        FROM user_roles ur 
+        JOIN roles r ON ur.role_id = r.role_id 
+        WHERE ur.user_id = $1
+        """,
+        x_user_id
+    )
+    role_codes = set(r["role_code"].upper() for r in roles)
+    allowed_roles = {"GENERAL_MANAGER", "SYS_ADMIN", "ADMIN", "BRANCH_MANAGER", "SALES_MANAGER"}
+    if not (role_codes & allowed_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="عملية الحذف محصورة بمدراء الفروع والمدير العام فقط. ليس لديك الصلاحية لحذف هذا السجل."
+        )
+
 
 @router.get("/projects", response_model=CollectionEnvelope[ProjectOut])
 async def list_projects(
@@ -107,6 +170,7 @@ async def list_projects(
             p.status,
             p.start_date,
             p.completion_date,
+            p.completion_date AS end_date,
             (SELECT COUNT(*) FROM buildings b WHERE b.project_id = p.project_id)::int AS buildings_count,
             (SELECT COUNT(*) FROM units u WHERE u.project_id = p.project_id OR u.building_id IN (SELECT b.building_id FROM buildings b WHERE b.project_id = p.project_id))::int AS units_count
         FROM projects p
@@ -131,7 +195,15 @@ async def create_project(payload: ProjectCreateIn, conn: asyncpg.Connection = De
     if not org_id:
         raise HTTPException(status_code=500, detail="No active organization found")
 
+    dev_id = payload.developer_customer_id
+    if dev_id:
+        dev_exists = await conn.fetchval("SELECT customer_id FROM customers WHERE customer_id = $1", dev_id)
+        if not dev_exists:
+            raise HTTPException(status_code=400, detail="المطور العقاري المحدد غير موجود في قاعدة بيانات العملاء.")
+
     project_id = await get_next_id(conn, "projects", "project")
+    completion_date = payload.completion_date or payload.end_date
+
     await conn.execute("""
         INSERT INTO projects (
             project_id, organization_id, name_ar, name_en, developer_customer_id,
@@ -140,25 +212,82 @@ async def create_project(payload: ProjectCreateIn, conn: asyncpg.Connection = De
             $1, $2, $3, $4, $5,
             $6, $7, $8, $9
         )
-    """, project_id, org_id, payload.name_ar.strip(), payload.name_en.strip(), payload.developer_customer_id,
-         payload.city_id, (payload.status or "ACTIVE").upper(), payload.start_date, payload.completion_date)
+    """, project_id, org_id, payload.name_ar.strip(), payload.name_en.strip(), dev_id,
+         payload.city_id, (payload.status or "ACTIVE").upper(), payload.start_date, completion_date)
 
-    query = """
-        SELECT 
-            p.project_id,
-            p.organization_id,
-            p.name_ar,
-            p.name_en,
-            c.name_en AS city_name,
-            p.status,
-            p.start_date,
-            p.completion_date
-        FROM projects p
-        LEFT JOIN cities c ON p.city_id = c.city_id
-        WHERE p.project_id = $1
-    """
-    row = await conn.fetchrow(query, project_id)
+    row = await conn.fetchrow(SINGLE_PROJECT_QUERY, project_id)
     return ResponseEnvelope(data=ProjectOut(**dict(row)), meta=BaseMeta())
+
+@router.put("/projects/{project_id}", response_model=ResponseEnvelope[ProjectOut])
+async def update_project(
+    project_id: str,
+    payload: ProjectUpdateIn,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    current = await conn.fetchrow("SELECT * FROM projects WHERE project_id = $1", project_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    payload_dict = payload.model_dump(exclude_unset=True)
+    if "end_date" in payload_dict and "completion_date" not in payload_dict:
+        payload_dict["completion_date"] = payload_dict["end_date"]
+    payload_dict.pop("end_date", None)
+
+    if not payload_dict:
+        row = await conn.fetchrow(SINGLE_PROJECT_QUERY, project_id)
+        return ResponseEnvelope(data=ProjectOut(**dict(row)), meta=BaseMeta())
+
+    if "developer_customer_id" in payload_dict and payload_dict["developer_customer_id"]:
+        dev_exists = await conn.fetchval("SELECT customer_id FROM customers WHERE customer_id = $1", payload_dict["developer_customer_id"])
+        if not dev_exists:
+            raise HTTPException(status_code=400, detail="المطور العقاري المحدد غير موجود في قاعدة بيانات العملاء.")
+
+    updates = []
+    params = []
+    p_idx = 1
+    for k in ("name_ar", "name_en", "city_id", "status", "developer_customer_id", "start_date", "completion_date"):
+        if k in payload_dict:
+            v = payload_dict[k]
+            updates.append(f"{k} = ${p_idx}")
+            params.append(v.strip() if isinstance(v, str) else v)
+            p_idx += 1
+
+    if updates:
+        params.append(project_id)
+        await conn.execute(f"UPDATE projects SET {', '.join(updates)} WHERE project_id = ${p_idx}", *params)
+
+    row = await conn.fetchrow(SINGLE_PROJECT_QUERY, project_id)
+    return ResponseEnvelope(data=ProjectOut(**dict(row)), meta=BaseMeta())
+
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(
+    project_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_management_delete_permission(conn, x_user_id)
+
+    current = await conn.fetchrow("SELECT project_id, name_ar, name_en FROM projects WHERE project_id = $1", project_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    bld_count = await conn.fetchval("SELECT count(*) FROM buildings WHERE project_id = $1", project_id) or 0
+    unit_count = await conn.fetchval("SELECT count(*) FROM units WHERE project_id = $1", project_id) or 0
+    camp_count = await conn.fetchval("SELECT count(*) FROM campaigns WHERE target_property_id = $1", project_id) or 0
+
+    reasons = []
+    if bld_count > 0:
+        reasons.append(f"{bld_count} مبنى / عمارة تابعة")
+    if unit_count > 0:
+        reasons.append(f"{unit_count} وحدة عقارية مسجلة بالمشروع")
+    if camp_count > 0:
+        reasons.append(f"{camp_count} حملة تسويقية مرتبطة")
+
+    if reasons:
+        msg_ar = f"لا يمكن حذف المشروع العقاري '{current['name_ar'] or current['name_en']}' لارتباطه بالبيانات التالية: {', '.join(reasons)}. يرجى معالجة أو حذف السجلات التابعة أولاً."
+        raise HTTPException(status_code=400, detail=msg_ar)
+
+    await conn.execute("DELETE FROM projects WHERE project_id = $1", project_id)
 
 @router.get("/units", response_model=CollectionEnvelope[UnitOut])
 async def list_units(
@@ -168,6 +297,9 @@ async def list_units(
     project_id: Optional[str] = None,
     building_id: Optional[str] = None,
     property_type_id: Optional[str] = None,
+    property_type: Optional[str] = None,
+    city_id: Optional[str] = None,
+    city: Optional[str] = None,
     bedrooms: Optional[int] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
@@ -208,9 +340,24 @@ async def list_units(
         params.append(building_id)
         p_idx += 1
 
-    if property_type_id:
+    if property_type_id and property_type_id.strip():
         conditions.append(f"u.property_type_id = ${p_idx}")
-        params.append(property_type_id)
+        params.append(property_type_id.strip())
+        p_idx += 1
+    elif property_type and property_type.strip():
+        pt_term = f"%{property_type.strip()}%"
+        conditions.append(f"(u.property_type_id = ${p_idx} OR pt.code ILIKE ${p_idx} OR pt.name_ar ILIKE ${p_idx} OR pt.name_en ILIKE ${p_idx})")
+        params.append(pt_term)
+        p_idx += 1
+
+    if city_id and city_id.strip():
+        conditions.append(f"COALESCE(p_direct.city_id, p_bld.city_id) = ${p_idx}")
+        params.append(city_id.strip())
+        p_idx += 1
+    elif city and city.strip():
+        c_term = f"%{city.strip()}%"
+        conditions.append(f"(COALESCE(p_direct.city_id, p_bld.city_id) = ${p_idx} OR c.name_ar ILIKE ${p_idx} OR c.name_en ILIKE ${p_idx})")
+        params.append(c_term)
         p_idx += 1
 
     if bedrooms is not None:
@@ -235,9 +382,22 @@ async def list_units(
             params.append(lp_val)
             p_idx += 1
 
-    if search:
-        conditions.append(f"(u.unit_number ILIKE ${p_idx} OR COALESCE(p_direct.name_en, p_bld.name_en) ILIKE ${p_idx} OR COALESCE(p_direct.name_ar, p_bld.name_ar) ILIKE ${p_idx} OR u.unit_id ILIKE ${p_idx})")
-        params.append(f"%{search}%")
+    if search and search.strip():
+        s_term = f"%{search.strip()}%"
+        conditions.append(f"""(
+            u.unit_number ILIKE ${p_idx} OR
+            u.unit_id ILIKE ${p_idx} OR
+            COALESCE(p_direct.name_en, p_bld.name_en) ILIKE ${p_idx} OR
+            COALESCE(p_direct.name_ar, p_bld.name_ar) ILIKE ${p_idx} OR
+            b.name ILIKE ${p_idx} OR
+            b.building_code ILIKE ${p_idx} OR
+            pt.name_ar ILIKE ${p_idx} OR
+            pt.name_en ILIKE ${p_idx} OR
+            pt.code ILIKE ${p_idx} OR
+            c.name_ar ILIKE ${p_idx} OR
+            c.name_en ILIKE ${p_idx}
+        )""")
+        params.append(s_term)
         p_idx += 1
 
     where_clause = " AND ".join(conditions)
@@ -247,6 +407,8 @@ async def list_units(
         LEFT JOIN buildings b ON u.building_id = b.building_id
         LEFT JOIN projects p_bld ON b.project_id = p_bld.project_id
         LEFT JOIN projects p_direct ON u.project_id = p_direct.project_id
+        LEFT JOIN property_types pt ON u.property_type_id = pt.property_type_id
+        LEFT JOIN cities c ON COALESCE(p_direct.city_id, p_bld.city_id) = c.city_id
         WHERE {where_clause}
     """
     total = await conn.fetchval(count_query, *params)
@@ -376,12 +538,88 @@ async def create_building(payload: BuildingCreateIn, conn: asyncpg.Connection = 
             p.name_en AS project_name_en,
             b.building_code,
             b.name AS building_name,
-            b.floors_count
+            b.floors_count,
+            (SELECT count(*) FROM units u WHERE u.building_id = b.building_id)::int AS units_count
         FROM buildings b
         LEFT JOIN projects p ON b.project_id = p.project_id
         WHERE b.building_id = $1
     """, building_id)
     return ResponseEnvelope(data=BuildingOut(**dict(row)), meta=BaseMeta())
+
+@router.put("/buildings/{building_id}", response_model=ResponseEnvelope[BuildingOut])
+async def update_building(
+    building_id: str,
+    payload: BuildingUpdateIn,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    current = await conn.fetchrow("SELECT * FROM buildings WHERE building_id = $1", building_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Building not found")
+
+    payload_dict = payload.model_dump(exclude_unset=True)
+    target_prj_id = payload.project_id if "project_id" in payload_dict else current["project_id"]
+    target_code = payload.building_code.strip() if payload.building_code else current["building_code"]
+
+    if "project_id" in payload_dict:
+        prj = await conn.fetchrow("SELECT project_id FROM projects WHERE project_id = $1", target_prj_id)
+        if not prj:
+            raise HTTPException(status_code=400, detail="المشروع المحدد غير موجود.")
+
+    # Duplicate code check within the project
+    existing = await conn.fetchval(
+        "SELECT building_id FROM buildings WHERE project_id = $1 AND LOWER(TRIM(building_code)) = LOWER(TRIM($2)) AND building_id != $3",
+        target_prj_id, target_code, building_id
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail=f"Building code '{target_code}' already exists in this project.")
+
+    updates = []
+    params = []
+    p_idx = 1
+    for k in ("project_id", "building_code", "name", "floors_count"):
+        if k in payload_dict:
+            v = payload_dict[k]
+            updates.append(f"{k} = ${p_idx}")
+            params.append(v.strip() if isinstance(v, str) else v)
+            p_idx += 1
+
+    if updates:
+        params.append(building_id)
+        await conn.execute(f"UPDATE buildings SET {', '.join(updates)} WHERE building_id = ${p_idx}", *params)
+
+    # If floors_count changed, sync units belonging to this building
+    if "floors_count" in payload_dict and payload.floors_count is not None:
+        await conn.execute("UPDATE units SET total_floors = $1 WHERE building_id = $2", payload.floors_count, building_id)
+
+    row = await conn.fetchrow(SINGLE_BUILDING_QUERY, building_id)
+    return ResponseEnvelope(data=BuildingOut(**dict(row)), meta=BaseMeta())
+
+@router.delete("/buildings/{building_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_building(
+    building_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_management_delete_permission(conn, x_user_id)
+
+    current = await conn.fetchrow("SELECT building_id, building_code, name FROM buildings WHERE building_id = $1", building_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Building not found")
+
+    unit_count = await conn.fetchval("SELECT count(*) FROM units WHERE building_id = $1", building_id) or 0
+    camp_count = await conn.fetchval("SELECT count(*) FROM campaigns WHERE target_property_id = $1", building_id) or 0
+
+    reasons = []
+    if unit_count > 0:
+        reasons.append(f"{unit_count} وحدة عقارية مسجلة تابعة للمبنى")
+    if camp_count > 0:
+        reasons.append(f"{camp_count} حملة تسويقية مرتبطة بالمبنى")
+
+    if reasons:
+        msg_ar = f"لا يمكن حذف المبنى '{current['building_code']}' لارتباطه بالبيانات التالية: {', '.join(reasons)}. يرجى معالجة أو نقل أو حذف الوحدات التابعة أولاً."
+        raise HTTPException(status_code=400, detail=msg_ar)
+
+    await conn.execute("DELETE FROM buildings WHERE building_id = $1", building_id)
 
 @router.post("/units", response_model=ResponseEnvelope[UnitOut], status_code=status.HTTP_201_CREATED)
 async def create_unit(
@@ -390,14 +628,24 @@ async def create_unit(
 ):
     effective_project_id = payload.project_id
     effective_building_id = payload.building_id
+    effective_total_floors = payload.total_floors
 
-    # If building provided, verify it exists and inherit its project_id
+    # If building provided, verify it exists and inherit its project_id and floors_count
     if effective_building_id:
-        bld = await conn.fetchrow("SELECT building_id, project_id FROM buildings WHERE building_id = $1", effective_building_id)
+        bld = await conn.fetchrow("SELECT building_id, project_id, floors_count FROM buildings WHERE building_id = $1", effective_building_id)
         if not bld:
             raise HTTPException(status_code=400, detail="Invalid building_id: building does not exist.")
         if not effective_project_id:
             effective_project_id = bld["project_id"]
+
+        # Enforce total_floors from building floors_count
+        if bld["floors_count"] is not None:
+            effective_total_floors = bld["floors_count"]
+            if payload.floor_no is not None and payload.floor_no > bld["floors_count"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"رقم الطابق ({payload.floor_no}) لا يمكن أن يتجاوز إجمالي عدد طوابق المبنى ({bld['floors_count']})."
+                )
 
         # Check if unit_number already exists in this building
         existing = await conn.fetchval(
@@ -451,7 +699,7 @@ async def create_unit(
             $13, $14, $15, $16, $17,
             $18, $19, $20, $21
         )
-    """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no, payload.total_floors,
+    """, unit_id, effective_project_id, effective_building_id, payload.unit_number.strip(), payload.property_type_id, payload.floor_no, effective_total_floors,
          payload.area_sqm, payload.bedrooms, payload.bathrooms, payload.parking_spaces, payload.orientation,
          payload.asking_price, payload.rent_price, payload.annual_operating_expenses, payload.annual_vacancy_rate, payload.investment_notes,
          lp, st, payload.owner_customer_id, payload.assigned_user_id
@@ -466,7 +714,7 @@ async def update_unit(
     payload: UnitUpdateIn,
     conn: asyncpg.Connection = Depends(get_db)
 ):
-    current = await conn.fetchrow("SELECT unit_id, building_id, project_id, unit_number, status FROM units WHERE unit_id = $1", unit_id)
+    current = await conn.fetchrow("SELECT unit_id, building_id, project_id, unit_number, floor_no, total_floors, status FROM units WHERE unit_id = $1", unit_id)
     if not current:
         raise HTTPException(status_code=404, detail="Unit not found")
 
@@ -476,7 +724,7 @@ async def update_unit(
     target_prj_id = payload.project_id if "project_id" in payload_dict else current["project_id"]
 
     if target_bld_id:
-        bld = await conn.fetchrow("SELECT building_id, project_id FROM buildings WHERE building_id = $1", target_bld_id)
+        bld = await conn.fetchrow("SELECT building_id, project_id, floors_count FROM buildings WHERE building_id = $1", target_bld_id)
         if not bld:
             raise HTTPException(status_code=400, detail="Invalid building_id: building does not exist.")
         if not target_prj_id:
@@ -523,8 +771,8 @@ async def update_unit(
         "building_id": payload.building_id if "building_id" in payload_dict else current["building_id"],
         "unit_number": payload.unit_number.strip() if payload.unit_number else None,
         "property_type_id": payload.property_type_id,
-        "floor_no": payload.floor_no,
-        "total_floors": payload.total_floors,
+        "floor_no": payload.floor_no if "floor_no" in payload_dict else current["floor_no"],
+        "total_floors": payload.total_floors if "total_floors" in payload_dict else current["total_floors"],
         "area_sqm": payload.area_sqm,
         "bedrooms": payload.bedrooms,
         "bathrooms": payload.bathrooms,
@@ -540,6 +788,20 @@ async def update_unit(
         "owner_customer_id": payload.owner_customer_id,
         "assigned_user_id": payload.assigned_user_id,
     }
+
+    # Enforce total_floors and validate floor_no when unit belongs to a building
+    if target_bld_id:
+        bld = await conn.fetchrow("SELECT floors_count FROM buildings WHERE building_id = $1", target_bld_id)
+        if bld and bld["floors_count"] is not None:
+            field_map["total_floors"] = bld["floors_count"]
+            if "total_floors" not in payload_dict:
+                payload_dict["total_floors"] = bld["floors_count"]
+            target_floor_no = field_map["floor_no"]
+            if target_floor_no is not None and target_floor_no > bld["floors_count"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"رقم الطابق ({target_floor_no}) لا يمكن أن يتجاوز إجمالي عدد طوابق المبنى ({bld['floors_count']})."
+                )
 
     # Ensure project_id is always synced
     if "project_id" in payload_dict or ("building_id" in payload_dict and target_prj_id != current["project_id"]):
@@ -562,19 +824,62 @@ async def update_unit(
     return ResponseEnvelope(data=UnitOut(**dict(row)), meta=BaseMeta())
 
 @router.delete("/units/{unit_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_unit(unit_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    # Check if unit has active tenancies or lease records
-    has_tenancies = await conn.fetchval("SELECT count(*) FROM tenancies WHERE unit_id = $1", unit_id)
-    if has_tenancies > 0:
-        raise HTTPException(status_code=400, detail="Cannot delete unit: associated tenancy/lease records exist.")
-    
-    # Check listings
-    has_listings = await conn.fetchval("SELECT count(*) FROM listings WHERE unit_id = $1", unit_id)
-    if has_listings > 0:
-        raise HTTPException(status_code=400, detail="Cannot delete unit: associated listings exist.")
+async def delete_unit(
+    unit_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    await verify_management_delete_permission(conn, x_user_id)
 
-    res = await conn.execute("DELETE FROM units WHERE unit_id = $1", unit_id)
-    if res == "DELETE 0":
+    current = await conn.fetchrow("SELECT unit_id, unit_number FROM units WHERE unit_id = $1", unit_id)
+    if not current:
         raise HTTPException(status_code=404, detail="Unit not found")
+
+    reasons = []
+
+    # 1. طلبات (Leads & Inquiries)
+    leads_count = await conn.fetchval("SELECT count(*) FROM leads WHERE unit_id = $1", unit_id) or 0
+    lead_units_count = await conn.fetchval("SELECT count(*) FROM lead_units WHERE unit_id = $1", unit_id) or 0
+    total_leads = leads_count + lead_units_count
+    if total_leads > 0:
+        reasons.append(f"{total_leads} طلب عميل مرتبط")
+
+    # 2. فرص بيعية وصفقات (Opportunities, Offers, Reservations, Invoices)
+    opp_units = await conn.fetchval("SELECT count(*) FROM opportunity_units WHERE unit_id = $1", unit_id) or 0
+    offers_cnt = await conn.fetchval("SELECT count(*) FROM offers WHERE unit_id = $1", unit_id) or 0
+    res_cnt = await conn.fetchval("SELECT count(*) FROM reservations WHERE unit_id = $1", unit_id) or 0
+    inv_cnt = await conn.fetchval("SELECT count(*) FROM invoices WHERE unit_id = $1", unit_id) or 0
+    deals_total = opp_units + offers_cnt + res_cnt + inv_cnt
+    if deals_total > 0:
+        reasons.append(f"{deals_total} صفقة/عرض/حجز بيعي مرتبط")
+
+    # 3. إدارة أصول وعقود تشغيلية وصيانة (Tenancies, Maintenance, Managed Units)
+    tenancies_cnt = await conn.fetchval("SELECT count(*) FROM tenancies WHERE unit_id = $1", unit_id) or 0
+    tickets_cnt = await conn.fetchval("SELECT count(*) FROM maintenance_tickets WHERE unit_id = $1", unit_id) or 0
+    managed_cnt = await conn.fetchval("SELECT count(*) FROM managed_units WHERE unit_id = $1", unit_id) or 0
+    pm_total = tenancies_cnt + tickets_cnt + managed_cnt
+    if pm_total > 0:
+        reasons.append(f"{pm_total} سجل إدارة أصول (عقود إيجار/بلاغات صيانة)")
+
+    # 4. حملات دعائية وإعلانية (Campaigns & Listings)
+    listings_cnt = await conn.fetchval("SELECT count(*) FROM listings WHERE unit_id = $1", unit_id) or 0
+    camps_cnt = await conn.fetchval("SELECT count(*) FROM campaigns WHERE target_property_id = $1", unit_id) or 0
+    mkt_total = listings_cnt + camps_cnt
+    if mkt_total > 0:
+        reasons.append(f"{mkt_total} إعلان/حملة تسويقية نشطة")
+
+    # 5. مستندات وفحوصات رسمية مرتبطة
+    docs_cnt = await conn.fetchval("SELECT count(*) FROM documents WHERE unit_id = $1", unit_id) or 0
+    if docs_cnt > 0:
+        reasons.append(f"{docs_cnt} وثيقة مؤرشفة")
+
+    if reasons:
+        msg_ar = f"لا يمكن حذف الوحدة العقارية '{current['unit_number']}' لأنها مرتبطة بالعمليات التالية: {', '.join(reasons)}. يرجى فك الارتباط أو إنهاء المعاملات قبل الحذف."
+        raise HTTPException(status_code=400, detail=msg_ar)
+
+    # Safe deletion: remove auxiliary history/media records
+    await conn.execute("DELETE FROM property_media WHERE unit_id = $1", unit_id)
+    await conn.execute("DELETE FROM unit_status_history WHERE unit_id = $1", unit_id)
+    await conn.execute("DELETE FROM units WHERE unit_id = $1", unit_id)
 
 

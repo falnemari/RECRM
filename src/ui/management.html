@@ -519,7 +519,7 @@
 
             <div id="ticket-filter-banner" style="display:none; background:#eff6ff; border:1.5px solid #93c5fd; border-radius:8px; padding:10px 16px; margin-bottom:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div id="ticket-filter-banner-text" style="color:#1e40af; font-size:0.9em; font-weight:700;"></div>
-                <button type="button" class="btn btn-sm btn-outline" onclick="clearTicketSearch()" style="background:white; color:#1e40af; border-color:#93c5fd; padding:3px 10px; font-size:0.82em; font-weight:700;">✕ إلغاء التصفية وعرض الكل</button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearTicketSearch()" style="background:white; color:#1e40af; border-color:#93c5fd; padding:3px 10px; font-size:0.82em; font-weight:700;" data-i18n="btn_clear_filter">✕ Clear Filter & Show All</button>
             </div>
 
             <div class="table-responsive">
@@ -566,7 +566,7 @@
 
             <div id="rent-filter-banner" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:10px 16px; margin-bottom:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div id="rent-filter-banner-text" style="color:#166534; font-size:0.9em; font-weight:700;"></div>
-                <button type="button" class="btn btn-sm btn-outline" onclick="clearRentSearch()" style="background:white; color:#166534; border-color:#86efac; padding:3px 10px; font-size:0.82em; font-weight:700;">✕ إلغاء التصفية وعرض الكل</button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearRentSearch()" style="background:white; color:#166534; border-color:#86efac; padding:3px 10px; font-size:0.82em; font-weight:700;" data-i18n="btn_clear_filter">✕ Clear Filter & Show All</button>
             </div>
 
             <div class="table-responsive">
@@ -852,11 +852,56 @@
                     <label data-i18n="lbl_payment_amount">Payment Received (SAR) *</label>
                     <input type="number" id="rp-amount" step="any" min="0.01" required>
                 </div>
+                <div class="form-row" style="display:flex; gap:12px; margin-top:8px;">
+                    <div class="form-group" style="flex:1;">
+                        <label style="font-size:0.82em; font-weight:600;">طريقة السداد</label>
+                        <select id="rp-method" class="select-filter" style="width:100%;">
+                            <option value="EJAR_ONLINE" selected>بوابة إيجار الإلكترونية (مدى / سداد)</option>
+                            <option value="BANK_TRANSFER">تحويل بنكي مباشر لحساب المالك</option>
+                            <option value="CHEQUE">شيك مصرفي معتمد</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label style="font-size:0.82em; font-weight:600;">رقم العملية / المرجع</label>
+                        <input type="text" id="rp-ref" placeholder="مثال: EJR-998811" class="search-input" style="width:100%;">
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-rent-pay')" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn btn-success" data-i18n="btn_confirm_pay">Confirm & Record Receipt</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: View Rent Collection Details & Official Receipt Voucher -->
+    <div id="modal-rent-details" class="modal-overlay">
+        <div class="modal" style="max-width: 940px; width: 95%;">
+            <div class="modal-header">
+                <h3 id="mrd-title">تفاصيل إجراء تحصيل الإيجار وسند القبض المالي</h3>
+                <button class="close-btn" onclick="closeModal('modal-rent-details')">&times;</button>
+            </div>
+            <div style="padding: 16px 20px;">
+                <!-- Summary Card -->
+                <div id="mrd-summary" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-bottom:16px;"></div>
+                
+                <!-- Document Preview / Action Section -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="margin:0; font-size:1.05em; color:var(--primary); display:flex; align-items:center; gap:6px;">
+                        <span>📄</span> <span>سند القبض المالي المعتمد</span>
+                    </h4>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-sm btn-outline" id="mrd-print-btn" onclick="printRentReceipt()" style="display:none;">🖨️ طباعة السند</button>
+                        <button type="button" class="btn btn-sm btn-primary" id="mrd-open-btn" onclick="openFullRentReceipt()" style="display:none; background:#1e3a8a; color:white;">🔍 فتح في نافذة مستقلة</button>
+                    </div>
+                </div>
+                <div id="mrd-doc-container" style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; background:#fff; height:500px;">
+                    <iframe id="mrd-doc-iframe" style="width:100%; height:100%; border:none;"></iframe>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-rent-details')">إغلاق</button>
+            </div>
         </div>
     </div>
 
@@ -944,7 +989,7 @@
 
     <!-- 6. Modal: Tenancy Collections Viewer -->
     <div id="modal-tenancy-view" class="modal-overlay">
-        <div class="modal" style="max-width: 700px;">
+        <div class="modal" style="max-width: 850px;">
             <div class="modal-header">
                 <h3 id="tv-title">Lease Agreement Details</h3>
                 <button class="close-btn" onclick="closeModal('modal-tenancy-view')">&times;</button>
@@ -1148,6 +1193,7 @@
                 lbl_quoted_amount: "Quoted Cost (SAR)", lbl_vendor_name: "Vendor / Contractor Name *",
                 lbl_contract: "Contract:", lbl_total_due: "Amount Due:", lbl_remaining_due: "Remaining Balance:",
                 btn_cancel: "Cancel", btn_close: "Close", btn_save_tenancy: "Create Lease Agreement",
+                btn_clear_filter: "✕ Clear Filter & Show All",
                 btn_save_ticket: "Open Ticket", btn_confirm_pay: "Confirm & Record Receipt",
                 btn_dispatch_wo: "Dispatch Work Order", btn_save_vendor: "Register Vendor",
                 modal_pmc_title: "New Owner Management Contract", lbl_owner: "Select Property Owner *",
@@ -1212,6 +1258,7 @@
                 lbl_quoted_amount: "تكلفة العرض (ر.س)", lbl_vendor_name: "اسم الشركة / المقاول *",
                 lbl_contract: "العقد:", lbl_total_due: "المستحق:", lbl_remaining_due: "المتبقي:",
                 btn_cancel: "إلغاء", btn_close: "إغلاق", btn_save_tenancy: "حفظ وتفعيل عقد الإيجار",
+                btn_clear_filter: "✕ إلغاء التصفية وعرض الكل",
                 btn_save_ticket: "تسجيل التذكرة", btn_confirm_pay: "تأكيد واستخراج السند",
                 btn_dispatch_wo: "إصدار أمر العمل", btn_save_vendor: "تسجيل المقاول",
                 modal_pmc_title: "تسجيل عقد إدارة أملاك جديد", lbl_owner: "مالك العقار *",
@@ -1273,6 +1320,12 @@
                 }
             });
             document.getElementById('lang-label').textContent = i18nData[currentLang].lang_label;
+            if (typeof ticketsData !== 'undefined' && ticketsData && ticketsData.length > 0) {
+                renderTickets(filterTickets());
+            }
+            if (typeof rentData !== 'undefined' && rentData && rentData.length > 0) {
+                renderRentCollections(filterRentCollections());
+            }
         }
 
         function toggleLanguage() {
@@ -1399,51 +1452,174 @@
         async function viewTenancyDetails(tenancyId) {
             try {
                 const res = await fetch(`${API_BASE}/api/v1/tenancies/${tenancyId}`);
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.detail || `HTTP ${res.status}: ${res.statusText}`);
+                }
                 const json = await res.json();
                 const d = json.data;
                 const t = d.tenancy;
                 const cols = d.collections || [];
+                const invs = d.invoices || [];
+                const isAr = currentLang === 'ar';
 
-                document.getElementById('tv-title').textContent = `Contract: ${t.contract_number} (Unit ${t.unit_number})`;
+                document.getElementById('tv-title').textContent = isAr 
+                    ? `تفاصيل عقد الإيجار: ${t.contract_number} (الوحدة ${t.unit_number || ''})`
+                    : `Contract: ${t.contract_number} (Unit ${t.unit_number || ''})`;
+
+                const stBadge = t.status === 'ACTIVE' ? 'badge-paid' : 'badge-due';
+                const ejarBadge = t.ejar_status ? `<span class="badge" style="background:#ecfdf5; color:#047857; margin-inline-start:6px;">Ejar: ${t.ejar_status}</span>` : '';
+
                 let html = `
-                    <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <div><strong>Tenant:</strong> ${t.tenant_name} (${t.tenant_mobile || 'No phone'})</div>
-                        <div><strong>Rent Amount:</strong> ${Number(t.rent_amount || 0).toLocaleString()} SAR / ${t.payment_frequency}</div>
-                        <div><strong>Period:</strong> ${t.start_date} to ${t.end_date || 'N/A'}</div>
-                        <div><strong>Security Deposit:</strong> ${t.deposit_amount ? Number(t.deposit_amount).toLocaleString() + ' SAR' : '0.00 SAR'}</div>
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 14px; border-radius: 8px; margin-bottom: 18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <span style="font-size: 1.1em; font-weight: 700; color: #0f172a;">${t.tenant_name || '--'}</span>
+                                <span style="color: #64748b; font-size: 0.85em; margin-inline-start: 6px;">(${t.tenant_mobile || (isAr ? 'بدون هاتف' : 'No phone')})</span>
+                            </div>
+                            <div>
+                                <span class="badge ${stBadge}">${t.status}</span>
+                                ${ejarBadge}
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 0.88em; color: #334155;">
+                            <div><strong>${isAr ? 'الوحدة العقارية:' : 'Unit:'}</strong> ${t.unit_number || '--'}</div>
+                            <div><strong>${isAr ? 'القيمة الإيجارية:' : 'Rent Amount:'}</strong> <span style="color:#0f172a; font-weight:700;">${Number(t.rent_amount || 0).toLocaleString()} SAR</span> / ${t.payment_frequency}</div>
+                            <div><strong>${isAr ? 'مدة العقد:' : 'Period:'}</strong> ${t.start_date} ${isAr ? 'إلى' : 'to'} ${t.end_date || 'N/A'}</div>
+                            <div><strong>${isAr ? 'مبلغ التأمين:' : 'Security Deposit:'}</strong> ${t.deposit_amount ? Number(t.deposit_amount).toLocaleString() + ' SAR' : '0.00 SAR'} (${t.security_deposit_status || '--'})</div>
+                            ${t.tenant_email ? `<div><strong>${isAr ? 'البريد الإلكتروني:' : 'Email:'}</strong> ${t.tenant_email}</div>` : ''}
+                            ${t.ejar_contract_number ? `<div><strong>${isAr ? 'رقم توثيق إيجار:' : 'Ejar Contract #:'}</strong> <span style="font-family:monospace;">${t.ejar_contract_number}</span></div>` : ''}
+                        </div>
                     </div>
-                    <h4>Rent Installments Schedule</h4>
-                    <table style="width:100%; border-collapse: collapse; font-size: 0.85em;">
-                        <thead>
-                            <tr style="background:#e2e8f0;">
-                                <th style="padding:6px;">Due Date</th>
-                                <th style="padding:6px;">Amount Due</th>
-                                <th style="padding:6px;">Amount Paid</th>
-                                <th style="padding:6px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+
+                    <!-- 1. Rent Installments Schedule -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <h4 style="margin:0; font-size:1.0em; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                                <span>📅</span>
+                                <span>${isAr ? 'جدول تحصيل أقساط الإيجار الدورية' : 'Rent Installments Schedule'}</span>
+                                <span class="badge" style="background:#f1f5f9; color:#475569; font-weight:700;">${cols.length}</span>
+                            </h4>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="background:#f1f5f9; border-bottom: 1.5px solid #cbd5e1;">
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</th>
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'المبلغ المستحق' : 'Amount Due'}</th>
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'المبلغ المحصل' : 'Amount Paid'}</th>
+                                        <th style="padding:7px; text-align:center;">${isAr ? 'الحالة' : 'Status'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                 `;
                 if (cols.length === 0) {
-                    html += `<tr><td colspan="4" style="text-align:center; padding:12px;">No scheduled installments.</td></tr>`;
+                    html += `<tr><td colspan="4" style="text-align:center; padding:12px; color:#64748b;">${isAr ? 'لا توجد أقساط مجدولة مسجلة.' : 'No scheduled installments.'}</td></tr>`;
                 } else {
                     cols.forEach(c => {
                         const bCls = c.status === 'PAID' ? 'badge-paid' : (c.status === 'PARTIAL' ? 'badge-partial' : 'badge-due');
                         html += `
-                            <tr>
-                                <td style="padding:6px;">${c.due_date}</td>
-                                <td style="padding:6px;">${Number(c.amount_due || 0).toLocaleString()} SAR</td>
-                                <td style="padding:6px;">${Number(c.amount_paid || 0).toLocaleString()} SAR</td>
-                                <td style="padding:6px;"><span class="badge ${bCls}">${c.status}</span></td>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding:7px;">${c.due_date}</td>
+                                <td style="padding:7px; font-weight:700;">${Number(c.amount_due || 0).toLocaleString()} SAR</td>
+                                <td style="padding:7px; color:#15803d; font-weight:700;">${Number(c.amount_paid || 0).toLocaleString()} SAR</td>
+                                <td style="padding:7px; text-align:center;"><span class="badge ${bCls}">${c.status}</span></td>
                             </tr>
                         `;
                     });
                 }
-                html += `</tbody></table>`;
+                html += `</tbody></table></div></div>`;
+
+                // 2. Associated Invoices & Saudi Statutory Fees Section
+                html += `
+                    <div style="border-top: 1.5px solid #e2e8f0; padding-top: 16px; margin-top: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                            <h4 style="margin:0; font-size:1.0em; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                                <span>🧾</span>
+                                <span>${isAr ? 'الفواتير والرسوم النظامية المرتبطة بالعقد والوحدة' : 'Associated Fee & Tax Invoices'}</span>
+                                <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${invs.length}</span>
+                            </h4>
+                            <a href="finance.html?tab=invoices&search=${encodeURIComponent(t.contract_number || t.unit_number || '')}" target="_blank" class="btn btn-sm btn-outline" style="font-size:0.8em; text-decoration:none; padding:4px 10px; font-weight:700;">
+                                ${isAr ? 'الانتقال إلى شاشة الفواتير والمالية ↗' : 'Open Finance Invoices ↗'}
+                            </a>
+                        </div>
+                `;
+
+                if (invs.length === 0) {
+                    html += `
+                        <div style="text-align:center; padding:16px; color:#64748b; background:#f8fafc; border-radius:6px; font-size:0.88em;">
+                            ${isAr ? 'لا توجد فواتير أو رسوم نظامية مسجلة لهذه الوحدة أو العقد حالياً.' : 'No invoices or statutory fees currently linked to this unit/contract.'}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="background:#f1f5f9; border-bottom: 1.5px solid #cbd5e1;">
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'رقم الفاتورة والمرجع' : 'Invoice # / Ref'}</th>
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'المكلف بالسداد' : 'Payer'}</th>
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'البند والتصنيف' : 'Description / Items'}</th>
+                                        <th style="padding:7px; text-align:start;">${isAr ? 'المبلغ الإجمالي' : 'Total Amount'}</th>
+                                        <th style="padding:7px; text-align:center;">${isAr ? 'الحالة' : 'Status'}</th>
+                                        <th style="padding:7px; text-align:center;">${isAr ? 'إجراءات' : 'Actions'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    invs.forEach(inv => {
+                        const isPaid = (inv.status === 'PAID');
+                        const stCls = isPaid ? 'badge-paid' : 'badge-due';
+                        const isCust = (inv.payer_type === 'CUSTOMER');
+                        const payerBadge = isCust 
+                            ? `<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.8em;">👤 ${isAr ? 'المستأجر' : 'Tenant'}</span>`
+                            : `<span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.8em;">🏢 ${isAr ? 'المالك' : 'Owner'}</span>`;
+                        
+                        let desc = inv.notes || '';
+                        if (inv.line_items && inv.line_items.length > 0) {
+                            const itemLabels = inv.line_items.map(li => isAr ? (li.item_ar || li.description || '') : (li.item_en || li.description || li.item_ar || '')).filter(Boolean);
+                            if (itemLabels.length > 0) desc = itemLabels.join(' • ');
+                        }
+
+                        html += `
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding:7px;">
+                                    <strong style="font-family:monospace; color:#0f172a;">${inv.invoice_number}</strong>
+                                    <div style="font-size:0.75em; color:#64748b; font-family:monospace;">${inv.invoice_id}</div>
+                                </td>
+                                <td style="padding:7px;">
+                                    <div>${payerBadge}</div>
+                                    <div style="font-weight:600; margin-top:2px;">${inv.payer_name || '--'}</div>
+                                    ${inv.payer_mobile ? `<div style="font-size:0.75em; color:#64748b;">📞 ${inv.payer_mobile}</div>` : ''}
+                                </td>
+                                <td style="padding:7px; max-width:220px; line-height:1.35; color:#334155;">
+                                    ${desc || '--'}
+                                </td>
+                                <td style="padding:7px;">
+                                    <strong style="color:#0f172a; font-size:1.02em;">${Number(inv.total_amount || 0).toLocaleString()} SAR</strong>
+                                    <div style="font-size:0.75em; color:#64748b;">${isAr ? 'الأساسي: ' : 'Base: '}${Number(inv.subtotal || 0).toLocaleString()} | ${isAr ? 'ضريبة: ' : 'VAT: '}${Number(inv.vat_amount || 0).toLocaleString()}</div>
+                                </td>
+                                <td style="padding:7px; text-align:center;">
+                                    <span class="badge ${stCls}">${inv.status}</span>
+                                    ${inv.paid_at ? `<div style="font-size:0.72em; color:#166534; margin-top:2px;">${inv.paid_at.substring(0, 10)}</div>` : ''}
+                                </td>
+                                <td style="padding:7px; text-align:center;">
+                                    <a href="finance.html?tab=invoices&search=${encodeURIComponent(inv.invoice_number)}" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none; padding:3px 8px; font-weight:700; font-size:0.8em; white-space:nowrap;">
+                                        ${isPaid ? (isAr ? '👁 عرض بالمالية' : '👁 View') : (isAr ? '💵 تحصيل بالمالية' : '💵 Collect')}
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+                html += `</div>`;
+
                 document.getElementById('tv-body').innerHTML = html;
                 openModal('modal-tenancy-view');
             } catch (err) {
-                alert("Failed to load details: " + err);
+                const isAr = currentLang === 'ar';
+                alert((isAr ? "فشل تحميل تفاصيل العقد: " : "Failed to load details: ") + (err.message || err));
             }
         }
 
@@ -1652,11 +1828,20 @@
                         <td style="color:${remaining > 0 ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:700;">${remaining.toLocaleString()} SAR</td>
                         <td><span class="badge ${bCls}">${r.status}</span></td>
                         <td>
-                            ${remaining > 0 ? `
-                                <button class="btn btn-success btn-sm" onclick="openRecordRentPayModal('${r.rent_collection_id}', '${r.contract_number}', '${r.due_date}', ${due}, ${remaining})">
-                                    Record Receipt
-                                </button>
-                            ` : `<span style="color:var(--success); font-size:0.85em;">✔ Settled</span>`}
+                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                ${remaining > 0 ? `
+                                    <button class="btn btn-success btn-sm" onclick="openRecordRentPayModal('${r.rent_collection_id}', '${r.contract_number}', '${r.due_date}', ${due}, ${remaining})">
+                                        💰 ${isAr ? 'تسجيل السداد' : 'Record Receipt'}
+                                    </button>
+                                ` : `
+                                    <span class="badge badge-paid" style="font-size:0.8em;">✔ ${isAr ? 'مسددة' : 'Settled'}</span>
+                                `}
+                                ${(paid > 0 || r.status === 'PAID') ? `
+                                    <button type="button" class="btn btn-sm btn-outline" style="font-size:0.78em; padding:4px 8px; border-color:#2563eb; color:#1d4ed8; font-weight:700;" onclick="viewRentCollectionDetails('${r.rent_collection_id}')">
+                                        👁️ ${isAr ? 'معاينة الإجراء والسند' : 'View Action & Receipt'}
+                                    </button>
+                                ` : ''}
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1973,23 +2158,123 @@
             e.preventDefault();
             const collectionId = document.getElementById('rp-collection-id').value;
             const amount = parseFloat(document.getElementById('rp-amount').value);
+            const method = document.getElementById('rp-method')?.value || 'EJAR_ONLINE';
+            const ref = document.getElementById('rp-ref')?.value || undefined;
 
             try {
                 const res = await fetch(`${API_BASE}/api/v1/rent-collections/${collectionId}/record-payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount_paid: amount })
+                    body: JSON.stringify({
+                        amount_paid: amount,
+                        payment_method: method,
+                        payment_reference: ref
+                    })
                 });
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.detail || 'Payment record failed');
                 }
+                const resJson = await res.json();
                 closeModal('modal-rent-pay');
-                loadRentCollections();
+                await loadRentCollections();
                 loadSummary();
-                alert("Rent payment receipt recorded successfully!");
+                const isAr = currentLang === 'ar';
+                alert(isAr ? "✓ تم تسجيل سداد الدفعة الإيجارية وإصدار سند القبض الرسمي بنجاح!" : "Rent payment receipt recorded successfully!");
+                if (resJson && resJson.data && resJson.data.rent_collection_id) {
+                    viewRentCollectionDetails(resJson.data.rent_collection_id);
+                }
             } catch (err) {
                 alert("Payment error: " + err.message);
+            }
+        }
+
+        let currentRentDetailDocId = null;
+
+        async function viewRentCollectionDetails(collectionId) {
+            const isAr = currentLang === 'ar';
+            let r = (rentData || []).find(x => x.rent_collection_id === collectionId);
+            if (!r) {
+                try {
+                    const fetchRes = await fetch(`${API_BASE}/api/v1/rent-collections?collection_id=${encodeURIComponent(collectionId)}`);
+                    const fetchJson = await fetchRes.json();
+                    if (fetchJson.data && fetchJson.data.length > 0) r = fetchJson.data[0];
+                } catch (_) {}
+            }
+            if (!r) {
+                alert(isAr ? "لم يتم العثور على سجل التحصيل." : "Rent collection record not found.");
+                return;
+            }
+
+            const due = Number(r.amount_due || 0);
+            const paid = Number(r.amount_paid || 0);
+            const rem = Math.max(0, due - paid);
+            const paidDate = r.paid_at ? r.paid_at.substring(0, 19).replace('T', ' ') : (r.due_date || '--');
+
+            const summaryEl = document.getElementById('mrd-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:0.88em;">
+                        <div><span style="color:#64748b;">رقم المعاملة:</span> <strong>${r.rent_collection_id}</strong></div>
+                        <div><span style="color:#64748b;">رقم العقد:</span> <strong style="color:#1e3a8a;">${r.contract_number || 'N/A'}</strong></div>
+                        <div><span style="color:#64748b;">الوحدة:</span> <strong>${r.unit_number ? 'Unit ' + r.unit_number : 'N/A'}</strong></div>
+                        <div><span style="color:#64748b;">المستأجر:</span> <strong>${r.tenant_name || 'N/A'}</strong></div>
+                        <div><span style="color:#64748b;">تاريخ الاستحقاق:</span> <strong>${r.due_date}</strong></div>
+                        <div><span style="color:#64748b;">تاريخ وساعة التحصيل:</span> <strong style="color:#16a34a;">${paidDate}</strong></div>
+                        <div><span style="color:#64748b;">المبلغ المحصل:</span> <strong style="color:#16a34a; font-size:1.1em;">${paid.toLocaleString()} SAR</strong></div>
+                        <div><span style="color:#64748b;">الحالة:</span> <span class="badge ${r.status === 'PAID' ? 'badge-paid' : 'badge-partial'}">${r.status}</span></div>
+                    </div>
+                `;
+            }
+
+            let docId = r.document_id;
+            const iframe = document.getElementById('mrd-doc-iframe');
+            const printBtn = document.getElementById('mrd-print-btn');
+            const openBtn = document.getElementById('mrd-open-btn');
+
+            if (!docId) {
+                try {
+                    const searchRes = await fetch(`${API_BASE}/api/v1/documents?search=${encodeURIComponent(r.contract_number || collectionId)}`);
+                    const searchJson = await searchRes.json();
+                    if (searchJson.data && searchJson.data.length > 0) {
+                        const receiptDoc = searchJson.data.find(d => 
+                            (d.metadata && d.metadata.rent_collection_id === collectionId) ||
+                            (d.file_name && d.file_name.includes(collectionId)) ||
+                            ((d.document_type_code === 'PAYMENT_RECEIPT' || (d.file_name || '').includes('سند_قبض')) && (d.file_name || '').includes(r.contract_number))
+                        );
+                        if (receiptDoc) docId = receiptDoc.document_id;
+                    }
+                } catch (_) {}
+            }
+
+            currentRentDetailDocId = docId;
+            if (docId) {
+                iframe.src = `${API_BASE}/api/v1/documents/${docId}/html`;
+                if (printBtn) printBtn.style.display = 'inline-block';
+                if (openBtn) openBtn.style.display = 'inline-block';
+            } else {
+                iframe.srcdoc = `
+                    <div style="font-family:sans-serif; text-align:center; padding:50px; color:#64748b;">
+                        <h3>سند القبض قيد الأرشفة والتوليد</h3>
+                        <p>تم استلام الدفعة بنجاح بمبلغ ${paid.toLocaleString()} ر.س بتاريخ ${paidDate}.</p>
+                    </div>
+                `;
+                if (printBtn) printBtn.style.display = 'none';
+                if (openBtn) openBtn.style.display = 'none';
+            }
+
+            openModal('modal-rent-details');
+        }
+
+        function printRentReceipt() {
+            if (currentRentDetailDocId) {
+                window.open(`${API_BASE}/api/v1/documents/${currentRentDetailDocId}/html`, '_blank');
+            }
+        }
+
+        function openFullRentReceipt() {
+            if (currentRentDetailDocId) {
+                window.open(`${API_BASE}/api/v1/documents/${currentRentDetailDocId}/html`, '_blank');
             }
         }
 
