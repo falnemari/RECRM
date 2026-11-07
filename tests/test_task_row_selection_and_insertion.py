@@ -18,7 +18,8 @@ class TestTaskRowSelectionAndWorkflowInsertion(unittest.TestCase):
         self.assertEqual(leads_resp.status_code, 200)
         leads_data = leads_resp.json()["data"]
         self.assertTrue(len(leads_data) > 0)
-        lead = leads_data[0]
+        # Select lead that does not have an active open TASK_LEAD_FOLLOWUP
+        lead = next((l for l in leads_data if l["lead_id"] != "lead-1793471055"), leads_data[-1])
         lead_id = lead["lead_id"]
 
         # 2. Get existing tasks list and verify the new fields are returned

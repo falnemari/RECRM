@@ -615,10 +615,12 @@ class WorkflowEngine:
         task_id: Optional[str] = None,
         outcome: Optional[str] = None,
         notes: Optional[str] = None,
-        completed_at: Optional[datetime] = None
+        completed_at: Optional[datetime] = None,
+        scheduled_at: Optional[datetime] = None,
+        status: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Records an immutable Activity representing what actually occurred in the real world.
+        Records an Activity representing real-world actions or planned appointments.
         """
         tmpl = await conn.fetchrow(
             """
@@ -631,7 +633,9 @@ class WorkflowEngine:
         subject = tmpl["standard_title_ar"] if tmpl else f"Activity ({template_id})"
 
         activity_id = await get_next_id(conn, "activities", "activity")
-        now_dt = completed_at or datetime.now(timezone.utc)
+        now_dt = datetime.now(timezone.utc)
+        act_status = (status or ("PLANNED" if scheduled_at and not completed_at else "COMPLETED")).upper()
+        comp_dt = completed_at if completed_at is not None else (now_dt if act_status == "COMPLETED" else None)
 
         act_type_code = "CALL"
         if template_id in ("ACT_VIEWING_SCHEDULED", "ACT_VIEWING_REPORT_SUBMITTED"):
@@ -652,13 +656,13 @@ class WorkflowEngine:
             """
             INSERT INTO activities (
                 activity_id, template_id, user_id, customer_id, lead_id, opportunity_id,
-                activity_type_id, subject, description, outcome, completed_at, status, created_at, task_id
+                activity_type_id, subject, description, outcome, scheduled_at, completed_at, status, created_at, task_id
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'COMPLETED', NOW(), $12
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14
             )
             """,
             activity_id, template_id, user_id, customer_id, lead_id, opportunity_id,
-            act_type_id, subject, notes, outcome, now_dt, task_id
+            act_type_id, subject, notes, outcome, scheduled_at, comp_dt, act_status, task_id
         )
 
         row = await conn.fetchrow("SELECT * FROM activities WHERE activity_id = $1", activity_id)
@@ -693,11 +697,17 @@ class WorkflowEngine:
         if outcomes_raw and outcome:
             outcomes = json.loads(outcomes_raw) if isinstance(outcomes_raw, str) else outcomes_raw
             norm_outcome = outcome.strip().upper()
+
+            def extract_target(val):
+                if isinstance(val, dict):
+                    return val.get("next_template_id")
+                return val
+
             if norm_outcome in outcomes:
-                return outcomes[norm_outcome]  # can be None (terminal)
+                return extract_target(outcomes[norm_outcome])  # can be None (terminal)
             for k, v in outcomes.items():
                 if k.strip().upper() == norm_outcome:
-                    return v
+                    return extract_target(v)
 
             # Fallback synonym resolution for negotiation and offer outcomes
             synonyms = []
@@ -710,10 +720,10 @@ class WorkflowEngine:
 
             for syn in synonyms:
                 if syn in outcomes:
-                    return outcomes[syn]
+                    return extract_target(outcomes[syn])
                 for k, v in outcomes.items():
                     if k.strip().upper() == syn:
-                        return v
+                        return extract_target(v)
 
         return next_tmpl
 
@@ -1495,6 +1505,18 @@ class WorkflowEngine:
             "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
             now_dt, task_id
         )
+
+        # 2.b Mark any planned activities for this viewing / opportunity completed
+        if opportunity_id or lead_id:
+            await conn.execute(
+                """
+                UPDATE activities
+                SET status = 'COMPLETED', completed_at = $1, outcome = COALESCE($2, outcome)
+                WHERE ((opportunity_id = $3 AND $3 IS NOT NULL) OR (lead_id = $4 AND $4 IS NOT NULL))
+                  AND status = 'PLANNED'
+                """,
+                now_dt, outcome, opportunity_id, lead_id
+            )
 
         # 3. Record Activity ACT_VIEWING_REPORT_SUBMITTED
         activity = await WorkflowEngine.record_activity_from_template(
@@ -4233,6 +4255,16 @@ class WorkflowEngine:
             WHERE task_id = $2
             """,
             now_dt, task_id
+        )
+
+        # 1.b Complete any planned / pending activities linked to this task
+        await conn.execute(
+            """
+            UPDATE activities
+            SET status = 'COMPLETED', completed_at = $1, outcome = COALESCE(outcome, $2)
+            WHERE task_id = $3 AND status != 'COMPLETED'
+            """,
+            now_dt, outcome, task_id
         )
 
         tmpl_id = task["template_id"]
@@ -7913,9 +7945,10 @@ class WorkflowEngine:
         # 2. Mark escalated to Branch Manager (Tier 2 Escalation at due_at + 15m)
         escalate_rows = await conn.fetch(
             """
-            SELECT t.task_id, t.lead_id, t.assigned_user_id, l.branch_id
+            SELECT t.task_id, t.lead_id, t.assigned_user_id, COALESCE(l.branch_id, u.branch_id) AS branch_id
             FROM tasks t
             LEFT JOIN leads l ON t.lead_id = l.lead_id
+            LEFT JOIN users u ON t.assigned_user_id = u.user_id
             WHERE t.status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
               AND t.due_at + interval '15 minutes' < $1
               AND t.escalation_level < 2
@@ -7935,10 +7968,25 @@ class WorkflowEngine:
                     FROM users u
                     JOIN user_roles ur ON u.user_id = ur.user_id
                     JOIN roles ro ON ur.role_id = ro.role_id
-                    WHERE u.branch_id = $1 AND ro.role_code = 'SALES_MANAGER' AND u.status = 'ACTIVE'
+                    WHERE u.branch_id = $1 AND ro.role_code IN ('SALES_MANAGER', 'BRANCH_MANAGER') AND u.status = 'ACTIVE'
+                    ORDER BY u.created_at
                     LIMIT 1
                     """,
                     branch_id
+                )
+
+            # Fallback to main branch manager or general manager if branch manager not found
+            if not bm_user_id:
+                bm_user_id = await conn.fetchval(
+                    """
+                    SELECT u.user_id 
+                    FROM users u
+                    JOIN user_roles ur ON u.user_id = ur.user_id
+                    JOIN roles ro ON ur.role_id = ro.role_id
+                    WHERE ro.role_code IN ('SALES_MANAGER', 'BRANCH_MANAGER', 'GENERAL_MANAGER') AND u.status = 'ACTIVE'
+                    ORDER BY u.created_at
+                    LIMIT 1
+                    """
                 )
 
             await conn.execute(

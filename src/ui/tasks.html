@@ -700,10 +700,11 @@
                             <th class="col-act-cust" data-i18n="th_customer">Customer</th>
                             <th class="col-act-date" data-i18n="th_date">Date / Time</th>
                             <th class="col-act-status" data-i18n="th_status">Status</th>
+                            <th class="col-act-action" data-i18n="th_actions" style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="acts-tbody">
-                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading activities...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading activities...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2664,6 +2665,7 @@
         async function ensureReferenceCatalogsLoaded() {
             try {
                 const promises = [];
+                if (!workflowTemplatesLoaded || window.workflowTemplatesCatalog.length === 0) promises.push(loadWorkflowTemplates());
                 if (referenceCities.length === 0) promises.push(apiRequest(`${API_BASE}/api/v1/cities`).then(r => { if (r && r.data) referenceCities = r.data; }));
                 if (referencePropertyTypes.length === 0) promises.push(apiRequest(`${API_BASE}/api/v1/property-types`).then(r => { if (r && r.data) referencePropertyTypes = r.data; }));
                 if (referenceBranches.length === 0) promises.push(apiRequest(`${API_BASE}/api/v1/branches`).then(r => { if (r && r.data) referenceBranches = r.data; }));
@@ -3142,6 +3144,277 @@
             }
         }
 
+        async function setupInvestDiscountNegotiationFields(t, taskLead, taskOpp) {
+            let origPrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || 0;
+            let capexDiscount = 0;
+            let grossRent = origPrice * 0.08;
+            let opexVal = grossRent * 0.10;
+            let targetNoi = Math.max(0, grossRent - (grossRent * 0.05) - opexVal);
+            let discountedPrice = origPrice;
+
+            if (t && t.opportunity_id) {
+                try {
+                    const ddrRes = await fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`);
+                    const ddrJson = await ddrRes.json();
+                    if (ddrJson.data && ddrJson.data.length > 0) {
+                        const rep = ddrJson.data[0];
+                        if (rep.purchase_price_sar) origPrice = parseFloat(rep.purchase_price_sar);
+                        if (rep.suggested_price_adjustment_sar) capexDiscount = parseFloat(rep.suggested_price_adjustment_sar);
+                        else if (rep.estimated_capex_sar) capexDiscount = parseFloat(rep.estimated_capex_sar);
+                        discountedPrice = Math.max(0, origPrice - capexDiscount);
+                        if (rep.gross_annual_rent_sar) grossRent = parseFloat(rep.gross_annual_rent_sar);
+                        if (rep.operating_expenses_opex_sar) opexVal = parseFloat(rep.operating_expenses_opex_sar);
+                        if (rep.net_operating_income_noi_sar) targetNoi = parseFloat(rep.net_operating_income_noi_sar);
+                        else targetNoi = Math.max(0, grossRent - (grossRent * 0.05) - opexVal);
+                    }
+                } catch (_) {}
+            }
+
+            window.origInvestPrice = origPrice;
+            window.capexInvestDiscount = capexDiscount;
+            window.discountedInvestPrice = discountedPrice;
+
+            window.updateNegotiatedPriceFields = function(decision) {
+                const pInput = document.getElementById('comp-invest-disc-approved-price');
+                const eqInput = document.getElementById('comp-invest-disc-equity');
+                if (!pInput || !eqInput) return;
+                if (decision === 'DISCOUNT_ACCEPTED') {
+                    pInput.value = window.discountedInvestPrice;
+                    eqInput.value = window.discountedInvestPrice;
+                } else if (decision === 'COMPROMISE_AGREED') {
+                    const compromise = Math.round((window.origInvestPrice + window.discountedInvestPrice) / 2);
+                    pInput.value = compromise;
+                    eqInput.value = compromise;
+                } else if (decision === 'DISCOUNT_REJECTED') {
+                    pInput.value = window.origInvestPrice;
+                    eqInput.value = window.origInvestPrice;
+                }
+                window.calcNegotiatedKPIs();
+            };
+
+            window.calcNegotiatedKPIs = function(noiManual = false) {
+                const p = parseFloat(document.getElementById('comp-invest-disc-approved-price')?.value) || 0;
+                const eq = parseFloat(document.getElementById('comp-invest-disc-equity')?.value) || p;
+                const rent = parseFloat(document.getElementById('comp-invest-disc-gross-rent')?.value) || 0;
+                const opex = parseFloat(document.getElementById('comp-invest-disc-opex')?.value) || 0;
+                const noiInput = document.getElementById('comp-invest-disc-noi');
+                let noi = parseFloat(noiInput?.value) || 0;
+
+                if (!noiManual && noiInput) {
+                    noi = Math.max(0, rent - (rent * 0.05) - opex);
+                    noiInput.value = noi;
+                }
+
+                const badge = document.getElementById('comp-invest-disc-kpi-badge');
+                if (badge) {
+                    const capRate = p > 0 ? ((noi / p) * 100).toFixed(2) : '0.00';
+                    const coc = eq > 0 ? ((noi / eq) * 100).toFixed(2) : '0.00';
+                    badge.innerHTML = `Cap Rate: ${capRate}% | CoC Yield: ${coc}%`;
+                }
+            };
+
+            const container = document.getElementById('comp-outcome-options');
+            if (container) {
+                const headerHtml = `
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:12px;">
+                        <div style="font-weight:700; color:#1e40af; font-size:0.9em; margin-bottom:6px;">💰 تفاصيل الأصل ومبالغ التفاوض السعري وعيوب الفحص (CapEx):</div>
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; background:#fff; padding:8px; border-radius:6px; text-align:center; border:1px solid #dbeafe;">
+                            <div>
+                                <div style="font-size:0.75em; color:#64748b;">سعر الأصل المطلوب</div>
+                                <div style="font-weight:700; color:#0f172a;" id="disp-disc-orig-price">${Number(origPrice).toLocaleString()} SAR</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.75em; color:#dc2626;">خصم عيوب الفحص (CapEx)</div>
+                                <div style="font-weight:700; color:#dc2626;" id="disp-disc-capex">-${Number(capexDiscount).toLocaleString()} SAR</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.75em; color:#16a34a;">السعر المخفض المقترح</div>
+                                <div style="font-weight:700; color:#16a34a;" id="disp-disc-target-price">${Number(discountedPrice).toLocaleString()} SAR</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const footerHtml = `
+                    <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:12px; margin-bottom:12px;">
+                        <div style="font-weight:700; font-size:0.9em; color:#0f172a; margin-bottom:6px;">📝 البيانات المعتمدة للتفاوض (تُغذى تلقائياً لمهمة خط الأساس):</div>
+                        <div style="font-size:0.78em; color:#64748b; margin-bottom:12px;">يتم حفظ هذه البيانات واعتمادها لتغذية المهمة اللاحقة "الاستثمار — تأسيس خط الأساس لأداء الاستثمار":</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">سعر الاستحواذ المعتمد (SAR) *</label>
+                                <input type="number" id="comp-invest-disc-approved-price" value="${discountedPrice}" class="search-input" style="width:100%; font-weight:700; color:#15803d;" oninput="window.calcNegotiatedKPIs()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">رأس المال النقدي المستثمر (Equity) (SAR) *</label>
+                                <input type="number" id="comp-invest-disc-equity" value="${discountedPrice}" class="search-input" style="width:100%; font-weight:700;" oninput="window.calcNegotiatedKPIs()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">إجمالي الإيجار السنوي (SAR) *</label>
+                                <input type="number" id="comp-invest-disc-gross-rent" value="${grossRent}" class="search-input" style="width:100%; font-weight:700;" oninput="window.calcNegotiatedKPIs()">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">مصاريف التشغيل السنوية OPEX (SAR)</label>
+                                <input type="number" id="comp-invest-disc-opex" value="${opexVal}" class="search-input" style="width:100%;" oninput="window.calcNegotiatedKPIs()">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">صافي الدخل المستهدف NOI (SAR) *</label>
+                                <input type="number" id="comp-invest-disc-noi" value="${targetNoi}" class="search-input" style="width:100%; font-weight:700; color:#0369a1;" oninput="window.calcNegotiatedKPIs(true)">
+                            </div>
+                            <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
+                                <label style="font-size:0.8em; font-weight:700; color:#475569;">مؤشرات الأداء اللحظية المتوقعة:</label>
+                                <div id="comp-invest-disc-kpi-badge" style="background:#e0f2fe; color:#0369a1; padding:6px 10px; border-radius:6px; font-weight:700; font-size:0.82em;">
+                                    Cap Rate: ${(targetNoi / (discountedPrice || 1) * 100).toFixed(2)}% | CoC Yield: ${(targetNoi / (discountedPrice || 1) * 100).toFixed(2)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('afterbegin', headerHtml);
+                container.insertAdjacentHTML('beforeend', footerHtml);
+            }
+        }
+
+        async function setupInvestAcquisitionOfferFields(t, taskLead, taskOpp) {
+            let origPrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.unit_price) || 0;
+            let capexDiscount = 0;
+            let adjustedPrice = origPrice;
+
+            if (t && t.opportunity_id) {
+                try {
+                    const ddrRes = await fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`);
+                    const ddrJson = await ddrRes.json();
+                    if (ddrJson.data && ddrJson.data.length > 0) {
+                        const rep = ddrJson.data[0];
+                        if (rep.purchase_price_sar) origPrice = parseFloat(rep.purchase_price_sar);
+                        if (rep.suggested_price_adjustment_sar) capexDiscount = parseFloat(rep.suggested_price_adjustment_sar);
+                        else if (rep.estimated_capex_sar) capexDiscount = parseFloat(rep.estimated_capex_sar);
+                        adjustedPrice = Math.max(0, origPrice - capexDiscount);
+                    }
+                } catch (_) {}
+            }
+
+            const container = document.getElementById('comp-outcome-options');
+            if (container) {
+                const headerHtml = `
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; margin-bottom:12px;">
+                        <div style="font-weight:700; color:#1e40af; font-size:0.88em; margin-bottom:6px;">💰 تفاصيل عرض الاستحواذ والتعديل السعري (CapEx):</div>
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; background:#fff; padding:6px; border-radius:4px; text-align:center; border:1px solid #dbeafe;">
+                            <div>
+                                <div style="font-size:0.75em; color:#64748b;">سعر الأصل المطلوب</div>
+                                <div style="font-weight:700; color:#0f172a;">${Number(origPrice).toLocaleString()} SAR</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.75em; color:#dc2626;">خصم عيوب الفحص (CapEx)</div>
+                                <div style="font-weight:700; color:#dc2626;">-${Number(capexDiscount).toLocaleString()} SAR</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.75em; color:#16a34a;">سعر العرض المخفض المقترح</div>
+                                <div style="font-weight:700; color:#16a34a;">${Number(adjustedPrice).toLocaleString()} SAR</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('afterbegin', headerHtml);
+            }
+        }
+
+        function renderDynamicTaskOutcomes(templateId, isAr) {
+            const container = document.getElementById('comp-outcome-options');
+            if (!container) return;
+
+            const tmpl = (window.workflowTemplatesCatalog || []).find(t => t.template_id === templateId);
+            const transitions = (tmpl && tmpl.outcome_transitions) ? tmpl.outcome_transitions : null;
+
+            if (!transitions || Object.keys(transitions).length === 0) {
+                container.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="COMPLETED" checked onchange="handleDynamicOutcomeChange('COMPLETED', '${templateId}', '')">
+                        <div>
+                            <strong style="color:#166534;">${isAr ? '✓ إنجاز المهمة بنجاح' : '✓ Task Completed Successfully'}</strong>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تم تنفيذ المطلوب وتحديث السجل' : 'Action finished and records updated'}</div>
+                        </div>
+                    </label>
+                `;
+                handleDynamicOutcomeChange('COMPLETED', templateId, '');
+                return;
+            }
+
+            const keys = Object.keys(transitions);
+            let html = '';
+
+            keys.forEach((key, idx) => {
+                const val = transitions[key];
+                const isRich = val && typeof val === 'object';
+                const label = isRich ? (isAr ? (val.label_ar || val.label_en || key) : (val.label_en || val.label_ar || key)) : key;
+                const desc = isRich ? (isAr ? (val.description_ar || '') : (val.description_en || '')) : '';
+                const style = isRich ? (val.style || 'success') : 'success';
+                const reqFields = isRich ? (val.requires_fields || '') : '';
+                const isChecked = idx === 0 ? 'checked' : '';
+
+                let border = '#bbf7d0';
+                let titleColor = '#166534';
+                if (style === 'warning') { border = '#fed7aa'; titleColor = '#c2410c'; }
+                else if (style === 'danger') { border = '#fecaca'; titleColor = '#991b1b'; }
+                else if (style === 'info' || style === 'primary') { border = '#bae6fd'; titleColor = '#0369a1'; }
+
+                html += `
+                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid ${border}; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="comp_outcome" value="${key}" ${isChecked} onchange="handleDynamicOutcomeChange('${key}', '${templateId}', '${reqFields}')">
+                        <div>
+                            <strong style="color:${titleColor};">${label}</strong>
+                            ${desc ? `<div style="font-size:0.8em; color:var(--text-muted);">${desc}</div>` : ''}
+                        </div>
+                    </label>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            if (keys.length > 0) {
+                const firstVal = transitions[keys[0]];
+                const firstReq = (firstVal && typeof firstVal === 'object') ? (firstVal.requires_fields || '') : '';
+                handleDynamicOutcomeChange(keys[0], templateId, firstReq);
+            }
+        }
+
+        function handleDynamicOutcomeChange(outcome, templateId, reqFields) {
+            // Callback toggle
+            if (outcome === 'CALLBACK_REQUESTED' || reqFields === 'callback') {
+                toggleCallbackFields(true);
+            } else {
+                toggleCallbackFields(false);
+            }
+
+            // Qualification toggle
+            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED' || reqFields === 'qual') {
+                toggleQualFields(true);
+            } else if (templateId === 'TASK_LEAD_QUALIFY' || templateId === 'TASK_LEAD_COMPLETE_INFO') {
+                toggleQualFields(false);
+            }
+
+            // Viewing schedule toggle
+            if (outcome === 'SCHEDULED' || reqFields === 'viewing_schedule') {
+                toggleViewingScheduleFields(true);
+            } else if (templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE') {
+                toggleViewingScheduleFields(false);
+            }
+
+            // Viewing report offer toggle
+            if (outcome === 'INTERESTED' || outcome === 'OFFER_REQUESTED' || reqFields === 'offer') {
+                toggleViewingReportOffer(true);
+            } else if (templateId === 'TASK_VIEWING_REPORT' || templateId === 'TASK_RENT_VIEWING_FOLLOW_UP') {
+                toggleViewingReportOffer(false);
+            }
+
+            // Investment discount update
+            if (templateId === 'TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT' && window.updateNegotiatedPriceFields) {
+                window.updateNegotiatedPriceFields(outcome);
+            }
+        }
+
         async function completeTask(taskId, templateId) {
             await ensureReferenceCatalogsLoaded();
             const t = tasksData.find(x => x.task_id === taskId);
@@ -3404,1557 +3677,45 @@
                 cbInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
             }
 
-            if (templateId === 'TASK_LEAD_FIRST_CONTACT' || templateId === 'TASK_RENT_LEAD_FIRST_CONTACT' || templateId === 'TASK_INVEST_LEAD_FIRST_CONTACT' || templateId === 'TASK_LEAD_FOLLOWUP') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CONNECTED" checked onchange="toggleCallbackFields(false); toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📞 تم التواصل بنجاح' : '📞 Connected'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية حالة الطلب إلى (CONTACTED) وتوليد مهمة التأهيل تلقائياً' : 'Promote lead to CONTACTED and automatically generate qualification task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="NO_ANSWER" onchange="toggleCallbackFields(false); toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '📵 لم يرد / مشغول / تعذر الوصول' : '📵 No Answer / Busy'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة متابعة تلقائية (سقف 3 محاولات ثم إغلاق كغير مستجيب)' : 'Schedule automatic follow-up (up to 3 attempts before closing as unreachable)'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #ffedd5; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CALLBACK_REQUESTED" onchange="toggleCallbackFields(true); toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#d97706;">${isAr ? '⏰ طلب معاودة الاتصال لاحقاً' : '⏰ Callback Requested'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديد موعد وتوقيت إعادة الاتصال بالعميل' : 'Specify date and time to call the client back'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="INVALID_CONTACT" onchange="toggleCallbackFields(false); toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#b91c1c;">${isAr ? '📵 رقم خاطئ / تعذر الاتصال نهائياً' : '📵 Invalid Contact / Wrong Number'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب لعدم صحة بيانات الاتصال' : 'Disqualify lead due to invalid contact details'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="NOT_INTERESTED" onchange="toggleCallbackFields(false); toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '🚫 غير مهتم بالطلب' : '🚫 Not Interested'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب وتحديث حالته إلى ملغى' : 'Disqualify lead and archive inquiry'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_LEAD_COMPLETE_INFO') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="INFO_COMPLETED" checked onchange="toggleQualFields(true)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ تم استكمال وتحديث بيانات الطلب' : '✓ Information Completed'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث متطلبات الميزانية والمدينة ونوع العقار على الطلب' : 'Update budget range, preferred city and property type'}</div>
-                        </div>
-                    </label>
-                `;
-                if (qualFields) qualFields.style.display = 'block';
+            // 1. Render task outcomes dynamically from database workflow_templates.outcome_transitions
+            renderDynamicTaskOutcomes(templateId, isAr);
 
-            } else if (templateId === 'TASK_LEAD_QUALIFY') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="QUALIFIED" checked onchange="toggleQualFields(true)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '⭐ استيفاء معايير التأهيل' : '⭐ Qualified'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحويل الطلب لفرصة بيعية نشطة، وتوليد مهمة مطابقة وترشيح العقارات' : 'Promote to active deal opportunity and generate property matching task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="FOLLOWUP_NEEDED" onchange="toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '⏳ يحتاج متابعة إضافية' : '⏳ Needs Additional Follow-up'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة اتصال متابعة جديد لاستكمال متطلبات وميزانية العميل' : 'Schedule new follow-up call to verify budget and requirements'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="DISQUALIFIED" onchange="toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '❌ غير مؤهل' : '❌ Disqualified'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'استبعاد الطلب لعدم الجدية أو عدم مناسبة المعايير' : 'Disqualify lead due to lack of serious interest or unmatched criteria'}</div>
-                        </div>
-                    </label>
-                `;
-                if (qualFields) qualFields.style.display = 'block';
-            } else if (templateId === 'TASK_LEAD_ASSIGN') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="ASSIGNED" checked onchange="toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ تم توجيه وتعيين وسيط المبيعات' : '✓ Agent Assigned'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إتمام التعيين وتوليد مهمة الاتصال الأولي للوسيط بمهلة 30 دقيقة' : 'Complete assignment and spawn 30-min first contact SLA task'}</div>
-                        </div>
-                    </label>
-                `;
-                if (assignFields) assignFields.style.display = 'block';
+            // 2. Display template-specific interactive calculation panels and custom input fields
+            if (templateId === "TASK_LEAD_ASSIGN") {
+                if (assignFields) assignFields.style.display = "block";
                 populateBranchAgentsForAssign(taskLead, t);
-            } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES' || templateId === 'TASK_RENT_MATCH_PROPERTIES') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="PRESENTED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '🏢 تم ترشيح الوحدات المطابقة وإرسالها للعميل' : '🏢 Properties Matched & Presented'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق إرسال مقترحات العقارات وتوليد مهمة جدولة المعاينة الميدانية' : 'Record sent property recommendations and spawn site visit scheduling task'}</div>
-                        </div>
-                    </label>
-                `;
-                if (matchFields) matchFields.style.display = 'block';
+            } else if (templateId === "TASK_LEAD_QUALIFY" || templateId === "TASK_LEAD_COMPLETE_INFO") {
+                if (qualFields) qualFields.style.display = "block";
+            } else if (templateId === "TASK_OPPORTUNITY_MATCH_PROPERTIES" || templateId === "TASK_RENT_MATCH_PROPERTIES") {
+                if (matchFields) matchFields.style.display = "block";
                 populateMatchingUnits(t);
-
-            } else if (templateId === 'TASK_VIEWING_SCHEDULE' || templateId === 'TASK_VIEWING_RESCHEDULE' || templateId === 'TASK_INVEST_SCHEDULE_INSPECTION') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="SCHEDULED" checked onchange="toggleViewingScheduleFields(true)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '👁️ تم الاتفاق وتأكيد موعد المعاينة الميدانية' : '👁️ Site Visit Scheduled & Confirmed'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل موعد المعاينة، وتوليد مهمة تقرير المعاينة وترقية الصفقة لـ (VIEWING)' : 'Book site visit, advance deal to VIEWING, and generate viewing report task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="RESCHEDULE_NEEDED" onchange="toggleViewingScheduleFields(false)">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '⏳ تعذر التنسيق / إعادة الجدولة' : '⏳ Reschedule Needed'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'جدولة موعد متابعة لاحق للتنسيق مع العميل والمالك' : 'Schedule follow-up date to coordinate with buyer and owner'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CANCELLED" onchange="toggleViewingScheduleFields(false)">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '🚫 إلغاء المعاينة من طرف العميل' : '🚫 Viewing Cancelled by Client'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إلغاء المعاينة وتوثيق أسباب الاعتذار' : 'Cancel site visit and record reason'}</div>
-                        </div>
-                    </label>
-                `;
-                if (viewingFields) viewingFields.style.display = 'block';
+            } else if (templateId === "TASK_VIEWING_SCHEDULE" || templateId === "TASK_VIEWING_RESCHEDULE" || templateId === "TASK_INVEST_SCHEDULE_INSPECTION") {
+                if (viewingFields) viewingFields.style.display = "block";
                 populateViewingModalUnits(t);
-
-            } else if (templateId === 'TASK_VIEWING_REPORT' || templateId === 'TASK_RENT_VIEWING_FOLLOW_UP') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="INTERESTED" checked onchange="toggleViewingReportOffer(true)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '⭐ العميل مهتم ويرغب بتقديم عرض' : '⭐ Interested — Ready to Submit Offer'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية الصفقة لمرحلة التفاوض (NEGOTIATION) وتوليد مهمة تقديم العرض المالي بمهلة 12 ساعة' : 'Promote deal to NEGOTIATION and generate 12-hour offer submission task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bae6fd; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="NEEDS_ANOTHER_UNIT" onchange="toggleViewingReportOffer(false)">
-                        <div>
-                            <strong style="color:#0369a1;">${isAr ? '🔄 العقار لم يناسبه ويرغب بمعاينة وحدة بديلة' : '🔄 Needs Alternative Unit'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'بقاء الصفقة في مرحلة المعاينة وتوليد مهمة جدولة معاينة جديدة لوحدة بديلة' : 'Keep deal in viewing stage and spawn new viewing schedule task for alternative unit'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="NOT_INTERESTED" onchange="toggleViewingReportOffer(false)">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '🚫 غير مناسب / صرف النظر' : '🚫 Not Interested'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق أسباب عدم مناسبة العقار للعميل' : 'Document client feedback and archive opportunity'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="NO_SHOW" onchange="toggleViewingReportOffer(false)">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '⚠️ لم يحضر العميل للموعد' : '⚠️ Client No Show'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق تخلف العميل وتوليد مهمة إعادة الجدولة التلقائية فوراً' : 'Document client absence and automatically generate reschedule task'}</div>
-                        </div>
-                    </label>
-                `;
-                if (viewingReportFields) viewingReportFields.style.display = 'block';
-            } else if (templateId === 'TASK_OFFER_SUBMIT' || templateId === 'TASK_OFFER_PREPARE') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="OFFER_SUBMITTED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '💰 تقديم واعتماد العرض المالي للوحدة' : '💰 Submit Commercial Offer'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق مبلغ العرض المالي المقدم للوحدة وتحديث سجل التفاوض' : 'Document offer amount and advance to negotiation / manager review'}</div>
-                        </div>
-                    </label>
-                `;
-                if (viewingReportFields) {
-                    viewingReportFields.style.display = 'block';
-                    const offerInput = document.getElementById('comp-offer-price');
-                    if (offerInput && !offerInput.value) {
-                        const ceiling = window.currentViewingUnitPrice;
-                        let prefill = t.expected_value || t.deal_value || '';
-                        if (prefill && ceiling && parseFloat(prefill) > ceiling) {
-                            prefill = ceiling;
-                        } else if (!prefill && ceiling) {
-                            prefill = ceiling;
-                        }
-                        if (prefill) offerInput.value = prefill;
-                    }
-                }
-            } else if (templateId === 'TASK_OFFER_MANAGER_APPROVAL') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="APPROVED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ اعتماد العرض المالي للمدير وإرساله للعميل' : '✓ Approve Discounted Offer (Manager Approval)'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث حالة العرض إلى (SUBMITTED) وإرسال المقترح للعميل عبر الواتساب وتوليد مهمة المتابعة' : 'Advance offer to SUBMITTED, send proposal to client via WhatsApp and spawn follow-up task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="REJECTED">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '✕ رفض العرض وإعادته للتفاوض' : '✕ Reject Discounted Offer'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'رفض نسبة الخصم وإعادة العرض للوسيط للتفاوض ورفع القيمة' : 'Reject discount and return to sales agent for negotiation'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_OFFER_FOLLOWUP') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="ACCEPTED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ موافقة العميل على العرض والبدء بالحجز' : '✓ Client Accepted Offer'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث العرض إلى (ACCEPTED) وتوليد مهمة التحقق من توفر الوحدة وحجزها (Stage F)' : 'Promote offer to ACCEPTED and spawn unit availability & reservation task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="COUNTER">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '💬 طلب تفاوض / تقديم عرض مضاد' : '💬 Counter Offer Requested'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل تفاصيل العرض المضاد وتحديث حالة العرض إلى (COUNTER)' : 'Record counter offer details and update status'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="REJECTED">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '✕ اعتذار العميل عن قبول العرض' : '✕ Offer Rejected by Client'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تسجيل أسباب الرفض واستبعاد الفرصة أو البحث عن بديل' : 'Document rejection reason and archive opportunity'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RESERVATION_VERIFY_AVAILABILITY') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CONFIRMED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '🔒 تأكيد توفر الوحدة وحجزها وتثبيت القفل' : '🔒 Verify Availability & Reserve Unit'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'قفل الوحدة كـ (RESERVED) وتوليد مهمة متابعة تحصيل العربون خلال 48 ساعة' : 'Lock unit as RESERVED and spawn 48-hour earnest deposit collection task'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RESERVATION_DEPOSIT_FOLLOWUP') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="DEPOSIT_VERIFIED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '💰 تم التحقق من استلام العربون بالحساب البنكي' : '💰 Earnest Deposit Verified in Bank'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية الحجز إلى (CONFIRMED) وتوليد مهمة إعداد مسودة العقد (Stage G) للشؤون القانونية' : 'Promote reservation to CONFIRMED and spawn contract draft task for Legal'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CANCELLED">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '🚫 تعذر سداد العربون وإلغاء الحجز' : '🚫 Cancel Reservation & Release Unit'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إلغاء الحجز وإعادة إتاحة الوحدة في المخزون المتاح (AVAILABLE)' : 'Cancel reservation and release unit back to AVAILABLE inventory'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_CONTRACT_DRAFT') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="DRAFT_CREATED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📝 تم إعداد مسودة العقد وإرسالها للمراجعة' : '📝 Contract Draft Prepared'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إنشاء مسودة العقد وتوليد مهمة المراجعة الداخلية للمستشار القانوني' : 'Create contract draft record and spawn internal legal review task'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_CONTRACT_INTERNAL_REVIEW') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="APPROVED_FOR_SIGNATURE" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '⚖️ اعتماد المسودة القانونية وجاهزية العقد للتوقيع' : '⚖️ Legal Approval for Signature'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية العقد إلى (PENDING_SIGNATURE) وإرسال إرشادات ورابط التوقيع للعميل' : 'Advance contract to PENDING_SIGNATURE and send signing instructions'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_CONTRACT_SIGNATURE') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="SIGNED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✍️ توثيق توقيع العقد رسمياً وجدولة الدفعات' : '✍️ Record Formal Contract Signature'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'ترقية العقد إلى (SIGNED)، تحويل الحجز رسمياً، وجدولة الأقساط ومطابقة المالية' : 'Advance contract to SIGNED, convert reservation, schedule payments and reconcile'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_CONTRACT_HANDOVER') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="HANDOVER_COMPLETED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '🔑 إتمام تسليم الوحدة وإغلاق الصفقة بنجاح' : '🔑 Complete Property Handover & Close Won'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تحديث حالة الوحدة إلى (SOLD)، وتفعيل العقد وإغلاق الصفقة كـ (CLOSED_WON)' : 'Mark unit SOLD, activate contract, and advance opportunity to CLOSED_WON'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_CONTRACT_RECONCILIATION') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="RECONCILED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '💳 تم التحقق من مطابقة الدفعات والقيود المالية' : '💳 Financial Payments Reconciled'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تأكيد مطابقة الحسابات وسداد الدفعة الأولى وقيد العمولات' : 'Confirm deposit matching, first installment check, and commission ledger'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_PREPARE_TENANCY') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="EXECUTED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📝 تم توقيع واعتماد عقد الإيجار وتوليد جدول الأقساط' : '📝 Rental Agreement Executed & Schedule Generated'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تفعيل عقد الإيجار، وتوليد مهمة مراقبة وتحصيل الدفعات الدورية' : 'Activate tenancy and spawn periodic rent collection monitoring task'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="TERMS_REJECTED">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '✕ رفض الشروط والبحث عن بديل' : '✕ Terms Rejected — Rematch'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'إعادة فتح مسار مطابقة وترشيح وحدات شاغرة أخرى' : 'Reopen matching for alternative vacant units'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_CONFIRM_OBJECTIVES') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="OBJECTIVES_CONFIRMED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '🎯 تم اعتماد الأهداف الاستثمارية والميزانية' : '🎯 Investment Goals & Budget Confirmed'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توثيق رأس المال المستهدف ومعدل العائد المطلوب، وتوليد مهمة تحليل ومقارنة العوائد' : 'Document target capital, yield & timeline, spawn returns comparison task'}</div>
-                        </div>
-                    </label>
-                `;
-                if (investObjFields) {
-                    investObjFields.style.display = 'block';
-                    const initCap = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || prefillBMax || '';
-                    if (initCap) document.getElementById('comp-invest-target-capital').value = initCap;
-                    document.getElementById('comp-invest-target-yield').value = '8.0';
-                    document.getElementById('comp-invest-horizon-years').value = '5';
-                    document.getElementById('comp-invest-risk-tolerance').value = 'MEDIUM';
-                    document.getElementById('comp-invest-strategy').value = 'BALANCED';
-                }
-            } else if (templateId === 'TASK_INVEST_COMPARE_RETURNS') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="RETURNS_COMPARED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📈 المسار المعياري: اعتماد النتائج — جدولة المعاينة والفحص الفني النافي للجهالة (Due Diligence)' : '📈 Standard: Returns Compared — Schedule Due Diligence Inspection'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'أفضل الممارسات: فحص سلامة الهيكل الإنشائي والتكييف والمصاعد وعقود منصة إيجار قبل الشراء' : 'Best practice: Verify building code, mechanicals, and lease contracts roll before purchase'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="FAST_TRACK_OFFER">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '⚡ المسار السريع: اعتماد الأصل الموصى به وموافقة المستثمر — الانتقال المباشر لتقديم عرض الاستحواذ' : '⚡ Fast-Track: Investor Approved Unit — Advance Directly to Acquisition Offer'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تجاوز الفحص الفني (للوحدات الجديدة تحت ضمان المطور، أو الوحدات المفحوصة مسبقاً من العميل)' : 'Bypass due diligence inspection (for brand new units under warranty or pre-inspected assets)'}</div>
-                        </div>
-                    </label>
-                `;
-                if (investRetFields) {
-                    investRetFields.style.display = 'block';
-                    populateInvestReturnsUnits(t, taskLead, taskOpp);
-                }
-            } else if (templateId === 'TASK_INVEST_INSPECTION_REPORT') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="RECOMMENDED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '⭐ موصى به — الفحص الفني والتجاري ممتاز' : '⭐ Recommended — Solid Due Diligence'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'الهيكل سليم ومطابق للكود ونسبة الإشغال ممتازة، المضي نحو تدقيق الفرضيات المالية' : 'Structure sound, SBC compliant, occupancy verified; advance to financial validation'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="RECOMMENDED_WITH_PRICE_ADJUSTMENT">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '⚠️ موصى به مع تعديل السعر (خصم الـ CapEx)' : '⚠️ Proceed with CapEx Price Adjustment'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'توجد ملاحظات صيانة تتطلب نفقات رأسمالية (CapEx) يوصى بخصمها من قيمة العرض' : 'Recommend deducting estimated CapEx from acquisition offer price'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecaca; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="REJECTED">
-                        <div>
-                            <strong style="color:#991b1b;">${isAr ? '🚫 استبعاد العقار — عيوب فنية أو انخفاض حاد في الإشغال' : '🚫 Rejected — Major Technical/Occupancy Defects'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'صرف النظر عن الأصل والعودة للبحث ومقارنة بدائل استثمارية أخرى' : 'Disqualify candidate property and return to comparative analysis'}</div>
-                        </div>
-                    </label>
-                `;
-                if (ddrFields) {
-                    ddrFields.style.display = 'block';
-
-                    // 1. Inherit Price & Rent from Unit (strictly prioritizing Unit Asking Price over general budget)
-                    let pPrice = (taskLead && taskLead.asking_price) || (taskLead && taskLead.unit_price) || (taskOpp && taskOpp.unit_price) || (taskOpp && taskOpp.asking_price) || 0;
-                    let pRent = (taskLead && taskLead.rent_price) || (taskOpp && taskOpp.rent_price) || 0;
-                    let pOpex = 0;
-                    let pCash = 0;
-
-                    if (t && t.opportunity_id) {
-                        try {
-                            const uRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${t.opportunity_id}/units`);
-                            if (uRes.ok) {
-                                const uData = (await uRes.json()).data || [];
-                                if (uData.length > 0) {
-                                    const primU = uData.find(u => u.is_primary) || uData[0];
-                                    pPrice = primU.offered_price || primU.asking_price || pPrice;
-                                    pRent = primU.rent_price || pRent;
-                                }
-                            }
-                        } catch (_) {}
-
-                        // Seamlessly inherit full financial model from previous Feasibility / Comparison Document
-                        try {
-                            const dRes = await fetch(`${API_BASE}/api/v1/documents?opportunity_id=${encodeURIComponent(t.opportunity_id)}&page_size=20`);
-                            if (dRes.ok) {
-                                const dJson = await dRes.json();
-                                const cDoc = (dJson.data || []).find(d => (d.document_type_code || '').includes('INVEST_COMPARATIVE_REPORT') || (d.file_name || '').includes('المقارنة') || (d.file_name || '').includes('الجدوى'));
-                                if (cDoc && cDoc.metadata) {
-                                    const meta = typeof cDoc.metadata === 'string' ? JSON.parse(cDoc.metadata) : cDoc.metadata;
-                                    const cUnits = meta.compared_units || [];
-                                    const prim = cUnits.find(u => u.is_primary) || cUnits[0];
-                                    let pVac = null;
-                                    if (prim) {
-                                        if (prim.purchase_price) pPrice = prim.purchase_price;
-                                        if (prim.gross_annual_rent) pRent = prim.gross_annual_rent;
-                                        if (prim.annual_vacancy_allowance != null) pVac = prim.annual_vacancy_allowance;
-                                        if (prim.annual_operating_expenses) pOpex = prim.annual_operating_expenses;
-                                        if (prim.cash_invested) pCash = prim.cash_invested;
-                                    }
-                                }
-                            }
-                        } catch (_) {}
-                    }
-                    if (!pPrice && taskOpp && taskOpp.expected_value) {
-                        pPrice = taskOpp.expected_value;
-                    } else if (!pPrice && taskLead && taskLead.budget_max) {
-                        pPrice = taskLead.budget_max;
-                    }
-                    if (!pRent) {
-                        pRent = pPrice ? pPrice * 0.08 : 0;
-                    }
-                    if (!pOpex) {
-                        pOpex = Math.round(pRent * 0.10);
-                    }
-                    if (!pCash) {
-                        pCash = pPrice;
-                    }
-
-                    if (pPrice) {
-                        document.getElementById('comp-invest-price').value = pPrice;
-                        document.getElementById('comp-invest-cash-inv').value = pCash;
-                    }
-                    if (pRent) {
-                        document.getElementById('comp-invest-gross-rent').value = pRent;
-                    }
-                    if (pOpex) {
-                        document.getElementById('comp-invest-opex').value = pOpex;
-                    }
-                    if (pVac != null) {
-                        const vacEl = document.getElementById('comp-invest-vac');
-                        if (vacEl) {
-                            vacEl.value = pVac;
-                            vacEl.dataset.manual = 'true';
-                        }
-                    }
-                    calculateLiveInvestmentMetrics();
-
-                    // 2. Fetch existing due diligence report if available
-                    if (t && t.opportunity_id) {
-                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
-                            .then(r => r.json())
-                            .then(j => {
-                                if (j.data && j.data.length > 0) {
-                                    const rep = j.data[0];
-                                    if (rep.purchase_price_sar) document.getElementById('comp-invest-price').value = rep.purchase_price_sar;
-                                    if (rep.gross_annual_rent_sar) document.getElementById('comp-invest-gross-rent').value = rep.gross_annual_rent_sar;
-                                    if (rep.vacancy_allowance_sar != null) {
-                                        const vacEl = document.getElementById('comp-invest-vac');
-                                        if (vacEl) {
-                                            vacEl.value = rep.vacancy_allowance_sar;
-                                            vacEl.dataset.manual = 'true';
-                                        }
-                                    }
-                                    if (rep.operating_expenses_opex_sar) document.getElementById('comp-invest-opex').value = rep.operating_expenses_opex_sar;
-                                    if (rep.estimated_capex_sar != null) document.getElementById('comp-invest-capex').value = rep.estimated_capex_sar;
-                                    if (rep.suggested_price_adjustment_sar != null) document.getElementById('comp-invest-price-adj').value = rep.suggested_price_adjustment_sar;
-                                    if (rep.actual_occupancy_rate != null) document.getElementById('comp-invest-actual-occ').value = rep.actual_occupancy_rate;
-                                    if (rep.occupied_units_count != null) document.getElementById('comp-invest-occ-count').value = rep.occupied_units_count;
-                                    if (rep.total_units_inspected != null) {
-                                        const occVal = rep.occupied_units_count || 1;
-                                        document.getElementById('comp-invest-tot-units').value = Math.max(rep.total_units_inspected, occVal);
-                                    }
-                                    if (rep.structural_condition) document.getElementById('comp-invest-structural').value = rep.structural_condition;
-                                    if (rep.building_age_years != null) document.getElementById('comp-invest-bld-age').value = rep.building_age_years;
-                                    if (rep.saudi_building_code_compliant != null) document.getElementById('comp-invest-sbc').value = String(rep.saudi_building_code_compliant);
-                                    if (rep.hvac_status) document.getElementById('comp-invest-hvac').value = rep.hvac_status;
-                                    if (rep.elevators_status) document.getElementById('comp-invest-elevators').value = rep.elevators_status;
-                                    if (rep.roofing_and_insulation_status) document.getElementById('comp-invest-roofing').value = rep.roofing_and_insulation_status;
-                                    if (rep.technical_notes) document.getElementById('comp-invest-tech-notes').value = rep.technical_notes;
-                                    if (rep.commercial_viability_score != null) document.getElementById('comp-invest-comm-score').value = rep.commercial_viability_score;
-                                    if (rep.property_manager_interview_notes) document.getElementById('comp-invest-pm-notes').value = rep.property_manager_interview_notes;
-                                    if (!rep.estimated_capex_sar) {
-                                        autoCalculateEstimatedCapex();
-                                    }
-                                } else {
-                                    autoCalculateEstimatedCapex();
-                                }
-                                calculateLiveInvestmentMetrics();
-                            }).catch(() => {
-                                autoCalculateEstimatedCapex();
-                                calculateLiveInvestmentMetrics();
-                            });
-                    } else {
-                        autoCalculateEstimatedCapex();
-                        calculateLiveInvestmentMetrics();
-                    }
-                }
-            } else if (templateId === 'TASK_INVEST_VALIDATE_FINANCIALS') {
-                const auditFields = document.getElementById('comp-invest-financials-fields');
-                if (auditFields) auditFields.style.display = 'block';
-
-                let grossRent = 600000;
-                let vac = 48000;
-                let opex = 60000;
-                let purchasePrice = 12000000;
-
-                if (t && t.opportunity_id) {
-                    try {
-                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
-                            .then(r => r.json())
-                            .then(j => {
-                                if (j.data && j.data.length > 0) {
-                                    const rep = j.data[0];
-                                    if (rep.gross_annual_rent_sar) grossRent = parseFloat(rep.gross_annual_rent_sar);
-                                    if (rep.vacancy_allowance_sar != null) vac = parseFloat(rep.vacancy_allowance_sar);
-                                    if (rep.operating_expenses_opex_sar) opex = parseFloat(rep.operating_expenses_opex_sar);
-                                    if (rep.purchase_price_sar) purchasePrice = parseFloat(rep.purchase_price_sar);
-                                }
-                                const grEl = document.getElementById('comp-audit-gross-rent');
-                                const vacEl = document.getElementById('comp-audit-vac');
-                                const opexEl = document.getElementById('comp-audit-opex');
-                                if (grEl) grEl.value = grossRent;
-                                if (vacEl) vacEl.value = vac;
-                                if (opexEl) opexEl.value = opex;
-                                window.currentAuditPurchasePrice = purchasePrice;
-                                recalcAuditMetrics();
-                            }).catch(() => {
-                                const grEl = document.getElementById('comp-audit-gross-rent');
-                                const vacEl = document.getElementById('comp-audit-vac');
-                                const opexEl = document.getElementById('comp-audit-opex');
-                                if (grEl) grEl.value = grossRent;
-                                if (vacEl) vacEl.value = vac;
-                                if (opexEl) opexEl.value = opex;
-                                window.currentAuditPurchasePrice = purchasePrice;
-                                recalcAuditMetrics();
-                            });
-                    } catch (_) {}
-                } else {
-                    const grEl = document.getElementById('comp-audit-gross-rent');
-                    const vacEl = document.getElementById('comp-audit-vac');
-                    const opexEl = document.getElementById('comp-audit-opex');
-                    if (grEl) grEl.value = grossRent;
-                    if (vacEl) vacEl.value = vac;
-                    if (opexEl) opexEl.value = opex;
-                    window.currentAuditPurchasePrice = purchasePrice;
-                    recalcAuditMetrics();
-                }
-
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="VALIDATED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ اعتماد وتدقيق الفرضيات المالية والاستثمارية' : '✓ Financial Projections Validated'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد تكاليف الشغور والتشغيل وصافي الدخل وإصدار الموافقة المالية الرسمية' : 'Validate vacancy, OPEX, NOI and issue formal financial approval'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT') {
-                let origPrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.budget_max) || 0;
-                let capexDiscount = 0;
-                let grossRent = origPrice * 0.08;
-                let opexVal = grossRent * 0.10;
-                let targetNoi = Math.max(0, grossRent - (grossRent * 0.05) - opexVal);
-                let discountedPrice = origPrice;
-
-                if (t && t.opportunity_id) {
-                    try {
-                        const ddrRes = await fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`);
-                        const ddrJson = await ddrRes.json();
-                        if (ddrJson.data && ddrJson.data.length > 0) {
-                            const rep = ddrJson.data[0];
-                            if (rep.purchase_price_sar) origPrice = parseFloat(rep.purchase_price_sar);
-                            if (rep.suggested_price_adjustment_sar) capexDiscount = parseFloat(rep.suggested_price_adjustment_sar);
-                            else if (rep.estimated_capex_sar) capexDiscount = parseFloat(rep.estimated_capex_sar);
-                            discountedPrice = Math.max(0, origPrice - capexDiscount);
-                            if (rep.gross_annual_rent_sar) grossRent = parseFloat(rep.gross_annual_rent_sar);
-                            if (rep.operating_expenses_opex_sar) opexVal = parseFloat(rep.operating_expenses_opex_sar);
-                            if (rep.net_operating_income_noi_sar) targetNoi = parseFloat(rep.net_operating_income_noi_sar);
-                            else targetNoi = Math.max(0, grossRent - (grossRent * 0.05) - opexVal);
-                        }
-                    } catch (_) {}
-                }
-
-                window.origInvestPrice = origPrice;
-                window.capexInvestDiscount = capexDiscount;
-                window.discountedInvestPrice = discountedPrice;
-
-                window.updateNegotiatedPriceFields = function(decision) {
-                    const pInput = document.getElementById('comp-invest-disc-approved-price');
-                    const eqInput = document.getElementById('comp-invest-disc-equity');
-                    if (!pInput || !eqInput) return;
-                    if (decision === 'DISCOUNT_ACCEPTED') {
-                        pInput.value = window.discountedInvestPrice;
-                        eqInput.value = window.discountedInvestPrice;
-                    } else if (decision === 'COMPROMISE_AGREED') {
-                        const compromise = Math.round((window.origInvestPrice + window.discountedInvestPrice) / 2);
-                        pInput.value = compromise;
-                        eqInput.value = compromise;
-                    } else if (decision === 'DISCOUNT_REJECTED') {
-                        pInput.value = window.origInvestPrice;
-                        eqInput.value = window.origInvestPrice;
-                    }
-                    window.calcNegotiatedKPIs();
-                };
-
-                window.calcNegotiatedKPIs = function(noiManual = false) {
-                    const p = parseFloat(document.getElementById('comp-invest-disc-approved-price')?.value) || 0;
-                    const eq = parseFloat(document.getElementById('comp-invest-disc-equity')?.value) || p;
-                    const rent = parseFloat(document.getElementById('comp-invest-disc-gross-rent')?.value) || 0;
-                    const opex = parseFloat(document.getElementById('comp-invest-disc-opex')?.value) || 0;
-                    const noiInput = document.getElementById('comp-invest-disc-noi');
-                    let noi = parseFloat(noiInput?.value) || 0;
-
-                    if (!noiManual && noiInput) {
-                        noi = Math.max(0, rent - (rent * 0.05) - opex);
-                        noiInput.value = noi;
-                    }
-
-                    const badge = document.getElementById('comp-invest-disc-kpi-badge');
-                    if (badge) {
-                        const capRate = p > 0 ? ((noi / p) * 100).toFixed(2) : '0.00';
-                        const coc = eq > 0 ? ((noi / eq) * 100).toFixed(2) : '0.00';
-                        badge.innerHTML = `Cap Rate: ${capRate}% | CoC Yield: ${coc}%`;
-                    }
-                };
-
-                container.innerHTML = `
-                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:12px;">
-                        <div style="font-weight:700; color:#1e40af; font-size:0.9em; margin-bottom:6px;">💰 تفاصيل الأصل ومبالغ التفاوض السعري وعيوب الفحص (CapEx):</div>
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; background:#fff; padding:8px; border-radius:6px; text-align:center; border:1px solid #dbeafe;">
-                            <div>
-                                <div style="font-size:0.75em; color:#64748b;">سعر الأصل المطلوب</div>
-                                <div style="font-weight:700; color:#0f172a;" id="disp-disc-orig-price">${Number(origPrice).toLocaleString()} SAR</div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75em; color:#dc2626;">خصم عيوب الفحص (CapEx)</div>
-                                <div style="font-weight:700; color:#dc2626;" id="disp-disc-capex">-${Number(capexDiscount).toLocaleString()} SAR</div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75em; color:#16a34a;">السعر المخفض المقترح</div>
-                                <div style="font-weight:700; color:#16a34a;" id="disp-disc-target-price">${Number(discountedPrice).toLocaleString()} SAR</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="font-size:0.88em; font-weight:700; margin-bottom:8px; color:#1e293b;">📌 مناقشة البائع والوصول إلى قرار نهائي:</div>
-                    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="DISCOUNT_ACCEPTED" checked onchange="window.updateNegotiatedPriceFields('DISCOUNT_ACCEPTED')">
-                            <div>
-                                <strong style="color:#166534;">🟢 موافقة البائع على الخصم كاملاً (${Number(discountedPrice).toLocaleString()} SAR)</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">وافق البائع على حسم تكاليف الـ CapEx كاملاً وتعديل سعر الشراء ليصبح ${Number(discountedPrice).toLocaleString()} ريال</div>
-                            </div>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fef08a; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="COMPROMISE_AGREED" onchange="window.updateNegotiatedPriceFields('COMPROMISE_AGREED')">
-                            <div>
-                                <strong style="color:#854d0e;">🟡 التوصل لتسوية وسطية واتفاق على تخفيض جزئي</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">تحقيق توازن بين تكلفة الإصلاح ورغبة البائع، وتحديد سعر وسطي متفق عليه بين الطرفين</div>
-                            </div>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecdd3; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="DISCOUNT_REJECTED" onchange="window.updateNegotiatedPriceFields('DISCOUNT_REJECTED')">
-                            <div>
-                                <strong style="color:#9f1239;">🔴 رفض البائع للخصم والتمسك بسعره الأصلي (${Number(origPrice).toLocaleString()} SAR)</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">تمسك البائع بالسعر الكامل، والاعتماد للمستثمر للمفاضلة والموافقة مع خط الأساس</div>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:14px; margin-bottom:12px;">
-                        <div style="font-weight:700; font-size:0.9em; color:#0f172a; margin-bottom:6px;">📝 البيانات المعتمدة للتفاوض (تُغذى تلقائياً لمهمة خط الأساس):</div>
-                        <div style="font-size:0.78em; color:#64748b; margin-bottom:12px;">يتم حفظ هذه البيانات واعتمادها لتغذية المهمة اللاحقة "الاستثمار — تأسيس خط الأساس لأداء الاستثمار":</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">سعر الاستحواذ المعتمد (SAR) *</label>
-                                <input type="number" id="comp-invest-disc-approved-price" value="${discountedPrice}" class="search-input" style="width:100%; font-weight:700; color:#15803d;" oninput="window.calcNegotiatedKPIs()">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">رأس المال النقدي المستثمر (Equity) (SAR) *</label>
-                                <input type="number" id="comp-invest-disc-equity" value="${discountedPrice}" class="search-input" style="width:100%; font-weight:700;" oninput="window.calcNegotiatedKPIs()">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">إجمالي الإيجار السنوي (SAR) *</label>
-                                <input type="number" id="comp-invest-disc-gross-rent" value="${grossRent}" class="search-input" style="width:100%; font-weight:700;" oninput="window.calcNegotiatedKPIs()">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">مصاريف التشغيل السنوية OPEX (SAR)</label>
-                                <input type="number" id="comp-invest-disc-opex" value="${opexVal}" class="search-input" style="width:100%;" oninput="window.calcNegotiatedKPIs()">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:700; color:#0f172a;">صافي الدخل المستهدف NOI (SAR) *</label>
-                                <input type="number" id="comp-invest-disc-noi" value="${targetNoi}" class="search-input" style="width:100%; font-weight:700; color:#0369a1;" oninput="window.calcNegotiatedKPIs(true)">
-                            </div>
-                            <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
-                                <label style="font-size:0.8em; font-weight:700; color:#475569;">مؤشرات الأداء اللحظية المتوقعة:</label>
-                                <div id="comp-invest-disc-kpi-badge" style="background:#e0f2fe; color:#0369a1; padding:6px 10px; border-radius:6px; font-weight:700; font-size:0.82em;">
-                                    Cap Rate: ${(targetNoi / (discountedPrice || 1) * 100).toFixed(2)}% | CoC: ${(targetNoi / (discountedPrice || 1) * 100).toFixed(2)}%
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (templateId === 'TASK_INVEST_PREPARE_ACQUISITION_OFFER') {
-                let origPrice = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.unit_price) || 0;
-                let capexDiscount = 0;
-                let adjustedPrice = origPrice;
-
-                if (t && t.opportunity_id) {
-                    try {
-                        const ddrRes = await fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`);
-                        const ddrJson = await ddrRes.json();
-                        if (ddrJson.data && ddrJson.data.length > 0) {
-                            const rep = ddrJson.data[0];
-                            if (rep.purchase_price_sar) origPrice = parseFloat(rep.purchase_price_sar);
-                            if (rep.suggested_price_adjustment_sar) capexDiscount = parseFloat(rep.suggested_price_adjustment_sar);
-                            else if (rep.estimated_capex_sar) capexDiscount = parseFloat(rep.estimated_capex_sar);
-                            adjustedPrice = Math.max(0, origPrice - capexDiscount);
-                        }
-                    } catch (_) {}
-                }
-
-                container.innerHTML = `
-                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-weight:700; color:#1e40af; font-size:0.88em; margin-bottom:6px;">💰 تفاصيل عرض الاستحواذ والتعديل السعري (CapEx):</div>
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; background:#fff; padding:6px; border-radius:4px; text-align:center; border:1px solid #dbeafe;">
-                            <div>
-                                <div style="font-size:0.75em; color:#64748b;">سعر الأصل المطلوب</div>
-                                <div style="font-weight:700; color:#0f172a;">${Number(origPrice).toLocaleString()} SAR</div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75em; color:#dc2626;">خصم عيوب الفحص (CapEx)</div>
-                                <div style="font-weight:700; color:#dc2626;">-${Number(capexDiscount).toLocaleString()} SAR</div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75em; color:#16a34a;">سعر العرض المخفض المقترح</div>
-                                <div style="font-weight:700; color:#16a34a;">${Number(adjustedPrice).toLocaleString()} SAR</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="font-size:0.85em; font-weight:700; margin-bottom:8px;">📌 نتيجة التفاوض ورد البائع على عرض الاستحواذ:</div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="OFFER_ACCEPTED" checked onchange="document.getElementById('invest-compromise-box').style.display='none'">
-                            <div>
-                                <strong style="color:#166534;">🟢 قبل البائع العرض المخفض بالكامل (${Number(adjustedPrice).toLocaleString()} SAR)</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">الموافقة على خصم الـ CapEx كاملاً وترقية الصفقة للإتمام وتأسيس خط الأساس</div>
-                            </div>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fef08a; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="OFFER_COMPROMISE" onchange="document.getElementById('invest-compromise-box').style.display='block'">
-                            <div>
-                                <strong style="color:#854d0e;">🟡 تم التوصل لتسوية تفاوضية وسعر وسط</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">الاتفاق على خصم جزئي أو تسوية سعرية مع المالك</div>
-                            </div>
-                        </label>
-                        <div id="invest-compromise-box" style="display:none; padding:8px 12px; background:#fefce8; border:1px solid #fef08a; border-radius:6px; margin-right:24px;">
-                            <label style="font-size:0.8em; font-weight:600;">السعر النهائي المتفق عليه بالتسوية (SAR):</label>
-                            <input type="number" id="comp-invest-compromise-price" value="${adjustedPrice}" class="search-input" style="width:100%; font-weight:700;">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fecdd3; border-radius:6px; cursor:pointer;">
-                            <input type="radio" name="comp_outcome" value="OFFER_REJECTED" onchange="document.getElementById('invest-compromise-box').style.display='none'">
-                            <div>
-                                <strong style="color:#9f1239;">🔴 رفض البائع الخصم وتمسك بالسعر الأصلي (${Number(origPrice).toLocaleString()} SAR)</strong>
-                                <div style="font-size:0.8em; color:var(--text-muted);">إعادة تقييم الصفقة بناءً على هامش أمان المستثمر وميزانيته القصوى</div>
-                            </div>
-                        </label>
-                    </div>
-                `;
-            } else if (templateId === 'TASK_INVEST_BASELINE_PERFORMANCE') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="BASELINE_ESTABLISHED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📊 اعتماد وتوثيق خط الأساس الاستثماري' : '📊 Baseline Performance Established'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'اعتماد مؤشرات الأداء (NOI و Cap Rate و Yield) كنقطة ارتكاز رسمية لبدء المتابعة الدورية' : 'Commit baseline metrics to track post-acquisition actual returns'}</div>
-                        </div>
-                    </label>
-                `;
-                if (baseFields) {
-                    baseFields.style.display = 'block';
-                    if (t && t.opportunity_id) {
-                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
-                            .then(r => r.json())
-                            .then(j => {
-                                if (j.data && j.data.length > 0) {
-                                    const rep = j.data[0];
-                                    if (rep.purchase_price_sar) document.getElementById('comp-base-price').value = rep.purchase_price_sar;
-                                    if (rep.cash_invested_sar) document.getElementById('comp-base-cash-inv').value = rep.cash_invested_sar;
-                                    if (rep.gross_annual_rent_sar) document.getElementById('comp-base-rent').value = rep.gross_annual_rent_sar;
-                                    if (rep.net_operating_income_noi_sar) document.getElementById('comp-base-noi').value = rep.net_operating_income_noi_sar;
-                                }
-                            }).catch(() => {});
-                    }
-                }
-            } else if (templateId === 'TASK_INVEST_PORTFOLIO_REVIEW') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="HOLD" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '📈 الاحتفاظ بالأصل (HOLD) — إتمام مسار الاستثمار بنجاح' : '📈 Retain Asset (HOLD) — Complete Investment Lifecycle'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'الأداء الاستثماري ممتاز ومطابق للتوقعات، التوصية بالاحتفاظ بالأصل واستمرار تحصيل العوائد التأجيرية الدورية (إتمام الدورة بنجاح ودون تكرار مهام).' : 'Returns are solid; recommend retaining asset and collecting recurring yields (successfully concludes transaction cycle without task loops).'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="DIVEST">
-                        <div>
-                            <strong style="color:#c2410c;">${isAr ? '💼 التخارج / بيع الأصل (DIVEST)' : '💼 Divest / Liquidate Asset'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'التوصية ببيع العقار لتحقيق الأرباح الرأسمالية وإعادة توجيه السيولة.' : 'Recommend selling asset to capture capital gains and reallocate capital.'}</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bfdbfe; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="EXPAND">
-                        <div>
-                            <strong style="color:#1d4ed8;">${isAr ? '🏢 توسيع المحفظة وشراء أصول جديدة (EXPAND)' : '🏢 Expand Portfolio & Acquire New Assets'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'رغبة المستثمر في ضخ سيولة إضافية والبحث عن صفقات استثمارية جديدة.' : 'Investor seeks to deploy additional capital into new investment acquisitions.'}</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_MONITOR_ACTUAL_RETURNS') {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="MONITORED" checked>
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ تدقيق العوائد الفعلية ومقارنة الأداء' : '✓ Returns Monitored — Advance to Portfolio Review'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'مقارنة الدخل الفعلي والمصروفات بخط الأساس وتوليد مهمة مراجعة أداء المحفظة الاستثمارية الختامية' : 'Compare actual vs baseline returns, spawn concluding portfolio review task'}</div>
-                        </div>
-                    </label>
-                `;
-                if (monFields) {
-                    monFields.style.display = 'block';
-                    if (t && t.opportunity_id) {
-                        fetch(`${API_BASE}/api/v1/investment/opportunities/${t.opportunity_id}/due-diligence`)
-                            .then(r => r.json())
-                            .then(j => {
-                                if (j.data && j.data.length > 0) {
-                                    const rep = j.data[0];
-                                    const gross = rep.gross_annual_rent_sar || (rep.purchase_price_sar * 0.08);
-                                    const targetDisp = document.getElementById('comp-mon-target-disp');
-                                    if (targetDisp) targetDisp.textContent = `${Number(gross).toLocaleString()} SAR`;
-                                    const monTarget = document.getElementById('comp-mon-forecast-income');
-                                    if (monTarget) monTarget.value = gross;
-                                }
-                            }).catch(() => {});
-                    }
-                }
-            } else if (templateId === 'TASK_INVEST_LEGAL_TITLE_AUDIT') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📜 بيانات التدقيق القانوني للصك والملكية:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم الصك الإلكتروني المعتمد *</label>
-                                <input type="text" id="comp-legal-deed-no" placeholder="مثال: 310105009877" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تاريخ الصك</label>
-                                <input type="date" id="comp-legal-deed-date" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة الصك في البورصة العقارية / ناجز</label>
-                                <select id="comp-legal-status" class="select-filter" style="width:100%;">
-                                    <option value="ACTIVE_CLEAN" selected>✓ سليم ونشط وخالي من النزاعات</option>
-                                    <option value="MORTGAGED">⚠️ عليه رهن بنكي قائم</option>
-                                    <option value="RESTRICTED">✗ عليه حظر تصرف أو نزاع قضائي</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة الوكالة الشرعية</label>
-                                <select id="comp-legal-poa" class="select-filter" style="width:100%;">
-                                    <option value="VALID" selected>✓ أصالة أو وكالة سارية ومحدثة</option>
-                                    <option value="EXPIRED">✗ منتهية الصلاحية</option>
-                                    <option value="NOT_APPLICABLE">غير مطبق (المالك مباشرة)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="TITLE_APPROVED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد سلامة الملكية والجاهزية القانونية</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">تم التدقيق القانوني والتأكد من خلو العقار من النزاعات والرهون والقيود</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_TAX_ZAKAT_ADVISORY') {
-                const dealVal = (taskOpp && taskOpp.expected_value) || (taskLead && taskLead.unit_price) || 0;
-                const rettAmount = Math.round(dealVal * 0.05);
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📊 الحسبة الضريبية وضريبة التصرفات العقارية (RETT):</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">قيمة الصفقة الخاضعة للضريبة (SAR)</label>
-                                <input type="number" id="comp-tax-deal-val" value="${dealVal}" class="search-input" style="width:100%; font-weight:700;" oninput="document.getElementById('comp-tax-rett-val').value = Math.round(parseFloat(this.value||0)*0.05)">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">ضريبة التصرفات العقارية RETT 5% (SAR)</label>
-                                <input type="number" id="comp-tax-rett-val" value="${rettAmount}" class="search-input" style="width:100%; font-weight:700; color:#0369a1;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم طلب سداد ضريبة التصرفات (ZATCA)</label>
-                                <input type="text" id="comp-tax-sadad" placeholder="مثال: RETT-9928174" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة الإعفاء الضريبي</label>
-                                <select id="comp-tax-exempt" class="select-filter" style="width:100%;">
-                                    <option value="TAXABLE" selected>خاضع بالكامل للضريبة (5%)</option>
-                                    <option value="EXEMPT_FIRST_HOME">إعفاء مسكن أول للمواطن (حتى 1M)</option>
-                                    <option value="CORPORATE_REORG">إعفاء إعادة هيكلة بين شركات تابعة</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="TAX_ASSESSED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد التقرير الضريبي وتوليد فاتورة RETT</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">تم توثيق الوعاء الضريبي وإدراجه ضمن التكلفة الاستثمارية الكلية</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_TAQEEM_VALUATION') {
-                const dealVal = (taskOpp && taskOpp.expected_value) || 0;
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">🏢 بيانات تقرير التقييم المعتمد (مقيّمين Taqeem):</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">اسم مكتب التقييم المعتمد *</label>
-                                <input type="text" id="comp-taqeem-firm" placeholder="مثال: شركة التقييم المتكامل للتقييم العقاري" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">القيمة السوقية المعتمدة بالتقرير (SAR) *</label>
-                                <input type="number" id="comp-taqeem-value" value="${dealVal}" class="search-input" style="width:100%; font-weight:700; color:#16a34a;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">أسلوب التقييم المعتمد</label>
-                                <select id="comp-taqeem-method" class="select-filter" style="width:100%;">
-                                    <option value="INCOME_APPROACH" selected>أسلوب الدخل والرسملة (Income Approach)</option>
-                                    <option value="MARKET_COMPARISON">أسلوب المقارنة بالسوق (Sales Comparison)</option>
-                                    <option value="COST_APPROACH">أسلوب التكلفة والإحلال (Cost Approach)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">معدل الرسملة المعتمد في التقييم (%)</label>
-                                <input type="number" step="0.1" id="comp-taqeem-cap-rate" value="8.0" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="VALUATION_APPROVED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد تقرير التقييم العقاري المعتمد</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">القيمة السوقية المعتمدة مطابقة وتدعم السعر المستهدف في الاستحواذ</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_INVEST_ENVIRONMENTAL_SOIL_CHECK') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📐 نتائج الفحص المساحي والسلامة البيئية:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مطابقة الأبعاد والارتدادات مع كروكي الأمانة</label>
-                                <select id="comp-survey-bounds" class="select-filter" style="width:100%;">
-                                    <option value="MATCHED" selected>✓ مطابقة تماماً بدون أي تعديات مساحية</option>
-                                    <option value="MINOR_NOTES">⚠️ توجد ملاحظات ارتداد غير جوهرية</option>
-                                    <option value="ENCROACHMENT">✗ يوجد تعدي مساحي على خط التنظيم</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">منسوب الأرض وتصريف السيول</label>
-                                <select id="comp-survey-flood" class="select-filter" style="width:100%;">
-                                    <option value="SAFE" selected>✓ منسوب آمن وخالي من مجاري وتجمعات السيول</option>
-                                    <option value="NEEDS_DRAINAGE">⚠️ يتطلب تحسين تصريف مياه الأمطار</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:8px;">
-                            <label style="font-size:0.8em; font-weight:600;">اسم المكتب الهندسي المساحي المعتمد</label>
-                            <input type="text" id="comp-survey-office" placeholder="مثال: مكتب الرياض للاستشارات المساحية" class="search-input" style="width:100%;">
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="SURVEY_CERTIFIED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد تقرير المسح والبيئة</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">سلامة الموقع مساحياً وطبوغرافياً وجاهزيته للاستحواذ والتطوير</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_SALE_NEGOTIATE_CONCESSIONS') {
-                const dealVal = (taskOpp && taskOpp.expected_value) || 0;
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">🤝 بيانات التفاوض على التخفيض وشروط السداد:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">السعر المطلوب الأصلي (SAR)</label>
-                                <input type="number" id="comp-sale-orig-price" value="${dealVal}" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مبلغ التخفيض المتفق عليه (SAR)</label>
-                                <input type="number" id="comp-sale-disc" placeholder="مثال: 50,000" class="search-input" style="width:100%; color:#dc2626; font-weight:700;" oninput="document.getElementById('comp-sale-final-price').value = Math.max(0, (parseFloat(document.getElementById('comp-sale-orig-price').value||0) - parseFloat(this.value||0)))">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">السعر النهائي بعد التخفيض (SAR) *</label>
-                                <input type="number" id="comp-sale-final-price" value="${dealVal}" class="search-input" style="width:100%; font-weight:700; color:#16a34a;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">شروط وخطة السداد</label>
-                                <select id="comp-sale-pay-terms" class="select-filter" style="width:100%;">
-                                    <option value="FULL_CASH" selected>سداد نقدي كامل خلال 14 يوماً</option>
-                                    <option value="MORTGAGE">تمويل بنكي (خلال 30-45 يوماً)</option>
-                                    <option value="INSTALLMENTS">دفعات مجدولة باتفاق الطرفين</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="CONCESSION_AGREED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد الاتفاق السعري وشروط السداد</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">موافقة المالك والمشتري وتحديث قيمة الصفقة وتجهيز العقد</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_SALE_TITLE_DEED_VERIFICATION') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📑 التحقق من الصك والرهن ومحاضر الفرز:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم الصك الإلكتروني المفرز *</label>
-                                <input type="text" id="comp-sale-deed" placeholder="مثال: 310928374823" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة فك الرهن البنكي</label>
-                                <select id="comp-sale-mortgage" class="select-filter" style="width:100%;">
-                                    <option value="FREE" selected>✓ لا يوجد رهن (العقار حر بالكامل)</option>
-                                    <option value="RELEASE_ISSUED">✓ تم فك الرهن وصدور خطاب البنك</option>
-                                    <option value="PENDING_BANK">⚠️ الرهن قائم وبانتظار خطاب المخالصة</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مطابقة محضر الفرز (بلدي/إسكان)</label>
-                                <select id="comp-sale-subdiv" class="select-filter" style="width:100%;">
-                                    <option value="APPROVED" selected>✓ محضر الفرز مطابق ومفعل نظاماً</option>
-                                    <option value="NOT_APPLICABLE">عقار كامل (غير مفرز)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">الجاهزية للإفراغ الفوري</label>
-                                <select id="comp-sale-ready" class="select-filter" style="width:100%;">
-                                    <option value="READY" selected>✓ جاهز للإفراغ الفوري في البورصة العقارية</option>
-                                    <option value="NEEDS_TIME">يتطلب مهلة لإنهاء الإجراءات</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="TITLE_CLEARED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ تأكيد سلامة الصك وجاهزية الإفراغ</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">خلو العقار من الرهون ومطابقة الفرز واعتماد الانتقال لتوقيع العقود</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_SALE_MORTGAGE_PREQUALIFICATION') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">🏦 بيانات التأهيل التمويلي للعميل:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">جهة التمويل البنكي *</label>
-                                <select id="comp-mort-bank" class="select-filter" style="width:100%;">
-                                    <option value="ALRAJHI" selected>مصرف الراجحي</option>
-                                    <option value="SNB">البنك الأهلي السعودي (SNB)</option>
-                                    <option value="ALINMA">مصرف الإنماء</option>
-                                    <option value="RIYAD">بنك الرياض</option>
-                                    <option value="OTHER">جهة تمويلية أخرى</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مبلغ التمويل المعتمد مبدئياً (SAR) *</label>
-                                <input type="number" id="comp-mort-amount" placeholder="مثال: 1,200,000" class="search-input" style="width:100%; font-weight:700; color:#16a34a;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">الدفعة الأولى النقدية من المشتري (SAR)</label>
-                                <input type="number" id="comp-mort-downpay" placeholder="مثال: 250,000" class="search-input" style="width:100%; font-weight:600;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">نسبة الاستقطاع الشهري DBR (%)</label>
-                                <input type="number" step="0.1" id="comp-mort-dbr" value="55.0" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="PREQUALIFIED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد الأهلية التمويلية واستلام خطاب البنك</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">تأكيد كفاية سقف التمويل وتوفير الدفعة الأولى لبدء إجراءات التقييم والإفراغ</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_SALE_DEFECTS_DISCLOSURE') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📝 إقرار الإفصاح عن عيوب وحالة العقار:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة العزل والتسريبات السابقة</label>
-                                <select id="comp-defect-leaks" class="select-filter" style="width:100%;">
-                                    <option value="CLEAR" selected>✓ سليم ولا توجد أية تسريبات حالية أو سابقة</option>
-                                    <option value="REPAIRED">✓ تم عزل السطح مسبقاً وتوجد وثيقة ضمان</option>
-                                    <option value="OBSERVED">⚠️ توجد ملاحظات رطوبة سطحية تم الإفصاح عنها</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة التمديدات الكهربائية والسباكة</label>
-                                <select id="comp-defect-mep" class="select-filter" style="width:100%;">
-                                    <option value="EXCELLENT" selected>✓ تعمل بكفاءة تامة وتحت الفحص</option>
-                                    <option value="MAINT_NEEDED">⚠️ تحتاج صيانة قطع استهلاكية خفيفة</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:8px;">
-                            <label style="font-size:0.8em; font-weight:600;">توقيع إقرار الإفصاح من البائع والمشتري</label>
-                            <select id="comp-defect-signed" class="select-filter" style="width:100%;">
-                                <option value="SIGNED" selected>✓ تم توقيع النموذج النظامي من الطرفين بالعلم والقبول</option>
-                                <option value="PENDING">بانتظار توقيع المشتري</option>
-                            </select>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="DISCLOSURE_EXECUTED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد وتوثيق إقرار الإفصاح النظامي</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">إرفاق الإقرار بملف المبايعة لحماية حقوق الطرفين والوسيط من دعاوى العيوب الخفية</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_TENANT_SCREENING_CREDIT') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">🔍 نتائج الفحص الإيجاري والائتماني للمستأجر:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تقييم السجل في منصة إيجار *</label>
-                                <select id="comp-screen-ejar" class="select-filter" style="width:100%;">
-                                    <option value="EXCELLENT" selected>⭐⭐⭐⭐⭐ ممتاز (التزام تام بالسداد)</option>
-                                    <option value="GOOD">⭐⭐⭐⭐ جيد (تأخيرات غير جوهرية)</option>
-                                    <option value="NEW">مستأجر جديد (لا توجد عقود سابقة)</option>
-                                    <option value="DEFAULT">⚠️ يوجد تعثر سابق في سداد الإيجار</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة سمة / السجل الائتماني</label>
-                                <select id="comp-screen-simah" class="select-filter" style="width:100%;">
-                                    <option value="CLEAN" selected>✓ خالي من التعثرات المالية ومطالبات التنفيذ</option>
-                                    <option value="ACTIVE_DEFAULT">✗ توجد قضايا تنفيذ أو تعثرات قائمة</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">إثبات الدخل / السجل التجاري</label>
-                                <input type="text" id="comp-screen-income" placeholder="مثال: تعريف راتب 18,000 ريال / شركة معتمدة" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">قرار الأهلية الإيجارية</label>
-                                <select id="comp-screen-decision" class="select-filter" style="width:100%;">
-                                    <option value="APPROVED" selected>✓ مؤهل ومقبول للتأجير</option>
-                                    <option value="APPROVED_WITH_GUARANTOR">مقبول بشرط كفيل غارم</option>
-                                    <option value="DECLINED">مرفوض لعدم الملاءة</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="SCREENING_APPROVED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد الأهلية الإيجارية للمستأجر</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">ثبوت الملاءة وسداد المستحقات والمضي قدماً في إبرام العقد الرسمي</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_SPECIAL_CONDITIONS_NEGOTIATION') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">⏳ فترات السماح والشروط التأجيرية الخاصة:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">فترة السماح المجانية للتجهيز (أيام) *</label>
-                                <input type="number" id="comp-rent-grace" value="30" class="search-input" style="width:100%; font-weight:700; color:#0369a1;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تاريخ بدء سريان احتساب الإيجار الفعلي *</label>
-                                <input type="date" id="comp-rent-start-date" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:8px;">
-                            <label style="font-size:0.8em; font-weight:600;">الشروط الإضافية المتفق عليها</label>
-                            <input type="text" id="comp-rent-custom-terms" placeholder="مثال: يلتزم المستأجر بعدم تعديل الواجهات، الصيانة الإنشائية على المالك..." class="search-input" style="width:100%;">
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="TERMS_AGREED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد الشروط الخاصة وفترات السماح</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">إدراج الشروط المتفق عليها في عقد إيجار الإلكتروني الموحد</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_COMMERCIAL_LICENSING_CHECK') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">🏢 مطابقة التراخيص البلدية والدفاع المدني:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تصنيف الاستخدام برخصة البناء</label>
-                                <select id="comp-lic-use" class="select-filter" style="width:100%;">
-                                    <option value="COMMERCIAL" selected>✓ تجاري / معارض ومكاتب</option>
-                                    <option value="MIXED">تجاري سكني مشترك</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مطابقة كود النشاط في بوابة بلدي</label>
-                                <select id="comp-lic-code" class="select-filter" style="width:100%;">
-                                    <option value="PERMITTED" selected>✓ مسموح فورياً بدون استثناءات</option>
-                                    <option value="REQUIRES_PERMIT">يتطلب موافقة جهات إضافية</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رخصة سلامة الدفاع المدني للمبنى</label>
-                                <select id="comp-lic-safety" class="select-filter" style="width:100%;">
-                                    <option value="ACTIVE" selected>✓ سارية ومحدثة بنظام أجهزة الإنذار والإطفاء</option>
-                                    <option value="RENEWAL_REQ">تتطلب تجديد</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">توفر المواقف النظامية</label>
-                                <select id="comp-lic-parking" class="select-filter" style="width:100%;">
-                                    <option value="AVAILABLE" selected>✓ متوفرة وفق اشتراطات الأمانة</option>
-                                    <option value="LIMITED">محدودة</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="LICENSING_CLEARED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ اعتماد الجاهزية للترخيص التجاري</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">مطابقة الموقع للنشاط المستهدف واشتراطات بلدي والسلامة بدون عوائق</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_SECURITY_DEPOSIT_RECEIPT') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💵 توثيق واستلام مبلغ تأمين الأضرار:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مبلغ التأمين المستلم (SAR) *</label>
-                                <input type="number" id="comp-dep-amount" placeholder="مثال: 5,000" class="search-input" style="width:100%; font-weight:700; color:#16a34a;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم سند القبض المالي *</label>
-                                <input type="text" id="comp-dep-receipt-no" placeholder="مثال: RC-4482" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">الحساب البنكي المودع به</label>
-                                <input type="text" id="comp-dep-bank" value="حساب أمانات التأمين - مصرف الإنماء" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة الربط بمحضر التسليم</label>
-                                <select id="comp-dep-linked" class="select-filter" style="width:100%;">
-                                    <option value="LINKED" selected>✓ تم الربط بمحضر حالة العقار وتوثيق الصور</option>
-                                    <option value="PENDING">قيد المطابقة</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="DEPOSIT_SECURED" checked>
-                        <div>
-                            <strong style="color:#166534;">✓ تأكيد استلام التأمين وإصدار السند</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">إيداع مبلغ الضمان المسترد وإصدار سند القبض لحماية حقوق الأطراف عند الإخلاء</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RESERVATION_DOCUMENTS') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">📁 بيانات فحص وتدقيق المستندات الإلزامية:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">نوع الإثبات المعتمد *</label>
-                                <select id="comp-doc-type" class="select-filter" style="width:100%;">
-                                    <option value="NATIONAL_ID">هوية وطنية للمواطن</option>
-                                    <option value="IQAMA">إقامة نظامية للمقيم</option>
-                                    <option value="COMMERCIAL_REG">سجل تجاري للشركات / المؤسسات</option>
-                                    <option value="POA">وكالة شرعية رسمية (ناجز)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم الهوية / السجل *</label>
-                                <input type="text" id="comp-doc-number" placeholder="مثال: 1088492019" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">العنوان الوطني المسجل</label>
-                                <input type="text" id="comp-doc-address" placeholder="الرمز البريدي والرقم الإضافي" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">اكتمال المرفقات الثبوتية</label>
-                                <select id="comp-doc-status" class="select-filter" style="width:100%;">
-                                    <option value="ALL_VERIFIED" selected>✓ تم استلام ومطابقة كافة الوثائق المطلوبة</option>
-                                    <option value="PENDING_ATTACHMENT">بانتظار رفع مستند متبقٍ</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="COMPLETED" checked>
-                        <div>
-                            <strong style="color:#166534;">🟢 اعتماد المستندات وترقية المعاملة لإعداد العقد</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">كافة الوثائق الثبوتية مكتملة وجاهزة لتوليد مسودة العقد الرسمي</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="INCOMPLETE">
-                        <div>
-                            <strong style="color:#991b1b;">🔴 نقص في الوثائق الإلزامية وإشعار العميل</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">تعليق الإجراء وإرسال تنبيه بالمتطلبات الناقصة قبل فوات المهلة</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RENT_COLLECTION_MONITORING') {
-                container.innerHTML = `
-                    <div id="comp-rent-col-alert" style="display:none; margin-bottom:12px;"></div>
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💳 بيانات تدقيق سداد الدفعة الإيجارية:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">المبلغ المحصل (SAR) *</label>
-                                <input type="number" id="comp-rent-col-amount" placeholder="مثال: 35,000" class="search-input" style="width:100%; font-weight:700; color:#15803d;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم مرجع منصة إيجار / الحوالة *</label>
-                                <input type="text" id="comp-rent-col-ref" placeholder="مثال: EJR-998811" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">تاريخ التحصيل الفعلي</label>
-                                <input type="date" id="comp-rent-col-date" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">طريقة السداد</label>
-                                <select id="comp-rent-col-method" class="select-filter" style="width:100%;">
-                                    <option value="EJAR_ONLINE" selected>بوابة إيجار الإلكترونية (مدى / سداد)</option>
-                                    <option value="BANK_TRANSFER">تحويل بنكي مباشر لحساب المالك</option>
-                                    <option value="CHEQUE">شيك مصرفي معتمد</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="PAID" checked>
-                        <div>
-                            <strong style="color:#166534;">🟢 تم سداد الدفعة الإيجارية بالكامل وتسويتها</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">مطابقة الدفعة بالحساب البنكي وإغلاق المطالبة بنجاح</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fef08a; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="PARTIAL">
-                        <div>
-                            <strong style="color:#854d0e;">🟡 سداد دفعة جزئية وجدولة المبلغ المتبقي</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">توثيق المبلغ المدفوع وجدولة متابعة للمتبقي مع المستأجر</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="OVERDUE">
-                        <div>
-                            <strong style="color:#991b1b;">🔴 تعثر السداد والرفع لمنصة إيجار</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">توثيق التأخر وبدء الإجراءات النظامية لإنفاذ سند التنفيذ</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_COMMISSION_SETTLEMENT') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">💼 تفاصيل وصرف عمولة الوسيط العقاري:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">صافي العمولة المستحقة (SAR) *</label>
-                                <input type="number" id="comp-comm-net-amount" placeholder="مثال: 12,500" class="search-input" style="width:100%; font-weight:700; color:#15803d;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم رخصة فال العقارية (Fal #) *</label>
-                                <input type="text" id="comp-comm-fal-no" placeholder="مثال: 1200018890" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">الآيبان البنكي للوسيط (IBAN)</label>
-                                <input type="text" id="comp-comm-iban" placeholder="SA..." class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم القيد المحاسبي / إشعار التحويل</label>
-                                <input type="text" id="comp-comm-journal-ref" placeholder="مثال: JV-2026-081" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="APPROVED" checked>
-                        <div>
-                            <strong style="color:#166534;">🟢 اعتماد وصرف العمولة لحساب الوسيط</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">اكتمال تسليم العقار وتحصيل أتعاب السعي والتحقق من سريان رخصة فال</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="REJECTED">
-                        <div>
-                            <strong style="color:#991b1b;">🔴 تعليق أو رفض الصرف لعدم اكتمال المتطلبات</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">إعادة المعاملة لمدير العمليات لوجود ملاحظات نظامية أو محاسبية</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_COLLECT_SAUDI_FEES') {
-                container.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#1e293b; margin-bottom:8px;">⚖️ تدقيق الرسوم والضرائب النظامية (ZATCA / الهيئة):</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">ضريبة التصرفات العقارية RETT (5%) (SAR)</label>
-                                <input type="number" id="comp-fees-rett" placeholder="مثال: 50,000" class="search-input" style="width:100%; font-weight:700; color:#0369a1;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">رقم سداد فاتورة الهيئة (SADAD #)</label>
-                                <input type="text" id="comp-fees-sadad" placeholder="مثال: 9028172635" class="search-input" style="width:100%; font-weight:700;">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">ضريبة القيمة المضافة على السعي VAT (15%)</label>
-                                <input type="number" id="comp-fees-vat" placeholder="مثال: 3,750" class="search-input" style="width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">حالة الفاتورة الإلكترونية الضريبية</label>
-                                <select id="comp-fees-e-inv" class="select-filter" style="width:100%;">
-                                    <option value="GENERATED" selected>✓ تم إصدار الفاتورة الضريبية وتضمين الـ QR</option>
-                                    <option value="EXEMPT">معفى نظاماً (مسكن أول مواطن حتى 1M)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="PAID_AND_SETTLED" checked>
-                        <div>
-                            <strong style="color:#166534;">🟢 تم سداد وتوريد كامل الرسوم والضرائب النظامية</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">التحقق من إشعار السداد وسلامة الموقف الضريبي للصفقة</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fed7aa; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="EXEMPT">
-                        <div>
-                            <strong style="color:#c2410c;">🟡 إعفاء نظامي معتمد (شهادة الإعفاء متوفرة)</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">تحمل الدولة لضريبة المسكن الأول أو إعفاء حكومي رسمي</div>
-                        </div>
-                    </label>
-                `;
-            } else if (templateId === 'TASK_RESERVATION_EXPIRY_REVIEW') {
-                container.innerHTML = `
-                    <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:10px; margin-bottom:12px;">
-                        <div style="font-size:0.85em; font-weight:700; color:#854d0e; margin-bottom:8px;">⏳ إدارة مهلة الحجز وقرب انتهائها:</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">ساعات التمديد الإضافية (إن تقرر التمديد)</label>
-                                <select id="comp-exp-ext-hours" class="select-filter" style="width:100%; font-weight:700;">
-                                    <option value="24" selected>تمديد 24 ساعة إضافية</option>
-                                    <option value="48">تمديد 48 ساعة إضافية (بموافقة المدير)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.8em; font-weight:600;">مبررات التمديد أو سبب الإلغاء</label>
-                                <input type="text" id="comp-exp-reason" placeholder="مثال: العميل بانتظار التحويل الخارجي / اعتذار العميل" class="search-input" style="width:100%;">
-                            </div>
-                        </div>
-                    </div>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer; margin-bottom:8px;">
-                        <input type="radio" name="comp_outcome" value="EXTENDED" checked>
-                        <div>
-                            <strong style="color:#166534;">🟢 تمديد مهلة سداد العربون والانتظار</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">إعادة جدولة مهمة متابعة العربون لفترة إضافية للحفاظ على الصفقة</div>
-                        </div>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #fee2e2; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="RELEASED">
-                        <div>
-                            <strong style="color:#991b1b;">🔴 إلغاء الحجز وإعادة إتاحة الوحدة في المخزون (AVAILABLE)</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">فك القفل عن الوحدة وإتاحتها فوراً للمشترين والمستأجرين الآخرين</div>
-                        </div>
-                    </label>
-                `;
-            } else {
-                container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="COMPLETED" checked onchange="toggleQualFields(false)">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ إنجاز المهمة بنجاح' : '✓ Task Completed Successfully'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تم تنفيذ المطلوب وتحديث السجل' : 'Action finished and records updated'}</div>
-                        </div>
-                    </label>
-                `;
+            } else if (templateId === "TASK_VIEWING_REPORT") {
+                if (viewingReportFields) viewingReportFields.style.display = "block";
+            } else if (templateId === "TASK_INVEST_INSPECTION_REPORT") {
+                if (ddrFields) ddrFields.style.display = "block";
+                populateInspectionDdrFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_VALIDATE_FINANCIALS") {
+                if (auditFinancialsFields) auditFinancialsFields.style.display = "block";
+                populateFinancialValidationFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_CONFIRM_OBJECTIVES") {
+                if (investObjFields) investObjFields.style.display = "block";
+                populateInvestmentObjectivesFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_COMPARE_RETURNS") {
+                if (investRetFields) investRetFields.style.display = "block";
+                populateInvestmentReturnsComparison(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_BASELINE_PERFORMANCE") {
+                if (baseFields) baseFields.style.display = "block";
+                populateBaselinePerformanceFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_MONITOR_ACTUAL_RETURNS") {
+                if (monFields) monFields.style.display = "block";
+                populateInvestmentMonitoringFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT") {
+                setupInvestDiscountNegotiationFields(t, taskLead, taskOpp);
+            } else if (templateId === "TASK_INVEST_PREPARE_ACQUISITION_OFFER") {
+                setupInvestAcquisitionOfferFields(t, taskLead, taskOpp);
             }
 
             // Auto-populate Financial Settlement & Fee Collection Fields
@@ -7390,7 +6151,7 @@
             const tbody = document.getElementById('acts-tbody');
             const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد أنشطة مسجلة.' : 'No activities recorded.'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد أنشطة مسجلة.' : 'No activities recorded.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(a => {
@@ -7483,9 +6244,38 @@
                         <td class="col-act-cust">${a.customer_name || 'N/A'}</td>
                         <td class="col-act-date">${dt}</td>
                         <td class="col-act-status"><span class="badge ${a.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${isAr ? (a.status === 'COMPLETED' ? 'منجز' : (a.status === 'PLANNED' ? 'مجدول' : a.status)) : (a.status === 'COMPLETED' ? 'Completed' : (a.status === 'PLANNED' ? 'Planned' : a.status))}</span></td>
+                        <td class="col-act-action" style="text-align: center;">
+                            ${a.status === 'PLANNED' ? `
+                                <button type="button" class="btn-sm btn-success" onclick="completeActivityDirect('${a.activity_id}')" style="background:#16a34a; color:#fff; border:none; border-radius:4px; padding:3px 10px; font-size:0.78em; font-weight:700; cursor:pointer;" title="${isAr ? 'إنجاز النشاط وتوثيقه' : 'Complete Activity'}">
+                                    ✓ ${isAr ? 'إنجاز' : 'Complete'}
+                                </button>
+                            ` : `
+                                <span style="color:#16a34a; font-size:0.8em; font-weight:700;" title="${isAr ? 'تم الإنجاز في: ' + dt : 'Completed at ' + dt}">✓ ${isAr ? 'مكتمل' : 'Done'}</span>
+                            `}
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        async function completeActivityDirect(actId) {
+            const isAr = currentLang === 'ar';
+            const note = prompt(isAr ? 'ملاحظة الإنجاز (اختياري):' : 'Completion notes (optional):');
+            if (note === null) return; // User cancelled prompt
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/activities/${encodeURIComponent(actId)}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ outcome: 'COMPLETED', notes: note || undefined })
+                });
+                if (!res.ok) throw new Error('Failed to complete activity');
+                await loadActivities();
+                loadSummary();
+                alert(isAr ? '✓ تم إنجاز النشاط وتحديث وقت الاكتمال بنجاح!' : 'Activity marked completed successfully!');
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
         }
 
         // --- Tab 3: Communications ---

@@ -409,3 +409,162 @@ class TestDynamicWorkflowTransitions(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_sla_escalation_tier1_and_tier2(self):
+        """
+        Verify that SLA escalation worker automatically updates:
+          - escalation_level = 1 when due_at has passed.
+          - escalation_level = 2 and sets escalated_to_user_id when due_at + 15m has passed.
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            now_dt = datetime.now(timezone.utc)
+            # Create a lead
+            lead_id = f"lead-test-sla-{int(now_dt.timestamp())}"
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, branch_id, assigned_user_id, status, inquiry_type, created_at)
+                VALUES ($1, $2, NULL, $3, $4, 'NEW', 'BUY', $5)
+                """,
+                lead_id, self.org_id, self.branch_id, self.agent_id, now_dt
+            )
+
+            # Task A: 5 minutes overdue (Tier 1)
+            task_a_id = f"task-sla-t1-{int(now_dt.timestamp())}"
+            await self.conn.execute(
+                """
+                INSERT INTO tasks (task_id, lead_id, assigned_user_id, title, status, priority, due_at, escalation_level, created_at)
+                VALUES ($1, $2, $3, 'Overdue Task Tier 1', 'OPEN', 'NORMAL', $4, 0, $5)
+                """,
+                task_a_id, lead_id, self.agent_id, now_dt - timedelta(minutes=5), now_dt - timedelta(minutes=35)
+            )
+
+            # Task B: 25 minutes overdue (Tier 2, > 15m after due_at)
+            task_b_id = f"task-sla-t2-{int(now_dt.timestamp())}"
+            await self.conn.execute(
+                """
+                INSERT INTO tasks (task_id, lead_id, assigned_user_id, title, status, priority, due_at, escalation_level, created_at)
+                VALUES ($1, $2, $3, 'Overdue Task Tier 2', 'OPEN', 'NORMAL', $4, 0, $5)
+                """,
+                task_b_id, lead_id, self.agent_id, now_dt - timedelta(minutes=25), now_dt - timedelta(minutes=55)
+            )
+
+            # Evaluate SLA
+            res = await WorkflowEngine.evaluate_sla_escalations(self.conn)
+            self.assertIn("tier1_breaches", res)
+            self.assertIn("tier2_manager_escalations", res)
+
+            # Verify Task A: escalated to level 1
+            lvl_a = await self.conn.fetchval("SELECT escalation_level FROM tasks WHERE task_id = $1", task_a_id)
+            self.assertEqual(lvl_a, 1)
+
+            # Verify Task B: escalated to level 2 and assigned to Branch Manager
+            row_b = await self.conn.fetchrow("SELECT escalation_level, escalated_to_user_id FROM tasks WHERE task_id = $1", task_b_id)
+            self.assertEqual(row_b["escalation_level"], 2)
+            self.assertIsNotNone(row_b["escalated_to_user_id"])
+
+        finally:
+            await tr.rollback()
+
+    def test_evaluate_sla_api_endpoint(self):
+        """Verify POST /api/v1/tasks/evaluate-sla triggers correctly and returns summary."""
+        from fastapi.testclient import TestClient
+        from app.main import app
+        with TestClient(app) as client:
+            res = client.post("/api/v1/tasks/evaluate-sla", headers={"X-User-ID": "user-51"})
+            self.assertEqual(res.status_code, 200)
+            data = res.json()["data"]
+            self.assertIn("scanned_at", data)
+            self.assertIn("tier1_breaches", data)
+            self.assertIn("tier2_manager_escalations", data)
+
+    def test_activity_status_and_completed_at_lifecycle(self):
+        """Verify activity status and completed_at transitions correctly upon creation and completion."""
+        from fastapi.testclient import TestClient
+        from app.main import app
+        with TestClient(app) as client:
+            # 1. Create a PLANNED activity
+            payload_planned = {
+                "subject": "مكالمة مجدولة لمتابعة العرض المالي",
+                "activity_type_code": "CALL",
+                "status": "PLANNED",
+                "scheduled_at": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+            }
+            res_p = client.post("/api/v1/activities", json=payload_planned, headers={"X-User-ID": "user-51"})
+            self.assertEqual(res_p.status_code, 201)
+            act_p = res_p.json()["data"]
+            self.assertEqual(act_p["status"], "PLANNED")
+            self.assertIsNone(act_p["completed_at"])
+
+            act_id = act_p["activity_id"]
+
+            # 2. Complete the PLANNED activity via complete endpoint
+            res_c = client.post(
+                f"/api/v1/activities/{act_id}/complete",
+                json={"outcome": "CONNECTED", "notes": "تم التواصل بنجاح وموافقة العميل"},
+                headers={"X-User-ID": "user-51"}
+            )
+            self.assertEqual(res_c.status_code, 200)
+            comp_data = res_c.json()["data"]
+            self.assertEqual(comp_data["status"], "COMPLETED")
+            self.assertIsNotNone(comp_data["completed_at"])
+            self.assertEqual(comp_data["outcome"], "CONNECTED")
+
+            # 3. Create a COMPLETED activity directly
+            payload_completed = {
+                "subject": "مكالمة تمت للتو مع المستأجر",
+                "activity_type_code": "CALL",
+                "status": "COMPLETED"
+            }
+            res_dir = client.post("/api/v1/activities", json=payload_completed, headers={"X-User-ID": "user-51"})
+            self.assertEqual(res_dir.status_code, 201)
+            act_dir = res_dir.json()["data"]
+            self.assertEqual(act_dir["status"], "COMPLETED")
+            self.assertIsNotNone(act_dir["completed_at"])
+
+    async def test_rich_outcome_transitions_metadata_and_catalog(self):
+        """
+        Verify that workflow_templates outcome_transitions stores rich metadata
+        (label_ar, label_en, description_ar, style) for tasks and documentation for activities,
+        and that resolve_next_task_template correctly extracts next_template_id.
+        """
+        # 1. Verify resolution with rich dictionary structure
+        next_tmpl = await WorkflowEngine.resolve_next_task_template(
+            self.conn, "TASK_LEAD_FIRST_CONTACT", outcome="CONNECTED"
+        )
+        self.assertEqual(next_tmpl, "TASK_LEAD_QUALIFY")
+
+        next_tmpl_sched = await WorkflowEngine.resolve_next_task_template(
+            self.conn, "TASK_VIEWING_SCHEDULE", outcome="SCHEDULED"
+        )
+        self.assertEqual(next_tmpl_sched, "TASK_VIEWING_REPORT")
+
+        # 2. Verify API returns parsed rich outcome_transitions
+        from fastapi.testclient import TestClient
+        from app.main import app
+        with TestClient(app) as client:
+            res = client.get("/api/v1/workflow-templates")
+            self.assertEqual(res.status_code, 200)
+            templates = res.json()["data"]
+
+            # Check TASK template has rich outcomes
+            first_contact = next((t for t in templates if t["template_id"] == "TASK_LEAD_FIRST_CONTACT"), None)
+            self.assertIsNotNone(first_contact)
+            self.assertIsInstance(first_contact["outcome_transitions"], dict)
+            connected_meta = first_contact["outcome_transitions"]["CONNECTED"]
+            self.assertIsInstance(connected_meta, dict)
+            self.assertEqual(connected_meta["next_template_id"], "TASK_LEAD_QUALIFY")
+            self.assertIn("label_ar", connected_meta)
+            self.assertIn("description_ar", connected_meta)
+
+            # Check ACTIVITY template has documented outcomes
+            act_lead_contact = next((t for t in templates if t["template_id"] == "ACT_LEAD_FIRST_CONTACT"), None)
+            self.assertIsNotNone(act_lead_contact)
+            self.assertIsInstance(act_lead_contact["outcome_transitions"], dict)
+            self.assertIn("CONNECTED", act_lead_contact["outcome_transitions"])
+            self.assertIn("label_ar", act_lead_contact["outcome_transitions"]["CONNECTED"])
+
+
+
+
+

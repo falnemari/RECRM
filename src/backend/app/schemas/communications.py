@@ -185,6 +185,10 @@ class ActivityCreateIn(BaseModel):
     completed_at: Optional[datetime] = None
     status: Optional[str] = "COMPLETED"
 
+class ActivityCompleteIn(BaseModel):
+    outcome: Optional[str] = "COMPLETED"
+    notes: Optional[str] = None
+
 class CommunicationOut(BaseModel):
     communication_id: str
     channel: str

@@ -35,17 +35,46 @@ async def reservation_expiry_worker():
         except Exception as e:
             logger.warning(f"Reservation expiry worker error: {e}")
 
+async def sla_escalation_worker():
+    """
+    Background worker that runs periodically every 60 seconds to evaluate SLA compliance:
+    - Marks overdue tasks with escalation_level = 1 (Tier 1 warning/breach).
+    - Escalates overdue tasks (+15m) to the Branch Manager with escalation_level = 2 and escalated_to_user_id.
+    """
+    while True:
+        try:
+            await asyncio.sleep(60)
+            if pool:
+                async with pool.acquire() as conn:
+                    from app.services.workflow_engine import WorkflowEngine
+                    await WorkflowEngine.evaluate_sla_escalations(conn)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.warning(f"SLA escalation worker error: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize DB Pool and Expiry Worker
+    # Startup: Initialize DB Pool and Background Workers
     await init_db_pool()
+    # Run immediate check once on startup
+    if pool:
+        try:
+            async with pool.acquire() as conn:
+                from app.services.workflow_engine import WorkflowEngine
+                await WorkflowEngine.evaluate_sla_escalations(conn)
+        except Exception as e:
+            logger.warning(f"Initial SLA escalation check error: {e}")
+
     worker_task = asyncio.create_task(reservation_expiry_worker())
+    sla_task = asyncio.create_task(sla_escalation_worker())
     yield
-    # Shutdown: Cancel worker & Close DB Pool
+    # Shutdown: Cancel workers & Close DB Pool
     worker_task.cancel()
+    sla_task.cancel()
     try:
-        await worker_task
-    except asyncio.CancelledError:
+        await asyncio.gather(worker_task, sla_task, return_exceptions=True)
+    except Exception:
         pass
     await close_db_pool()
 

@@ -12,7 +12,7 @@ from app.routers.auth import check_user_scope_override, resolve_user_data_scope,
 from app.schemas.communications import (
     TasksSummaryOut,
     TaskOut, TaskCreateIn, TaskUpdateIn, TaskCompleteIn, TaskReopenIn, TaskCancelIn,
-    ActivityOut, ActivityCreateIn,
+    ActivityOut, ActivityCreateIn, ActivityCompleteIn,
     CommunicationOut, CommunicationCreateIn,
     InternalPingCreateIn, InternalPingOut, InternalPingsInboxOut, InternalPingsSummary, CleanupExpiredPingsOut
 )
@@ -845,6 +845,22 @@ async def reopen_task_endpoint(
     return ResponseEnvelope(data=result)
 
 
+@router.post("/tasks/evaluate-sla", response_model=ResponseEnvelope[dict])
+async def trigger_sla_evaluation(
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    On-Demand / Administrative SLA Evaluation Endpoint:
+    Scans all open/pending tasks and applies 30m / 45m SLA rules:
+      - Tier 1: Sets escalation_level = 1 when due_at < NOW().
+      - Tier 2: Sets escalation_level = 2 and escalated_to_user_id = Branch Manager when due_at + 15m < NOW().
+    """
+    async with conn.transaction():
+        res = await WorkflowEngine.evaluate_sla_escalations(conn)
+    return ResponseEnvelope(data=res)
+
+
 @router.post("/tasks/{task_id}/cancel", response_model=ResponseEnvelope[dict])
 async def cancel_task_endpoint(
     task_id: str,
@@ -1026,9 +1042,12 @@ async def create_activity(payload: ActivityCreateIn, conn: asyncpg.Connection = 
             cust_name = (f"{c['first_name'] or ''} {c['last_name'] or ''}").strip() or c["company_name"]
 
     now = datetime.now(timezone.utc)
+    status_val = (payload.status or "COMPLETED").upper()
     completed_at = payload.completed_at
-    if payload.status == "COMPLETED" and not completed_at:
+    if status_val == "COMPLETED" and not completed_at:
         completed_at = now
+    elif status_val == "PLANNED":
+        completed_at = None
 
     await conn.execute(
         """
@@ -1039,7 +1058,7 @@ async def create_activity(payload: ActivityCreateIn, conn: asyncpg.Connection = 
         """,
         act_id, payload.user_id, payload.customer_id, payload.lead_id, payload.opportunity_id,
         act_type_id, payload.subject, payload.description, payload.scheduled_at, completed_at,
-        payload.status or "COMPLETED"
+        status_val
     )
 
     out = ActivityOut(
@@ -1057,19 +1076,41 @@ async def create_activity(payload: ActivityCreateIn, conn: asyncpg.Connection = 
         opportunity_id=payload.opportunity_id,
         scheduled_at=payload.scheduled_at,
         completed_at=completed_at,
-        status=payload.status or "COMPLETED"
+        status=status_val
     )
     return ResponseEnvelope(data=out)
 
 @router.post("/activities/{activity_id}/complete", response_model=ResponseEnvelope[dict])
-async def complete_activity(activity_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    act = await conn.fetchrow("SELECT activity_id FROM activities WHERE activity_id = $1", activity_id)
+async def complete_activity(
+    activity_id: str,
+    payload: Optional[ActivityCompleteIn] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    act = await conn.fetchrow("SELECT * FROM activities WHERE activity_id = $1", activity_id)
     if not act:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     now = datetime.now(timezone.utc)
-    await conn.execute("UPDATE activities SET status = 'COMPLETED', completed_at = $1 WHERE activity_id = $2", now, activity_id)
-    return ResponseEnvelope(data={"activity_id": str(activity_id), "status": "COMPLETED", "completed_at": now.isoformat()})
+    outcome = (payload.outcome if payload and payload.outcome else None) or "COMPLETED"
+    notes = payload.notes if payload and payload.notes else None
+    desc = act["description"] or ""
+    if notes:
+        desc = (desc + f"\n[ملاحظة الإنجاز]: {notes}").strip()
+
+    await conn.execute(
+        """
+        UPDATE activities 
+        SET status = 'COMPLETED', completed_at = $1, outcome = COALESCE($2, outcome, 'COMPLETED'), description = $3
+        WHERE activity_id = $4
+        """,
+        now, outcome, desc, activity_id
+    )
+    return ResponseEnvelope(data={
+        "activity_id": str(activity_id),
+        "status": "COMPLETED",
+        "completed_at": now.isoformat(),
+        "outcome": outcome
+    })
 
 
 # ---------------------------------------------------------
