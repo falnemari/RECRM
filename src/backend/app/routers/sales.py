@@ -465,7 +465,8 @@ async def list_viewings(
             v.status,
             v.outcome,
             v.notes,
-            COALESCE(v.outcome, v.notes) AS feedback
+            COALESCE(v.outcome, v.notes) AS feedback,
+            v.updated_at
         FROM viewings v
         LEFT JOIN units u ON v.unit_id = u.unit_id
         LEFT JOIN customers owner_c ON u.owner_customer_id = owner_c.customer_id
@@ -542,7 +543,8 @@ async def get_viewing(
             v.scheduled_end,
             v.status,
             v.outcome,
-            v.notes
+            v.notes,
+            v.updated_at
         FROM viewings v
         LEFT JOIN units u ON v.unit_id = u.unit_id
         LEFT JOIN buildings b ON u.building_id = b.building_id
@@ -567,6 +569,8 @@ async def get_viewing(
         d["scheduled_start"] = d["scheduled_start"].isoformat()
     if d.get("scheduled_end"):
         d["scheduled_end"] = d["scheduled_end"].isoformat()
+    if d.get("updated_at"):
+        d["updated_at"] = d["updated_at"].isoformat()
     return ResponseEnvelope(data=d)
 
 @router.patch("/viewings/{viewing_id}", response_model=ResponseEnvelope[dict])
@@ -688,7 +692,7 @@ async def list_reservations(
     conn: asyncpg.Connection = Depends(get_db)
 ):
     offset = (page - 1) * page_size
-    conditions = ["1=1"]
+    conditions = ["1=1", "(r.opportunity_id IS NOT NULL OR opp.lead_id IS NOT NULL)"]
     params = []
     p_idx = 1
 

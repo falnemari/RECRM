@@ -366,7 +366,8 @@ class WorkflowEngine:
         assigned_user_id: str,
         assigner_user_id: Optional[str] = None,
         branch_id: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        parent_task_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Handles workflow state when a lead is assigned or reassigned to a sales agent:
@@ -395,9 +396,10 @@ class WorkflowEngine:
         elif inq in ("INVEST", "INVESTMENT"):
             contact_tmpl = "TASK_INVEST_LEAD_FIRST_CONTACT"
         else:
-            contact_tmpl = "TASK_LEAD_FIRST_CONTACT"
+            resolved_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_LEAD_ASSIGN", "SALES")
+            contact_tmpl = resolved_tmpl or "TASK_SALES_LEAD_CONTACT_QUALIFY"
 
-        # 2. Complete open TASK_LEAD_ASSIGN if present
+        # 2. Complete open TASK_LEAD_ASSIGN if present and resolve parent_task_id
         open_assign_task = await conn.fetchrow(
             """
             SELECT task_id FROM tasks 
@@ -408,8 +410,20 @@ class WorkflowEngine:
         )
         if open_assign_task:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, open_assign_task["task_id"]
+            )
+            if not parent_task_id:
+                parent_task_id = open_assign_task["task_id"]
+
+        if not parent_task_id:
+            parent_task_id = await conn.fetchval(
+                """
+                SELECT task_id FROM tasks 
+                WHERE lead_id = $1 AND template_id = 'TASK_LEAD_ASSIGN'
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                lead_id
             )
 
         # Log assignment activity unconditionally for the assigned agent
@@ -419,6 +433,7 @@ class WorkflowEngine:
             user_id=assigned_user_id,
             customer_id=customer_id,
             lead_id=lead_id,
+            task_id=parent_task_id,
             outcome="ASSIGNED",
             notes=notes or f"تم تعيين الطلب للوسيط ({agent_name}). تم إسناد مهمة الاتصال الأولي (مهلة 30 دقيقة)."
         )
@@ -426,8 +441,8 @@ class WorkflowEngine:
         # 3. Check for open first contact task (standard, rental, or investment)
         open_contact_task = await conn.fetchrow(
             """
-            SELECT task_id FROM tasks 
-            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT') AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+            SELECT task_id, parent_task_id FROM tasks 
+            WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY') AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             LIMIT 1
             """,
             lead_id
@@ -438,20 +453,21 @@ class WorkflowEngine:
             await conn.execute(
                 """
                 UPDATE tasks 
-                SET assigned_user_id = $1, due_at = $2
+                SET assigned_user_id = $1, due_at = $2, parent_task_id = COALESCE(parent_task_id, $4)
                 WHERE task_id = $3
                 """,
-                assigned_user_id, first_contact_due, open_contact_task["task_id"]
+                assigned_user_id, first_contact_due, open_contact_task["task_id"], parent_task_id
             )
             task_dict = dict(open_contact_task)
             task_dict["assigned_user_id"] = assigned_user_id
+            task_dict["parent_task_id"] = open_contact_task["parent_task_id"] or parent_task_id
         else:
             # Check if first contact has already occurred or a first contact task was already completed
             contact_already_done = await conn.fetchval(
                 """
                 SELECT 1 FROM leads WHERE lead_id = $1 AND (first_contact_at IS NOT NULL OR status IN ('CONTACTED', 'QUALIFIED', 'CONVERTED', 'LOST', 'DISQUALIFIED'))
                 UNION
-                SELECT 1 FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT') AND status = 'COMPLETED'
+                SELECT 1 FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY') AND status = 'COMPLETED'
                 LIMIT 1
                 """,
                 lead_id
@@ -465,7 +481,8 @@ class WorkflowEngine:
                     customer_id=customer_id,
                     assigned_user_id=assigned_user_id,
                     priority=priority,
-                    custom_due_at=first_contact_due
+                    custom_due_at=first_contact_due,
+                    parent_task_id=parent_task_id
                 )
 
         # 4. Sync lead assigned_user_id, first_contact_due_at and optionally branch_id
@@ -473,6 +490,8 @@ class WorkflowEngine:
         updates = ["assigned_user_id = $1", "first_contact_due_at = $2"]
         params = [assigned_user_id, first_contact_due]
         p_idx = 3
+        if lead.get("status") == "NEW":
+            updates.append("status = 'ASSIGNED'")
         if effective_branch_id:
             updates.append(f"branch_id = ${p_idx}")
             params.append(effective_branch_id)
@@ -668,6 +687,118 @@ class WorkflowEngine:
         row = await conn.fetchrow("SELECT * FROM activities WHERE activity_id = $1", activity_id)
         return dict(row)
 
+    CANONICAL_OUTCOME_ALIASES: Dict[str, Dict[str, str]] = {
+        "TASK_RENT_VIEWING_FOLLOW_UP": {
+            "ANOTHER_VIEWING": "REQUESTS_ANOTHER_VIEWING",
+        },
+        "TASK_CONTRACT_DRAFT": {
+            "DRAFTED": "SUBMITTED",
+        },
+        "TASK_CONTRACT_INTERNAL_REVIEW": {
+            "APPROVED_DRAFT": "APPROVED",
+            "REJECTED": "REVISIONS_NEEDED",
+        },
+        "TASK_CONTRACT_SIGNATURE": {
+            "RECORD_SIGNATURE": "SIGNED",
+        },
+        "TASK_OFFER_FOLLOWUP": {
+            "COUNTER": "COUNTER_OFFER",
+            "COUNTERED": "COUNTER_OFFER",
+            "NEGOTIATION": "COUNTER_OFFER",
+            "ACCEPTED": "OFFER_ACCEPTED",
+            "EXPIRED": "REJECTED",
+        },
+        "TASK_RESERVATION_DEPOSIT_FOLLOWUP": {
+            "PAID": "DEPOSIT_VERIFIED",
+            "VERIFIED": "DEPOSIT_VERIFIED",
+        },
+        "TASK_RESERVATION_VERIFY_AVAILABILITY": {
+            "CONFIRMED": "AVAILABLE",
+        },
+        "TASK_SALE_NEGOTIATE_CONCESSIONS": {
+            "AGREED": "CONCESSION_AGREED",
+            "ACCEPTED": "CONCESSION_AGREED",
+        },
+        "TASK_RENT_PREPARE_TENANCY": {
+            "EXECUTED": "AGREEMENT_EXECUTED",
+            "APPROVED": "AGREEMENT_EXECUTED",
+            "COMPLETED": "AGREEMENT_EXECUTED",
+            "REJECTED": "TERMS_REJECTED",
+        },
+        "TASK_INVEST_INSPECTION_REPORT": {
+            "COMPLETED": "RECOMMENDED",
+            "REJECTED": "NOT_RECOMMENDED",
+        },
+        "TASK_INVEST_VALIDATE_FINANCIALS": {
+            "APPROVED": "VALIDATED",
+            "DISCOUNT_REQUIRED": "DISCOUNT_REQUIRED",
+        },
+        "TASK_INVEST_PREPARE_ACQUISITION_OFFER": {
+            "ACCEPTED": "OFFER_ACCEPTED",
+            "WON": "OFFER_ACCEPTED",
+            "REJECTED": "OFFER_REJECTED",
+        },
+        "TASK_INVEST_COMPARE_RETURNS": {
+            "FAST_TRACK_OFFER": "PROCEED_TO_OFFER",
+        },
+        "TASK_INVEST_PORTFOLIO_REVIEW": {
+            "MONITOR_AGAIN": "HOLD",
+            "LIQUIDATE": "EXIT",
+        },
+        "TASK_LEAD_QUALIFY": {
+            "CONVERTED": "QUALIFIED",
+            "QUALIFIED_SALE": "QUALIFIED",
+            "LOST": "DISQUALIFIED",
+        },
+        "TASK_SALES_LEAD_CONTACT_QUALIFY": {
+            "CONTACTED & QUALIFIED": "CONTACTED_QUALIFIED",
+            "CONTACTED_AND_QUALIFIED": "CONTACTED_QUALIFIED",
+            "QUALIFIED": "CONTACTED_QUALIFIED",
+            "CONNECTED": "CONTACTED_QUALIFIED",
+            "CONVERTED": "CONTACTED_QUALIFIED",
+            "NO_ANSWER": "UNREACHABLE",
+            "BUSY": "UNREACHABLE",
+            "DISQUALIFIED": "NOT_INTERESTED",
+        },
+        "TASK_LEAD_FOLLOWUP_QUALIFY": {
+            "CONTACTED & QUALIFIED": "CONTACTED_QUALIFIED",
+            "CONTACTED_AND_QUALIFIED": "CONTACTED_QUALIFIED",
+            "QUALIFIED": "CONTACTED_QUALIFIED",
+            "CONNECTED": "CONTACTED_QUALIFIED",
+            "CONVERTED": "CONTACTED_QUALIFIED",
+            "NO_ANSWER": "UNREACHABLE",
+            "BUSY": "UNREACHABLE",
+            "DISQUALIFIED": "NOT_INTERESTED",
+        },
+        "TASK_MATCH_PROPERTIES": {
+            "PROPERTIES_MATCHED": "MATCHED",
+        },
+        "TASK_LEAD_ASSIGN": {
+            "ASSIGNED": "SALES",
+        },
+        "TASK_VIEWING_REPORT": {
+            "OFFER_REQUESTED": "INTERESTED",
+        },
+    }
+
+    GLOBAL_OUTCOME_ALIASES: Dict[str, str] = {
+        "CONTACTED & QUALIFIED": "CONTACTED_QUALIFIED",
+        "CONTACTED_AND_QUALIFIED": "CONTACTED_QUALIFIED",
+        "COUNTER": "COUNTER_OFFER",
+        "COUNTERED": "COUNTER_OFFER",
+        "NEGOTIATION": "COUNTER_OFFER",
+        "PAID": "DEPOSIT_VERIFIED",
+        "VERIFIED": "DEPOSIT_VERIFIED",
+        "CONFIRMED": "AVAILABLE",
+        "AGREED": "CONCESSION_AGREED",
+        "RECORD_SIGNATURE": "SIGNED",
+        "FAST_TRACK_OFFER": "PROCEED_TO_OFFER",
+        "MONITOR_AGAIN": "HOLD",
+        "LIQUIDATE": "EXIT",
+        "APPROVED_DRAFT": "APPROVED",
+        "DRAFTED": "SUBMITTED",
+    }
+
     @staticmethod
     async def resolve_next_task_template(
         conn: asyncpg.Connection,
@@ -677,8 +808,9 @@ class WorkflowEngine:
         """
         Dynamically resolves the next task template from database (workflow_templates).
         1. Checks outcome_transitions JSONB for an exact match or normalized upper outcome.
-        2. If outcome is not matched or outcome is None, falls back to next_template_id.
-        3. Returns None if template is Terminal, Standalone, or outcome maps explicitly to None.
+        2. Applies declarative canonical aliases for backward compatibility and clean outcomes.
+        3. If outcome is not matched or outcome is None, falls back to next_template_id.
+        4. Returns None if template is Terminal, Standalone, or outcome maps explicitly to None.
         """
         row = await conn.fetchrow(
             """
@@ -698,6 +830,12 @@ class WorkflowEngine:
             outcomes = json.loads(outcomes_raw) if isinstance(outcomes_raw, str) else outcomes_raw
             norm_outcome = outcome.strip().upper()
 
+            # Canonical alias normalization for backward compatibility and clean unified transitions
+            if current_template_id in WorkflowEngine.CANONICAL_OUTCOME_ALIASES and norm_outcome in WorkflowEngine.CANONICAL_OUTCOME_ALIASES[current_template_id]:
+                norm_outcome = WorkflowEngine.CANONICAL_OUTCOME_ALIASES[current_template_id][norm_outcome]
+            elif norm_outcome in WorkflowEngine.GLOBAL_OUTCOME_ALIASES:
+                norm_outcome = WorkflowEngine.GLOBAL_OUTCOME_ALIASES[norm_outcome]
+
             def extract_target(val):
                 if isinstance(val, dict):
                     return val.get("next_template_id")
@@ -708,22 +846,6 @@ class WorkflowEngine:
             for k, v in outcomes.items():
                 if k.strip().upper() == norm_outcome:
                     return extract_target(v)
-
-            # Fallback synonym resolution for negotiation and offer outcomes
-            synonyms = []
-            if norm_outcome in ("COUNTER", "COUNTERED", "COUNTER_OFFER"):
-                synonyms = ["COUNTER_OFFER", "COUNTER", "COUNTERED", "NEGOTIATION"]
-            elif norm_outcome in ("AGREED", "CONCESSION_AGREED"):
-                synonyms = ["AGREED", "CONCESSION_AGREED"]
-            elif norm_outcome in ("ACCEPTED", "OFFER_ACCEPTED"):
-                synonyms = ["ACCEPTED", "OFFER_ACCEPTED"]
-
-            for syn in synonyms:
-                if syn in outcomes:
-                    return extract_target(outcomes[syn])
-                for k, v in outcomes.items():
-                    if k.strip().upper() == syn:
-                        return extract_target(v)
 
         return next_tmpl
 
@@ -844,7 +966,7 @@ class WorkflowEngine:
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
             WHERE lead_id = $2
-              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+              AND template_id IN ('TASK_LEAD_QUALIFY', 'TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP', 'TASK_SALES_LEAD_CONTACT_QUALIFY', 'TASK_LEAD_FOLLOWUP_QUALIFY')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
             """,
             now_dt, lead_id
@@ -963,14 +1085,22 @@ class WorkflowEngine:
             "SELECT count(*) FROM opportunity_units WHERE opportunity_id = $1 AND is_primary = TRUE",
             opp_id
         )
-        qual_outcome = "QUALIFIED_INVESTMENT" if is_invest else ("QUALIFIED_RENT" if is_rent else "QUALIFIED_SALE")
-        db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_LEAD_QUALIFY", qual_outcome)
+        qual_outcome = "QUALIFIED_INVESTMENT" if is_invest else ("QUALIFIED_RENT" if is_rent else "QUALIFIED")
+
+        parent_tmpl = None
+        if parent_task_id:
+            parent_tmpl = await conn.fetchval("SELECT template_id FROM tasks WHERE task_id = $1", parent_task_id)
+
+        if parent_tmpl in ("TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY"):
+            db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, parent_tmpl, "CONTACTED_QUALIFIED")
+        else:
+            db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_LEAD_QUALIFY", qual_outcome)
 
         if db_next_tmpl:
             if not has_primary_unit and is_rent:
                 next_task_template = "TASK_RENT_MATCH_PROPERTIES"
             elif not has_primary_unit and not is_invest:
-                next_task_template = "TASK_OPPORTUNITY_MATCH_PROPERTIES"
+                next_task_template = db_next_tmpl if parent_tmpl in ("TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY") else "TASK_OPPORTUNITY_MATCH_PROPERTIES"
             else:
                 next_task_template = db_next_tmpl
         else:
@@ -998,7 +1128,7 @@ class WorkflowEngine:
             "opportunity_id": opp_id,
             "activity": activity,
             "viewing_task": next_task if next_task_template in ("TASK_VIEWING_SCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP") else None,
-            "matching_task": next_task if next_task_template in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES") else None,
+            "matching_task": next_task if next_task_template in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_MATCH_PROPERTIES") else None,
             "invest_task": next_task if is_invest else None,
             "next_task": next_task
         }
@@ -1067,16 +1197,49 @@ class WorkflowEngine:
             units_summary.append(f"وحدة #{r['unit_number']} ({r['project_name'] or 'المشروع'}) بسعر {float(r['price']):,.0f} ريال")
         units_text = " • " + "\n • ".join(units_summary) if units_summary else "مجموعة من الوحدات العقارية المختارة"
 
+        # 1.b Resolve parent_task_id if not explicitly provided
+        if not parent_task_id:
+            parent_task_id = await conn.fetchval(
+                """
+                SELECT task_id FROM tasks
+                WHERE (opportunity_id = $1 OR ($2::text IS NOT NULL AND lead_id = $2))
+                  AND template_id IN ('TASK_OPPORTUNITY_MATCH_PROPERTIES', 'TASK_RENT_MATCH_PROPERTIES', 'TASK_MATCH_PROPERTIES')
+                  AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                opportunity_id, lead_id
+            )
+            if not parent_task_id:
+                parent_task_id = await conn.fetchval(
+                    """
+                    SELECT task_id FROM tasks
+                    WHERE (opportunity_id = $1 OR ($2::text IS NOT NULL AND lead_id = $2))
+                      AND template_id IN ('TASK_OPPORTUNITY_MATCH_PROPERTIES', 'TASK_RENT_MATCH_PROPERTIES', 'TASK_MATCH_PROPERTIES')
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    opportunity_id, lead_id
+                )
+
         # 2. Complete open matching tasks (standard or rental)
+        if parent_task_id:
+            await conn.execute(
+                """
+                UPDATE tasks
+                SET status = 'COMPLETED', completed_at = $1
+                WHERE task_id = $2 AND status != 'COMPLETED'
+                """,
+                now_dt, parent_task_id
+            )
         await conn.execute(
             """
             UPDATE tasks
             SET status = 'COMPLETED', completed_at = $1
             WHERE (opportunity_id = $2 OR ($3::text IS NOT NULL AND lead_id = $3))
-              AND template_id IN ('TASK_OPPORTUNITY_MATCH_PROPERTIES', 'TASK_RENT_MATCH_PROPERTIES')
+              AND template_id IN ('TASK_OPPORTUNITY_MATCH_PROPERTIES', 'TASK_RENT_MATCH_PROPERTIES', 'TASK_MATCH_PROPERTIES')
               AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+              AND ($4::text IS NULL OR task_id != $4)
             """,
-            now_dt, opportunity_id, lead_id
+            now_dt, opportunity_id, lead_id, parent_task_id
         )
 
         # 3. Record Activity (ACT_RENT_PROPERTIES_MATCHED or ACT_OPPORTUNITY_PROPERTIES_PRESENTED)
@@ -1168,6 +1331,17 @@ class WorkflowEngine:
                 opportunity_id = opportunity_id or t_row["opportunity_id"]
                 customer_id = customer_id or t_row["customer_id"]
                 agent_user_id = agent_user_id or t_row["assigned_user_id"]
+        elif opportunity_id or lead_id:
+            task_id = await conn.fetchval(
+                """
+                SELECT task_id FROM tasks
+                WHERE (opportunity_id = $1 OR ($2::text IS NOT NULL AND lead_id = $2))
+                  AND template_id IN ('TASK_VIEWING_SCHEDULE', 'TASK_VIEWING_RESCHEDULE', 'TASK_INVEST_SCHEDULE_INSPECTION')
+                  AND status IN ('PENDING', 'OPEN', 'IN_PROGRESS')
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                opportunity_id, lead_id
+            )
 
         # Ensure opportunity_id
         if not opportunity_id and lead_id:
@@ -1237,7 +1411,7 @@ class WorkflowEngine:
         # 3. Complete any open TASK_VIEWING_SCHEDULE, TASK_VIEWING_RESCHEDULE, or TASK_INVEST_SCHEDULE_INSPECTION
         if task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, task_id
             )
         await conn.execute(
@@ -1250,8 +1424,9 @@ class WorkflowEngine:
                   ($2::text IS NOT NULL AND lead_id = $2) OR
                   ($3::text IS NOT NULL AND opportunity_id = $3)
               )
+              AND ($4::text IS NULL OR task_id != $4)
             """,
-            now_dt, lead_id, opportunity_id
+            now_dt, lead_id, opportunity_id, task_id
         )
 
         # 4. Advance Opportunity Stage to 'VIEWING' and link unit in opportunity_units
@@ -1502,7 +1677,7 @@ class WorkflowEngine:
 
         # 2. Mark report task completed
         await conn.execute(
-            "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+            "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
             now_dt, task_id
         )
 
@@ -1536,7 +1711,7 @@ class WorkflowEngine:
         new_stage = None
 
         # 4. State Transitions based on outcome
-        if outcome == "INTERESTED":
+        if outcome in ("INTERESTED", "OFFER_REQUESTED"):
             new_stage = "NEGOTIATION"
             if opportunity_id:
                 # Update opportunity expected value to the approved offer amount, or cap at unit price
@@ -1573,7 +1748,7 @@ class WorkflowEngine:
                             opportunity_id, target_unit_id, offered_to_set
                         )
             curr_view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_REPORT"
-            db_next = await WorkflowEngine.resolve_next_task_template(conn, curr_view_tmpl, outcome="INTERESTED")
+            db_next = await WorkflowEngine.resolve_next_task_template(conn, curr_view_tmpl, outcome=outcome)
             next_tmpl = db_next or ("TASK_RENT_PREPARE_TENANCY" if is_rent else "TASK_OFFER_SUBMIT")
 
             if is_rent:
@@ -1650,7 +1825,7 @@ class WorkflowEngine:
             )
             next_action = {"type": "RESCHEDULE_TASK_SPAWNED", "task": resched_task}
 
-        elif outcome in ("REQUESTS_ANOTHER_VIEWING", "ANOTHER_VIEWING"):
+        elif outcome == "REQUESTS_ANOTHER_VIEWING":
             new_stage = "VIEWING"
             curr_view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_REPORT"
             db_next = await WorkflowEngine.resolve_next_task_template(conn, curr_view_tmpl, outcome="REQUESTS_ANOTHER_VIEWING")
@@ -1674,6 +1849,23 @@ class WorkflowEngine:
                     "UPDATE opportunities SET updated_at = NOW() WHERE opportunity_id = $1",
                     opportunity_id
                 )
+
+        else:
+            # Fallback dynamic task resolution for any additional outcome configured in workflow_templates
+            curr_view_tmpl = "TASK_RENT_VIEWING_FOLLOW_UP" if is_rent else "TASK_VIEWING_REPORT"
+            db_next = await WorkflowEngine.resolve_next_task_template(conn, curr_view_tmpl, outcome=outcome)
+            if db_next:
+                spawned_task, _ = await WorkflowEngine.spawn_task_from_template(
+                    conn=conn,
+                    template_id=db_next,
+                    lead_id=lead_id,
+                    opportunity_id=opportunity_id,
+                    customer_id=customer_id,
+                    assigned_user_id=agent_user_id,
+                    priority="HIGH",
+                    parent_task_id=task_id
+                )
+                next_action = {"type": f"{db_next}_SPAWNED", "task": spawned_task}
 
         return {
             "task_id": task_id,
@@ -1848,7 +2040,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
 
@@ -2019,7 +2211,7 @@ class WorkflowEngine:
                 now_dt
             )
             # Automatic Stage F Trigger: verify availability & reserve unit via dynamic transition
-            db_acc_next = await WorkflowEngine.resolve_next_task_template(conn, "TASK_OFFER_FOLLOWUP", outcome="ACCEPTED")
+            db_acc_next = await WorkflowEngine.resolve_next_task_template(conn, "TASK_OFFER_FOLLOWUP", outcome="OFFER_ACCEPTED")
             next_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
                 template_id=db_acc_next or "TASK_RESERVATION_VERIFY_AVAILABILITY",
@@ -2120,7 +2312,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
 
@@ -2359,7 +2551,7 @@ class WorkflowEngine:
         # 7. Complete open TASK_RENT_PREPARE_TENANCY tasks
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
         await conn.execute(
@@ -2712,7 +2904,7 @@ class WorkflowEngine:
             """
         ) or agent_id
 
-        db_dep = await WorkflowEngine.resolve_next_task_template(conn, "TASK_RESERVATION_VERIFY_AVAILABILITY", outcome="CONFIRMED")
+        db_dep = await WorkflowEngine.resolve_next_task_template(conn, "TASK_RESERVATION_VERIFY_AVAILABILITY", outcome="AVAILABLE")
         dep_tmpl = db_dep or "TASK_RESERVATION_DEPOSIT_FOLLOWUP"
         deposit_task, _ = await WorkflowEngine.spawn_task_from_template(
             conn=conn,
@@ -2759,7 +2951,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
 
@@ -2891,7 +3083,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
         else:
@@ -3099,7 +3291,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
 
@@ -3535,7 +3727,7 @@ class WorkflowEngine:
 
         if parent_task_id:
             await conn.execute(
-                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2",
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'",
                 now_dt, parent_task_id
             )
 
@@ -4246,6 +4438,17 @@ class WorkflowEngine:
             return {"task": dict(task), "already_completed": True}
 
         now_dt = datetime.now(timezone.utc)
+        tmpl_id = task["template_id"]
+        lead_id = task["lead_id"]
+
+        # Canonical normalization for outcome aliases
+        norm_outcome = (outcome or "").strip().upper()
+        if tmpl_id in WorkflowEngine.CANONICAL_OUTCOME_ALIASES and norm_outcome in WorkflowEngine.CANONICAL_OUTCOME_ALIASES[tmpl_id]:
+            outcome = WorkflowEngine.CANONICAL_OUTCOME_ALIASES[tmpl_id][norm_outcome]
+        elif norm_outcome in WorkflowEngine.GLOBAL_OUTCOME_ALIASES:
+            outcome = WorkflowEngine.GLOBAL_OUTCOME_ALIASES[norm_outcome]
+        else:
+            outcome = norm_outcome
 
         # 1. Complete Task
         await conn.execute(
@@ -4267,12 +4470,15 @@ class WorkflowEngine:
             now_dt, outcome, task_id
         )
 
-        tmpl_id = task["template_id"]
-        lead_id = task["lead_id"]
+        # 2. Stage 2 Special Handling: TASK_LEAD_QUALIFY & Streamlined Sales Contact & Followup
+        if lead_id and tmpl_id in ("TASK_LEAD_QUALIFY", "TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY"):
+            # Ensure Speed-to-Lead SLA timestamp is permanently locked on contact attempt
+            await conn.execute(
+                "UPDATE leads SET first_contact_at = COALESCE(first_contact_at, $1), updated_at = NOW() WHERE lead_id = $2",
+                now_dt, lead_id
+            )
 
-        # 2. Stage 2 Special Handling: TASK_LEAD_QUALIFY
-        if lead_id and tmpl_id == "TASK_LEAD_QUALIFY":
-            if outcome in ("QUALIFIED", "CONVERTED"):
+            if outcome in ("QUALIFIED", "CONVERTED", "CONTACTED_QUALIFIED"):
                 q_data = qualification_data or {}
                 qual_res = await WorkflowEngine.on_lead_qualified(
                     conn=conn,
@@ -4292,7 +4498,7 @@ class WorkflowEngine:
                     "activity": qual_res["activity"],
                     "business_transition": qual_res
                 }
-            elif outcome in ("DISQUALIFIED", "NOT_INTERESTED", "LOST"):
+            elif outcome in ("DISQUALIFIED", "NOT_INTERESTED", "INVALID_CONTACT", "LOST"):
                 await conn.execute(
                     "UPDATE leads SET status = 'DISQUALIFIED', updated_at = NOW() WHERE lead_id = $1",
                     lead_id
@@ -4301,14 +4507,15 @@ class WorkflowEngine:
                     "UPDATE opportunities SET stage = 'LOST', updated_at = NOW() WHERE lead_id = $1 AND stage NOT IN ('WON', 'LOST')",
                     lead_id
                 )
+                act_tmpl = "ACT_LEAD_FIRST_CONTACT" if tmpl_id == "TASK_SALES_LEAD_CONTACT_QUALIFY" else ("ACT_LEAD_FOLLOWUP" if tmpl_id == "TASK_LEAD_FOLLOWUP_QUALIFY" else "ACT_LEAD_QUALIFIED")
                 activity = await WorkflowEngine.record_activity_from_template(
                     conn=conn,
-                    template_id="ACT_LEAD_QUALIFIED",
+                    template_id=act_tmpl,
                     user_id=user_id,
                     customer_id=task["customer_id"],
                     lead_id=lead_id,
                     task_id=task_id,
-                    outcome="DISQUALIFIED",
+                    outcome=outcome,
                     notes=notes or "تم استبعاد الطلب لعدم توافر معايير التأهيل أو رغبة العميل.",
                     completed_at=now_dt
                 )
@@ -4319,21 +4526,92 @@ class WorkflowEngine:
                     "activity": activity,
                     "business_transition": {"lead_id": lead_id, "new_status": "DISQUALIFIED"}
                 }
-            elif outcome in ("NO_ANSWER", "FOLLOWUP_NEEDED", "CALLBACK_REQUESTED"):
-                followup_due = now_dt + timedelta(hours=3)
+            elif outcome in ("NO_ANSWER", "BUSY", "UNREACHABLE"):
+                curr_retries = int(task["retry_count"]) if "retry_count" in task and task["retry_count"] is not None else 0
+                next_retries = curr_retries + 1
+                if next_retries < 3:
+                    followup_due = now_dt + timedelta(hours=3)
+                    target_followup_tmpl = "TASK_LEAD_FOLLOWUP_QUALIFY" if tmpl_id in ("TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY") else "TASK_LEAD_FOLLOWUP"
+                    followup_task, _ = await WorkflowEngine.spawn_task_from_template(
+                        conn=conn,
+                        template_id=target_followup_tmpl,
+                        lead_id=lead_id,
+                        customer_id=task["customer_id"],
+                        assigned_user_id=task["assigned_user_id"] or user_id,
+                        custom_due_at=followup_due,
+                        priority="NORMAL",
+                        parent_task_id=task_id
+                    )
+                    if followup_task:
+                        await conn.execute("UPDATE tasks SET retry_count = $1 WHERE task_id = $2", next_retries, followup_task["task_id"])
+                        followup_task["retry_count"] = next_retries
+                    act_tmpl = "ACT_LEAD_FIRST_CONTACT" if tmpl_id == "TASK_SALES_LEAD_CONTACT_QUALIFY" else "ACT_LEAD_FOLLOWUP"
+                    activity = await WorkflowEngine.record_activity_from_template(
+                        conn=conn,
+                        template_id=act_tmpl,
+                        user_id=user_id,
+                        customer_id=task["customer_id"],
+                        lead_id=lead_id,
+                        task_id=task_id,
+                        outcome=outcome,
+                        notes=notes or f"تعذر الوصول للعميل (محاولة {next_retries} من 3).",
+                        completed_at=now_dt
+                    )
+                    return {
+                        "task_id": task_id,
+                        "status": "COMPLETED",
+                        "completed_at": now_dt.isoformat(),
+                        "activity": activity,
+                        "business_transition": {"lead_id": lead_id, "retry_count": next_retries, "followup_task": followup_task}
+                    }
+                else:
+                    await conn.execute(
+                        "UPDATE leads SET status = 'UNREACHABLE', updated_at = NOW() WHERE lead_id = $1",
+                        lead_id
+                    )
+                    act_tmpl = "ACT_LEAD_FIRST_CONTACT" if tmpl_id == "TASK_SALES_LEAD_CONTACT_QUALIFY" else "ACT_LEAD_FOLLOWUP"
+                    activity = await WorkflowEngine.record_activity_from_template(
+                        conn=conn,
+                        template_id=act_tmpl,
+                        user_id=user_id,
+                        customer_id=task["customer_id"],
+                        lead_id=lead_id,
+                        task_id=task_id,
+                        outcome="UNREACHABLE",
+                        notes=notes or "تم استنفاد الحد الأقصى للمحاولات (3 محاولات) وتحديث حالة الطلب إلى متعذر الوصول.",
+                        completed_at=now_dt
+                    )
+                    return {
+                        "task_id": task_id,
+                        "status": "COMPLETED",
+                        "completed_at": now_dt.isoformat(),
+                        "activity": activity,
+                        "business_transition": {"lead_id": lead_id, "new_status": "UNREACHABLE", "max_retries_exceeded": True}
+                    }
+            elif outcome in ("CALLBACK_REQUESTED", "FOLLOWUP_NEEDED"):
+                v_data = viewing_data or {}
+                cb_time = v_data.get("callback_at")
+                if isinstance(cb_time, str):
+                    cb_dt = datetime.fromisoformat(cb_time.replace("Z", "+00:00"))
+                elif isinstance(cb_time, datetime):
+                    cb_dt = cb_time
+                else:
+                    cb_dt = now_dt + timedelta(hours=3)
+                target_followup_tmpl = "TASK_LEAD_FOLLOWUP_QUALIFY" if tmpl_id in ("TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY") else "TASK_LEAD_FOLLOWUP"
                 followup_task, _ = await WorkflowEngine.spawn_task_from_template(
                     conn=conn,
-                    template_id="TASK_LEAD_FOLLOWUP",
+                    template_id=target_followup_tmpl,
                     lead_id=lead_id,
                     customer_id=task["customer_id"],
                     assigned_user_id=task["assigned_user_id"] or user_id,
-                    custom_due_at=followup_due,
-                    priority="NORMAL",
+                    custom_due_at=cb_dt,
+                    priority="HIGH" if outcome == "CALLBACK_REQUESTED" else "NORMAL",
                     parent_task_id=task_id
                 )
+                act_tmpl = "ACT_LEAD_FIRST_CONTACT" if tmpl_id == "TASK_SALES_LEAD_CONTACT_QUALIFY" else "ACT_LEAD_FOLLOWUP"
                 activity = await WorkflowEngine.record_activity_from_template(
                     conn=conn,
-                    template_id="ACT_LEAD_FOLLOWUP",
+                    template_id=act_tmpl,
                     user_id=user_id,
                     customer_id=task["customer_id"],
                     lead_id=lead_id,
@@ -4350,8 +4628,8 @@ class WorkflowEngine:
                     "business_transition": {"lead_id": lead_id, "followup_task": followup_task}
                 }
 
-        # 3. Stage C Handling: TASK_OPPORTUNITY_MATCH_PROPERTIES & TASK_RENT_MATCH_PROPERTIES
-        if tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES"):
+        # 3. Stage C Handling: TASK_OPPORTUNITY_MATCH_PROPERTIES & TASK_RENT_MATCH_PROPERTIES & TASK_MATCH_PROPERTIES
+        if tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_MATCH_PROPERTIES"):
             v_data = viewing_data or {}
             unit_ids = v_data.get("unit_ids") or []
             if not unit_ids and v_data.get("unit_id"):
@@ -4405,7 +4683,7 @@ class WorkflowEngine:
         if tmpl_id in ("TASK_VIEWING_SCHEDULE", "TASK_VIEWING_RESCHEDULE", "TASK_RENT_VIEWING_FOLLOW_UP", "TASK_INVEST_SCHEDULE_INSPECTION"):
             v_data = viewing_data or {}
             # If completing viewing follow up with inspection outcome directly:
-            if tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP" and outcome in ("INTERESTED", "NOT_INTERESTED", "NEEDS_ANOTHER_UNIT", "NO_SHOW", "CANCELLED") and not v_data.get("scheduled_start"):
+            if tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP" and outcome in ("INTERESTED", "OFFER_REQUESTED", "NOT_INTERESTED", "NEEDS_ANOTHER_UNIT", "NO_SHOW", "CANCELLED") and not v_data.get("scheduled_start"):
                 res = await WorkflowEngine.complete_property_viewing_report(
                     conn=conn,
                     task_id=task_id,
@@ -4673,7 +4951,7 @@ class WorkflowEngine:
                                 latest_offer_id
                             )
 
-                db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_SALE_NEGOTIATE_CONCESSIONS", outcome="AGREED")
+                db_next_tmpl = await WorkflowEngine.resolve_next_task_template(conn, "TASK_SALE_NEGOTIATE_CONCESSIONS", outcome="CONCESSION_AGREED")
                 next_task, _ = await WorkflowEngine.spawn_task_from_template(
                     conn=conn,
                     template_id=db_next_tmpl or "TASK_RESERVATION_VERIFY_AVAILABILITY",
@@ -5004,6 +5282,43 @@ class WorkflowEngine:
                 "business_transition": res
             }
 
+        if tmpl_id == "TASK_CONTRACT_RECONCILIATION":
+            c_row = None
+            if task.get("opportunity_id"):
+                c_row = await conn.fetchrow(
+                    """
+                    SELECT c.*, r.reservation_number 
+                    FROM contracts c 
+                    JOIN reservations r ON c.reservation_id = r.reservation_id 
+                    WHERE r.opportunity_id = $1 
+                    ORDER BY c.contract_id DESC LIMIT 1
+                    """,
+                    task["opportunity_id"]
+                )
+            c_num = c_row["contract_number"] if c_row else "العقد المعتمد"
+            reconcile_notes = notes or f"تمت المطابقة المالية واعتماد جدول الأقساط وتسوية قيد العربون للعقد {c_num} بنجاح."
+
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
+            activity = await WorkflowEngine.record_activity_from_template(
+                conn=conn,
+                template_id="ACT_FEE_COLLECTED",
+                user_id=user_id,
+                customer_id=task["customer_id"],
+                lead_id=task["lead_id"],
+                opportunity_id=task["opportunity_id"],
+                task_id=task_id,
+                outcome=outcome or "RECONCILED",
+                notes=reconcile_notes,
+                completed_at=now_dt
+            )
+            return {
+                "task_id": task_id,
+                "status": "COMPLETED",
+                "completed_at": now_dt.isoformat(),
+                "activity": activity,
+                "business_transition": {"contract_reconciled": True, "contract_number": c_num}
+            }
+
         if tmpl_id == "TASK_COMMISSION_SETTLEMENT":
             v_data = viewing_data or {}
             c_amt = v_data.get("commission_amount")
@@ -5073,7 +5388,7 @@ class WorkflowEngine:
                 user_id=user_id
             )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_FEE_COLLECTED",
@@ -5116,7 +5431,7 @@ class WorkflowEngine:
                     notes=notes or "تم التحقق وسداد الرسوم النظامية وسعي الشركة بنجاح."
                 )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_FEE_COLLECTED",
@@ -5160,7 +5475,7 @@ class WorkflowEngine:
                     """,
                     opp_id
                 )
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_FEE_COLLECTED",
@@ -5221,7 +5536,7 @@ class WorkflowEngine:
                         """,
                         hist_id, u["unit_id"], user_id, now_dt, "فك حجز الوحدة وإعادتها للمخزون المتاح إثر إلغاء الصفقة"
                     )
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
             activity = await WorkflowEngine.record_activity_from_template(
                 conn=conn,
                 template_id="ACT_TASK_CANCELLED",
@@ -5592,7 +5907,7 @@ class WorkflowEngine:
                         task["opportunity_id"], uid, (idx == 0)
                     )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             crit_summary = (
                 f"تم اعتماد وتأكيد الأهداف الاستثمارية: رأس المال المستهدف: {t_cap:,.2f} ريال | "
@@ -5926,7 +6241,7 @@ class WorkflowEngine:
                 user_id=user_id
             )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             comp_notes = notes or rec_notes
             activity = await WorkflowEngine.record_activity_from_template(
@@ -5971,7 +6286,7 @@ class WorkflowEngine:
         if tmpl_id == "TASK_INVEST_INSPECTION_REPORT":
             v_data = viewing_data or {}
             norm_outcome = (outcome or "RECOMMENDED").upper()
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             # 1. Resolve unit_id
             target_unit_id = v_data.get("unit_id")
@@ -6272,7 +6587,7 @@ class WorkflowEngine:
         # 4. TASK_INVEST_VALIDATE_FINANCIALS
         if tmpl_id == "TASK_INVEST_VALIDATE_FINANCIALS":
             norm_outcome = (outcome or "VALIDATED").upper()
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             # Check if there is an inspection report to enrich validation notes
             rep_row = await conn.fetchrow(
@@ -6344,7 +6659,7 @@ class WorkflowEngine:
         if tmpl_id == "TASK_INVEST_NEGOTIATE_PRICE_DISCOUNT":
             norm_outcome = (outcome or "DISCOUNT_ACCEPTED").upper()
             v_data = viewing_data or {}
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             rep = None
             if task["opportunity_id"]:
@@ -6517,7 +6832,7 @@ class WorkflowEngine:
         # 4. TASK_INVEST_PREPARE_ACQUISITION_OFFER
         if tmpl_id == "TASK_INVEST_PREPARE_ACQUISITION_OFFER":
             norm_outcome = (outcome or "OFFER_ACCEPTED").upper()
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             if norm_outcome in ("OFFER_ACCEPTED", "OFFER_COMPROMISE", "ACCEPTED", "WON", "COMPLETED"):
                 if task["opportunity_id"]:
@@ -6769,7 +7084,7 @@ class WorkflowEngine:
                 annual_pre_tax_cash_flow=r_metrics["net_operating_income"]
             )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             dd_ref = f" استناداً إلى تقرير الفحص النافي للجهالة (#{rep_row['report_id']})" if rep_row else ""
             base_notes = notes or (
@@ -6916,7 +7231,7 @@ class WorkflowEngine:
                 forecast_income=forecast_inc
             )
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             dd_info = f" (مقارنة بخط أساس الفحص النافي للجهالة #{rep_row['report_id']})" if rep_row else ""
             mon_notes = notes or (
@@ -6972,7 +7287,7 @@ class WorkflowEngine:
                 )
 
             rec_outcome = (outcome or "HOLD").upper()
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             dd_info = f" (مقارنة بمستهدف خط الأساس: عائد {float(rep_row['net_yield_percent'])}% و NOI {float(rep_row['net_operating_income_noi_sar']):,.2f} ريال)" if rep_row and rep_row['net_operating_income_noi_sar'] else ""
             activity = await WorkflowEngine.record_activity_from_template(
@@ -7016,7 +7331,7 @@ class WorkflowEngine:
             if not target_agent_id:
                 raise ValueError("يجب تحديد الوسيط المراد تعيين الطلب إليه لإنجاز المهمة.")
 
-            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2", now_dt, task_id)
+            await conn.execute("UPDATE tasks SET status = 'COMPLETED', completed_at = $1 WHERE task_id = $2 AND status != 'COMPLETED'", now_dt, task_id)
 
             assign_res = await WorkflowEngine.on_lead_assigned(
                 conn=conn,
@@ -7024,7 +7339,8 @@ class WorkflowEngine:
                 assigned_user_id=target_agent_id,
                 assigner_user_id=user_id,
                 branch_id=target_branch_id,
-                notes=notes
+                notes=notes,
+                parent_task_id=task_id
             )
 
             return {
@@ -7037,7 +7353,8 @@ class WorkflowEngine:
                     "assigned_user_id": target_agent_id,
                     "branch_id": target_branch_id,
                     "assignment_details": assign_res
-                }
+                },
+                "next_task": assign_res.get("task")
             }
 
         # 4. Stage A Handling: TASK_LEAD_COMPLETE_INFO
@@ -7087,14 +7404,24 @@ class WorkflowEngine:
 
         # 5. Determine and record corresponding Activity for other tasks
         act_template_id = "ACT_LEAD_FIRST_CONTACT"
-        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT"):
+        if tmpl_id in ("TASK_CONTRACT_RECONCILIATION", "TASK_COLLECT_SAUDI_FEES", "TASK_COMMISSION_SETTLEMENT"):
+            act_template_id = "ACT_FEE_COLLECTED"
+        elif tmpl_id in ("TASK_CONTRACT_HANDOVER",):
+            act_template_id = "ACT_CONTRACT_CLOSED"
+        elif tmpl_id in ("TASK_CONTRACT_SIGNATURE",):
+            act_template_id = "ACT_CONTRACT_SIGNED"
+        elif tmpl_id in ("TASK_CONTRACT_DRAFT", "TASK_CONTRACT_INTERNAL_REVIEW"):
+            act_template_id = "ACT_CONTRACT_DRAFT_CREATED"
+        elif tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_SALES_LEAD_CONTACT_QUALIFY"):
             act_template_id = "ACT_LEAD_FIRST_CONTACT"
-        elif tmpl_id == "TASK_LEAD_FOLLOWUP":
+        elif tmpl_id in ("TASK_LEAD_FOLLOWUP", "TASK_LEAD_FOLLOWUP_QUALIFY"):
             act_template_id = "ACT_LEAD_FOLLOWUP"
         elif tmpl_id == "TASK_LEAD_QUALIFY":
             act_template_id = "ACT_LEAD_QUALIFIED"
         elif tmpl_id == "TASK_LEAD_ASSIGN":
             act_template_id = "ACT_LEAD_ASSIGNED"
+        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_MATCH_PROPERTIES"):
+            act_template_id = "ACT_OPPORTUNITY_PROPERTIES_PRESENTED"
         elif tmpl_id == "TASK_RENT_MATCH_PROPERTIES":
             act_template_id = "ACT_RENT_PROPERTIES_MATCHED"
         elif tmpl_id == "TASK_RENT_VIEWING_FOLLOW_UP":
@@ -7121,6 +7448,8 @@ class WorkflowEngine:
             act_template_id = "ACT_INVEST_RETURNS_MONITORED"
         elif tmpl_id == "TASK_INVEST_PORTFOLIO_REVIEW":
             act_template_id = "ACT_INVEST_PORTFOLIO_REVIEWED"
+        elif "CONTRACT" in tmpl_id or "FEE" in tmpl_id:
+            act_template_id = "ACT_FEE_COLLECTED"
 
         activity = await WorkflowEngine.record_activity_from_template(
             conn=conn,
@@ -7284,7 +7613,8 @@ class WorkflowEngine:
         # Excludes tasks that have already completed their lifecycle routing (e.g. Lead First Contact/Followup with terminal outcome)
         is_first_contact_or_followup = tmpl_id in (
             "TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT",
-            "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP"
+            "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP",
+            "TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY"
         )
         is_terminal_transition = bool(business_transition and (
             business_transition.get("max_retries_exceeded") or 
@@ -7401,16 +7731,16 @@ class WorkflowEngine:
         viewing_reverted = None
 
         # A) First Contact & Follow-up reversions
-        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP") and lead_id:
+        if tmpl_id in ("TASK_LEAD_FIRST_CONTACT", "TASK_RENT_LEAD_FIRST_CONTACT", "TASK_INVEST_LEAD_FIRST_CONTACT", "TASK_LEAD_FOLLOWUP", "TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY") and lead_id:
             lead = await conn.fetchrow("SELECT status, assigned_user_id FROM leads WHERE lead_id = $1", lead_id)
-            if lead and lead["status"] in ("CONTACTED", "UNREACHABLE", "DISQUALIFIED"):
+            if lead and lead["status"] in ("CONTACTED", "UNREACHABLE", "DISQUALIFIED", "QUALIFIED"):
                 prev_lead_status = "ASSIGNED" if lead["assigned_user_id"] else "NEW"
                 # Check if there are other completed contact tasks for this lead
                 other_contact = await conn.fetchval(
                     """
                     SELECT count(*) FROM tasks 
                     WHERE lead_id = $1 AND task_id != $2 
-                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP')
+                      AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_RENT_LEAD_FIRST_CONTACT', 'TASK_INVEST_LEAD_FIRST_CONTACT', 'TASK_LEAD_FOLLOWUP', 'TASK_SALES_LEAD_CONTACT_QUALIFY', 'TASK_LEAD_FOLLOWUP_QUALIFY')
                       AND status = 'COMPLETED'
                     """,
                     lead_id, task_id
@@ -7426,6 +7756,23 @@ class WorkflowEngine:
                         prev_lead_status, lead_id
                     )
                 lead_reverted = prev_lead_status
+
+            # If this consolidated task created an opportunity, clean up or revert it
+            if tmpl_id in ("TASK_SALES_LEAD_CONTACT_QUALIFY", "TASK_LEAD_FOLLOWUP_QUALIFY"):
+                opp = await conn.fetchrow(
+                    "SELECT opportunity_id, stage FROM opportunities WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 1",
+                    lead_id
+                )
+                if opp and opp["stage"] in ("QUALIFIED", "LOST"):
+                    opp_acts = await conn.fetchval(
+                        "SELECT count(*) FROM activities WHERE opportunity_id = $1 AND template_id NOT IN ('ACT_LEAD_QUALIFIED', 'ACT_RENT_LEAD_QUALIFIED', 'ACT_INVEST_LEAD_QUALIFIED', 'ACT_LEAD_FIRST_CONTACT', 'ACT_LEAD_FOLLOWUP')",
+                        opp["opportunity_id"]
+                    )
+                    if not opp_acts or opp_acts == 0:
+                        await conn.execute("UPDATE activities SET opportunity_id = NULL WHERE opportunity_id = $1", opp["opportunity_id"])
+                        await conn.execute("DELETE FROM opportunity_units WHERE opportunity_id = $1", opp["opportunity_id"])
+                        await conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp["opportunity_id"])
+                        opp_reverted = "DELETED"
 
         # B) Lead Qualification reversions
         elif tmpl_id == "TASK_LEAD_QUALIFY" and lead_id:
@@ -7458,7 +7805,7 @@ class WorkflowEngine:
                     opp_reverted = "QUALIFIED"
 
         # C) Property Matching & Investment Evaluation reversions
-        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_INVEST_CONFIRM_OBJECTIVES", "TASK_INVEST_COMPARE_RETURNS", "TASK_INVEST_SCHEDULE_INSPECTION", "TASK_INVEST_INSPECTION_REPORT", "TASK_INVEST_VALIDATE_FINANCIALS"):
+        elif tmpl_id in ("TASK_OPPORTUNITY_MATCH_PROPERTIES", "TASK_RENT_MATCH_PROPERTIES", "TASK_MATCH_PROPERTIES", "TASK_INVEST_CONFIRM_OBJECTIVES", "TASK_INVEST_COMPARE_RETURNS", "TASK_INVEST_SCHEDULE_INSPECTION", "TASK_INVEST_INSPECTION_REPORT", "TASK_INVEST_VALIDATE_FINANCIALS"):
             if opp_id:
                 await conn.execute(
                     "UPDATE opportunities SET stage = 'QUALIFIED', updated_at = NOW() WHERE opportunity_id = $1",
@@ -8568,8 +8915,10 @@ class WorkflowEngine:
                 "is_done": is_done,
                 "timestamp": t_ts.isoformat() if t_ts else None,
                 "created_at": t["created_at"].isoformat() if t.get("created_at") else None,
+                "completed_at": t["completed_at"].isoformat() if t.get("completed_at") else None,
                 "due_at": t["due_at"].isoformat() if t.get("due_at") else None,
-                "user_name": t.get("assigned_user_name") or "Agent"
+                "user_name": t.get("assigned_user_name") or "Agent",
+                "parent_task_id": t.get("parent_task_id")
             })
         for a in activity_list:
             is_done = (a.get("completed_at") is not None) or (a.get("status") == "COMPLETED")
@@ -8583,7 +8932,8 @@ class WorkflowEngine:
                 "status": a.get("status") or ("COMPLETED" if is_done else "PLANNED"),
                 "is_done": is_done,
                 "timestamp": a_ts.isoformat() if a_ts else None,
-                "user_name": a.get("user_name") or "System/Agent"
+                "user_name": a.get("user_name") or "System/Agent",
+                "task_id": a.get("task_id")
             })
         for c in comm_list:
             is_done = (c.get("sent_at") is not None) or (c.get("delivery_status") in ("DELIVERED", "SENT"))
@@ -8720,6 +9070,7 @@ class WorkflowEngine:
                 "due_date": due_dt.isoformat() if due_dt else None,
                 "created_at": created_dt.isoformat() if created_dt else None,
                 "completed_at": completed_dt.isoformat() if completed_dt else None,
+                "parent_task_id": t.get("parent_task_id"),
                 "date_time": dt_sort.isoformat() if dt_sort else None
             })
 
@@ -8732,6 +9083,7 @@ class WorkflowEngine:
             formatted_activities.append({
                 "activity_id": a["activity_id"],
                 "lead_id": a.get("lead_id") or lead_id,
+                "task_id": a.get("task_id"),
                 "activity_type": a.get("activity_type_code") or a.get("type") or "ACTIVITY",
                 "subject": a["subject"],
                 "description": a.get("description") or "",

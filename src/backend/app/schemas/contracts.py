@@ -52,6 +52,8 @@ class CommissionOut(BaseModel):
     gov_fees_deducted: Optional[float] = 0.0
     net_commission_base: Optional[float] = 0.0
     calculation_notes: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
 
 class CommissionCreate(BaseModel):
     user_id: str
@@ -87,6 +89,8 @@ class ContractOut(BaseModel):
     maintenance_terms: Optional[str] = None
     notes: Optional[str] = None
     ejar_contract_number: Optional[str] = None
+    lead_id: Optional[str] = None
+    opportunity_id: Optional[str] = None
 
 class ContractCreate(BaseModel):
     reservation_id: Optional[str] = None

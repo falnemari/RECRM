@@ -604,6 +604,80 @@ class TestWorkflowStage3(unittest.IsolatedAsyncioTestCase):
         finally:
             await tr.rollback()
 
+    async def test_viewing_report_outcome_offer_requested(self):
+        """
+        Rule: When TASK_VIEWING_REPORT is completed with outcome 'OFFER_REQUESTED':
+          - Opportunity advances to stage 'NEGOTIATION'
+          - Stage 4 TASK_OFFER_SUBMIT is spawned with parent_task_id set to the viewing report task
+          - Activity ACT_VIEWING_REPORT_SUBMITTED is recorded with outcome 'OFFER_REQUESTED'
+        """
+        tr = self.conn.transaction()
+        await tr.start()
+        try:
+            lead_id = "test-lead-offer-requested"
+            cust_id = "test-cust-offer-requested"
+            opp_id = "test-opp-offer-requested"
+
+            await self.conn.execute("DELETE FROM viewings WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM tasks WHERE lead_id = $1 OR opportunity_id = $2", lead_id, opp_id)
+            await self.conn.execute("DELETE FROM opportunities WHERE opportunity_id = $1", opp_id)
+            await self.conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
+            await self.conn.execute("DELETE FROM customers WHERE customer_id = $1", cust_id)
+
+            await self.conn.execute(
+                """
+                INSERT INTO customers (customer_id, organization_id, customer_type, first_name, last_name, mobile, status, created_at, updated_at)
+                VALUES ($1, $2, 'INDIVIDUAL', 'Sultan', 'Al-Otaibi', '+966599887766', 'ACTIVE', NOW(), NOW())
+                """,
+                cust_id, self.org_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO leads (lead_id, organization_id, customer_id, assigned_user_id, branch_id, status, priority, inquiry_type, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'QUALIFIED', 'HIGH', 'BUY', NOW(), NOW())
+                """,
+                lead_id, self.org_id, cust_id, self.agent_id, self.branch_id
+            )
+            await self.conn.execute(
+                """
+                INSERT INTO opportunities (opportunity_id, lead_id, customer_id, assigned_user_id, stage, expected_value, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, 'VIEWING', 1500000, NOW(), NOW())
+                """,
+                opp_id, lead_id, cust_id, self.agent_id
+            )
+
+            rep_task, _ = await WorkflowEngine.spawn_task_from_template(
+                conn=self.conn,
+                template_id="TASK_VIEWING_REPORT",
+                lead_id=lead_id,
+                opportunity_id=opp_id,
+                customer_id=cust_id,
+                assigned_user_id=self.agent_id
+            )
+
+            res = await WorkflowEngine.complete_task_with_outcome(
+                conn=self.conn,
+                task_id=rep_task["task_id"],
+                user_id=self.agent_id,
+                outcome="OFFER_REQUESTED",
+                notes="طلب تقديم عرض مالي رسمي"
+            )
+
+            self.assertEqual(res["status"], "COMPLETED")
+            self.assertEqual(res["new_stage"], "NEGOTIATION")
+            self.assertIsNotNone(res.get("next_action"))
+            self.assertEqual(res["next_action"]["type"], "OFFER_TASK_SPAWNED")
+
+            spawned_task = res["next_action"]["task"]
+            self.assertEqual(spawned_task["template_id"], "TASK_OFFER_SUBMIT")
+            self.assertEqual(spawned_task["parent_task_id"], rep_task["task_id"])
+
+            opp_stage = await self.conn.fetchval("SELECT stage FROM opportunities WHERE opportunity_id = $1", opp_id)
+            self.assertEqual(opp_stage, "NEGOTIATION")
+
+        finally:
+            await tr.rollback()
+
     async def test_viewing_report_outcome_requests_another_viewing(self):
         """
         Rule: When TASK_VIEWING_REPORT is completed with outcome 'REQUESTS_ANOTHER_VIEWING':

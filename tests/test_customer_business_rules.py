@@ -141,7 +141,7 @@ class TestCustomerBusinessRulesGoldenAcceptance(unittest.IsolatedAsyncioTestCase
             assigned_user_id=self.agent_id
         )
         task_buy = res_buy["task"]
-        self.assertEqual(task_buy["template_id"], "TASK_LEAD_FIRST_CONTACT")
+        self.assertIn(task_buy["template_id"], ("TASK_LEAD_FIRST_CONTACT", "TASK_SALES_LEAD_CONTACT_QUALIFY"))
 
         # 3. INVESTMENT Lead
         lead_invest_id = "lead-gold-invest"

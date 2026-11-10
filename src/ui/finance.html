@@ -17,9 +17,9 @@
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
-        /* Top-Tier Professional Arabic Typography */
+        /* Top-Tier Professional Arabic Typography & Emoji Rendering */
         [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
             font-family: var(--ar-font) !important;
         }
@@ -51,6 +51,14 @@
             font-size: 0.8em;
             color: #94a3b8;
         }
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main);
@@ -70,7 +78,14 @@
         .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
         .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
         .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
-        .content { padding: 24px; max-width: 1500px; margin: 0 auto; }
+        .content {
+            padding: 20px 28px;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
         
         /* KPI Cards */
         .kpi-grid {
@@ -86,31 +101,89 @@
         /* Tabs */
         .tab-nav {
             display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px;
+            overflow-x: auto; white-space: nowrap; padding-bottom: 2px;
         }
         .tab-btn {
-            padding: 10px 20px; border: none; background: none; font-size: 0.95em; font-weight: 600; color: var(--text-muted);
-            cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+            padding: 10px 18px; border: 1.5px solid transparent; background: #f8fafc; font-size: 0.9em; font-weight: 700; color: var(--text-muted);
+            cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex; align-items: center; gap: 6px;
         }
+        .tab-btn:hover { background: #f1f5f9; color: var(--text-main); }
         .tab-btn.active {
-            color: var(--secondary); border-bottom-color: var(--secondary); background: white; border-radius: 6px 6px 0 0;
+            color: #1d4ed8; background: white; border-color: var(--border); border-bottom-color: white;
+            box-shadow: 0 -2px 6px rgba(0,0,0,0.03);
+        }
+
+        /* Connecting Keys & Traceability Chips (Executive In-Page Filter System) */
+        button.connecting-key-chip {
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            width: 215px; height: 28px; box-sizing: border-box;
+            border-radius: 6px; font-size: 0.76em; font-weight: 700; text-decoration: none;
+            transition: all 0.15s ease; white-space: nowrap; line-height: 1;
+            cursor: pointer; font-family: inherit; border-style: solid; border-width: 1px;
+            background: none; outline: none; padding: 0 10px; text-align: center;
+        }
+        button.connecting-key-lead { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        button.connecting-key-lead:hover { background: #dbeafe; color: #1e40af; border-color: #60a5fa; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(29, 78, 216, 0.15); }
+        button.connecting-key-opp { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        button.connecting-key-opp:hover { background: #dcfce7; color: #166534; border-color: #4ade80; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(22, 101, 52, 0.15); }
+        .connecting-keys-group { display: flex; flex-direction: column; gap: 4px; align-items: center; width: 215px; margin: 0 auto; }
+        .icon-glyph {
+            display: inline-flex; align-items: center; justify-content: center;
+            line-height: 1; flex-shrink: 0; vertical-align: middle; overflow: visible !important;
+        }
+
+        /* Executive Global Connecting Keys Filter Banner */
+        .global-filter-banner {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+            border: 1.5px solid #93c5fd;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+        }
+        .global-filter-banner .banner-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .global-filter-banner .banner-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .controls-bar {
             background: white; padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border);
             display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+            box-sizing: border-box; width: 100%;
         }
         .controls-bar input, .controls-bar select {
             padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+            box-sizing: border-box;
         }
 
         .table-wrap {
-            background: white; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+            background: white; border-radius: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+            width: 100%; max-width: 100%; box-sizing: border-box;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-        th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
+        table { width: 100%; min-width: 100%; border-collapse: collapse; font-size: 0.82rem; table-layout: auto; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.82rem; box-sizing: border-box; }
         [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
         th { background: #f1f5f9; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; letter-spacing: 0.5px; }
         tr:hover { background: #f8fafc; }
+
+        /* Responsive cell wrapping to eliminate horizontal blowout */
+        .cell-wrap { white-space: normal !important; word-break: break-word; line-height: 1.35; }
+        .cell-nowrap { white-space: nowrap !important; }
 
         /* Pagination Bar */
         .pagination-bar {
@@ -125,10 +198,48 @@
         .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
         .page-num-display { font-weight: 700; padding: 0 6px; color: var(--text-main); }
 
+        /* Identity Badges - Unified Geometry Across All Tabs */
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, monospace;
-            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 2px 6px;
-            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 600;
+            font-size: 0.78rem; background: #f1f5f9; color: #0f172a; padding: 0 10px;
+            height: 28px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 6px; border: 1px solid #cbd5e1; user-select: all; white-space: nowrap; font-weight: 700;
+        }
+        .contract-id-badge, .res-id-badge, .payment-id-badge, .commission-id-badge {
+            width: 145px;
+            height: 28px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .invoice-id-badge {
+            width: 180px;
+            height: 28px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .id-badge-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            width: 145px;
+            margin: 0 auto;
+        }
+        /* Unified Payer Type and Invoice Status Badges */
+        .payer-type-badge, .invoice-status-badge {
+            width: 140px !important;
+            height: 28px !important;
+            box-sizing: border-box;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1;
         }
         .btn-ref-edit {
             background: #f1f5f9; border: 1px solid #cbd5e1; cursor: pointer;
@@ -140,11 +251,57 @@
             background: #e2e8f0; color: #0f172a; border-color: #94a3b8; transform: scale(1.08);
         }
 
-        .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; white-space: nowrap; }
-        .badge-signed, .badge-paid, .badge-approved { background: #dcfce7; color: #166534; }
-        .badge-due, .badge-pending { background: #fef3c7; color: #92400e; }
-        .badge-partial { background: #e0f2fe; color: #0369a1; }
-        .badge-overdue, .badge-cancelled { background: #fee2e2; color: #991b1b; }
+        /* Unified Status Badges Across All Tabs */
+        .badge {
+            padding: 0 10px;
+            height: 26px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        .badge-signed, .badge-paid, .badge-approved { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .badge-due, .badge-pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-partial { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-overdue, .badge-cancelled { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+        /* Unified Action Buttons Across All Financial Tabs */
+        .finance-actions-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 130px;
+            margin: 0 auto;
+        }
+        .finance-action-btn {
+            width: 130px;
+            height: 28px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 0 8px;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .finance-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
         .btn {
             background-color: var(--secondary); color: white; padding: 8px 14px; border: none; border-radius: 6px;
@@ -153,6 +310,8 @@
         .btn:hover { background-color: #2563eb; }
         .btn-success { background-color: var(--accent); }
         .btn-success:hover { background-color: #059669; }
+        .btn-outline { background: #ffffff; border: 1.5px solid var(--border); }
+        .btn-outline:hover { background: #f8fafc; }
         .btn-sm { padding: 4px 10px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; }
         .btn-sm:hover { background: #cbd5e1; }
 
@@ -252,11 +411,44 @@
 
         <!-- Navigation Tabs -->
         <div class="tab-nav">
-            <button class="tab-btn active" id="tab-btn-contracts" onclick="switchTab('contracts')" data-i18n="tab_contracts">Contracts & Sales Agreements</button>
-            <button class="tab-btn" id="tab-btn-reservations" onclick="switchTab('reservations')" data-i18n="tab_reservations">Unit Reservations & Earnest Deposits</button>
-            <button class="tab-btn" id="tab-btn-payments" onclick="switchTab('payments')" data-i18n="tab_payments">Payment Schedules & Receivables</button>
-            <button class="tab-btn" id="tab-btn-commissions" onclick="switchTab('commissions')" data-i18n="tab_commissions">Broker Commission Payouts</button>
-            <button class="tab-btn" id="tab-btn-invoices" onclick="switchTab('invoices')" data-i18n="tab_invoices">Saudi Fees & Tax Invoices</button>
+            <button class="tab-btn active" id="tab-btn-contracts" onclick="switchTab('contracts')">
+                <span class="icon-glyph">📜</span>
+                <span data-i18n="tab_contracts">Contracts & Sales Agreements</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-reservations" onclick="switchTab('reservations')">
+                <span class="icon-glyph">🏷️</span>
+                <span data-i18n="tab_reservations">Unit Reservations & Earnest Deposits</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-payments" onclick="switchTab('payments')">
+                <span class="icon-glyph">💳</span>
+                <span data-i18n="tab_payments">Payment Schedules & Receivables</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-commissions" onclick="switchTab('commissions')">
+                <span class="icon-glyph">💼</span>
+                <span data-i18n="tab_commissions">Broker Commission Payouts</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-invoices" onclick="switchTab('invoices')">
+                <span class="icon-glyph">⚖️</span>
+                <span data-i18n="tab_invoices">Saudi Fees & Tax Invoices</span>
+            </button>
+        </div>
+
+        <!-- EXECUTIVE GLOBAL CONNECTING KEYS FILTER BANNER -->
+        <div id="global-finance-filter-banner" class="global-filter-banner" style="display: none;">
+            <div class="banner-info">
+                <span class="icon-glyph" style="font-size: 1.35em;">🎯</span>
+                <div id="global-filter-banner-text" style="color: #1e40af; font-size: 0.9em; font-weight: 600;"></div>
+                <span id="global-filter-scope-badge" class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.82em; padding: 4px 10px; border-radius: 6px;"></span>
+            </div>
+            <div class="banner-actions">
+                <button type="button" class="btn btn-sm btn-primary" id="global-filter-all-tabs-btn" onclick="applyFilterToAllTabs()" style="background: #2563eb; color: white; font-weight: 700; border: none; cursor: pointer; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                    <span class="icon-glyph">🌐</span>
+                    <span data-i18n="btn_filter_all_tabs">Search All Tabs</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline" id="global-filter-clear-btn" onclick="clearGlobalFinanceFilter()" style="font-weight: 700; color: #dc2626; border: 1.5px solid #fca5a5; background: white; cursor: pointer; padding: 5px 12px; border-radius: 6px;">
+                    ✕ <span data-i18n="btn_clear_filter">Clear Filter</span>
+                </button>
+            </div>
         </div>
 
         <!-- TAB 1: CONTRACTS -->
@@ -285,20 +477,21 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="th_con_num">Contract #</th>
-                            <th data-i18n="th_con_type">Type</th>
-                            <th data-i18n="th_con_customer">Customer</th>
-                            <th data-i18n="th_con_unit">Unit #</th>
-                            <th data-i18n="th_unit_owner">Unit Owner</th>
-                            <th data-i18n="th_con_value">Value (SAR)</th>
-                            <th data-i18n="th_con_paid">Paid (SAR)</th>
-                            <th data-i18n="th_con_bal">Balance (SAR)</th>
-                            <th data-i18n="th_con_status">Status</th>
-                            <th data-i18n="th_actions">Actions</th>
+                            <th data-i18n="th_con_num" style="width: 155px; min-width: 150px; text-align: center;">Contract #</th>
+                            <th data-i18n="th_connecting_keys" style="width: 225px; min-width: 220px; text-align: center;">Connecting Keys</th>
+                            <th data-i18n="th_con_type" style="width: 80px; min-width: 75px; text-align: center;">Type</th>
+                            <th data-i18n="th_con_customer" style="min-width: 150px;">Customer</th>
+                            <th data-i18n="th_con_unit" style="width: 120px; min-width: 110px; text-align: center;">Unit #</th>
+                            <th data-i18n="th_unit_owner" style="min-width: 150px;">Unit Owner</th>
+                            <th data-i18n="th_con_value" style="width: 130px; min-width: 120px; text-align: right;">Value (SAR)</th>
+                            <th data-i18n="th_con_paid" style="width: 120px; min-width: 110px; text-align: right;">Paid (SAR)</th>
+                            <th data-i18n="th_con_bal" style="width: 120px; min-width: 110px; text-align: right;">Balance (SAR)</th>
+                            <th data-i18n="th_con_status" style="width: 110px; min-width: 105px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 140px; min-width: 135px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="contracts-tbody">
-                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
+                        <tr><td colspan="11" style="text-align: center; padding: 24px;">Loading contracts...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="contracts-pagination-bar">
@@ -351,19 +544,20 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="th_res_number">Reservation #</th>
-                            <th data-i18n="th_customer_buyer">Customer / Buyer</th>
-                            <th data-i18n="th_target_unit">Target Unit</th>
-                            <th data-i18n="th_unit_owner">Unit Owner</th>
-                            <th data-i18n="th_earnest_deposit">Earnest Deposit</th>
-                            <th data-i18n="th_reserved_date">Reserved Date</th>
-                            <th data-i18n="th_expiry_date">Expiry / Validity</th>
-                            <th data-i18n="th_status">Status</th>
-                            <th data-i18n="th_actions">Actions</th>
+                            <th data-i18n="th_res_number" style="width: 155px; min-width: 150px; text-align: center;">Reservation #</th>
+                            <th data-i18n="th_connecting_keys" style="width: 225px; min-width: 220px; text-align: center;">Connecting Keys</th>
+                            <th data-i18n="th_customer_buyer" style="min-width: 150px;">Customer / Buyer</th>
+                            <th data-i18n="th_target_unit" style="min-width: 130px;">Target Unit</th>
+                            <th data-i18n="th_unit_owner" style="min-width: 140px;">Unit Owner</th>
+                            <th data-i18n="th_earnest_deposit" style="width: 130px; min-width: 120px; text-align: right;">Earnest Deposit</th>
+                            <th data-i18n="th_reserved_date" style="width: 110px; min-width: 105px; text-align: center;">Reserved Date</th>
+                            <th data-i18n="th_expiry_date" style="width: 130px; min-width: 125px; text-align: center;">Expiry / Validity</th>
+                            <th data-i18n="th_status" style="width: 115px; min-width: 110px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 140px; min-width: 135px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="reservations-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading reservations...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="reservations-pagination-bar">
@@ -404,19 +598,20 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="th_pay_ref">Reference #</th>
-                            <th data-i18n="th_pay_contract">Contract & Unit</th>
-                            <th data-i18n="th_pay_due_date">Due Date</th>
-                            <th data-i18n="th_pay_amount_due">Amount Due</th>
-                            <th data-i18n="th_pay_amount_paid">Amount Paid</th>
-                            <th data-i18n="th_pay_balance">Remaining</th>
-                            <th data-i18n="th_pay_method">Method</th>
-                            <th data-i18n="th_pay_status">Status</th>
-                            <th data-i18n="th_actions">Actions</th>
+                            <th data-i18n="th_pay_ref" style="width: 155px; min-width: 150px; text-align: center;">Reference #</th>
+                            <th data-i18n="th_connecting_keys" style="width: 225px; min-width: 220px; text-align: center;">Connecting Keys</th>
+                            <th data-i18n="th_pay_contract" style="min-width: 160px;">Contract & Unit</th>
+                            <th data-i18n="th_pay_due_date" style="width: 110px; min-width: 105px; text-align: center;">Due Date</th>
+                            <th data-i18n="th_pay_amount_due" style="width: 130px; min-width: 120px; text-align: right;">Amount Due</th>
+                            <th data-i18n="th_pay_amount_paid" style="width: 130px; min-width: 120px; text-align: right;">Amount Paid</th>
+                            <th data-i18n="th_pay_balance" style="width: 130px; min-width: 120px; text-align: right;">Remaining</th>
+                            <th data-i18n="th_pay_method" style="width: 100px; min-width: 95px; text-align: center;">Method</th>
+                            <th data-i18n="th_pay_status" style="width: 110px; min-width: 105px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 140px; min-width: 135px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="payments-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading payments...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="payments-pagination-bar">
@@ -456,18 +651,19 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="th_comm_agent">Agent / Broker</th>
-                            <th data-i18n="th_comm_contract">Contract & Unit</th>
-                            <th>النمط المالي / Compensation</th>
-                            <th>صافي السعي / Net Base</th>
-                            <th>الرسوم المستبعدة / Gov Fees Excluded</th>
-                            <th data-i18n="th_comm_amount">Commission Amount</th>
-                            <th data-i18n="th_comm_status">Status</th>
-                            <th data-i18n="th_actions">Actions</th>
+                            <th data-i18n="th_comm_agent" style="width: 155px; min-width: 150px; text-align: center;">Agent / Broker</th>
+                            <th data-i18n="th_connecting_keys" style="width: 225px; min-width: 220px; text-align: center;">Connecting Keys</th>
+                            <th data-i18n="th_comm_contract" style="min-width: 140px;">Contract & Unit</th>
+                            <th style="width: 130px; min-width: 120px; text-align: center;">النمط المالي / Compensation</th>
+                            <th style="width: 130px; min-width: 120px; text-align: right;">صافي السعي / Net Base</th>
+                            <th style="width: 130px; min-width: 120px; text-align: right;">الرسوم المستبعدة / Gov Fees Excluded</th>
+                            <th data-i18n="th_comm_amount" style="width: 140px; min-width: 130px; text-align: right;">Commission Amount</th>
+                            <th data-i18n="th_comm_status" style="width: 110px; min-width: 105px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 140px; min-width: 135px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="commissions-tbody">
-                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading commissions...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="commissions-pagination-bar">
@@ -539,19 +735,20 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="th_inv_num">Invoice #</th>
-                            <th data-i18n="th_inv_type">Deal & Type</th>
-                            <th data-i18n="th_inv_payer">Obligated Payer</th>
-                            <th data-i18n="th_inv_breakdown">Statutory Fee Breakdown</th>
-                            <th data-i18n="th_inv_net">Net (SAR)</th>
-                            <th data-i18n="th_inv_vat">VAT (SAR)</th>
-                            <th data-i18n="th_inv_total">Total Due (SAR)</th>
-                            <th data-i18n="th_inv_status">Status</th>
-                            <th data-i18n="th_actions">Actions</th>
+                            <th data-i18n="th_inv_num" style="width: 215px; min-width: 205px; text-align: center;">Invoice #</th>
+                            <th data-i18n="th_connecting_keys" style="width: 225px; min-width: 220px; text-align: center;">Connecting Keys</th>
+                            <th data-i18n="th_inv_type" style="width: 100px; min-width: 95px; text-align: center;">Deal & Type</th>
+                            <th data-i18n="th_inv_payer" style="width: 160px; min-width: 155px; text-align: center;">Obligated Payer</th>
+                            <th data-i18n="th_inv_breakdown" style="width: 160px; min-width: 150px; text-align: right;">Statutory Fee Breakdown</th>
+                            <th data-i18n="th_inv_net" style="width: 110px; min-width: 105px; text-align: right;">Net (SAR)</th>
+                            <th data-i18n="th_inv_vat" style="width: 110px; min-width: 100px; text-align: right;">VAT (SAR)</th>
+                            <th data-i18n="th_inv_total" style="width: 130px; min-width: 120px; text-align: right;">Total Due (SAR)</th>
+                            <th data-i18n="th_inv_status" style="width: 155px; min-width: 150px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 140px; min-width: 135px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="invoices-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
+                        <tr><td colspan="10" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="invoices-pagination-bar">
@@ -570,11 +767,6 @@
                         <button class="btn-page" id="invoices-next-btn" onclick="changeInvoicesPage(1)">Next ›</button>
                     </div>
                 </div>
-            </div>
-        </div>
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading invoices...</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -1056,6 +1248,7 @@
                 opt_all_statuses: "All Statuses", statutory_rule_title: "Saudi Statutory Real Estate & Tax Regulations",
                 statutory_rule_desc: "Strictly separating Brokerage Commission (2.5% + 15% VAT on Buyer/Tenant) from RETT (5% ZATCA) / Ejar Fee (on Seller/Lessor). Advancing deal is blocked until all fees are settled.",
                 th_inv_num: "Invoice #", th_inv_type: "Deal & Type", th_inv_payer: "Obligated Payer",
+                th_connecting_keys: "Connecting Keys (Lead / Opp)",
                 th_inv_breakdown: "Statutory Fee Breakdown", th_inv_net: "Net (SAR)", th_inv_vat: "VAT (SAR)", th_inv_total: "Total Due (SAR)", th_inv_status: "Status",
                 modal_collect_fee_title: "Collect Invoice & Confirm Bank Receipt", lbl_inv_num: "Invoice #", lbl_inv_amount: "Amount to Collect (SAR) *",
                 btn_convert_res: "+ Convert Reservation to Contract",
@@ -1109,6 +1302,8 @@
                 opt_pay_cancelled: "CANCELLED",
                 th_pay_contract: "Contract & Unit",
                 th_comm_contract: "Contract & Unit",
+                btn_filter_all_tabs: "Search All Tabs",
+                btn_clear_filter: "Clear Filter",
                 btn_cancel_contract: "Cancel Contract",
                 opt_all_comm_statuses: "All Commission Statuses",
                 opt_comm_pending: "PENDING",
@@ -1150,6 +1345,7 @@
                 opt_all_statuses: "كافة الحالات", statutory_rule_title: "قواعد الرسوم العقارية والضريبية النظامية في المملكة العربية السعودية",
                 statutory_rule_desc: "يتم فصل سعي الوساطة 2.5% + الضريبة 15% (على المشتري/المستأجر) عن ضريبة التصرفات العقارية 5% / رسوم شبكة إيجار (على البائع/المؤجر)، مع حظر إتمام الصفقة دون التحصيل.",
                 th_inv_num: "رقم الفاتورة", th_inv_type: "النوع والصفقة", th_inv_payer: "الطرف الملزم بالسداد",
+                th_connecting_keys: "البيانات الجامعة (الطلب / الفرصة)",
                 th_inv_breakdown: "تفاصيل الرسوم والضرائب المقررة", th_inv_net: "المبلغ الصافي", th_inv_vat: "الضريبة 15%", th_inv_total: "الإجمالي المستحق", th_inv_status: "الحالة",
                 modal_collect_fee_title: "تحصيل الفاتورة وتأكيد السداد", lbl_inv_num: "رقم الفاتورة", lbl_inv_amount: "المبلغ المطلوب تحصيله (SAR) *",
                 btn_convert_res: "+ تحويل حجز إلى عقد رسمي",
@@ -1228,11 +1424,15 @@
                 modal_verify_deposit_title: "التحقق من استلام عربون الحجز",
                 lbl_res_num: "رقم الحجز",
                 lbl_dep_expected: "مبلغ العربون المطلوب (ريال)",
-                lbl_dep_received: "المبلغ المستلم والمؤكد (ريال) *"
+                lbl_dep_received: "المبلغ المستلم والمؤكد (ريال) *",
+                btn_filter_all_tabs: "بحث في كافة التبويبات",
+                btn_clear_filter: "إلغاء التصفية"
             }
         };
 
         let currentLang = localStorage.getItem('recrm_lang') || 'ar';
+        let cachedReservations = [];
+        let activeReservationInModal = null;
 
         function setGlobalArabicFont(fontVal) {
             localStorage.setItem('recrm_ar_font', fontVal);
@@ -1256,7 +1456,7 @@
                 lbl.textContent = i18nData[currentLang].lang_label;
             }
             localStorage.setItem('recrm_lang', currentLang);
-            if (typeof cachedReservations !== 'undefined' && cachedReservations && cachedReservations.length > 0) {
+            if (Array.isArray(cachedReservations) && cachedReservations.length > 0) {
                 fetchReservations();
             }
         }
@@ -1287,6 +1487,16 @@
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (btn) btn.classList.toggle('active', t === tab);
             });
+
+            if (typeof activeConnectingFilter !== 'undefined' && activeConnectingFilter) {
+                if (activeConnectingFilter.scope === 'all') {
+                    const inputId = (tab === 'contracts' ? 'contract-search' : (tab === 'reservations' ? 'res-search' : (tab === 'payments' ? 'payment-search' : (tab === 'commissions' ? 'commission-search' : 'invoice-search'))));
+                    const input = document.getElementById(inputId);
+                    if (input) input.value = activeConnectingFilter.value;
+                }
+                updateConnectingBannerScopeBadge(tab);
+            }
+
             if (tab === 'contracts') fetchContracts();
             if (tab === 'reservations') fetchReservations();
             if (tab === 'payments') fetchPayments();
@@ -1394,13 +1604,169 @@
             }
         }
 
+        let activeConnectingFilter = null; // { type: 'lead_id' | 'opportunity_id', value: '...', scope: 'tab' | 'all' }
+
+        function renderConnectingKeys(leadId, oppId) {
+            if (!leadId && !oppId) {
+                return `<span style="color: #94a3b8; font-size: 0.78em;">--</span>`;
+            }
+            const isAr = currentLang === 'ar';
+            let html = `<div class="connecting-keys-group">`;
+            if (leadId) {
+                html += `<button type="button" class="connecting-key-chip connecting-key-lead" onclick="filterByConnectingKey('lead_id', '${leadId}', event)" title="${isAr ? 'تصفية وبحث في نفس الصفحة لهذا الطلب' : 'Filter page by this Lead'}"><span class="icon-glyph">📋</span> ${isAr ? 'طلب' : 'Lead'}: #${leadId}</button>`;
+            }
+            if (oppId) {
+                html += `<button type="button" class="connecting-key-chip connecting-key-opp" onclick="filterByConnectingKey('opportunity_id', '${oppId}', event)" title="${isAr ? 'تصفية وبحث في نفس الصفحة لهذه الفرصة' : 'Filter page by this Opportunity'}"><span class="icon-glyph">💼</span> ${isAr ? 'فرصة' : 'Opp'}: #${oppId}</button>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function filterByConnectingKey(keyType, keyValue, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            activeConnectingFilter = {
+                type: keyType,
+                value: keyValue,
+                scope: 'tab'
+            };
+            applyCurrentConnectingFilter();
+        }
+
+        function getActiveTabName() {
+            const tabs = ['contracts', 'reservations', 'payments', 'commissions', 'invoices'];
+            for (const t of tabs) {
+                const el = document.getElementById(`tab-${t}`);
+                if (el && el.style.display !== 'none') return t;
+            }
+            return 'contracts';
+        }
+
+        function updateConnectingBannerScopeBadge(currentTab) {
+            const scopeBadge = document.getElementById('global-filter-scope-badge');
+            const allTabsBtn = document.getElementById('global-filter-all-tabs-btn');
+            if (!scopeBadge || !activeConnectingFilter) return;
+            const isAr = currentLang === 'ar';
+            const tabNames = {
+                contracts: isAr ? 'العقود' : 'Contracts',
+                reservations: isAr ? 'حجوزات وعربون' : 'Reservations',
+                payments: isAr ? 'جدول الدفعات' : 'Payments',
+                commissions: isAr ? 'عمولات السعي' : 'Commissions',
+                invoices: isAr ? 'الفواتير والرسوم' : 'Invoices'
+            };
+
+            if (activeConnectingFilter.scope === 'all') {
+                scopeBadge.textContent = isAr ? '🌐 مطبق على كافة التبويبات (الكل)' : '🌐 Applied to All Tabs';
+                scopeBadge.style.background = '#dcfce7';
+                scopeBadge.style.color = '#15803d';
+                if (allTabsBtn) allTabsBtn.style.display = 'none';
+            } else {
+                scopeBadge.textContent = isAr ? `📌 التاب الحالي: ${tabNames[currentTab] || currentTab}` : `📌 Current Tab: ${tabNames[currentTab] || currentTab}`;
+                scopeBadge.style.background = '#e0f2fe';
+                scopeBadge.style.color = '#0369a1';
+                if (allTabsBtn) {
+                    allTabsBtn.style.display = 'inline-flex';
+                    allTabsBtn.innerHTML = `<span class="icon-glyph">🌐</span> <span>${isAr ? 'بحث في كافة التبويبات' : 'Search All Tabs'}</span>`;
+                }
+            }
+        }
+
+        function applyCurrentConnectingFilter() {
+            if (!activeConnectingFilter) return;
+            const { type, value, scope } = activeConnectingFilter;
+            const isAr = currentLang === 'ar';
+            const isLead = type === 'lead_id';
+            const typeLabel = isLead ? (isAr ? 'الطلب' : 'Lead') : (isAr ? 'الفرصة' : 'Opportunity');
+            const glyph = isLead ? '📋' : '💼';
+
+            const activeTab = getActiveTabName();
+            const tabsToUpdate = scope === 'all' 
+                ? ['contracts', 'reservations', 'payments', 'commissions', 'invoices'] 
+                : [activeTab];
+
+            tabsToUpdate.forEach(t => {
+                if (t === 'contracts') {
+                    const input = document.getElementById('contract-search');
+                    if (input) input.value = value;
+                    contractsPage = 1;
+                } else if (t === 'reservations') {
+                    const input = document.getElementById('res-search');
+                    if (input) input.value = value;
+                    reservationsPage = 1;
+                } else if (t === 'payments') {
+                    const input = document.getElementById('payment-search');
+                    if (input) input.value = value;
+                    paymentsPage = 1;
+                } else if (t === 'commissions') {
+                    const input = document.getElementById('commission-search');
+                    if (input) input.value = value;
+                    commissionsPage = 1;
+                } else if (t === 'invoices') {
+                    const input = document.getElementById('invoice-search');
+                    if (input) input.value = value;
+                    invoicesPage = 1;
+                }
+            });
+
+            // Update banner UI
+            const banner = document.getElementById('global-finance-filter-banner');
+            const textEl = document.getElementById('global-filter-banner-text');
+            if (banner && textEl) {
+                banner.style.display = 'flex';
+                textEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span>${glyph}</span> <span>${typeLabel}:</span> <strong style="font-family: monospace; font-size: 1.05em; background: white; padding: 2px 7px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1d4ed8;">#${value}</strong></span>`;
+                updateConnectingBannerScopeBadge(activeTab);
+            }
+
+            // Fetch data for the active tab
+            fetchActiveTab(activeTab);
+        }
+
+        function applyFilterToAllTabs() {
+            if (!activeConnectingFilter) return;
+            activeConnectingFilter.scope = 'all';
+            applyCurrentConnectingFilter();
+        }
+
+        function clearGlobalFinanceFilter() {
+            activeConnectingFilter = null;
+            const banner = document.getElementById('global-finance-filter-banner');
+            if (banner) banner.style.display = 'none';
+
+            ['contract-search', 'res-search', 'payment-search', 'commission-search', 'invoice-search'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            contractsPage = 1;
+            reservationsPage = 1;
+            paymentsPage = 1;
+            commissionsPage = 1;
+            invoicesPage = 1;
+
+            fetchActiveTab(getActiveTabName());
+        }
+
+        function fetchActiveTab(tab) {
+            if (tab === 'contracts') fetchContracts();
+            else if (tab === 'reservations') fetchReservations();
+            else if (tab === 'payments') fetchPayments();
+            else if (tab === 'commissions') fetchCommissions();
+            else if (tab === 'invoices') fetchInvoices();
+        }
+
         async function fetchContracts() {
             const search = document.getElementById('contract-search')?.value || '';
             const status = document.getElementById('contract-status')?.value || '';
             const type = document.getElementById('contract-type')?.value || '';
 
             let url = `${API_BASE}/api/v1/contracts?page=${contractsPage}&page_size=${contractsPageSize}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (activeConnectingFilter && (activeConnectingFilter.scope === 'all' || getActiveTabName() === 'contracts')) {
+                if (activeConnectingFilter.type === 'lead_id') url += `&lead_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+                if (activeConnectingFilter.type === 'opportunity_id') url += `&opportunity_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+            } else if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (type) url += `&contract_type=${encodeURIComponent(type)}`;
 
@@ -1413,7 +1779,7 @@
 
                 const tbody = document.getElementById('contracts-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 24px;">No contracts found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 24px;">No contracts found.</td></tr>';
                     return;
                 }
 
@@ -1422,13 +1788,13 @@
                     let actionBtn = '';
                     if (c.status === 'DRAFT') {
                         stBadge = 'badge-due';
-                        actionBtn = `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة' : 'Approve Draft'}</button>`;
+                        actionBtn = `<button class="finance-action-btn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="advanceContractLifecycle('${c.contract_id}', 'APPROVE_DRAFT')">⚖️ ${currentLang === 'ar' ? 'اعتماد المسودة' : 'Approve Draft'}</button>`;
                     } else if (c.status === 'PENDING_SIGNATURE') {
                         stBadge = 'badge-due';
-                        actionBtn = `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق التوقيع' : 'Record Signature'}</button>`;
+                        actionBtn = `<button class="finance-action-btn" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;" onclick="advanceContractLifecycle('${c.contract_id}', 'RECORD_SIGNATURE')">✍️ ${currentLang === 'ar' ? 'توثيق التوقيع' : 'Record Sig'}</button>`;
                     } else if (c.status === 'SIGNED') {
                         stBadge = 'badge-signed';
-                        actionBtn = `<button class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-weight: 700; margin-inline-start: 4px;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'تسليم وإغلاق' : 'Handover & Close'}</button>`;
+                        actionBtn = `<button class="finance-action-btn" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;" onclick="advanceContractLifecycle('${c.contract_id}', 'COMPLETE_HANDOVER')">🔑 ${currentLang === 'ar' ? 'تسليم وإغلاق' : 'Handover & Close'}</button>`;
                     } else if (c.status === 'ACTIVE' || c.status === 'COMPLETED') {
                         stBadge = 'badge-signed';
                     } else if (c.status === 'CANCELLED') {
@@ -1440,27 +1806,30 @@
 
                     return `
                     <tr>
-                        <td>
-                            <span class="id-badge">${c.contract_number}</span>
-                            <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace; margin-top:2px;">${c.contract_id}</div>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <div class="id-badge-wrap">
+                                <span class="id-badge contract-id-badge">${c.contract_number}</span>
+                                <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace;">${c.contract_id}</div>
+                            </div>
                         </td>
-                        <td><span class="badge" style="background: #e2e8f0;">${c.contract_type}</span></td>
+                        <td style="text-align: center; vertical-align: middle;">${renderConnectingKeys(c.lead_id, c.opportunity_id)}</td>
+                        <td style="text-align: center;"><span class="badge" style="background: #e2e8f0; color: #334155;">${c.contract_type}</span></td>
                         <td>
                             <strong>${c.customer_name || 'N/A'}</strong>
                             ${c.customer_mobile ? `<span style="font-size: 0.78em; color: var(--text-muted); margin-inline-start: 4px;">• ${c.customer_mobile}</span>` : ''}
                         </td>
-                        <td><strong>${c.unit_number || 'N/A'}</strong></td>
+                        <td style="text-align: center;"><strong>${c.unit_number || 'N/A'}</strong></td>
                         <td>
                             <strong>👤 ${ownerName}</strong>
                             ${ownerMobile}
                         </td>
-                        <td><strong>${Number(c.contract_value || 0).toLocaleString()} SAR</strong></td>
-                        <td style="color: #16a34a;">${Number(c.total_paid || 0).toLocaleString()} SAR</td>
-                        <td style="color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
-                        <td><span class="badge ${stBadge}">${c.status}</span></td>
-                        <td>
-                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                                <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="viewContractDetail('${c.contract_id}')">👁️ ${currentLang === 'ar' ? 'معاينة العقد' : 'View Contract'}</button>
+                        <td style="text-align: right;"><strong>${Number(c.contract_value || 0).toLocaleString()} SAR</strong></td>
+                        <td style="text-align: right; color: #16a34a; font-weight: 700;">${Number(c.total_paid || 0).toLocaleString()} SAR</td>
+                        <td style="text-align: right; color: ${Number(c.outstanding_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 700;">${Number(c.outstanding_balance || 0).toLocaleString()} SAR</td>
+                        <td style="text-align: center;"><span class="badge ${stBadge}">${c.status}</span></td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <div class="finance-actions-group">
+                                <button class="finance-action-btn btn-outline" style="border: 1px solid #2563eb; color: #1d4ed8; background: #ffffff;" onclick="viewContractDetail('${c.contract_id}')">👁️ ${currentLang === 'ar' ? 'معاينة العقد' : 'View Contract'}</button>
                                 ${actionBtn}
                             </div>
                         </td>
@@ -1468,7 +1837,7 @@
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="10" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
+                document.getElementById('contracts-tbody').innerHTML = '<tr><td colspan="11" style="color: red; text-align: center;">Failed to load contracts.</td></tr>';
             }
         }
 
@@ -1479,10 +1848,15 @@
             const leadId = urlParams.get('lead_id') || '';
             const oppId = urlParams.get('opportunity_id') || '';
             let url = `${API_BASE}/api/v1/payments?page=${paymentsPage}&page_size=${paymentsPageSize}`;
+            if (activeConnectingFilter && (activeConnectingFilter.scope === 'all' || getActiveTabName() === 'payments')) {
+                if (activeConnectingFilter.type === 'lead_id') url += `&lead_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+                if (activeConnectingFilter.type === 'opportunity_id') url += `&opportunity_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+            } else if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
             if (status) url += `&status=${encodeURIComponent(status)}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-            if (leadId) url += `&lead_id=${encodeURIComponent(leadId)}`;
-            if (oppId) url += `&opportunity_id=${encodeURIComponent(oppId)}`;
+            if (leadId && (!activeConnectingFilter || activeConnectingFilter.type !== 'lead_id')) url += `&lead_id=${encodeURIComponent(leadId)}`;
+            if (oppId && (!activeConnectingFilter || activeConnectingFilter.type !== 'opportunity_id')) url += `&opportunity_id=${encodeURIComponent(oppId)}`;
 
             try {
                 const res = await fetch(url);
@@ -1493,7 +1867,7 @@
 
                 const tbody = document.getElementById('payments-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No payments found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 24px;">No payments found.</td></tr>';
                     return;
                 }
 
@@ -1502,35 +1876,38 @@
                     const conStatusBadge = p.contract_status === 'CANCELLED' ? `<span class="badge badge-cancelled" style="font-size:0.68em; margin-inline-start:4px;">${currentLang === 'ar' ? 'عقد ملغي' : 'CANCELLED'}</span>` : '';
                     return `
                         <tr>
-                            <td>
-                                <span class="id-badge">${p.payment_reference || p.payment_id || 'PAY-REF'}</span>
-                                <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace; margin-top:2px;">${p.payment_id}</div>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="id-badge-wrap">
+                                    <span class="id-badge payment-id-badge">${p.payment_reference || p.payment_id || 'PAY-REF'}</span>
+                                    <div style="font-size:0.75em; color:var(--text-muted); font-family:monospace;">${p.payment_id}</div>
+                                </div>
                             </td>
+                            <td style="text-align: center; vertical-align: middle;">${renderConnectingKeys(p.lead_id, p.opportunity_id)}</td>
                             <td>
                                 <strong>${p.contract_number || '--'}</strong>${conStatusBadge}
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${p.unit_number ? '🏠 ' + p.unit_number : ''} ${p.customer_name ? '• ' + p.customer_name : ''}</div>
                             </td>
-                            <td>${p.due_date || '--'}</td>
-                            <td><strong>${Number(p.amount_due || 0).toLocaleString()} SAR</strong></td>
-                            <td style="color: #16a34a;">${Number(p.amount_paid || 0).toLocaleString()} SAR</td>
-                            <td style="color: ${Number(p.remaining_balance || 0) > 0 ? '#ea580c' : '#64748b'}; font-weight: 600;">${Number(p.remaining_balance || 0).toLocaleString()} SAR</td>
-                            <td>${p.method || 'PENDING'}</td>
-                            <td><span class="badge ${stBadge}">${p.status}</span></td>
-                            <td>
-                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                            <td style="text-align: center;">${p.due_date || '--'}</td>
+                            <td style="text-align: right;"><strong>${Number(p.amount_due || 0).toLocaleString()} SAR</strong></td>
+                            <td style="text-align: right; color: #16a34a; font-weight: 700;">${Number(p.amount_paid || 0).toLocaleString()} SAR</td>
+                            <td style="text-align: right; color: ${Number(p.remaining_balance || 0) > 0 ? '#ea580c' : '#16a34a'}; font-weight: 700;">${Number(p.remaining_balance || 0).toLocaleString()} SAR</td>
+                            <td style="text-align: center;">${p.method || 'PENDING'}</td>
+                            <td style="text-align: center;"><span class="badge ${stBadge}">${p.status}</span></td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="finance-actions-group">
                                     ${Number(p.amount_paid || 0) > 0 ? `
-                                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewPayment('${p.payment_id}')">
-                                            👁️ ${currentLang === 'ar' ? 'معاينة سند القبض' : 'View Receipt'}
+                                        <button class="finance-action-btn btn-outline" style="border: 1px solid #2563eb; color: #1d4ed8; background: #ffffff;" onclick="previewPayment('${p.payment_id}')">
+                                            👁️ ${currentLang === 'ar' ? 'معاينة السند' : 'View Receipt'}
                                         </button>
                                     ` : ''}
-                                    ${p.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : (p.status !== 'PAID' ? `<button class="btn btn-sm btn-success" style="padding: 4px 8px; font-size: 0.78em; font-weight: 700; cursor: pointer;" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">${currentLang === 'ar' ? 'سند قبض' : 'Record Receipt'}</button>` : `<span style="color: #15803d; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مسددة' : 'Settled'}</span>`)}
+                                    ${p.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : (p.status !== 'PAID' ? `<button class="finance-action-btn" style="background: #16a34a; color: #ffffff; border: 1px solid #15803d;" onclick="openPayModal('${p.payment_id}', '${p.payment_reference}', ${Number(p.remaining_balance || 0)})">💵 ${currentLang === 'ar' ? 'سند قبض' : 'Record Receipt'}</button>` : `<span style="color: #15803d; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'مسددة' : 'Settled'}</span>`)}
                                 </div>
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load payments.</td></tr>';
+                document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="10" style="color: red; text-align: center;">Failed to load payments.</td></tr>';
             }
         }
 
@@ -1538,8 +1915,13 @@
             const status = document.getElementById('commission-status')?.value || '';
             const search = document.getElementById('commission-search')?.value || '';
             let url = `${API_BASE}/api/v1/commissions?page=${commissionsPage}&page_size=${commissionsPageSize}`;
+            if (activeConnectingFilter && (activeConnectingFilter.scope === 'all' || getActiveTabName() === 'commissions')) {
+                if (activeConnectingFilter.type === 'lead_id') url += `&lead_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+                if (activeConnectingFilter.type === 'opportunity_id') url += `&opportunity_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+            } else if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
             if (status) url += `&status=${encodeURIComponent(status)}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
 
             try {
                 const res = await fetch(url);
@@ -1550,7 +1932,7 @@
 
                 const tbody = document.getElementById('commissions-tbody');
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No commissions found.</td></tr>';
                     return;
                 }
 
@@ -1579,39 +1961,42 @@
 
                     return `
                         <tr ${notesTooltip}>
-                            <td>
-                                <strong style="font-family:monospace;">#${c.commission_id}</strong>
-                                <div style="font-weight:600; margin-top:2px;">${c.user_name || 'Agent'}</div>
-                                <div style="font-size: 0.76em; color: var(--text-muted);">${c.user_id || ''}</div>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="id-badge-wrap">
+                                    <span class="id-badge commission-id-badge">#${c.commission_id}</span>
+                                    <div style="font-weight:600; margin-top:2px; font-size:0.85em;">${c.user_name || 'Agent'}</div>
+                                    <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${c.user_id || ''}</div>
+                                </div>
                             </td>
+                            <td style="text-align: center; vertical-align: middle;">${renderConnectingKeys(c.lead_id, c.opportunity_id)}</td>
                             <td>
                                 <strong>${c.contract_number || '--'}</strong>${conStatusBadge}
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${c.unit_number ? '🏠 ' + c.unit_number : ''}</div>
                             </td>
-                            <td>
+                            <td style="text-align: center;">
                                 ${compBadge}
                                 <div style="font-size: 0.74em; color: var(--text-muted); margin-top: 2px;">${c.rate ? c.rate + '%' : (cType === 'FIXED_CUT' ? 'Flat Fee' : '--')}</div>
                             </td>
-                            <td>
+                            <td style="text-align: right;">
                                 <span style="font-weight: 600;">${Number(c.net_commission_base || c.gross_brokerage_amount || 0).toLocaleString()} SAR</span>
                             </td>
-                            <td>
+                            <td style="text-align: right;">
                                 <span style="color: #b91c1c; font-size: 0.85em; font-weight: 600;">- ${Number(c.gov_fees_deducted || 0).toLocaleString()} SAR</span>
                                 <div style="font-size: 0.72em; color: var(--text-muted);">${currentLang === 'ar' ? '15% ضريبة/رسوم' : '15% VAT/Fees'}</div>
                             </td>
-                            <td>${amountDisplay}</td>
-                            <td><span class="badge ${stBadge}">${c.status}</span></td>
-                            <td>
-                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                            <td style="text-align: right;">${amountDisplay}</td>
+                            <td style="text-align: center;"><span class="badge ${stBadge}">${c.status}</span></td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="finance-actions-group">
                                     ${(c.status === 'PAID' || c.status === 'APPROVED') ? `
-                                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewCommission('${c.commission_id}')">
-                                            👁️ ${currentLang === 'ar' ? 'معاينة سند الصرف' : 'View Voucher'}
+                                        <button class="finance-action-btn btn-outline" style="border: 1px solid #2563eb; color: #1d4ed8; background: #ffffff;" onclick="previewCommission('${c.commission_id}')">
+                                            👁️ ${currentLang === 'ar' ? 'معاينة السند' : 'View Voucher'}
                                         </button>
                                     ` : ''}
                                     ${c.status === 'CANCELLED' ? `<span style="color: #991b1b; font-size: 0.85em; font-weight: 600;">✕ ${currentLang === 'ar' ? 'ملغاة' : 'Cancelled'}</span>` : ''}
                                     ${isExempt ? `<span style="color: #475569; font-size: 0.82em;">✓ ${currentLang === 'ar' ? 'مسجل بالراتب' : 'Salaried'}</span>` : ''}
-                                    ${c.status === 'PENDING' && !isExempt ? `<button class="btn btn-sm" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
-                                    ${c.status === 'APPROVED' ? `<button class="btn btn-sm btn-success" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
+                                    ${c.status === 'PENDING' && !isExempt ? `<button class="finance-action-btn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="approveCommission('${c.commission_id}')">${currentLang === 'ar' ? 'اعتماد' : 'Approve'}</button>` : ''}
+                                    ${c.status === 'APPROVED' ? `<button class="finance-action-btn" style="background: #16a34a; color: #ffffff; border: 1px solid #15803d;" onclick="payoutCommission('${c.commission_id}')">${currentLang === 'ar' ? 'صرف' : 'Pay Out'}</button>` : ''}
                                     ${c.status === 'PAID' ? `<span style="color: #15803d; font-size: 0.85em; font-weight: 700;">✓ ${currentLang === 'ar' ? 'مصروفة' : 'Paid Out'}</span>` : ''}
                                 </div>
                             </td>
@@ -1858,9 +2243,14 @@
             let url = `${API_BASE}/api/v1/invoices?page_size=${invoicesPageSize}&offset=${offset}`;
             if (payer) url += `&payer_type=${encodeURIComponent(payer)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-            if (oppParam) url += `&opportunity_id=${encodeURIComponent(oppParam)}`;
-            if (leadParam) url += `&lead_id=${encodeURIComponent(leadParam)}`;
+            if (activeConnectingFilter && (activeConnectingFilter.scope === 'all' || getActiveTabName() === 'invoices')) {
+                if (activeConnectingFilter.type === 'lead_id') url += `&lead_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+                if (activeConnectingFilter.type === 'opportunity_id') url += `&opportunity_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+            } else if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            if (oppParam && (!activeConnectingFilter || activeConnectingFilter.type !== 'opportunity_id')) url += `&opportunity_id=${encodeURIComponent(oppParam)}`;
+            if (leadParam && (!activeConnectingFilter || activeConnectingFilter.type !== 'lead_id')) url += `&lead_id=${encodeURIComponent(leadParam)}`;
             if (invParam && !search) url += `&search=${encodeURIComponent(invParam)}`;
 
             // Update banner
@@ -1893,7 +2283,7 @@
                 const tbody = document.getElementById('invoices-tbody');
                 if (!tbody) return;
                 if (items.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'لا توجد فواتير مطابقة للبحث' : 'No invoices found.'}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'لا توجد فواتير مطابقة للبحث' : 'No invoices found.'}</td></tr>`;
                     return;
                 }
 
@@ -1902,56 +2292,62 @@
                     const stBadge = isPaid ? 'badge-paid' : 'badge-due';
                     const isCustomer = (inv.payer_type === 'CUSTOMER');
                     const payerBadge = isCustomer
-                        ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">👤 ${currentLang === 'ar' ? 'المشتري / المستأجر' : 'Customer (Tenant/Buyer)'}</span>`
-                        : `<span style="background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">🏢 ${currentLang === 'ar' ? 'البائع / المؤجر' : 'Owner (Seller/Lessor)'}</span>`;
+                        ? `<span class="payer-type-badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">👤 ${currentLang === 'ar' ? 'المشتري / المستأجر' : 'Customer (Tenant/Buyer)'}</span>`
+                        : `<span class="payer-type-badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">🏢 ${currentLang === 'ar' ? 'البائع / المؤجر' : 'Owner (Seller/Lessor)'}</span>`;
 
                     const lineItemsDesc = (inv.line_items && inv.line_items.length > 0)
                         ? inv.line_items.map(item => {
                             const title = currentLang === 'ar' ? (item.item_ar || item.description || '') : (item.item_en || item.description || item.item_ar || '');
-                            const tot = Number(item.total || item.total_amount || item.amount || 0).toLocaleString();
-                            return `<div>• ${title}: <strong>${tot} SAR</strong></div>`;
+                            return `<div>• ${title}</div>`;
                         }).join('')
                         : (inv.notes ? `<div>${inv.notes}</div>` : '--');
 
                     const previewBtn = `
-                        <button class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.78em; border-color: #2563eb; color: #1d4ed8; font-weight: 700; cursor: pointer;" onclick="previewInvoice('${inv.invoice_id}', '${inv.invoice_number}')">
-                            👁️ ${currentLang === 'ar' ? 'معاينة' : 'View'}
+                        <button class="finance-action-btn btn-outline" style="border: 1px solid #2563eb; color: #1d4ed8; background: #ffffff;" onclick="previewInvoice('${inv.invoice_id}', '${inv.invoice_number}')">
+                            👁️ ${currentLang === 'ar' ? 'معاينة الفاتورة' : 'View'}
                         </button>
                     `;
 
                     const collectBtn = (!isPaid && inv.status !== 'CANCELLED') ? `
-                        <button class="btn btn-sm btn-success" onclick="openInvoicePayModal('${inv.invoice_id}', '${inv.invoice_number}', ${Number(inv.total_amount || 0)})" style="font-weight: 700; padding: 4px 8px; font-size: 0.78em; cursor: pointer;">
+                        <button class="finance-action-btn" onclick="openInvoicePayModal('${inv.invoice_id}', '${inv.invoice_number}', ${Number(inv.total_amount || 0)})" style="background: #16a34a; color: #ffffff; border: 1px solid #15803d;">
                             💵 ${currentLang === 'ar' ? 'تحصيل الفاتورة' : 'Collect Fee'}
                         </button>
                     ` : (isPaid ? `<span style="color: #166534; font-weight: 700; font-size: 0.85em;">✓ ${currentLang === 'ar' ? 'تم التحصيل' : 'Settled'}</span>` : `<span style="color: #64748b;">--</span>`);
 
                     return `
                         <tr>
-                            <td>
-                                <strong style="font-family: monospace;">${inv.invoice_number}</strong>
-                                <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace; margin-top:2px;">${inv.invoice_id} ${inv.payment_reference ? '• سداد: ' + inv.payment_reference : ''}</div>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="id-badge-wrap" style="width: 180px;">
+                                    <span class="id-badge invoice-id-badge">${inv.invoice_number}</span>
+                                    <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace; margin-top:2px;">${inv.invoice_id} ${inv.payment_reference ? '• سداد: ' + inv.payment_reference : ''}</div>
+                                </div>
                             </td>
-                            <td>
+                            <td style="text-align: center; vertical-align: middle;">${renderConnectingKeys(inv.lead_id, inv.opportunity_id)}</td>
+                            <td style="text-align: center;">
                                 <strong>${inv.transaction_type || 'SALE'}</strong>
-                                <div style="font-size: 0.78em; color: var(--text-muted);">${inv.unit_number ? '🏠 ' + inv.unit_number : ''} ${inv.opportunity_id ? '• ' + inv.opportunity_id : (inv.lead_id ? '• ' + inv.lead_id : '')}</div>
+                                ${inv.unit_number ? `<div style="font-size: 0.78em; color: var(--text-muted);">🏠 ${inv.unit_number}</div>` : ''}
                             </td>
-                            <td>
-                                ${payerBadge}
-                                <div style="font-weight: 600; margin-top: 2px;">${inv.payer_customer_name || inv.payer_name || '--'}</div>
-                                ${(inv.payer_customer_mobile || inv.payer_mobile) ? `<div style="font-size: 0.76em; color: var(--text-muted);">📞 ${inv.payer_customer_mobile || inv.payer_mobile}</div>` : ''}
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; width: 145px; margin: 0 auto;">
+                                    ${payerBadge}
+                                    <div style="font-weight: 600; font-size: 0.82em; margin-top: 2px;">${inv.payer_customer_name || inv.payer_name || '--'}</div>
+                                    ${(inv.payer_customer_mobile || inv.payer_mobile) ? `<div style="font-size: 0.75em; color: var(--text-muted);">📞 ${inv.payer_customer_mobile || inv.payer_mobile}</div>` : ''}
+                                </div>
                             </td>
-                            <td style="font-size: 0.84em; line-height: 1.4;">
+                            <td style="font-size: 0.82em; line-height: 1.45; text-align: right; color: #334155;">
                                 ${lineItemsDesc}
                             </td>
-                            <td>${Number(inv.subtotal || 0).toLocaleString()} SAR</td>
-                            <td style="color: #92400e;">${Number(inv.vat_amount || 0).toLocaleString()} SAR</td>
-                            <td><strong style="color: #0f172a; font-size: 1.05em;">${Number(inv.total_amount || 0).toLocaleString()} SAR</strong></td>
-                            <td>
-                                <span class="badge ${stBadge}">${inv.status}</span>
-                                ${inv.paid_at ? `<div style="font-size: 0.72em; color: #166534; margin-top: 2px;">${inv.paid_at.slice(0, 10)}</div>` : ''}
+                            <td style="text-align: right;">${Number(inv.subtotal || 0).toLocaleString()} SAR</td>
+                            <td style="text-align: right; color: #92400e;">${Number(inv.vat_amount || 0).toLocaleString()} SAR</td>
+                            <td style="text-align: right;"><strong style="color: #0f172a; font-size: 1.05em;">${Number(inv.total_amount || 0).toLocaleString()} SAR</strong></td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; width: 145px; margin: 0 auto;">
+                                    <span class="badge ${stBadge} invoice-status-badge">${inv.status}</span>
+                                    ${inv.paid_at ? `<div style="font-size: 0.72em; color: #166534; font-family: monospace;">${inv.paid_at.slice(0, 10)}</div>` : ''}
+                                </div>
                             </td>
-                            <td>
-                                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="finance-actions-group">
                                     ${previewBtn}
                                     ${collectBtn}
                                 </div>
@@ -1960,7 +2356,7 @@
                     `;
                 }).join('');
             } catch (e) {
-                document.getElementById('invoices-tbody').innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load invoices.</td></tr>';
+                document.getElementById('invoices-tbody').innerHTML = '<tr><td colspan="10" style="color: red; text-align: center;">Failed to load invoices.</td></tr>';
             }
         }
 
@@ -2055,9 +2451,6 @@
             fetchInvoices();
         }
 
-        let cachedReservations = [];
-        let activeReservationInModal = null;
-
         async function fetchReservations(searchOverride) {
             const searchInput = document.getElementById('res-search');
             let search = searchOverride !== undefined ? searchOverride : (searchInput?.value || '');
@@ -2068,9 +2461,14 @@
             const resIdParam = urlParams.get('reservation_id');
 
             let url = `${API_BASE}/api/v1/reservations?page=${reservationsPage}&page_size=${reservationsPageSize}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (activeConnectingFilter && (activeConnectingFilter.scope === 'all' || getActiveTabName() === 'reservations')) {
+                if (activeConnectingFilter.type === 'lead_id') url += `&lead_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+                if (activeConnectingFilter.type === 'opportunity_id') url += `&opportunity_id=${encodeURIComponent(activeConnectingFilter.value)}`;
+            } else if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
             if (status) url += `&status=${encodeURIComponent(status)}`;
-            if (resIdParam && !search) url += `&reservation_id=${encodeURIComponent(resIdParam)}`;
+            if (resIdParam && !search && (!activeConnectingFilter || activeConnectingFilter.type !== 'reservation_id')) url += `&reservation_id=${encodeURIComponent(resIdParam)}`;
 
             // Update banner
             const banner = document.getElementById('res-filter-banner');
@@ -2095,7 +2493,7 @@
                 const tbody = document.getElementById('reservations-tbody');
                 if (!tbody) return;
                 if (cachedReservations.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px; color: var(--text-muted);">No reservations found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--text-muted);">No reservations found.</td></tr>';
                     return;
                 }
 
@@ -2131,25 +2529,25 @@
                     }
 
                     let stBadge = '';
-                    let resActions = `<button class="btn btn-sm" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ View Detail</button>`;
+                    let resActions = `<button class="finance-action-btn btn-outline" style="border: 1px solid #2563eb; color: #1d4ed8; background: #ffffff;" onclick="viewReservationDetail('${r.reservation_id}')" title="View complete reservation details">👁️ ${currentLang === 'ar' ? 'معاينة الحجز' : 'View Detail'}</button>`;
                     const effPrice = r.agreed_price || r.accepted_offer_amount || r.contract_value || r.asking_price || r.rent_price || 0;
                     if (r.contract_id || r.contract_number) {
-                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="viewContractDetail('${r.contract_id}')">📄 ${r.contract_number || (currentLang === 'ar' ? 'عرض العقد' : 'View Contract')}</button>`;
+                        resActions += `<button class="finance-action-btn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="viewContractDetail('${r.contract_id}')">📄 ${r.contract_number || (currentLang === 'ar' ? 'عرض العقد' : 'View Contract')}</button>`;
                         if (r.status === 'CONVERTED') {
-                            stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight:700;">✓ CONVERTED</span>';
+                            stBadge = '<span class="badge badge-signed">✓ CONVERTED</span>';
                         } else {
-                            stBadge = `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight:700;">${r.status}</span>`;
+                            stBadge = `<span class="badge badge-partial">${r.status}</span>`;
                         }
                     } else if (r.status === 'ACTIVE') {
-                        stBadge = '<span class="badge badge-due" style="background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;">ACTIVE</span>';
-                        resActions += `<button class="btn btn-sm" style="background: #dcfce7; color: #166534; font-weight: 700; margin-inline-start: 4px;" onclick="openVerifyDepositModal('${r.reservation_id}', '${r.reservation_number}', ${r.deposit_amount || 0})">💰 ${currentLang === 'ar' ? 'التحقق من العربون' : 'Verify Deposit'}</button>`;
-                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
+                        stBadge = '<span class="badge badge-due">ACTIVE</span>';
+                        resActions += `<button class="finance-action-btn" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;" onclick="openVerifyDepositModal('${r.reservation_id}', '${r.reservation_number}', ${r.deposit_amount || 0})">💰 ${currentLang === 'ar' ? 'التحقق من العربون' : 'Verify Deposit'}</button>`;
+                        resActions += `<button class="finance-action-btn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'مسودة عقد' : 'Draft'}</button>`;
                     } else if (r.status === 'CONFIRMED') {
-                        stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight: 700;">✓ CONFIRMED</span>';
-                        resActions += `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight: 700; margin-inline-start: 4px;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
-                        resActions += `<button class="btn btn-sm" style="background: #f1f5f9; color: #0f172a; font-weight: 600; margin-inline-start: 4px;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">➔ Convert</button>`;
+                        stBadge = '<span class="badge badge-signed">✓ CONFIRMED</span>';
+                        resActions += `<button class="finance-action-btn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="initiateContractFromReservation('${r.reservation_id}', ${effPrice})">📝 ${currentLang === 'ar' ? 'إعداد مسودة العقد' : 'Draft Contract'}</button>`;
+                        resActions += `<button class="finance-action-btn btn-outline" style="border: 1px solid #cbd5e1; color: #0f172a; background: #f8fafc;" onclick="openConvertModal('${r.reservation_id}')" title="Convert to Contract">➔ ${currentLang === 'ar' ? 'تحويل لعقد' : 'Convert'}</button>`;
                     } else if (r.status === 'CONVERTED') {
-                        stBadge = '<span class="badge badge-signed" style="background: #dcfce7; color: #166534; font-weight:700;">✓ CONVERTED</span>';
+                        stBadge = '<span class="badge badge-signed">✓ CONVERTED</span>';
                     } else {
                         stBadge = `<span class="badge badge-due">${r.status}</span>`;
                     }
@@ -2159,18 +2557,19 @@
 
                     return `
                         <tr style="${rowStyle}" class="${isMatch ? 'highlighted-reservation-row' : ''}">
-                            <td>
-                                <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                                    <span class="id-badge">${r.reservation_number}</span>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="id-badge-wrap">
+                                    <span class="id-badge res-id-badge">${r.reservation_number}</span>
                                     ${matchBadge}
+                                    <div style="font-size: 0.75em; color: var(--text-muted); font-family: monospace;">${r.reservation_id}</div>
                                 </div>
-                                <div style="font-size: 0.76em; color: #64748b; font-family: monospace; font-weight: 700; margin-top: 2px;">${r.reservation_id}</div>
                             </td>
+                            <td style="text-align: center; vertical-align: middle;">${renderConnectingKeys(r.lead_id, r.opportunity_id)}</td>
                             <td>
                                 <strong>${r.customer_name || 'Prospect'}</strong>
                                 ${r.customer_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted);">${r.customer_mobile}</div>` : ''}
                             </td>
-                            <td>
+                            <td style="text-align: center;">
                                 <strong>Unit ${r.unit_number || r.unit_id}</strong>
                                 <div style="font-size: 0.78em; color: var(--text-muted);">${r.project_name || r.building_name || 'Direct Property'}</div>
                             </td>
@@ -2178,11 +2577,15 @@
                                 <strong>👤 ${ownerName}</strong>
                                 ${ownerMobile}
                             </td>
-                            <td style="font-weight: 700; color: #15803d;">${Number(r.deposit_amount || 0).toLocaleString()} SAR</td>
-                            <td>${r.reserved_at ? r.reserved_at.split('T')[0] : '--'}</td>
-                            <td>${expBadge}</td>
-                            <td>${stBadge}</td>
-                            <td>${resActions}</td>
+                            <td style="text-align: right; font-weight: 700; color: #15803d;">${Number(r.deposit_amount || 0).toLocaleString()} SAR</td>
+                            <td style="text-align: center;">${r.reserved_at ? r.reserved_at.split('T')[0] : '--'}</td>
+                            <td style="text-align: center;">${expBadge}</td>
+                            <td style="text-align: center;">${stBadge}</td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="finance-actions-group">
+                                    ${resActions}
+                                </div>
+                            </td>
                         </tr>
                     `;
                 }).join('');
@@ -2194,7 +2597,7 @@
             } catch (e) {
                 console.error(e);
                 const tbody = document.getElementById('reservations-tbody');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color: red; text-align: center;">Failed to load reservations.</td></tr>';
             }
         }
 
@@ -3092,8 +3495,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initTypographyAndLang();
-            loadSummary();
+            try { initTypographyAndLang(); } catch (e) { console.warn('Typography init warning:', e); }
+            try { loadSummary(); } catch (e) { console.warn('Summary load warning:', e); }
             const urlParams = new URLSearchParams(window.location.search);
             const searchParam = urlParams.get('search');
             const tabParam = urlParams.get('tab');

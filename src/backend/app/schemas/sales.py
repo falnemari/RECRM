@@ -63,6 +63,7 @@ class ViewingOut(BaseModel):
     owner_customer_id: Optional[str] = None
     unit_owner_name: Optional[str] = None
     unit_owner_mobile: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
 class ViewingCreateIn(BaseModel):
     unit_id: str
@@ -79,6 +80,7 @@ class ViewingCreateIn(BaseModel):
 class ReservationOut(BaseModel):
     reservation_id: str
     opportunity_id: str
+    lead_id: Optional[str] = None
     unit_id: str
     unit_number: Optional[str] = None
     owner_customer_id: Optional[str] = None

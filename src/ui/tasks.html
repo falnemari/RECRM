@@ -319,9 +319,136 @@
         .tasks-rel-cell {
             white-space: normal !important;
             word-break: break-word;
-            min-width: 140px;
-            max-width: 220px;
+            min-width: 195px;
+            max-width: 240px;
             line-height: 1.35;
+        }
+        .tasks-rel-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+        .tasks-rel-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            width: 100%;
+            height: 26px;
+            padding: 0 8px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tasks-rel-chip.chip-lead {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .tasks-rel-chip.chip-lead:hover {
+            background: #e0f2fe;
+            border-color: #7dd3fc;
+        }
+        .tasks-rel-chip.chip-opp {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+        .tasks-rel-chip.chip-opp:hover {
+            background: #dcfce7;
+            border-color: #86efac;
+        }
+        .tasks-rel-chip.chip-situation {
+            background: #fdf4ff;
+            color: #86198f;
+            border: 1px solid #f0abfc;
+            cursor: pointer;
+            justify-content: center;
+        }
+        .tasks-rel-chip.chip-situation:hover {
+            background: #fae8ff;
+            border-color: #e879f9;
+        }
+
+        /* Unified Status & SOP Guide Column */
+        .tasks-status-col-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 110px;
+            margin: 0 auto;
+        }
+        .tasks-status-badge {
+            width: 100%;
+            height: 26px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px !important;
+            font-weight: 700;
+            font-size: 0.80em;
+            padding: 0 6px;
+            text-align: center;
+        }
+        .tasks-sop-btn {
+            width: 100%;
+            height: 26px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            border: 1px solid #0284c7;
+            background: #f0f9ff;
+            color: #0284c7;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            padding: 0 6px;
+        }
+        .tasks-sop-btn:hover {
+            background: #e0f2fe;
+            border-color: #0369a1;
+        }
+
+        /* Unified Action Column */
+        .tasks-actions-col-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 130px;
+            margin: 0 auto;
+        }
+        .tasks-action-btn {
+            width: 100%;
+            height: 28px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 0 8px;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+            transition: all 0.15s ease-in-out;
         }
         .comms-business-cell {
             white-space: normal !important;
@@ -452,6 +579,312 @@
         }
         [dir="rtl"] .task-row.selected-task-row {
             box-shadow: inset -4px 0 0 #0284c7;
+        }
+
+        /* ==========================================================================
+           Modern Task Completion Outcome Cards & Decision Support (Senior UI/UX)
+           ========================================================================== */
+        .form-group label.outcome-card,
+        .outcome-card {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
+            padding: 12px 16px !important;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            position: relative;
+            user-select: none;
+            margin-bottom: 8px !important;
+            gap: 14px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        .outcome-card:hover {
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .outcome-card-control {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 2px;
+        }
+        .outcome-card-control input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin: 0;
+            accent-color: #0284c7;
+        }
+        .outcome-card-content {
+            flex: 1;
+            min-width: 0;
+            text-align: start;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .outcome-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .outcome-card-title {
+            font-size: 0.96em;
+            font-weight: 700;
+            line-height: 1.35;
+            color: #0f172a;
+        }
+        .outcome-card-desc {
+            font-size: 0.82em;
+            color: #475569;
+            line-height: 1.45;
+            margin: 0;
+        }
+        .outcome-badge {
+            font-size: 0.76em;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        /* Outcome Variations Active States */
+        .outcome-card.style-success { border-color: #86efac; }
+        .outcome-card.style-success:hover { border-color: #4ade80; background: #fcfdfc; }
+        .outcome-card.style-success:has(input:checked),
+        .outcome-card.style-success.selected {
+            border-color: #16a34a !important;
+            background: #f0fdf4 !important;
+            box-shadow: 0 0 0 1.5px #16a34a, 0 4px 12px rgba(22, 163, 74, 0.08) !important;
+        }
+        .outcome-card.style-success.selected .outcome-card-title { color: #166534; }
+        .outcome-card.style-success input[type="radio"] { accent-color: #16a34a; }
+
+        .outcome-card.style-info,
+        .outcome-card.style-primary { border-color: #7dd3fc; }
+        .outcome-card.style-info:hover,
+        .outcome-card.style-primary:hover { border-color: #38bdf8; background: #fcfdfe; }
+        .outcome-card.style-info:has(input:checked),
+        .outcome-card.style-primary:has(input:checked),
+        .outcome-card.style-info.selected,
+        .outcome-card.style-primary.selected {
+            border-color: #0284c7 !important;
+            background: #f0f9ff !important;
+            box-shadow: 0 0 0 1.5px #0284c7, 0 4px 12px rgba(2, 132, 199, 0.08) !important;
+        }
+        .outcome-card.style-info.selected .outcome-card-title,
+        .outcome-card.style-primary.selected .outcome-card-title { color: #0369a1; }
+        .outcome-card.style-info input[type="radio"],
+        .outcome-card.style-primary input[type="radio"] { accent-color: #0284c7; }
+
+        .outcome-card.style-warning { border-color: #fdba74; }
+        .outcome-card.style-warning:hover { border-color: #fb923c; background: #fffdfb; }
+        .outcome-card.style-warning:has(input:checked),
+        .outcome-card.style-warning.selected {
+            border-color: #ea580c !important;
+            background: #fff7ed !important;
+            box-shadow: 0 0 0 1.5px #ea580c, 0 4px 12px rgba(234, 88, 12, 0.08) !important;
+        }
+        .outcome-card.style-warning.selected .outcome-card-title { color: #c2410c; }
+        .outcome-card.style-warning input[type="radio"] { accent-color: #ea580c; }
+
+        .outcome-card.style-danger { border-color: #fca5a5; }
+        .outcome-card.style-danger:hover { border-color: #f87171; background: #fffcfc; }
+        .outcome-card.style-danger:has(input:checked),
+        .outcome-card.style-danger.selected {
+            border-color: #dc2626 !important;
+            background: #fef2f2 !important;
+            box-shadow: 0 0 0 1.5px #dc2626, 0 4px 12px rgba(220, 38, 38, 0.08) !important;
+        }
+        .outcome-card.style-danger.selected .outcome-card-title { color: #991b1b; }
+        .outcome-card.style-danger input[type="radio"] { accent-color: #dc2626; }
+
+        /* Decision Support Tab Navigation & Modern Cards */
+        .comp-nav-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .comp-tab-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #475569;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            user-select: none;
+        }
+        .comp-tab-pill:hover {
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .comp-tab-pill.active {
+            color: #0f172a;
+            background: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .comp-tab-count {
+            font-size: 0.85em;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .comp-tab-pill.active .comp-tab-count {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .comp-decision-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .comp-card-lead {
+            border-color: #bfdbfe;
+        }
+        .comp-card-unit {
+            border-color: #bbf7d0;
+        }
+        .comp-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1.5px solid #e2e8f0;
+        }
+        .comp-card-lead .comp-card-header {
+            border-bottom-color: #dbeafe;
+        }
+        .comp-card-unit .comp-card-header {
+            border-bottom-color: #dcfce7;
+        }
+        .comp-card-title {
+            font-weight: 700;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .comp-card-lead .comp-card-title { color: #1e40af; }
+        .comp-card-unit .comp-card-title { color: #166534; }
+
+        .comp-card-badge {
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .comp-card-lead .comp-card-badge {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+        .comp-card-unit .comp-card-badge {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .comp-spec-grid-full {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px 14px;
+            width: 100%;
+        }
+        .comp-spec-grid-half {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px 12px;
+            width: 100%;
+        }
+
+        .comp-spec-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            min-width: 0;
+        }
+        .comp-card-unit .comp-spec-item {
+            background: #fcfdfc;
+            border-color: #dcfce7;
+        }
+        .comp-spec-item.span-all {
+            grid-column: 1 / -1;
+        }
+        .comp-spec-label {
+            font-size: 0.76em;
+            font-weight: 600;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .comp-spec-value {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .comp-spec-value.highlight-green {
+            color: #15803d;
+        }
+        .comp-spec-value.highlight-blue {
+            color: #1e40af;
+        }
+
+        .comp-context-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            color: #475569;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        .comp-context-chip strong {
+            color: #0f172a;
         }
 
         .tab-pane { display: none; }
@@ -595,7 +1028,6 @@
                     </label>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-outline" id="btn-insert-workflow-task" style="border-color:#0284c7; color:#0284c7; font-weight:700;" onclick="onInsertWorkflowTaskClick()">➕ إدراج مهمة للمسار</button>
                     <button class="btn" onclick="openNewTaskModal()" data-i18n="btn_new_task">+ New Task</button>
                 </div>
             </div>
@@ -632,17 +1064,16 @@
                         <tr>
                             <th style="width: 100px;">Task ID</th>
                             <th data-i18n="th_task_title">Task Title</th>
-                            <th data-i18n="th_priority">Priority</th>
-                            <th data-i18n="th_created_at" style="width: 130px;">Created Date</th>
-                            <th data-i18n="th_due_date" style="width: 130px;">Due Date</th>
-                            <th data-i18n="th_assigned_to">Assigned Agent</th>
-                            <th data-i18n="th_related_to">Related Customer</th>
-                            <th data-i18n="th_status">Status</th>
-                            <th data-i18n="th_actions">Action</th>
+                            <th data-i18n="th_priority" style="width: 90px; text-align: center;">Priority</th>
+                            <th data-i18n="th_due_date" style="width: 120px; text-align: center;">Due Date</th>
+                            <th data-i18n="th_assigned_to" style="width: 130px;">Assigned Agent</th>
+                            <th data-i18n="th_related_to" style="min-width: 200px; width: 220px;">Related Customer</th>
+                            <th data-i18n="th_status" style="width: 125px; text-align: center;">Status</th>
+                            <th data-i18n="th_actions" style="width: 145px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="tasks-tbody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading tasks...</td></tr>
                     </tbody>
                 </table>
                 <div class="pagination-bar" id="tasks-pagination-bar">
@@ -1004,10 +1435,12 @@
                 <input type="hidden" id="comp-template-id">
                 
                 <!-- 1. مسمى المهمة ومعلومات الصفقة والطلب -->
-                <div style="background: #f8fafc; border: 1.5px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-weight: 700; font-size: 1.1em; color: var(--primary);" id="comp-task-name">اسم المهمة</div>
-                    <div style="font-size: 0.88em; color: var(--text-muted); margin-top: 6px; line-height: 1.5;" id="comp-task-context">معلومات العميل والطلب</div>
-                    <div id="comp-decision-ribbon" style="display: none; margin-top: 10px; padding: 8px 14px; border-radius: 6px; font-size: 0.86em; font-weight: 700;"></div>
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-weight: 800; font-size: 1.15em; color: var(--primary); display: flex; align-items: center; gap: 8px;" id="comp-task-name">اسم المهمة</div>
+                    </div>
+                    <div id="comp-task-context" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; line-height: 1.4;">معلومات العميل والطلب</div>
+                    <div id="comp-decision-ribbon" style="display: none; margin-top: 12px; padding: 8px 14px; border-radius: 8px; font-size: 0.86em; font-weight: 700;"></div>
                 </div>
 
                 <!-- 2. دليل خطوات تنفيذ المهمة خطوة بخطوة (SOP Help Guide) -->
@@ -1024,23 +1457,33 @@
                 </div>
 
                 <!-- 3. سجلات ومعطيات دعم اتخاذ القرار الموجبة للتنفيذ -->
-                <div id="comp-docs-container" style="display: none; background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                <div id="comp-docs-container" style="display: none; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                        <span style="font-weight: 700; color: #9a3412; font-size: 0.92em; display:flex; align-items:center; gap:6px;">
+                        <span style="font-weight: 700; color: #0f172a; font-size: 0.95em; display:flex; align-items:center; gap:6px;">
                             <span>🎯</span> <span id="lbl_comp_docs_title_txt" data-i18n="lbl_comp_docs_title">سجلات ومعطيات دعم اتخاذ القرار الموجبة للتنفيذ:</span>
                         </span>
                         <div style="display: flex; gap: 6px;">
-                            <button type="button" class="btn btn-sm" id="btn-comp-issue-doc" style="background:#ea580c; color:#fff; font-size:0.78em; padding:4px 12px; border-radius:4px; font-weight:700;" onclick="openTaskDocumentGeneratorModal()">+ إصدار وتوثيق مستند</button>
+                            <button type="button" class="btn btn-sm" id="btn-comp-issue-doc" style="background:#ea580c; color:#fff; font-size:0.78em; padding:5px 12px; border-radius:6px; font-weight:700; display:inline-flex; align-items:center; gap:4px;" onclick="openTaskDocumentGeneratorModal()">+ إصدار وتوثيق مستند</button>
                         </div>
                     </div>
 
                     <!-- Mini Tabs for Decision Support Records -->
-                    <div id="comp-records-nav" style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                        <button type="button" class="cat-pill active" id="tab-btn-docs" onclick="switchTaskRecordTab('docs')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">📑 <span id="txt-tab-docs">الوثائق المؤرشفة</span> (<span id="count-rec-docs">0</span>)</button>
-                        <button type="button" class="cat-pill" id="tab-btn-deposits" onclick="switchTaskRecordTab('deposits')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">💰 <span id="txt-tab-deposits">العربون والودائع</span> (<span id="count-rec-deposits">0</span>)</button>
-                        <button type="button" class="cat-pill" id="tab-btn-viewings" onclick="switchTaskRecordTab('viewings')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">🔍 <span id="txt-tab-viewings">المعاينة والفحص</span> (<span id="count-rec-viewings">0</span>)</button>
-                        <button type="button" class="cat-pill" id="tab-btn-solvency" onclick="switchTaskRecordTab('solvency')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">👤 <span id="txt-tab-solvency">التأهيل والملاءة</span></button>
-                        <button type="button" class="cat-pill" id="tab-btn-finance" onclick="switchTaskRecordTab('finance')" style="padding: 5px 12px; font-size: 0.82em; border-radius: 6px;">🧾 <span id="txt-tab-finance">الفواتير والمحاسبة</span> (<span id="count-rec-invoices">0</span>)</button>
+                    <div id="comp-records-nav" class="comp-nav-tabs">
+                        <button type="button" class="comp-tab-pill active" id="tab-btn-docs" onclick="switchTaskRecordTab('docs')">
+                            <span>📑</span> <span id="txt-tab-docs">الوثائق المؤرشفة</span> <span class="comp-tab-count" id="count-rec-docs">0</span>
+                        </button>
+                        <button type="button" class="comp-tab-pill" id="tab-btn-deposits" onclick="switchTaskRecordTab('deposits')">
+                            <span>💰</span> <span id="txt-tab-deposits">العربون والودائع</span> <span class="comp-tab-count" id="count-rec-deposits">0</span>
+                        </button>
+                        <button type="button" class="comp-tab-pill" id="tab-btn-viewings" onclick="switchTaskRecordTab('viewings')">
+                            <span>🔍</span> <span id="txt-tab-viewings">المعاينة والفحص</span> <span class="comp-tab-count" id="count-rec-viewings">0</span>
+                        </button>
+                        <button type="button" class="comp-tab-pill" id="tab-btn-solvency" onclick="switchTaskRecordTab('solvency')">
+                            <span>👤</span> <span id="txt-tab-solvency">بيانات التأهيل والطلب</span>
+                        </button>
+                        <button type="button" class="comp-tab-pill" id="tab-btn-finance" onclick="switchTaskRecordTab('finance')">
+                            <span>🧾</span> <span id="txt-tab-finance">الفواتير والمحاسبة</span> <span class="comp-tab-count" id="count-rec-invoices">0</span>
+                        </button>
                     </div>
 
                     <!-- Tab Contents -->
@@ -1061,11 +1504,30 @@
                     </div>
                 </div>
 
+                <!-- Stage C: Property Matching & Recommendations (shown for TASK_OPPORTUNITY_MATCH_PROPERTIES / TASK_RENT_MATCH_PROPERTIES) -->
+                <div id="comp-matching-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-weight: 700; font-size: 0.92em; color: #166534; display: flex; align-items: center; gap: 6px;">
+                            <span>🏢</span>
+                            <span data-i18n="lbl_comp_matching_header">الوحدات العقارية المطابقة والمقترح إرسالها للعميل عبر الواتساب:</span>
+                            <span id="comp-matching-summary-badge" style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; font-weight: 600; background: #dcfce7; color: #15803d;">...</span>
+                        </div>
+                        <button type="button" id="btn-open-opp-units-matching" onclick="openOppUnitsMatchingModalFromTask()" class="btn-sm" style="background: #0284c7; color: white; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" title="فتح نافذة تخصيص ومطابقة الوحدات للصفقة">
+                            <span>🏢</span>
+                            <span id="btn-open-opp-units-matching-text">تخصيص ومطابقة الوحدات للصفقة</span>
+                        </button>
+                    </div>
+
+                    <div id="comp-matching-units-list" style="max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 0.88em;">
+                        جاري تحميل الوحدات...
+                    </div>
+                </div>
+
                 <!-- 4. استكمال ما تبقى من محتويات إنجاز المهمة (النتيجة وحقول النموذج) -->
                 <!-- Outcome Selector Section -->
                 <div class="form-group" style="margin-bottom: 16px;">
-                    <label data-i18n="lbl_comp_outcome" style="font-weight: 700; display: block; margin-bottom: 8px;">النتيجة المعتمدة للمهمة *</label>
-                    <div id="comp-outcome-options" style="display: flex; flex-direction: column; gap: 8px;">
+                    <label data-i18n="lbl_comp_outcome" style="font-weight: 700; font-size: 0.92em; color: #0f172a; display: block; margin-bottom: 10px;">النتيجة المعتمدة للمهمة *</label>
+                    <div id="comp-outcome-options" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                         <!-- Injected by completeTask -->
                     </div>
                 </div>
@@ -1130,14 +1592,6 @@
                 <div id="comp-callback-fields" style="display: none; background: #fff7ed; border: 1.5px solid #ffedd5; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
                     <div data-i18n="lbl_comp_callback_header" style="font-weight: 600; font-size: 0.88em; color: #c2410c; margin-bottom: 8px;">⏰ Required Callback Date & Time *</div>
                     <input type="datetime-local" id="comp-callback-datetime" class="search-input" style="width: 100%; background: #fff;">
-                </div>
-
-                <!-- Stage C: Property Matching & Recommendations (shown for TASK_OPPORTUNITY_MATCH_PROPERTIES) -->
-                <div id="comp-matching-fields" style="display: none; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                    <div data-i18n="lbl_comp_matching_header" style="font-weight: 600; font-size: 0.88em; color: #166534; margin-bottom: 8px;">🏢 Matching Properties Recommended for WhatsApp:</div>
-                    <div id="comp-matching-units-list" style="max-height: 140px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 0.88em;">
-                        Loading units...
-                    </div>
                 </div>
 
                 <!-- Stage 3: Property Viewing Schedule Fields (Shown for TASK_VIEWING_SCHEDULE) -->
@@ -1613,6 +2067,24 @@
         </div>
     </div>
 
+    <!-- Opportunity Units Modal (Matching & Allocation) -->
+    <div class="modal-overlay" id="opp-units-modal" style="z-index: 1200;" onclick="if(event.target === this) closeOppUnitsModal()">
+        <div class="modal" style="max-width: 1350px; width: 96%; max-height: 88vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%); border-bottom: 1.5px solid #bae6fd;">
+                <h3 id="opp-units-modal-title" style="margin: 0; font-size: 1.05em; color: #0369a1; display: flex; align-items: center; gap: 8px;">
+                    <span>🏢</span> <span>تخصيص ومطابقة الوحدات للصفقة</span>
+                </h3>
+                <button class="close-btn" onclick="closeOppUnitsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="opp-units-modal-body" style="padding: 16px; overflow-y: auto; max-height: calc(88vh - 70px);">
+                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    <div style="font-size: 1.5em; margin-bottom: 8px;">⏳</div>
+                    جاري تحميل تفضيلات العميل ومخزون العقارات...
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Standalone SOP Execution Guide Modal -->
     <div id="modal-sop-help" class="modal-overlay">
         <div class="modal" style="max-width: 650px;">
@@ -1958,6 +2430,9 @@
         }
 
         let WORKFLOW_TASK_TITLES = {
+            'TASK_SALES_LEAD_CONTACT_QUALIFY': { ar: 'الطلب — الاتصال الأولي واستكمال التأهيل', en: 'Lead — First Contact & Qualification' },
+            'TASK_LEAD_FOLLOWUP_QUALIFY': { ar: 'الطلب — متابعة الاتصال والتأهيل', en: 'Lead — Follow-up & Qualification' },
+            'TASK_MATCH_PROPERTIES': { ar: 'الفرصة — مطابقة وترشيح العقارات', en: 'Opportunity — Match Properties' },
             'TASK_LEAD_FIRST_CONTACT': { ar: 'الطلب — الاتصال الأولي', en: 'Lead — First Contact' },
             'TASK_RENT_LEAD_FIRST_CONTACT': { ar: 'طلب الإيجار — الاتصال الأولي واستيفاء المتطلبات', en: 'Rental Lead — First Contact & Needs Analysis' },
             'TASK_INVEST_LEAD_FIRST_CONTACT': { ar: 'طلب استثماري — الاتصال الأولي وتأكيد الرغبة', en: 'Investment Lead — First Contact & Goals' },
@@ -2068,6 +2543,13 @@
                 if (title === WORKFLOW_TASK_TITLES[k].en) return isAr ? WORKFLOW_TASK_TITLES[k].ar : WORKFLOW_TASK_TITLES[k].en;
             }
             return title || (isAr ? 'مهمة' : 'Task');
+        }
+
+        function formatPropertyTypeDisplay(rawName) {
+            if (!rawName) return { clean: '', desc: '' };
+            const m = rawName.match(/^([^(]+)(?:\s*\((.*?)\))?/);
+            if (!m) return { clean: rawName.trim(), desc: '' };
+            return { clean: m[1].trim(), desc: m[2] ? m[2].trim() : '' };
         }
 
         function getLocalizedActSubject(subject, templateId) {
@@ -2219,7 +2701,7 @@
             const tabView = document.getElementById('txt-tab-viewings');
             if (tabView) tabView.textContent = lang === 'ar' ? 'المعاينة والفحص' : 'Inspection & Viewings';
             const tabSolv = document.getElementById('txt-tab-solvency');
-            if (tabSolv) tabSolv.textContent = lang === 'ar' ? 'التأهيل والملاءة' : 'Solvency & Qualification';
+            if (tabSolv) tabSolv.textContent = lang === 'ar' ? 'بيانات التأهيل' : 'Qualification Data';
             const tabFin = document.getElementById('txt-tab-finance');
             if (tabFin) tabFin.textContent = lang === 'ar' ? 'الفواتير والمحاسبة' : 'Invoices & Accounting';
 
@@ -2515,7 +2997,7 @@
 
             const tbody = document.getElementById('tasks-tbody');
             if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'جاري تحميل المهام...' : 'Loading tasks...'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px;">${currentLang === 'ar' ? 'جاري تحميل المهام...' : 'Loading tasks...'}</td></tr>`;
             }
 
             try {
@@ -2529,7 +3011,7 @@
             } catch (err) {
                 console.error("loadTasks error:", err);
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">${currentLang === 'ar' ? 'فشل تحميل المهام.' : 'Failed to load tasks.'}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">${currentLang === 'ar' ? 'فشل تحميل المهام.' : 'Failed to load tasks.'}</td></tr>`;
                 }
             }
         }
@@ -2539,20 +3021,20 @@
             if (!tbody) return;
             const isAr = currentLang === 'ar';
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مهام مطابقة.' : 'No tasks found.'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px;">${isAr ? 'لا توجد مهام مطابقة.' : 'No tasks found.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = items.map(t => {
                 const pCls = t.priority === 'URGENT' ? 'badge-urgent' : (t.priority === 'HIGH' ? 'badge-high' : 'badge-normal');
                 const sCls = t.status === 'COMPLETED' ? 'badge-completed' : (t.status === 'CANCELLED' ? 'badge-low' : (t.is_overdue ? 'badge-overdue' : 'badge-open'));
-                const createdDate = t.created_at ? new Date(t.created_at).toLocaleDateString() + ' ' + new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isAr ? 'بدون تاريخ' : 'No date');
                 const dueDate = t.due_at ? new Date(t.due_at).toLocaleDateString() + ' ' + new Date(t.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isAr ? 'بدون موعد' : 'No date');
                 const isActionable = (t.status === 'OPEN' || t.status === 'PENDING' || t.status === 'IN_PROGRESS');
                 const displayTitle = getLocalizedTaskTitle(t.title, t.template_id);
                 const assignedName = t.assigned_user_name || (isAr ? 'غير مسند' : 'Unassigned');
+                const statusText = isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : (t.status === 'CANCELLED' ? 'ملغاة' : t.status)))) : t.status;
                 
-                // Inquiry & Preferred Property Type Badge for decision support
-                let inqBadgeHtml = '';
+                // Inquiry & Preferred Property Type Badge for decision support (Line 2)
+                let inqSublineHtml = '';
                 if (t.inquiry_type || t.preferred_property_type_name_ar || t.preferred_property_type_name) {
                     const rawInq = (t.inquiry_type || '').toUpperCase();
                     let inqLabel = isAr ? 'طلب عقاري' : 'Inquiry';
@@ -2581,71 +3063,99 @@
                         inqIcon = '🏠';
                     }
 
-                    const pTypeName = isAr 
+                    const rawPt = isAr 
                         ? (t.preferred_property_type_name_ar || t.preferred_property_type_name || '') 
                         : (t.preferred_property_type_name || t.preferred_property_type_name_ar || '');
+                    const pt = formatPropertyTypeDisplay(rawPt);
+                    const ptTooltip = pt.desc ? `title="${pt.desc.replace(/"/g, '&quot;')}" style="cursor:help; border-bottom:1px dotted #94a3b8;"` : '';
 
-                    inqBadgeHtml = `
-                        <div style="margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; background: ${inqBg}; color: ${inqColor}; border: 1px solid ${inqBorder}; border-radius: 4px; padding: 2px 7px; font-size: 0.76em; font-weight: 700;">
-                            <span>${inqIcon} ${inqLabel}</span>
-                            ${pTypeName ? `<span style="opacity: 0.85;">• 🏢 ${pTypeName}</span>` : ''}
+                    inqSublineHtml = `
+                        <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; font-size: 0.78em;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px; background: ${inqBg}; color: ${inqColor}; border: 1px solid ${inqBorder}; border-radius: 4px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">
+                                <span class="icon-glyph">${inqIcon}</span>
+                                <span>${inqLabel}${pt.clean ? ` <span ${ptTooltip}>${pt.clean}</span>` : ''}</span>
+                                ${pt.desc ? `<span title="${pt.desc.replace(/"/g, '&quot;')}" style="cursor:help; opacity:0.8; font-size:0.9em; margin-inline-start:2px;">ℹ️</span>` : ''}
+                            </span>
+                            ${t.template_id ? `<span style="font-size:0.7em; color:#64748b; font-family:monospace; background:#f8fafc; border:1px solid #e2e8f0; padding:1px 5px; border-radius:4px;" title="Template ID: ${t.template_id}">[${t.template_id}]</span>` : ''}
                         </div>
                     `;
+                } else if (t.template_id) {
+                    inqSublineHtml = `
+                        <div style="margin-top: 3px; font-size: 0.7em; color: #64748b; font-family: monospace;">[${t.template_id}]</div>
+                    `;
                 }
+
+                const titleTooltip = (displayTitle || '').replace(/"/g, '&quot;');
+                const overdueTag = t.is_overdue ? (isAr ? '<span style="color:#b91c1c; background:#fee2e2; border:1px solid #fca5a5; font-size:0.7em; padding:1px 5px; border-radius:4px; font-weight:700; flex-shrink:0;">متأخر</span>' : '<span style="color:#b91c1c; background:#fee2e2; border:1px solid #fca5a5; font-size:0.7em; padding:1px 5px; border-radius:4px; font-weight:700; flex-shrink:0;">OVERDUE</span>') : '';
+                const escalatedTag = t.escalation_level > 1 ? (isAr ? '<span style="color:#991b1b; background:#fef2f2; border:1px solid #f87171; font-size:0.68em; padding:1px 5px; border-radius:4px; font-weight:700; flex-shrink:0;">🚨 مصعد</span>' : '<span style="color:#991b1b; background:#fef2f2; border:1px solid #f87171; font-size:0.68em; padding:1px 5px; border-radius:4px; font-weight:700; flex-shrink:0;">🚨 Escalated</span>') : '';
 
                 return `
                     <tr id="task-row-${t.task_id}" class="task-row ${window.selectedTaskId === t.task_id ? 'selected-task-row' : ''}" onclick="selectTaskRow('${t.task_id}', event)">
                         <td><span class="id-badge">${t.task_id}</span></td>
-                        <td class="tasks-title-cell">
-                            <strong>${displayTitle}</strong>
-                            ${t.template_id ? `<div style="font-size:0.7em; color:#64748b; font-family:monospace; margin-top:2px;">[${t.template_id}]</div>` : ''}
-                            ${inqBadgeHtml}
-                            ${t.is_overdue ? (isAr ? '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[متأخر]</span>' : '<span style="color:var(--danger); font-size:0.75em; margin-inline-start:6px; font-weight:700;">[OVERDUE]</span>') : ''}
-                            ${t.escalation_level > 1 ? (isAr ? '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 مصعد للمدير</span>' : '<span style="color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:0.72em; margin-inline-start:4px; font-weight:700;">🚨 Escalated to Manager</span>') : ''}
+                        <td class="tasks-title-cell" style="max-width: 320px; min-width: 240px;">
+                            <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${titleTooltip}">
+                                <span style="font-weight: 700; font-size: 0.94em; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayTitle}</span>
+                                ${overdueTag}
+                                ${escalatedTag}
+                            </div>
+                            ${inqSublineHtml}
                         </td>
-                        <td><span class="badge ${pCls}">${isAr ? (t.priority === 'URGENT' ? 'عاجل' : (t.priority === 'HIGH' ? 'هام' : (t.priority === 'NORMAL' ? 'عادي' : (t.priority === 'LOW' ? 'منخفض' : t.priority)))) : t.priority}</span></td>
-                        <td><span style="font-size:0.78rem; color:#475569; font-weight:600; white-space:nowrap;">📅 ${createdDate}</span></td>
-                        <td><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
+                        <td style="text-align: center;"><span class="badge ${pCls}">${isAr ? (t.priority === 'URGENT' ? 'عاجل' : (t.priority === 'HIGH' ? 'هام' : (t.priority === 'NORMAL' ? 'عادي' : (t.priority === 'LOW' ? 'منخفض' : t.priority)))) : t.priority}</span></td>
+                        <td style="text-align: center;"><span style="${t.is_overdue ? 'color:var(--danger); font-weight:700;' : ''}">${dueDate}</span></td>
                         <td>${assignedName}</td>
                         <td class="tasks-rel-cell">
-                            <div><strong>${t.customer_name || 'N/A'}</strong></div>
-                            <div style="font-size:0.75em; margin-top:2px; display:flex; flex-direction:column; gap:2px;">
-                                ${t.lead_id ? `<div style="color:#0284c7;">🎯 Lead: <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" style="color:#0284c7; text-decoration:none; font-weight:600;" onclick="event.stopPropagation();">${t.lead_id}</a></div>` : ''}
-                                ${t.opportunity_id ? `<div style="color:#16a34a;">📊 Opp: <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" style="color:#16a34a; text-decoration:none; font-weight:600;" onclick="event.stopPropagation();">${t.opportunity_id}</a></div>` : ''}
+                            <div style="font-weight:700; color:#1e293b; margin-bottom:4px; font-size:0.92em;">${t.customer_name || (isAr ? 'غير محدد' : 'N/A')}</div>
+                            <div class="tasks-rel-box">
+                                ${t.lead_id ? `
+                                    <a href="leads.html?search=${encodeURIComponent(t.lead_id)}" class="tasks-rel-chip chip-lead" onclick="event.stopPropagation();" title="${isAr ? 'ملف الطلب: ' : 'Lead: '}${t.lead_id}">
+                                        <span>📋</span> <span style="font-weight:600;">${isAr ? 'طلب' : 'Lead'}:</span> <span>#${t.lead_id}</span>
+                                    </a>
+                                ` : ''}
+                                ${t.opportunity_id ? `
+                                    <a href="sales.html?opportunity_id=${encodeURIComponent(t.opportunity_id)}" class="tasks-rel-chip chip-opp" onclick="event.stopPropagation();" title="${isAr ? 'ملف الصفقة: ' : 'Opp: '}${t.opportunity_id}">
+                                        <span>💼</span> <span style="font-weight:600;">${isAr ? 'فرصة' : 'Opp'}:</span> <span>#${t.opportunity_id}</span>
+                                    </a>
+                                ` : ''}
+                                ${(t.lead_id || t.opportunity_id) ? `
+                                    <button type="button" class="tasks-rel-chip chip-situation" onclick="event.stopPropagation(); openSituationModal({ leadId: '${t.lead_id || ''}', oppId: '${t.opportunity_id || ''}' })" title="${isAr ? 'مسار المعاملة التشغيلي' : 'Workflow Situation'}">
+                                        <span>📍</span> <span>${isAr ? 'مسار المعاملة' : 'Situation'}</span>
+                                    </button>
+                                ` : ''}
                             </div>
-                            ${(t.lead_id || t.opportunity_id) ? `
-                                <div style="margin-top:4px;">
-                                    <button type="button" class="btn-sm" style="font-size:0.72em; padding:2px 8px; background:#fdf4ff; color:#86198f; border:1px solid #f0abfc; border-radius:4px; cursor:pointer; font-weight:600;" onclick="event.stopPropagation(); openSituationModal({ leadId: '${t.lead_id || ''}', oppId: '${t.opportunity_id || ''}' })" title="Situation / مسار المعاملة">📍 مسار المعاملة</button>
-                                </div>
-                            ` : ''}
                         </td>
-                        <td><span class="badge ${sCls}">${isAr ? (t.status === 'COMPLETED' ? 'مكتمل' : (t.status === 'PENDING' ? 'قيد الانتظار' : (t.status === 'OPEN' ? 'جارية' : (t.status === 'CANCELLED' ? 'ملغاة' : t.status)))) : t.status}</span></td>
-                        <td>
-                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <td style="text-align: center; vertical-align: middle;">
+                            <div class="tasks-status-col-box">
+                                <span class="badge ${sCls} tasks-status-badge">
+                                    ${statusText}
+                                </span>
+                                <button type="button" class="tasks-sop-btn" onclick="event.stopPropagation(); openSopHelpModal('${t.template_id || t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" title="${isAr ? 'دليل خطوات تنفيذ المهمة' : 'SOP Steps Guide'}">
+                                    <span>💡</span> <span>${isAr ? 'مساعدة' : 'Help'}</span>
+                                </button>
+                            </div>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <div class="tasks-actions-col-box">
                             ${isActionable ? `
-                                <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); completeTask('${t.task_id}', '${t.template_id || ''}')" style="font-size: 0.82em; padding: 5px 10px;">
-                                    ${isAr ? '✓ إنجاز وتسجيل النتيجة' : '✓ Complete Task'}
+                                <button type="button" class="btn btn-success tasks-action-btn" onclick="event.stopPropagation(); completeTask('${t.task_id}', '${t.template_id || ''}')" title="${isAr ? 'إنجاز المهمة وتسجيل النتيجة المعتمدة' : 'Complete Task'}">
+                                    ✓ ${isAr ? 'إنجاز النتيجة' : 'Complete'}
                                 </button>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openCancelTaskModal('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}', '${t.opportunity_id || ''}')" style="font-size: 0.78em; padding: 4px 8px; border-color: #ef4444; color: #dc2626; font-weight: 700;" title="${isAr ? 'إلغاء المهمة مع رسالة تحذيرية وتأكيد' : 'Cancel task with warning confirmation'}">
-                                    🚫 ${isAr ? 'إلغاء' : 'Cancel'}
-                                </button>
-                            ` : `
-                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                    <span style="color:var(--success); font-size:0.85em; font-weight:600;">${isAr ? '✔ منجز' : '✔ Done'}</span>
-                                    <button class="btn btn-sm" onclick="event.stopPropagation(); viewTaskCompletionDetails('${t.task_id}')" style="font-size: 0.75em; padding: 3px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 4px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="${isAr ? 'عرض كافة المدخلات والبيانات المعتمدة للمهمة' : 'View Approved Task Inputs'}">
-                                        👁️ ${isAr ? 'بيانات الإنجاز' : 'Inputs'}
-                                    </button>
-                                    <button class="btn btn-sm" onclick="event.stopPropagation(); promptReopenTask('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="font-size: 0.75em; padding: 3px 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'" title="${isAr ? 'إعادة فتح المهمة والتراجع الذكي عن العمليات التابعة' : 'Reopen task and smartly undo downstream actions'}">
-                                        ${isAr ? '↩️ تراجع / إعادة فتح' : '↩️ Undo / Reopen'}
-                                    </button>
-                                </div>
-                            `}
-                                <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); insertTaskForSelectedRow('${t.task_id}')" style="font-size: 0.78em; padding: 4px 8px; border-color: #0284c7; color: #0284c7; font-weight: 700;" title="${isAr ? 'إدراج مهمة في مسار هذه المعاملة' : 'Insert task in this workflow'}">
+                                <button type="button" class="btn btn-outline tasks-action-btn" onclick="event.stopPropagation(); insertTaskForSelectedRow('${t.task_id}')" style="border-color: #0284c7; color: #0284c7;" title="${isAr ? 'إدراج مهمة في مسار هذه المعاملة' : 'Insert task in this workflow'}">
                                     ➕ ${isAr ? 'إدراج بالمسار' : 'Insert Task'}
                                 </button>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openSopHelpModal('${t.template_id || t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="font-size: 0.82em; padding: 5px 8px;" title="${isAr ? 'دليل خطوات تنفيذ المهمة' : 'SOP Steps Guide'}">
-                                    💡 ${isAr ? 'مساعدة' : 'Help'}
+                                <button type="button" class="btn btn-outline tasks-action-btn" onclick="event.stopPropagation(); openCancelTaskModal('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}', '${t.opportunity_id || ''}')" style="border-color: #ef4444; color: #dc2626;" title="${isAr ? 'إلغاء المهمة مع رسالة تحذيرية وتأكيد' : 'Cancel task with warning confirmation'}">
+                                    🚫 ${isAr ? 'إلغاء المهمة' : 'Cancel'}
                                 </button>
+                            ` : `
+                                <button type="button" class="tasks-action-btn" onclick="event.stopPropagation(); viewTaskCompletionDetails('${t.task_id}')" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;" title="${isAr ? 'عرض كافة المدخلات والبيانات المعتمدة للمهمة' : 'View Approved Task Inputs'}">
+                                    👁️ ${isAr ? 'بيانات الإنجاز' : 'Inputs'}
+                                </button>
+                                <button type="button" class="tasks-action-btn" onclick="event.stopPropagation(); promptReopenTask('${t.task_id}', '${(displayTitle || '').replace(/'/g, "\\'")}')" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1;" title="${isAr ? 'إعادة فتح المهمة والتراجع الذكي عن العمليات التابعة' : 'Reopen task and smartly undo downstream actions'}">
+                                    ↩️ ${isAr ? 'تراجع / فتح' : 'Reopen'}
+                                </button>
+                                <button type="button" class="btn btn-outline tasks-action-btn" onclick="event.stopPropagation(); insertTaskForSelectedRow('${t.task_id}')" style="border-color: #0284c7; color: #0284c7;" title="${isAr ? 'إدراج مهمة في مسار هذه المعاملة' : 'Insert task in this workflow'}">
+                                    ➕ ${isAr ? 'إدراج بالمسار' : 'Insert Task'}
+                                </button>
+                            `}
                             </div>
                         </td>
                     </tr>
@@ -3330,11 +3840,16 @@
 
             if (!transitions || Object.keys(transitions).length === 0) {
                 container.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid #bbf7d0; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="COMPLETED" checked onchange="handleDynamicOutcomeChange('COMPLETED', '${templateId}', '')">
-                        <div>
-                            <strong style="color:#166534;">${isAr ? '✓ إنجاز المهمة بنجاح' : '✓ Task Completed Successfully'}</strong>
-                            <div style="font-size:0.8em; color:var(--text-muted);">${isAr ? 'تم تنفيذ المطلوب وتحديث السجل' : 'Action finished and records updated'}</div>
+                    <label class="outcome-card style-success selected">
+                        <div class="outcome-card-control">
+                            <input type="radio" name="comp_outcome" value="COMPLETED" checked onchange="updateOutcomeSelectionState(this); handleDynamicOutcomeChange('COMPLETED', '${templateId}', '')">
+                        </div>
+                        <div class="outcome-card-content">
+                            <div class="outcome-card-header">
+                                <span class="outcome-card-title">${isAr ? '✓ إنجاز المهمة بنجاح' : '✓ Task Completed Successfully'}</span>
+                                <span class="outcome-badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac;">${isAr ? 'اعتماد' : 'Complete'}</span>
+                            </div>
+                            <div class="outcome-card-desc">${isAr ? 'تم تنفيذ المطلوب وتحديث السجل وحفظ البيانات في النظام.' : 'Action finished, records updated and saved in system.'}</div>
                         </div>
                     </label>
                 `;
@@ -3342,7 +3857,13 @@
                 return;
             }
 
-            const keys = Object.keys(transitions);
+            const keys = Object.keys(transitions).sort((a, b) => {
+                const orderA = (transitions[a] && typeof transitions[a] === 'object' && transitions[a].sort_order !== undefined)
+                    ? transitions[a].sort_order : 999;
+                const orderB = (transitions[b] && typeof transitions[b] === 'object' && transitions[b].sort_order !== undefined)
+                    ? transitions[b].sort_order : 999;
+                return orderA - orderB;
+            });
             let html = '';
 
             keys.forEach((key, idx) => {
@@ -3353,19 +3874,59 @@
                 const style = isRich ? (val.style || 'success') : 'success';
                 const reqFields = isRich ? (val.requires_fields || '') : '';
                 const isChecked = idx === 0 ? 'checked' : '';
+                const isSelectedClass = idx === 0 ? 'selected' : '';
 
-                let border = '#bbf7d0';
-                let titleColor = '#166534';
-                if (style === 'warning') { border = '#fed7aa'; titleColor = '#c2410c'; }
-                else if (style === 'danger') { border = '#fecaca'; titleColor = '#991b1b'; }
-                else if (style === 'info' || style === 'primary') { border = '#bae6fd'; titleColor = '#0369a1'; }
+                let badgeBg = '#dcfce7';
+                let badgeColor = '#15803d';
+                let badgeBorder = '#86efac';
+
+                if (style === 'warning') {
+                    badgeBg = '#ffedd5';
+                    badgeColor = '#c2410c';
+                    badgeBorder = '#fdba74';
+                } else if (style === 'danger') {
+                    badgeBg = '#fee2e2';
+                    badgeColor = '#b91c1c';
+                    badgeBorder = '#fca5a5';
+                } else if (style === 'info' || style === 'primary') {
+                    badgeBg = '#e0f2fe';
+                    badgeColor = '#0369a1';
+                    badgeBorder = '#7dd3fc';
+                }
+
+                // Determine Next Step / Action badge cleanly without undefined
+                let stepBadge = '';
+                const nextTmplId = isRich ? val.next_template_id : null;
+                if (nextTmplId) {
+                    const nextTmpl = (window.workflowTemplatesCatalog || []).find(t => t.template_id === nextTmplId);
+                    let nextName = '';
+                    if (nextTmpl) {
+                        nextName = isAr
+                            ? (nextTmpl.standard_title_ar || nextTmpl.title_ar || nextTmpl.title || nextTmpl.standard_title_en)
+                            : (nextTmpl.standard_title_en || nextTmpl.title_en || nextTmpl.title || nextTmpl.standard_title_ar);
+                    }
+                    if (!nextName && WORKFLOW_TASK_TITLES[nextTmplId]) {
+                        nextName = isAr ? WORKFLOW_TASK_TITLES[nextTmplId].ar : WORKFLOW_TASK_TITLES[nextTmplId].en;
+                    }
+                    if (!nextName) {
+                        nextName = nextTmplId;
+                    }
+                    stepBadge = `<span class="outcome-badge" style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder};" title="${nextTmplId}">➔ ${isAr ? 'الخطوة التالية: ' : 'Next: '}<strong>${nextName}</strong></span>`;
+                } else if (isRich && val.next_template_id === null) {
+                    stepBadge = `<span class="outcome-badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">⏹️ ${isAr ? 'نهاية المسار (إغلاق)' : 'Terminal Close'}</span>`;
+                }
 
                 html += `
-                    <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:white; border:1px solid ${border}; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="comp_outcome" value="${key}" ${isChecked} onchange="handleDynamicOutcomeChange('${key}', '${templateId}', '${reqFields}')">
-                        <div>
-                            <strong style="color:${titleColor};">${label}</strong>
-                            ${desc ? `<div style="font-size:0.8em; color:var(--text-muted);">${desc}</div>` : ''}
+                    <label class="outcome-card style-${style} ${isSelectedClass}">
+                        <div class="outcome-card-control">
+                            <input type="radio" name="comp_outcome" value="${key}" ${isChecked} onchange="updateOutcomeSelectionState(this); handleDynamicOutcomeChange('${key}', '${templateId}', '${reqFields}')">
+                        </div>
+                        <div class="outcome-card-content">
+                            <div class="outcome-card-header">
+                                <span class="outcome-card-title">${label}</span>
+                                ${stepBadge}
+                            </div>
+                            ${desc ? `<div class="outcome-card-desc">${desc}</div>` : ''}
                         </div>
                     </label>
                 `;
@@ -3380,6 +3941,17 @@
             }
         }
 
+        function updateOutcomeSelectionState(radioEl) {
+            const container = document.getElementById('comp-outcome-options');
+            if (!container) return;
+            const cards = container.querySelectorAll('.outcome-card');
+            cards.forEach(card => card.classList.remove('selected'));
+            const parentCard = radioEl ? radioEl.closest('.outcome-card') : null;
+            if (parentCard) {
+                parentCard.classList.add('selected');
+            }
+        }
+
         function handleDynamicOutcomeChange(outcome, templateId, reqFields) {
             // Callback toggle
             if (outcome === 'CALLBACK_REQUESTED' || reqFields === 'callback') {
@@ -3389,9 +3961,9 @@
             }
 
             // Qualification toggle
-            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED' || reqFields === 'qual') {
+            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED' || outcome === 'CONTACTED_QUALIFIED' || reqFields === 'qual') {
                 toggleQualFields(true);
-            } else if (templateId === 'TASK_LEAD_QUALIFY' || templateId === 'TASK_LEAD_COMPLETE_INFO') {
+            } else if (templateId === 'TASK_LEAD_QUALIFY' || templateId === 'TASK_LEAD_COMPLETE_INFO' || templateId === 'TASK_SALES_LEAD_CONTACT_QUALIFY' || templateId === 'TASK_LEAD_FOLLOWUP_QUALIFY') {
                 toggleQualFields(false);
             }
 
@@ -3423,12 +3995,12 @@
             document.getElementById('comp-template-id').value = templateId || '';
             document.getElementById('comp-task-name').textContent = t ? getLocalizedTaskTitle(t.title, t.template_id) : `Task #${taskId}`;
             
-            let contextParts = [];
-            if (t && t.customer_name) contextParts.push(`${isAr ? 'العميل: ' : 'Customer: '}${t.customer_name}`);
-            if (t && t.lead_id) contextParts.push(`${isAr ? 'طلب رقم: ' : 'Lead #: '}${t.lead_id}`);
-            if (t && t.opportunity_id) contextParts.push(`${isAr ? 'فرصة رقم: ' : 'Opp #: '}${t.opportunity_id}`);
-            if (t && t.assigned_user_name) contextParts.push(`${isAr ? 'المسؤول: ' : 'Assigned: '}${t.assigned_user_name}`);
-            document.getElementById('comp-task-context').textContent = contextParts.join(' | ') || (isAr ? 'سجل المهمة التشغيلي' : 'Operational Task Context');
+            let chipsHtml = [];
+            if (t && t.customer_name) chipsHtml.push(`<span class="comp-context-chip"><span>👤</span> <span>${isAr ? 'العميل: ' : 'Customer: '}</span><strong>${t.customer_name}</strong></span>`);
+            if (t && t.lead_id) chipsHtml.push(`<span class="comp-context-chip"><span>📋</span> <span>${isAr ? 'طلب: ' : 'Lead: '}</span><strong>#${t.lead_id}</strong></span>`);
+            if (t && t.opportunity_id) chipsHtml.push(`<span class="comp-context-chip"><span>💼</span> <span>${isAr ? 'فرصة: ' : 'Opp: '}</span><strong>#${t.opportunity_id}</strong></span>`);
+            if (t && t.assigned_user_name) chipsHtml.push(`<span class="comp-context-chip"><span>🎖️</span> <span>${isAr ? 'المسؤول: ' : 'Assigned: '}</span><strong>${t.assigned_user_name}</strong></span>`);
+            document.getElementById('comp-task-context').innerHTML = chipsHtml.length > 0 ? chipsHtml.join('') : (isAr ? 'سجل المهمة التشغيلي' : 'Operational Task Context');
 
             // Load SOP Step-by-Step execution guide dynamically
             loadTaskSopGuide(templateId || (t ? t.template_id : null), taskId, t ? t.title : null);
@@ -3684,9 +4256,9 @@
             if (templateId === "TASK_LEAD_ASSIGN") {
                 if (assignFields) assignFields.style.display = "block";
                 populateBranchAgentsForAssign(taskLead, t);
-            } else if (templateId === "TASK_LEAD_QUALIFY" || templateId === "TASK_LEAD_COMPLETE_INFO") {
+            } else if (templateId === "TASK_LEAD_QUALIFY" || templateId === "TASK_LEAD_COMPLETE_INFO" || templateId === "TASK_SALES_LEAD_CONTACT_QUALIFY" || templateId === "TASK_LEAD_FOLLOWUP_QUALIFY") {
                 if (qualFields) qualFields.style.display = "block";
-            } else if (templateId === "TASK_OPPORTUNITY_MATCH_PROPERTIES" || templateId === "TASK_RENT_MATCH_PROPERTIES") {
+            } else if (templateId === "TASK_OPPORTUNITY_MATCH_PROPERTIES" || templateId === "TASK_RENT_MATCH_PROPERTIES" || templateId === "TASK_MATCH_PROPERTIES") {
                 if (matchFields) matchFields.style.display = "block";
                 populateMatchingUnits(t);
             } else if (templateId === "TASK_VIEWING_SCHEDULE" || templateId === "TASK_VIEWING_RESCHEDULE" || templateId === "TASK_INVEST_SCHEDULE_INSPECTION") {
@@ -3824,8 +4396,11 @@
                                                 </div>
                                             `;
                                         }
-                                        const rad = document.querySelector('input[name="comp_outcome"][value="PAID"]');
-                                        if (rad) rad.checked = true;
+                                        const rad = document.querySelector('input[name="comp_outcome"][value="PAID"]') || document.querySelector('input[name="comp_outcome"][value="DEPOSIT_VERIFIED"]') || document.querySelector('input[name="comp_outcome"][value="COMPLETED"]');
+                                        if (rad) {
+                                            rad.checked = true;
+                                            updateOutcomeSelectionState(rad);
+                                        }
                                     }
                                 }
                             }
@@ -3883,46 +4458,1246 @@
             }
         }
 
+        // --- Opportunity Units Matching & Allocation Subsystem ---
+        let cachedInventoryUnits = [];
+        let cachedPropertyTypes = [];
+        let cachedCities = [];
+        let currentOppInModal = null;
+        let currentModalOppUnits = [];
+        let savedUnitSearchFilters = {
+            keyword: '',
+            typeId: '',
+            cityId: '',
+            listingPurpose: '',
+            minBeds: '',
+            maxPrice: ''
+        };
+
+        function formatBudgetDisplay(bMin, bMax, expVal, isAr) {
+            if (bMin != null && bMax != null) {
+                return `${Number(bMin).toLocaleString()} - ${Number(bMax).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (bMax != null) {
+                return `${isAr ? 'حتى' : 'Up to'} ${Number(bMax).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (bMin != null) {
+                return `${isAr ? 'من' : 'From'} ${Number(bMin).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            } else if (expVal != null && expVal > 0) {
+                return `~${Number(expVal).toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`;
+            }
+            return isAr ? 'غير محدد' : 'Not specified';
+        }
+
+        async function getInventoryUnits(force = false) {
+            if (!force && cachedInventoryUnits && cachedInventoryUnits.length > 0) return cachedInventoryUnits;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedInventoryUnits = json.data || [];
+                }
+            } catch (e) {
+                console.warn('Failed to load inventory units:', e);
+            }
+            return cachedInventoryUnits;
+        }
+
+        async function getPropertyTypes() {
+            if (cachedPropertyTypes && cachedPropertyTypes.length > 0) return cachedPropertyTypes;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/property-types`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedPropertyTypes = json.data || [];
+                }
+            } catch (e) {
+                console.warn('Failed to load property types:', e);
+            }
+            return cachedPropertyTypes;
+        }
+
+        async function getCities() {
+            if (cachedCities && cachedCities.length > 0) return cachedCities;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/cities`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cachedCities = json.data || [];
+                }
+            } catch (e) {
+                console.warn('Failed to load cities:', e);
+            }
+            return cachedCities;
+        }
+
+        function openOppUnitsMatchingModalFromTask() {
+            const t = window.currentExecutingTask;
+            const opp = window.currentExecutingOpp;
+            const lead = window.currentExecutingLead;
+            const oppId = (t && t.opportunity_id) || (opp && opp.opportunity_id) || (lead && lead.opportunity_id);
+            if (!oppId) {
+                alert(currentLang === 'ar' ? '⚠️ لا يوجد معرف صفقة/فرصة مرتبط بهذه المهمة' : '⚠️ No opportunity linked to this task');
+                return;
+            }
+            const oppTitle = (opp && opp.customer_name) || (t && t.customer_name) || (lead && lead.customer_name) || (opp && opp.title) || 'الصفقة';
+            viewOpportunityUnits(oppId, oppTitle);
+        }
+
+        async function viewOpportunityUnits(oppId, oppTitle) {
+            const modal = document.getElementById('opp-units-modal');
+            const titleEl = document.getElementById('opp-units-modal-title');
+            const bodyEl = document.getElementById('opp-units-modal-body');
+            const isAr = currentLang === 'ar';
+
+            titleEl.innerHTML = `<span>🏢</span> <span>${isAr ? 'تخصيص ومطابقة الوحدات للصفقة' : 'Assign & Match Property Units for Deal'}: <strong>${oppTitle}</strong> <span class="id-badge">${oppId}</span></span>`;
+            bodyEl.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);"><div style="font-size: 1.5em; margin-bottom: 8px;">⏳</div>${isAr ? 'جاري تحميل تفضيلات العميل ومخزون العقارات...' : 'Loading customer inquiry & inventory units...'}</div>`;
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+
+            try {
+                let opp = (window.currentExecutingOpp && window.currentExecutingOpp.opportunity_id === oppId) ? window.currentExecutingOpp : null;
+                const [unitsRes, invUnits, pTypes, cities] = await Promise.all([
+                    fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`),
+                    getInventoryUnits(),
+                    getPropertyTypes(),
+                    getCities()
+                ]);
+
+                if (!opp) {
+                    try {
+                        const oppRes = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}`);
+                        if (oppRes.ok) {
+                            const oppJson = await oppRes.json();
+                            opp = oppJson.data;
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch single opportunity:', e);
+                    }
+                }
+                currentOppInModal = opp || { opportunity_id: oppId, title: oppTitle };
+
+                if (!unitsRes.ok) throw new Error('Units fetch failed');
+                const json = await unitsRes.json();
+                currentModalOppUnits = json.data || [];
+
+                // 1. Customer Inquiry & Desired Unit Specs Banner
+                const inq = (currentOppInModal.inquiry_type || 'BUY').toUpperCase();
+                let reqInquiry = `<span style="color: #94a3b8;">${isAr ? 'غير محدد' : 'Not specified'}</span>`;
+                if (inq === 'RENT') {
+                    reqInquiry = isAr ? '🔑 إيجار (RENT)' : '🔑 Rent';
+                } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                    reqInquiry = isAr ? '📈 استثمار (INVESTMENT)' : '📈 Investment';
+                } else if (inq === 'BUY' || inq === 'SALE') {
+                    reqInquiry = isAr ? '🏠 شراء (BUY)' : '🏠 Buy';
+                }
+
+                const reqTypeName = (isAr 
+                    ? (currentOppInModal.preferred_property_type_name_ar || currentOppInModal.preferred_property_type_name)
+                    : (currentOppInModal.preferred_property_type_name || currentOppInModal.preferred_property_type_name_ar));
+                const reqType = reqTypeName 
+                    ? `🏢 ${reqTypeName}` 
+                    : `<span style="color: #94a3b8;">${isAr ? 'أي نوع عقار' : 'Any property type'}</span>`;
+
+                const reqBeds = currentOppInModal.bedrooms_min != null 
+                    ? `🛏️ ≥ ${currentOppInModal.bedrooms_min} ${isAr ? 'غرف' : 'Beds'}` 
+                    : `<span style="color: #94a3b8;">${isAr ? 'أي عدد' : 'Any'}</span>`;
+
+                const reqArea = currentOppInModal.area_min_sqm != null 
+                    ? `📐 ≥ ${currentOppInModal.area_min_sqm} m²` 
+                    : `<span style="color: #94a3b8;">--</span>`;
+
+                const reqCityName = (isAr 
+                    ? (currentOppInModal.preferred_city_name_ar || currentOppInModal.preferred_city_name)
+                    : (currentOppInModal.preferred_city_name || currentOppInModal.preferred_city_name_ar)) || '';
+                const reqCityDisplay = reqCityName 
+                    ? `<span style="color: #0284c7; font-weight: 700;">📍 ${reqCityName}</span>` 
+                    : `<span style="color: #94a3b8;">${isAr ? 'أي مدينة' : 'Any City'}</span>`;
+
+                const budgetFormatted = formatBudgetDisplay(currentOppInModal.budget_min, currentOppInModal.budget_max, currentOppInModal.expected_value, isAr);
+
+                const inquiryBannerHtml = `
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%); border: 1.5px solid #bae6fd; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <div style="font-weight: 700; color: #0369a1; font-size: 0.95em; display: flex; align-items: center; gap: 6px;">
+                                <span>🎯</span>
+                                <span>${isAr ? 'مواصفات العقار المطلوب من العميل ومطابقة المخزون' : 'Customer Inquiry Specs & Inventory Matching'}</span>
+                            </div>
+                            <div style="font-size: 0.85em; color: var(--navy); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <span>👤 ${currentOppInModal.customer_name || oppTitle}</span>
+                                ${currentOppInModal.customer_mobile ? `<span style="direction: ltr; color: var(--text-muted); font-size: 0.9em;">📞 ${currentOppInModal.customer_mobile}</span>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 0.84em;">
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'نوع العملية' : 'Inquiry Type'}</div>
+                                <div style="font-weight: 700; color: #0284c7;">${reqInquiry}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1.5px solid #bae6fd; background-color: #f0f9ff;">
+                                <div style="color: #0369a1; font-size: 0.78em; margin-bottom: 2px; font-weight: 700;">${isAr ? 'المدينة المطلوبة للصفقة' : 'Target Deal City'}</div>
+                                <div>${reqCityDisplay}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'نوع العقار المطلوب' : 'Property Type'}</div>
+                                <div style="font-weight: 700; color: var(--navy);">${reqType}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'الميزانية المحددة' : 'Budget Range'}</div>
+                                <div style="font-weight: 700; color: #16a34a;">💰 ${budgetFormatted}</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="color: var(--text-muted); font-size: 0.78em; margin-bottom: 2px;">${isAr ? 'المواصفات المطلوبة' : 'Desired Specs'}</div>
+                                <div style="font-weight: 700; color: var(--navy);">${reqBeds} • ${reqArea}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 2. Filter Options Setup
+                const dealCityId = currentOppInModal.preferred_city_id || '';
+                const activeCityId = (savedUnitSearchFilters.cityId !== undefined && savedUnitSearchFilters.cityId !== '') 
+                    ? savedUnitSearchFilters.cityId 
+                    : dealCityId;
+
+                const cityOptions = cities.map(c => {
+                    const cName = isAr ? (c.name_ar || c.name_en) : (c.name_en || c.name_ar);
+                    const isDealCity = c.city_id === dealCityId;
+                    const isSelected = c.city_id === activeCityId;
+                    const suffix = isDealCity ? ` ★ [${isAr ? 'المدينة المطلوبة للصفقة' : 'Deal Target City'}]` : '';
+                    return `<option value="${c.city_id}" ${isSelected ? 'selected' : ''}>${cName}${suffix}</option>`;
+                }).join('');
+
+                const savedKw = savedUnitSearchFilters.keyword || '';
+                const savedTypeId = savedUnitSearchFilters.typeId || '';
+                const savedPurpose = savedUnitSearchFilters.listingPurpose || '';
+                const savedBeds = savedUnitSearchFilters.minBeds || '';
+                const savedMaxPrice = savedUnitSearchFilters.maxPrice || '';
+
+                const typeOptions = pTypes.map(pt => 
+                    `<option value="${pt.property_type_id}" ${pt.property_type_id === savedTypeId ? 'selected' : ''}>${isAr ? (pt.name_ar || pt.name_en) : (pt.name_en || pt.name_ar)}</option>`
+                ).join('');
+
+                const maxPriceLabel = inq === 'RENT'
+                    ? (isAr ? 'أقصى ميزانية إيجار سنوي (ريال)' : 'Max Annual Rent Budget (SAR)')
+                    : (inq === 'INVESTMENT' || inq === 'INVEST'
+                        ? (isAr ? 'أقصى ميزانية بيع استثماري (ريال)' : 'Max Investment Sell Budget (SAR)')
+                        : (isAr ? 'أقصى ميزانية شراء (ريال)' : 'Max Purchase Budget (SAR)'));
+
+                const offeredPriceLabel = inq === 'RENT'
+                    ? (isAr ? 'ميزانية / سعر الإيجار المقترح (ريال/سنوي)' : 'Proposed Rent Budget (SAR/yr)')
+                    : (inq === 'INVESTMENT' || inq === 'INVEST'
+                        ? (isAr ? 'ميزانية / سعر البيع الاستثماري (ريال)' : 'Investment Sell Budget (SAR)')
+                        : (isAr ? 'ميزانية / سعر الشراء المعروض (ريال)' : 'Offered Purchase Budget (SAR)'));
+
+                // 3. Smart Search & Assign Card
+                const searchAndAssignHtml = `
+                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <h4 style="margin: 0; font-size: 0.95em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                                <span>🔍</span>
+                                <span>${isAr ? 'البحث في مخزون العقارات ومطابقة طلب العميل' : 'Search Inventory & Match Customer Criteria'}</span>
+                            </h4>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-sm" onclick="autoMatchLeadFilters()" style="background: #0284c7; color: white; border: none; font-weight: 600; padding: 5px 12px; border-radius: 5px; cursor: pointer;" title="Autofill filters with customer inquiry requirements">
+                                    ⚡ ${isAr ? 'مطابقة تلقائية لطلب العميل' : 'Auto-Match Lead Criteria'}
+                                </button>
+                                <button type="button" class="btn-sm" onclick="resetUnitSearchFilters()" style="background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                                    🔄 ${isAr ? 'إلغاء الفلاتر' : 'Reset'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- In-modal notification banner -->
+                        <div id="opp-unit-notice" style="display: none; margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.88em; font-weight: 600;"></div>
+
+                        <!-- Filter inputs grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'بحث بالاسم / الرقم / المالك' : 'Keyword / Unit # / Owner'}</label>
+                                <input type="text" id="unit-filter-keyword" value="${savedKw}" placeholder="${isAr ? 'بحث...' : 'Search units...'}" oninput="applyUnitFilters()" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyUnitFilters();}" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'المدينة' : 'City'}</label>
+                                <select id="unit-filter-city" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="">-- ${isAr ? 'كافة المدن' : 'All Cities'} --</option>
+                                    ${cityOptions}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'غرض الوحدة / نوع الطرح' : 'Listing Purpose'}</label>
+                                <select id="unit-filter-purpose" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="" ${savedPurpose === '' ? 'selected' : ''}>-- ${isAr ? 'المتوافق تلقائياً مع العملية' : 'Compatible with Inquiry'} --</option>
+                                    <option value="SALE" ${savedPurpose === 'SALE' ? 'selected' : ''}>${isAr ? 'بيع (SALE)' : 'Sale (SALE)'}</option>
+                                    <option value="RENT" ${savedPurpose === 'RENT' ? 'selected' : ''}>${isAr ? 'إيجار (RENT)' : 'Rent (RENT)'}</option>
+                                    <option value="INVESTMENT" ${savedPurpose === 'INVESTMENT' ? 'selected' : ''}>${isAr ? 'استثمار (INVESTMENT)' : 'Investment (INVESTMENT)'}</option>
+                                    <option value="ALL" ${savedPurpose === 'ALL' ? 'selected' : ''}>${isAr ? 'شامل لكافة الأغراض (ALL)' : 'Multi-purpose (ALL)'}</option>
+                                    <option value="ANY" ${savedPurpose === 'ANY' ? 'selected' : ''}>-- ${isAr ? 'أي طرح دون تصفية' : 'Any Purpose'} --</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'نوع العقار' : 'Property Type'}</label>
+                                <select id="unit-filter-type" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="">-- ${isAr ? 'الكل (جميع الأنواع)' : 'All Property Types'} --</option>
+                                    ${typeOptions}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${isAr ? 'عدد الغرف الأدنى' : 'Bedrooms (Min)'}</label>
+                                <select id="unit-filter-beds" onchange="applyUnitFilters()" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                                    <option value="" ${savedBeds === '' ? 'selected' : ''}>-- ${isAr ? 'الكل' : 'Any Bedrooms'} --</option>
+                                    <option value="0" ${savedBeds === '0' ? 'selected' : ''}>Studio (0)</option>
+                                    <option value="1" ${savedBeds === '1' ? 'selected' : ''}>1+ ${isAr ? 'غرفة' : 'Bed'}</option>
+                                    <option value="2" ${savedBeds === '2' ? 'selected' : ''}>2+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="3" ${savedBeds === '3' ? 'selected' : ''}>3+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="4" ${savedBeds === '4' ? 'selected' : ''}>4+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                    <option value="5" ${savedBeds === '5' ? 'selected' : ''}>5+ ${isAr ? 'غرف' : 'Beds'}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.76em; font-weight: 600; margin-bottom: 3px; color: var(--text-muted);">${maxPriceLabel}</label>
+                                <input type="number" id="unit-filter-maxprice" value="${savedMaxPrice}" placeholder="${isAr ? 'مثال: 500000' : 'e.g. 500000'}" oninput="applyUnitFilters()" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyUnitFilters();}" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.85em; background: #fff;">
+                            </div>
+                        </div>
+
+                        <!-- Include Reserved Units Toggle -->
+                        <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; background: #fffbeb; border: 1px dashed #fcd34d; padding: 6px 12px; border-radius: 6px;">
+                            <input type="checkbox" id="unit-filter-include-reserved" onchange="applyUnitFilters()" style="cursor: pointer; width: 16px; height: 16px;">
+                            <label for="unit-filter-include-reserved" style="cursor: pointer; font-size: 0.82em; font-weight: 700; color: #92400e;">
+                                ⚠️ ${isAr ? 'إظهار الوحدات المحجوزة كعروض بديلة / احتياطية (Include Reserved Units as Backup Offers)' : 'Include Reserved Units (as Backup Offers)'}
+                            </label>
+                        </div>
+
+                        <!-- Match stats badge and assign form -->
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span id="unit-match-count-badge" style="font-size: 0.8em; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">
+                                    ${isAr ? 'الوحدات المطابقة:' : 'Matching Units:'} ...
+                                </span>
+                                <span style="font-size: 0.78em; color: var(--text-muted);">
+                                    ${isAr ? 'اختر الوحدة المناسبة من القائمة ثم اضغط على زر الربط' : 'Select matching unit and click Link Unit'}
+                                </span>
+                            </div>
+
+                            <form onsubmit="submitAssignUnitToOpp(event, '${oppId}', '${encodeURIComponent(oppTitle)}')">
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                                    <div style="flex: 3; min-width: 250px;">
+                                        <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${isAr ? 'اختر الوحدة المطابقة من القائمة *' : 'Select Matching Unit *'}</label>
+                                        <select id="assign-unit-select" required onchange="onSelectedUnitChange()" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                            <option value="">-- ${isAr ? 'جاري تحميل الوحدات...' : 'Loading units...'} --</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1.5; min-width: 130px;">
+                                        <label style="display: block; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">${offeredPriceLabel}</label>
+                                        <input type="number" id="assign-unit-price" placeholder="e.g. 500000" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88em; background: #fff;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
+                                        <input type="checkbox" id="assign-unit-primary" checked style="cursor: pointer;">
+                                        <label for="assign-unit-primary" style="font-size: 0.82em; font-weight: 600; cursor: pointer;">${isAr ? 'الوحدة الرئيسية ★' : 'Primary Unit ★'}</label>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.88em; border-radius: 6px; background: #0284c7; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> <span>${isAr ? 'ربط الوحدة بالصفقة' : 'Link Unit to Deal'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Selected Unit Preview Card -->
+                                <div id="selected-unit-preview" style="display: none; margin-top: 10px; background: #fff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; font-size: 0.83em;">
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                // 4. Currently Assigned Units Table Container
+                const tableContainerHtml = `<div id="opp-assigned-units-container">${buildAssignedUnitsTableHtml(oppId, oppTitle, currentModalOppUnits, isAr)}</div>`;
+
+                bodyEl.innerHTML = inquiryBannerHtml + searchAndAssignHtml + tableContainerHtml;
+
+                // Sync select values if needed
+                if (savedTypeId) {
+                    const tSel = document.getElementById('unit-filter-type');
+                    if (tSel) tSel.value = savedTypeId;
+                }
+                if (activeCityId) {
+                    const cSel = document.getElementById('unit-filter-city');
+                    if (cSel) cSel.value = activeCityId;
+                }
+                if (savedBeds !== '') {
+                    const bSel = document.getElementById('unit-filter-beds');
+                    if (bSel) bSel.value = savedBeds;
+                }
+
+                // Initialize unit filters
+                applyUnitFilters();
+
+            } catch (err) {
+                console.error(err);
+                bodyEl.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">Error loading opportunity units: ${err.message}</div>`;
+            }
+        }
+
+        function closeOppUnitsModal() {
+            const m = document.getElementById('opp-units-modal');
+            if (m) {
+                m.style.display = 'none';
+                m.classList.remove('show');
+            }
+            if (window.currentExecutingTask) {
+                populateMatchingUnits(window.currentExecutingTask);
+            }
+        }
+
+        function buildAssignedUnitsTableHtml(oppId, oppTitle, units, isAr) {
+            if (!units || units.length === 0) {
+                return `<div style="text-align: center; padding: 22px; color: var(--text-muted); background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">${isAr ? 'لا توجد وحدات مرتبطة بهذه الفرصة حالياً. استخدم نموذج البحث أعلاه لربط وحدة.' : 'No units linked to this opportunity yet. Use the search form above to assign a unit.'}</div>`;
+            }
+            const inq = (currentOppInModal?.inquiry_type || 'BUY').toUpperCase();
+            const isRent = inq === 'RENT';
+            const isInvest = inq === 'INVESTMENT' || inq === 'INVEST';
+
+            const budgetHeader = isRent 
+                ? (isAr ? 'ميزانية الإيجار السنوي' : 'Rent Budget (SAR/yr)')
+                : (isInvest ? (isAr ? 'ميزانية البيع الاستثماري' : 'Investment Sell Budget') : (isAr ? 'ميزانية الشراء المطلوبة' : 'Purchase / Sell Budget'));
+
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-weight: 700; font-size: 0.9em; color: var(--navy); display: flex; align-items: center; gap: 6px;">
+                        <span>🏢</span>
+                        <span>${isAr ? 'الوحدات المحددة حالياً لهذه الصفقة:' : 'Currently Assigned Units to Deal:'}</span>
+                    </div>
+                    <button type="button" class="btn-sm" onclick="sendMatchedPropertiesRecommendations('${oppId}')" style="background: #16a34a; color: white; border: none; font-weight: 600; padding: 6px 14px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Send WhatsApp Recommendations to client">
+                        <span>📲</span> <span>${isAr ? 'إرسال المقترحات عبر الواتساب (WhatsApp Recommendations)' : 'Send Recommendations via WhatsApp'}</span>
+                    </button>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'معرف الوحدة' : 'Unit ID'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'اسم / رقم الوحدة' : 'Unit Name / #'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'المدينة والنوع' : 'City & Type'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'طرح الوحدة' : 'Purpose'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'مالك العقار' : 'Unit Owner'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${budgetHeader}</th>
+                            ${isInvest ? `<th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'العائد المتوقع (ROI)' : 'Expected ROI'}</th>` : ''}
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${isAr ? 'الوحدة الرئيسية' : 'Primary Unit'}</th>
+                            <th style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center;">${isAr ? 'الإجراء' : 'Action'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${units.map(u => {
+                            const ownerName = u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                            const ownerMobile = u.unit_owner_mobile ? `<div style="font-size: 0.78em; color: var(--text-muted); direction: ltr;">${u.unit_owner_mobile}</div>` : '';
+                            const city = isAr ? (u.city_name_ar || u.city_name_en || '--') : (u.city_name_en || u.city_name_ar || '--');
+                            const propType = isAr ? (u.property_type_name_ar || u.property_type_name_en || '--') : (u.property_type_name_en || u.property_type_name_ar || '--');
+                            const purpVal = (u.listing_purpose || 'ALL').toUpperCase();
+                            let purpBadge = `<span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.8em;">${purpVal}</span>`;
+                            if (purpVal === 'SALE') purpBadge = `<span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.8em; font-weight: 700;">${isAr ? 'بيع' : 'SALE'}</span>`;
+                            else if (purpVal === 'RENT') purpBadge = `<span class="badge" style="background: #f0fdf4; color: #15803d; font-size: 0.8em; font-weight: 700;">${isAr ? 'إيجار' : 'RENT'}</span>`;
+                            else if (purpVal === 'INVESTMENT') purpBadge = `<span class="badge" style="background: #fdf4ff; color: #86198f; font-size: 0.8em; font-weight: 700;">${isAr ? 'استثمار' : 'INVEST'}</span>`;
+
+                            let priceDisplay = '--';
+                            if (isRent) {
+                                const val = u.offered_price != null ? u.offered_price : u.rent_price;
+                                priceDisplay = val != null ? `🔑 ${Number(val).toLocaleString()} SAR/yr` : '--';
+                            } else {
+                                const val = u.offered_price != null ? u.offered_price : u.asking_price;
+                                priceDisplay = val != null ? `${isInvest ? '💼' : '🏠'} ${Number(val).toLocaleString()} SAR` : '--';
+                            }
+
+                            let roiColHtml = '';
+                            if (isInvest) {
+                                const sellVal = u.offered_price || u.asking_price;
+                                const rentVal = u.rent_price;
+                                if (sellVal && rentVal && sellVal > 0) {
+                                    const yld = ((rentVal / sellVal) * 100).toFixed(1);
+                                    roiColHtml = `<td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; color: #047857;">📈 ${yld}%</td>`;
+                                } else {
+                                    roiColHtml = `<td style="padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-muted);">--</td>`;
+                                }
+                            }
+
+                            return `
+                            <tr>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);"><span class="id-badge">${u.unit_id}</span></td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600;">#${u.unit_number || u.unit_id}</td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
+                                    <div style="font-weight: 600; color: #0284c7;">📍 ${city}</div>
+                                    <div style="font-size: 0.8em; color: var(--text-muted);">${propType}</div>
+                                </td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">${purpBadge}</td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
+                                    <div style="font-weight: 600; color: var(--navy);">👤 ${ownerName}</div>
+                                    ${ownerMobile}
+                                </td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--primary);">
+                                    ${priceDisplay}
+                                </td>
+                                ${roiColHtml}
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border);">
+                                    ${u.is_primary ? '<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;">★ PRIMARY</span>' : '<span class="badge badge-normal">SECONDARY</span>'}
+                                </td>
+                                <td style="padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; white-space: nowrap;">
+                                    <button type="button" class="btn-sm" style="background: #fee2e2; color: #991b1b; padding: 4px 10px; font-size: 0.82em; border-radius: 4px; border: 1px solid #fca5a5; cursor: pointer;" onclick="removeOpportunityUnit('${oppId}', '${u.unit_id}', '${encodeURIComponent(oppTitle)}')" title="Remove this unit link">🗑️ ${isAr ? 'فك الارتباط' : 'Remove'}</button>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderAssignedUnitsTable(oppId, oppTitle) {
+            const container = document.getElementById('opp-assigned-units-container');
+            if (!container) return;
+            const isAr = currentLang === 'ar';
+            container.innerHTML = buildAssignedUnitsTableHtml(oppId, oppTitle, currentModalOppUnits, isAr);
+        }
+
+        function showOppUnitNotice(message, type = 'success') {
+            const noticeEl = document.getElementById('opp-unit-notice');
+            if (!noticeEl) return;
+            noticeEl.style.display = 'block';
+            if (type === 'success') {
+                noticeEl.style.background = '#dcfce7';
+                noticeEl.style.border = '1px solid #86efac';
+                noticeEl.style.color = '#15803d';
+            } else if (type === 'error') {
+                noticeEl.style.background = '#fee2e2';
+                noticeEl.style.border = '1px solid #fca5a5';
+                noticeEl.style.color = '#991b1b';
+            } else {
+                noticeEl.style.background = '#e0f2fe';
+                noticeEl.style.border = '1px solid #93c5fd';
+                noticeEl.style.color = '#0369a1';
+            }
+            noticeEl.textContent = message;
+            setTimeout(() => {
+                if (noticeEl) noticeEl.style.display = 'none';
+            }, 4500);
+        }
+
+        function formatUnitOptionText(u, isAr, targetBudgetMax) {
+            const inq = (currentOppInModal?.inquiry_type || 'BUY').toUpperCase();
+            const owner = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+            const ptObj = cachedPropertyTypes.find(p => p.property_type_id === u.property_type_id);
+            const type = isAr 
+                ? (u.property_type_name_ar || ptObj?.name_ar || u.property_type_name || 'عقار') 
+                : (u.property_type_name_en || ptObj?.name_en || u.property_type_name || 'Unit');
+            const beds = u.bedrooms != null ? ` | ${u.bedrooms} ${isAr ? 'غرف' : 'Beds'}` : '';
+            const area = u.area_sqm != null ? ` | ${u.area_sqm} m²` : '';
+
+            // City Tag
+            const city = isAr 
+                ? (u.city_name_ar || u.city_name_en || u.city_name || (isAr ? 'غير محدد' : 'N/A'))
+                : (u.city_name_en || u.city_name_ar || u.city_name || 'N/A');
+            const cityTag = `[📍 ${city}]`;
+
+            // Listing Purpose Tag
+            const purp = (u.listing_purpose || 'ALL').toUpperCase();
+            let purpTag = `[${isAr ? 'طرح: شامل' : 'Purpose: ALL'}]`;
+            if (purp === 'SALE') purpTag = `[${isAr ? 'طرح: بيع' : 'Purpose: SALE'}]`;
+            else if (purp === 'RENT') purpTag = `[${isAr ? 'طرح: إيجار' : 'Purpose: RENT'}]`;
+            else if (purp === 'INVESTMENT') purpTag = `[${isAr ? 'طرح: استثماري' : 'Purpose: INVEST'}]`;
+
+            let reservedPrefix = '';
+            if ((u.status || '').toUpperCase() === 'RESERVED') {
+                reservedPrefix = `⚠️ [${isAr ? 'محجوزة' : 'RESERVED'}] `;
+            }
+
+            if (inq === 'RENT') {
+                const rentVal = u.rent_price != null ? u.rent_price : null;
+                const rentStr = rentVal != null ? ` | ${isAr ? 'إيجار:' : 'Rent:'} ${Number(rentVal).toLocaleString()} SAR/yr` : ` | ${isAr ? 'غير محدد للإيجار' : 'No Rent'}`;
+                let budgetMatchStr = '';
+                if (targetBudgetMax && rentVal && rentVal <= targetBudgetMax) {
+                    budgetMatchStr = isAr ? ' ✨ [ضمن ميزانية الإيجار]' : ' ✨ [Within Rent Budget]';
+                }
+                return `${reservedPrefix}${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${owner}) (${type}${beds}${area}${rentStr})${budgetMatchStr}`;
+            } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                const askVal = u.asking_price != null ? u.asking_price : null;
+                let roiStr = '';
+                if (askVal && u.rent_price && askVal > 0) {
+                    const yieldPct = ((u.rent_price / askVal) * 100).toFixed(1);
+                    roiStr = ` (${isAr ? 'عائد:' : 'Yield:'} ${yieldPct}%)`;
+                }
+                const askStr = askVal != null ? ` | ${isAr ? 'سعر البيع:' : 'Sell Price:'} ${Number(askVal).toLocaleString()} SAR${roiStr}` : ` | ${isAr ? 'غير محدد للبيع' : 'No Sell Price'}`;
+                let budgetMatchStr = '';
+                if (targetBudgetMax && askVal && askVal <= targetBudgetMax) {
+                    budgetMatchStr = isAr ? ' ✨ [ضمن ميزانية الاستثمار]' : ' ✨ [Within Investment Budget]';
+                }
+                return `${reservedPrefix}${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${owner}) (${type}${area}${askStr})${budgetMatchStr}`;
+            } else {
+                // BUY
+                const askVal = u.asking_price != null ? u.asking_price : null;
+                const askStr = askVal != null ? ` | ${isAr ? 'سعر البيع:' : 'Sell Price:'} ${Number(askVal).toLocaleString()} SAR` : ` | ${isAr ? 'غير محدد للبيع' : 'No Sell Price'}`;
+                let budgetMatchStr = '';
+                if (targetBudgetMax && askVal && askVal <= targetBudgetMax) {
+                    budgetMatchStr = isAr ? ' ✨ [ضمن ميزانية الشراء]' : ' ✨ [Within Buy Budget]';
+                }
+                return `${reservedPrefix}${cityTag} [${u.unit_id}] #${u.unit_number} ${purpTag} (${isAr ? 'المالك:' : 'Owner:'} ${owner}) (${type}${beds}${area}${askStr})${budgetMatchStr}`;
+            }
+        }
+
+        function applyUnitFilters() {
+            const kwInput = document.getElementById('unit-filter-keyword');
+            const typeSelect = document.getElementById('unit-filter-type');
+            const citySelect = document.getElementById('unit-filter-city');
+            const purposeSelect = document.getElementById('unit-filter-purpose');
+            const bedsSelect = document.getElementById('unit-filter-beds');
+            const priceInput = document.getElementById('unit-filter-maxprice');
+
+            const kw = (kwInput ? kwInput.value : (savedUnitSearchFilters.keyword || '')).trim();
+            const typeId = typeSelect ? typeSelect.value : (savedUnitSearchFilters.typeId || '');
+            const cityId = citySelect ? citySelect.value : (savedUnitSearchFilters.cityId || '');
+            const purposeVal = purposeSelect ? purposeSelect.value : (savedUnitSearchFilters.listingPurpose || '');
+            const minBedsVal = bedsSelect ? bedsSelect.value : (savedUnitSearchFilters.minBeds || '');
+            const maxPriceVal = priceInput ? priceInput.value : (savedUnitSearchFilters.maxPrice || '');
+
+            savedUnitSearchFilters = {
+                keyword: kw,
+                typeId: typeId,
+                cityId: cityId,
+                listingPurpose: purposeVal,
+                minBeds: minBedsVal,
+                maxPrice: maxPriceVal
+            };
+
+            const kwLower = kw.toLowerCase();
+            const minBeds = minBedsVal !== '' && minBedsVal != null ? parseInt(minBedsVal, 10) : null;
+            const maxPrice = parseFloat(maxPriceVal) || null;
+
+            const isAr = currentLang === 'ar';
+            const inq = (currentOppInModal?.inquiry_type || 'BUY').toUpperCase();
+            const isInquiryRent = inq === 'RENT';
+            const includeReserved = document.getElementById('unit-filter-include-reserved')?.checked || false;
+
+            const filtered = cachedInventoryUnits.filter(u => {
+                const st = (u.status || 'AVAILABLE').toUpperCase();
+                // Strictly exclude SOLD and RENTED
+                if (st === 'SOLD' || st === 'RENTED') return false;
+                // Exclude RESERVED unless explicitly toggled on as backup offer
+                if (st === 'RESERVED' && !includeReserved) return false;
+
+                // 1. Keyword search
+                if (kwLower) {
+                    const num = (u.unit_number || '').toLowerCase();
+                    const uid = (u.unit_id || '').toLowerCase();
+                    const projEn = (u.project_name_en || '').toLowerCase();
+                    const projAr = (u.project_name_ar || '').toLowerCase();
+                    const typeName = (u.property_type_name || u.property_type_name_ar || '').toLowerCase();
+                    const owner = (u.owner_name || u.unit_owner_name || '').toLowerCase();
+                    const cityAr = (u.city_name_ar || '').toLowerCase();
+                    const cityEn = (u.city_name_en || '').toLowerCase();
+                    if (!num.includes(kwLower) && !uid.includes(kwLower) && !projEn.includes(kwLower) && 
+                        !projAr.includes(kwLower) && !typeName.includes(kwLower) && !owner.includes(kwLower) &&
+                        !cityAr.includes(kwLower) && !cityEn.includes(kwLower)) {
+                        return false;
+                    }
+                }
+
+                // 2. City Filter
+                if (cityId) {
+                    if (u.city_id !== cityId) {
+                        const selCity = cachedCities.find(c => c.city_id === cityId);
+                        const targetCityAr = (selCity?.name_ar || '').toLowerCase();
+                        const targetCityEn = (selCity?.name_en || '').toLowerCase();
+                        const uCityAr = (u.city_name_ar || '').toLowerCase();
+                        const uCityEn = (u.city_name_en || '').toLowerCase();
+                        if (!targetCityAr || (!uCityAr.includes(targetCityAr) && !uCityEn.includes(targetCityEn))) {
+                            return false;
+                        }
+                    }
+                }
+
+                // 3. Property Type Filter
+                if (typeId) {
+                    if (u.property_type_id !== typeId) {
+                        const pt = cachedPropertyTypes.find(p => p.property_type_id === typeId);
+                        if (!pt || pt.name_en !== u.property_type_name) {
+                            return false;
+                        }
+                    }
+                }
+
+                // 4. Listing Purpose Compatibility Filter
+                const uPurpose = (u.listing_purpose || 'ALL').toUpperCase();
+                if (purposeVal === 'ANY') {
+                    // Show any purpose
+                } else if (purposeVal && purposeVal !== '') {
+                    if (purposeVal === 'SALE') {
+                        if (uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    } else if (purposeVal === 'RENT') {
+                        if (uPurpose !== 'RENT' && uPurpose !== 'ALL') return false;
+                    } else if (purposeVal === 'INVESTMENT') {
+                        if (uPurpose !== 'INVESTMENT' && uPurpose !== 'ALL' && uPurpose !== 'SALE') return false;
+                    } else if (purposeVal === 'ALL') {
+                        if (uPurpose !== 'ALL') return false;
+                    }
+                } else {
+                    // Automatic compatibility with inquiry_type
+                    if (isInquiryRent) {
+                        if (uPurpose !== 'RENT' && uPurpose !== 'ALL') return false;
+                    } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                        if (uPurpose !== 'INVESTMENT' && uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    } else {
+                        // BUY / SALE
+                        if (uPurpose !== 'SALE' && uPurpose !== 'ALL') return false;
+                    }
+                }
+
+                // 5. Min Bedrooms
+                if (minBeds !== null) {
+                    const uBeds = u.bedrooms != null ? u.bedrooms : 0;
+                    if (uBeds < minBeds) return false;
+                }
+
+                // 6. Max Price
+                if (maxPrice !== null) {
+                    const uPrice = isInquiryRent ? (u.rent_price ?? u.asking_price) : (u.asking_price ?? u.rent_price);
+                    if (uPrice != null && uPrice > maxPrice) return false;
+                }
+
+                return true;
+            });
+
+            const sel = document.getElementById('assign-unit-select');
+            const badge = document.getElementById('unit-match-count-badge');
+            if (badge) {
+                badge.textContent = `${isAr ? 'الوحدات المطابقة:' : 'Matching Units:'} ${filtered.length} / ${cachedInventoryUnits.length}`;
+                badge.style.background = filtered.length > 0 ? '#e0f2fe' : '#fee2e2';
+                badge.style.color = filtered.length > 0 ? '#0284c7' : '#991b1b';
+            }
+
+            if (!sel) return;
+
+            if (filtered.length === 0) {
+                sel.innerHTML = `<option value="">-- ${isAr ? 'لا توجد وحدات تطابق معايير البحث والمدينة ونوع العملية' : 'No units match search, city & inquiry criteria'} --</option>`;
+                const preview = document.getElementById('selected-unit-preview');
+                if (preview) preview.style.display = 'none';
+                return;
+            }
+
+            const targetBudgetMax = currentOppInModal?.budget_max || currentOppInModal?.expected_value || null;
+            sel.innerHTML = `<option value="">-- ${isAr ? 'اختر الوحدة المناسبة من الوحدات المطابقة' : 'Select a matching unit'} (${filtered.length}) --</option>` +
+                filtered.map(u => {
+                    const optText = formatUnitOptionText(u, isAr, targetBudgetMax);
+                    return `<option value="${u.unit_id}">${optText}</option>`;
+                }).join('');
+
+            if (filtered.length === 1) {
+                sel.value = filtered[0].unit_id;
+                onSelectedUnitChange();
+            } else {
+                onSelectedUnitChange();
+            }
+        }
+
+        function autoMatchLeadFilters() {
+            if (!currentOppInModal) return;
+
+            // City
+            const citySelect = document.getElementById('unit-filter-city');
+            if (citySelect && currentOppInModal.preferred_city_id) {
+                citySelect.value = currentOppInModal.preferred_city_id;
+            }
+
+            // Purpose
+            const purposeSelect = document.getElementById('unit-filter-purpose');
+            if (purposeSelect) {
+                const inq = (currentOppInModal.inquiry_type || 'BUY').toUpperCase();
+                if (inq === 'RENT') purposeSelect.value = 'RENT';
+                else if (inq === 'INVESTMENT' || inq === 'INVEST') purposeSelect.value = 'INVESTMENT';
+                else purposeSelect.value = 'SALE';
+            }
+
+            // Property type
+            const typeSelect = document.getElementById('unit-filter-type');
+            if (typeSelect && currentOppInModal.preferred_property_type_id) {
+                typeSelect.value = currentOppInModal.preferred_property_type_id;
+                if (!typeSelect.value && currentOppInModal.preferred_property_type_name) {
+                    for (let opt of typeSelect.options) {
+                        if (opt.text.toLowerCase().includes(currentOppInModal.preferred_property_type_name.toLowerCase())) {
+                            typeSelect.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Bedrooms
+            const bedsSelect = document.getElementById('unit-filter-beds');
+            if (bedsSelect && currentOppInModal.bedrooms_min != null) {
+                const targetBeds = String(currentOppInModal.bedrooms_min);
+                let matched = false;
+                for (let opt of bedsSelect.options) {
+                    if (opt.value === targetBeds) {
+                        bedsSelect.value = opt.value;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched && currentOppInModal.bedrooms_min >= 5) {
+                    bedsSelect.value = "5";
+                }
+            }
+
+            // Price
+            const priceInput = document.getElementById('unit-filter-maxprice');
+            if (priceInput) {
+                const maxVal = currentOppInModal.budget_max || currentOppInModal.expected_value || null;
+                if (maxVal) {
+                    priceInput.value = maxVal;
+                }
+            }
+
+            applyUnitFilters();
+            showOppUnitNotice(currentLang === 'ar' ? '✓ تمت مطابقة مواصفات الصفقة (المدينة، نوع العملية، نوع العقار والميزانية) مع مخزون الوحدات بنجاح!' : 'Deal criteria (City, Inquiry Type, Property Type & Budget) auto-matched against inventory successfully!', 'success');
+        }
+
+        function resetUnitSearchFilters() {
+            savedUnitSearchFilters = {
+                keyword: '',
+                typeId: '',
+                cityId: '',
+                listingPurpose: 'ANY',
+                minBeds: '',
+                maxPrice: ''
+            };
+            const kw = document.getElementById('unit-filter-keyword');
+            const type = document.getElementById('unit-filter-type');
+            const city = document.getElementById('unit-filter-city');
+            const purpose = document.getElementById('unit-filter-purpose');
+            const beds = document.getElementById('unit-filter-beds');
+            const price = document.getElementById('unit-filter-maxprice');
+            if (kw) kw.value = '';
+            if (type) type.value = '';
+            if (city) city.value = '';
+            if (purpose) purpose.value = 'ANY';
+            if (beds) beds.value = '';
+            if (price) price.value = '';
+            applyUnitFilters();
+        }
+
+        function onSelectedUnitChange() {
+            const sel = document.getElementById('assign-unit-select');
+            const unitId = sel ? sel.value : null;
+            const priceInput = document.getElementById('assign-unit-price');
+            const previewEl = document.getElementById('selected-unit-preview');
+            if (!unitId) {
+                if (previewEl) previewEl.style.display = 'none';
+                return;
+            }
+            const unit = cachedInventoryUnits.find(u => u.unit_id === unitId);
+            if (!unit) return;
+
+            const inq = (currentOppInModal?.inquiry_type || 'BUY').toUpperCase();
+            const isInquiryRent = inq === 'RENT';
+            const unitPrice = isInquiryRent ? (unit.rent_price ?? unit.asking_price) : (unit.asking_price ?? unit.rent_price);
+
+            if (unitPrice && priceInput && (!priceInput.value || priceInput.dataset.autofilled === 'true')) {
+                priceInput.value = unitPrice;
+                priceInput.dataset.autofilled = 'true';
+            }
+
+            if (previewEl) {
+                const isAr = currentLang === 'ar';
+                const project = isAr ? (unit.project_name_ar || unit.project_name_en || '--') : (unit.project_name_en || unit.project_name_ar || '--');
+                const ownerName = unit.owner_name || unit.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                const ownerMobile = unit.owner_mobile || unit.unit_owner_mobile || '';
+                const beds = unit.bedrooms != null ? unit.bedrooms : '--';
+                const baths = unit.bathrooms != null ? unit.bathrooms : '--';
+                const area = unit.area_sqm != null ? `${unit.area_sqm} m²` : '--';
+                const isReserved = (unit.status || '').toUpperCase() === 'RESERVED';
+                const statusBadge = unit.status === 'AVAILABLE' 
+                    ? '<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;">AVAILABLE</span>' 
+                    : (isReserved 
+                        ? `<span class="badge" style="background: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 700;">⚠️ RESERVED (${isAr ? 'محجوزة' : 'Reserved'})</span>` 
+                        : `<span class="badge badge-normal">${unit.status || 'UNKNOWN'}</span>`);
+
+                const reservedWarningHtml = isReserved ? `
+                    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; color: #92400e; font-size: 0.88em; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                        <span>⚠️</span>
+                        <span>${isAr ? 'تنبيه: هذه الوحدة محجوزة حالياً لعميل آخر — سيتم ربطها بالصفقة كعرض احتياطي (Backup Option).' : 'Warning: This unit is currently reserved for another customer — will be linked as a backup option.'}</span>
+                    </div>
+                ` : '';
+
+                const targetBudgetMax = currentOppInModal?.budget_max || currentOppInModal?.expected_value || null;
+                const relevantPrice = isInquiryRent ? unit.rent_price : unit.asking_price;
+                const budgetMatchBadge = (targetBudgetMax && relevantPrice && relevantPrice <= targetBudgetMax)
+                    ? `<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85em;">✅ ${isAr ? 'ضمن ميزانية العميل' : 'Within Customer Budget'}</span>`
+                    : '';
+
+                // City match validation
+                const unitCity = isAr 
+                    ? (unit.city_name_ar || unit.city_name_en || unit.city_name || (isAr ? 'غير محدد' : 'N/A'))
+                    : (unit.city_name_en || unit.city_name_ar || unit.city_name || 'N/A');
+                const dealCityId = currentOppInModal?.preferred_city_id;
+                const isCityMatched = dealCityId && (unit.city_id === dealCityId);
+                const cityMatchBadge = isCityMatched 
+                    ? `<span style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em;">✓ ${isAr ? 'متطابقة مع المدينة المطلوبة للصفقة' : 'Matches Deal City'}</span>` 
+                    : '';
+
+                // Purpose compatibility validation
+                const unitPurpose = (unit.listing_purpose || 'ALL').toUpperCase();
+                let purposeLabel = isAr ? 'شامل لكافة الأغراض (ALL)' : 'Multi-purpose (ALL)';
+                if (unitPurpose === 'SALE') purposeLabel = isAr ? 'طرح بيع (SALE)' : 'For Sale (SALE)';
+                else if (unitPurpose === 'RENT') purposeLabel = isAr ? 'طرح إيجار (RENT)' : 'For Rent (RENT)';
+                else if (unitPurpose === 'INVESTMENT') purposeLabel = isAr ? 'طرح استثماري (INVESTMENT)' : 'Investment (INVESTMENT)';
+
+                const isPurposeCompatible = (isInquiryRent && (unitPurpose === 'RENT' || unitPurpose === 'ALL')) ||
+                    (!isInquiryRent && inq !== 'INVESTMENT' && inq !== 'INVEST' && (unitPurpose === 'SALE' || unitPurpose === 'ALL')) ||
+                    ((inq === 'INVESTMENT' || inq === 'INVEST') && (unitPurpose === 'INVESTMENT' || unitPurpose === 'SALE' || unitPurpose === 'ALL'));
+
+                const dealInqText = isInquiryRent ? (isAr ? 'إيجار' : 'RENT') : ((inq === 'INVESTMENT' || inq === 'INVEST') ? (isAr ? 'استثمار' : 'INVESTMENT') : (isAr ? 'شراء' : 'BUY'));
+                const purposeBadge = isPurposeCompatible
+                    ? `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em;">✓ ${isAr ? `متوافق مع نوع العملية (${dealInqText})` : `Compatible with Inquiry (${dealInqText})`}</span>`
+                    : `<span style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em;">⚠️ ${isAr ? 'غير متطابق مع الغرض المطلوب' : 'Purpose Mismatch'}</span>`;
+
+                const selPtObj = cachedPropertyTypes.find(p => p.property_type_id === unit.property_type_id);
+                const selPtName = isAr 
+                    ? (unit.property_type_name_ar || selPtObj?.name_ar || unit.property_type_name || '') 
+                    : (unit.property_type_name_en || selPtObj?.name_en || unit.property_type_name || '');
+
+                let inquirySpecificDetailsHtml = '';
+
+                if (inq === 'RENT') {
+                    const rentFormatted = unit.rent_price ? `${Number(unit.rent_price).toLocaleString()} SAR` : '--';
+                    inquirySpecificDetailsHtml = `
+                        <div style="display: flex; gap: 12px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                            <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.15em;">🔑</span>
+                                <span>${isAr ? 'ميزانية الإيجار السنوي المطلوبة:' : 'Annual Rent Budget:'} <strong style="color: #15803d; font-size: 1.1em;">${rentFormatted} /yr</strong></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 14px; margin-top: 8px; color: var(--text-muted); font-size: 0.88em; flex-wrap: wrap;">
+                            <span>🛏️ ${beds} ${isAr ? 'غرف نوم' : 'Bedrooms'}</span>
+                            <span>🚿 ${baths} ${isAr ? 'دورات مياه' : 'Baths'}</span>
+                            <span>📐 ${area}</span>
+                            <span>🏢 ${isAr ? 'الطابق:' : 'Floor:'} ${unit.floor_no != null ? unit.floor_no : '--'}</span>
+                        </div>
+                    `;
+                } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
+                    const askingFormatted = unit.asking_price ? `${Number(unit.asking_price).toLocaleString()} SAR` : '--';
+                    const rentFormatted = unit.rent_price ? `${Number(unit.rent_price).toLocaleString()} SAR` : null;
+                    let roiYieldHtml = '';
+                    if (unit.asking_price && unit.rent_price && unit.asking_price > 0) {
+                        const yieldPct = ((unit.rent_price / unit.asking_price) * 100).toFixed(1);
+                        roiYieldHtml = `
+                            <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.15em;">📈</span>
+                                <span>${isAr ? 'العائد الاستثماري التأجيري (ROI Yield):' : 'Expected Rental Yield (ROI):'} <strong style="color: #047857; font-size: 1.1em;">${yieldPct}%</strong> (${rentFormatted}/yr)</span>
+                            </div>
+                        `;
+                    }
+                    inquirySpecificDetailsHtml = `
+                        <div style="display: flex; gap: 10px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.15em;">💼</span>
+                                <span>${isAr ? 'ميزانية البيع الاستثماري المطلوبة:' : 'Investment Sell Budget:'} <strong style="color: #1d4ed8; font-size: 1.1em;">${askingFormatted}</strong></span>
+                            </div>
+                            ${roiYieldHtml}
+                        </div>
+                        <div style="display: flex; gap: 14px; margin-top: 8px; color: var(--text-muted); font-size: 0.88em; flex-wrap: wrap;">
+                            <span>📐 ${area}</span>
+                            <span>🏷️ ${isAr ? 'نوع الأصل:' : 'Asset Type:'} ${selPtName}</span>
+                            <span>🚗 ${isAr ? 'مواقف:' : 'Parking:'} ${unit.parking_spaces != null ? unit.parking_spaces : '--'}</span>
+                        </div>
+                    `;
+                } else {
+                    // BUY
+                    const askingFormatted = unit.asking_price ? `${Number(unit.asking_price).toLocaleString()} SAR` : '--';
+                    inquirySpecificDetailsHtml = `
+                        <div style="display: flex; gap: 12px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.15em;">🏠</span>
+                                <span>${isAr ? 'ميزانية الشراء / سعر البيع المطلوب:' : 'Purchase / Asking Sell Budget:'} <strong style="color: #1d4ed8; font-size: 1.1em;">${askingFormatted}</strong></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 14px; margin-top: 8px; color: var(--text-muted); font-size: 0.88em; flex-wrap: wrap;">
+                            <span>🛏️ ${beds} ${isAr ? 'غرف نوم' : 'Bedrooms'}</span>
+                            <span>🚿 ${baths} ${isAr ? 'دورات مياه' : 'Baths'}</span>
+                            <span>📐 ${area}</span>
+                            <span>🏢 ${isAr ? 'الطابق:' : 'Floor:'} ${unit.floor_no != null ? unit.floor_no : '--'}</span>
+                        </div>
+                    `;
+                }
+
+                previewEl.innerHTML = `
+                    ${reservedWarningHtml}
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                        <div>
+                            <span class="id-badge" style="font-weight: 700; margin-inline-end: 6px;">${unit.unit_id}</span>
+                            <strong>${isAr ? 'الوحدة المحددة:' : 'Unit:'}</strong> 
+                            <span style="color: var(--primary); font-weight: 700; font-size: 1.05em;">#${unit.unit_number}</span> 
+                            (${selPtName}) - <em>${project}</em>
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">${budgetMatchBadge} ${statusBadge}</div>
+                    </div>
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 0.86em;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 600; color: var(--navy);">📍 ${isAr ? 'المدينة:' : 'City:'}</span>
+                            <strong>${unitCity}</strong>
+                            ${cityMatchBadge}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 600; color: var(--navy);">🏷️ ${isAr ? 'طرح الوحدة:' : 'Offering:'}</span>
+                            <strong>${purposeLabel}</strong>
+                            ${purposeBadge}
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.9em; display: flex; align-items: center; gap: 6px;">
+                        <span style="font-weight: 600; color: var(--navy);">👤 ${isAr ? 'مالك الوحدة العقارية:' : 'Property Owner:'}</span>
+                        <strong style="color: #0f172a;">${ownerName}</strong>
+                        ${ownerMobile ? `<span style="color: var(--text-muted); direction: ltr; font-size: 0.85em; margin-inline-start: 6px;">(${ownerMobile})</span>` : ''}
+                    </div>
+                    ${inquirySpecificDetailsHtml}
+                `;
+                previewEl.style.display = 'block';
+            }
+        }
+
+        async function submitAssignUnitToOpp(e, oppId, encOppTitle) {
+            e.preventDefault();
+            const oppTitle = decodeURIComponent(encOppTitle);
+            const unitId = document.getElementById('assign-unit-select').value;
+            const price = parseFloat(document.getElementById('assign-unit-price').value) || null;
+            const isPrimary = document.getElementById('assign-unit-primary').checked;
+
+            if (!unitId) {
+                showOppUnitNotice(currentLang === 'ar' ? 'يرجى اختيار الوحدة المطابقة أولاً' : 'Please select a matching unit first', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/units`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unit_id: unitId, is_primary: isPrimary, offered_price: price })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to assign unit');
+                }
+
+                // Update assigned units list
+                const unitsRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`);
+                if (unitsRes.ok) {
+                    const json = await unitsRes.json();
+                    currentModalOppUnits = json.data || [];
+                }
+
+                // Re-render table without touching search filters or inputs
+                renderAssignedUnitsTable(oppId, oppTitle);
+
+                // Uncheck primary for next unit selection if any
+                const primaryCb = document.getElementById('assign-unit-primary');
+                if (primaryCb) primaryCb.checked = false;
+
+                const successMsg = currentLang === 'ar' ? 'تم ربط وتعيين الوحدة بالفرصة بنجاح!' : 'Unit linked to opportunity successfully!';
+                showOppUnitNotice(successMsg, 'success');
+                showToast(successMsg, 'success');
+
+                // IMMEDIATELY synchronize task completion window
+                if (window.currentExecutingTask) {
+                    populateMatchingUnits(window.currentExecutingTask);
+                }
+            } catch (err) {
+                showOppUnitNotice('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function removeOpportunityUnit(oppId, unitId, encOppTitle) {
+            const oppTitle = decodeURIComponent(encOppTitle);
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من فك ارتباط هذه الوحدة بالفرصة؟' : 'Are you sure you want to unlink this unit from this opportunity?')) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/units/${unitId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error('Failed to unlink unit');
+
+                const unitsRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`);
+                if (unitsRes.ok) {
+                    const json = await unitsRes.json();
+                    currentModalOppUnits = json.data || [];
+                }
+
+                renderAssignedUnitsTable(oppId, oppTitle);
+
+                const unlinkedMsg = currentLang === 'ar' ? 'تم فك ارتباط الوحدة بنجاح' : 'Unit unlinked successfully';
+                showOppUnitNotice(unlinkedMsg, 'info');
+                showToast(unlinkedMsg, 'info');
+
+                // IMMEDIATELY synchronize task completion window
+                if (window.currentExecutingTask) {
+                    populateMatchingUnits(window.currentExecutingTask);
+                }
+            } catch (err) {
+                showOppUnitNotice('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function sendMatchedPropertiesRecommendations(oppId) {
+            const isAr = currentLang === 'ar';
+            if (!confirm(isAr ? 'هل تود توثيق إرسال مقترحات هذه الوحدات للعميل عبر الواتساب وتوليد مهمة جدولة المعاينة الميدانية؟' : 'Send WhatsApp recommendations for these units and spawn a site visit scheduling task?')) {
+                return;
+            }
+            try {
+                const activeUserId = localStorage.getItem('recrm_user_id') || 'user-51';
+                const currentTaskId = window.currentExecutingTask?.task_id || null;
+                const res = await fetch(`${API_BASE}/api/v1/opportunities/${oppId}/present-units`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-ID': activeUserId
+                    },
+                    body: JSON.stringify({ task_id: currentTaskId })
+                });
+                if (res.ok) {
+                    alert(isAr ? '✓ تم إرسال توصيات الوحدات للعميل بنجاح عبر الواتساب وتوليد مهمة جدولة المعاينة الميدانية!' : 'Properties recommendations sent via WhatsApp and viewing schedule task generated!');
+                    closeOppUnitsModal();
+                    closeModal('modal-complete-task');
+                    if (typeof fetchTasks === 'function') fetchTasks();
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + (err.detail || JSON.stringify(err)));
+                }
+            } catch (e) {
+                alert('Network Error: ' + e.message);
+            }
+        }
+
         async function populateMatchingUnits(task) {
             const listEl = document.getElementById('comp-matching-units-list');
+            const summaryBadge = document.getElementById('comp-matching-summary-badge');
+            const btnText = document.getElementById('btn-open-opp-units-matching-text');
             if (!listEl) return;
             const isAr = currentLang === 'ar';
-            listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'جاري البحث في المخزون المتاح...' : 'Loading available units...'}</span>`;
+
+            const oppId = task.opportunity_id || window.currentExecutingOpp?.opportunity_id || window.currentExecutingLead?.opportunity_id;
+            const oppTitle = (window.currentExecutingOpp && window.currentExecutingOpp.customer_name) || task.customer_name || (window.currentExecutingLead && window.currentExecutingLead.customer_name) || 'الصفقة';
+
+            // Set button label
+            if (btnText) {
+                if (oppId) {
+                    btnText.innerHTML = `${isAr ? '🏢 تخصيص ومطابقة الوحدات للصفقة: ' : '🏢 Match Units for Deal: '}<strong>${oppTitle}</strong> <span style="opacity:0.85; font-size:0.9em;">(${oppId})</span>`;
+                } else {
+                    btnText.textContent = isAr ? '🏢 تخصيص ومطابقة الوحدات للصفقة' : '🏢 Match Units for Deal';
+                }
+            }
+
+            listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'جاري فحص الوحدات المخصصة والبحث في المخزون المتاح...' : 'Loading assigned and matching units...'}</span>`;
+
             try {
-                let shortlistedIds = [];
-                if (task.opportunity_id) {
+                let assignedUnits = [];
+                if (oppId) {
                     try {
-                        const oppRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${task.opportunity_id}/units`);
+                        const oppRes = await fetch(`${API_BASE}/api/v1/sales/opportunities/${oppId}/units`);
                         if (oppRes.ok) {
-                            const oppData = (await oppRes.json()).data || [];
-                            shortlistedIds = oppData.map(u => u.unit_id);
-                        }
-                    } catch (_) {}
-                }
-                if (shortlistedIds.length === 0 && task.lead_id) {
-                    try {
-                        const lRes = await fetch(`${API_BASE}/api/v1/leads/${task.lead_id}`);
-                        if (lRes.ok) {
-                            const ld = (await lRes.json()).data;
-                            if (ld && ld.units) shortlistedIds = ld.units.map(u => u.unit_id);
-                            else if (ld && ld.unit_id) shortlistedIds = [ld.unit_id];
+                            assignedUnits = (await oppRes.json()).data || [];
                         }
                     } catch (_) {}
                 }
 
-                const res = await fetch(`${API_BASE}/api/v1/units?page_size=100`);
-                const json = await res.json();
-                let units = json.data || [];
+                const assignedIds = assignedUnits.map(u => u.unit_id);
 
-                const inq = (task.inquiry_type || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
+                // Update summary badge
+                if (summaryBadge) {
+                    if (assignedUnits.length > 0) {
+                        summaryBadge.innerHTML = `✓ ${assignedUnits.length} ${isAr ? 'وحدات مخصصة بالصفقة' : 'Units Assigned'}`;
+                        summaryBadge.style.background = '#dcfce7';
+                        summaryBadge.style.color = '#15803d';
+                        summaryBadge.style.border = '1px solid #86efac';
+                    } else {
+                        summaryBadge.innerHTML = `⚠️ ${isAr ? 'لم يتم تخصيص وحدات للصفقة بعد' : 'No units assigned yet'}`;
+                        summaryBadge.style.background = '#fef3c7';
+                        summaryBadge.style.color = '#92400e';
+                        summaryBadge.style.border = '1px solid #fde68a';
+                    }
+                }
 
-                // Exclude SOLD and RENTED units strictly; exclude RESERVED unless already shortlisted for this deal;
-                // Filter by listing_purpose matching inquiry_type (Rent vs Sale vs Investment)
-                units = units.filter(u => {
+                // If units are assigned, ensure outcome MATCHED is selected if available
+                if (assignedUnits.length > 0) {
+                    const matchedRadio = document.querySelector('input[name="comp_outcome"][value="MATCHED"]');
+                    if (matchedRadio && !matchedRadio.checked) {
+                        matchedRadio.checked = true;
+                        updateOutcomeSelectionState(matchedRadio);
+                        handleDynamicOutcomeChange('MATCHED', task.template_id || 'TASK_OPPORTUNITY_MATCH_PROPERTIES', '');
+                    }
+                }
+
+                // Load inventory units to show recommendations / matches
+                const invUnits = await getInventoryUnits();
+                const inq = (task.inquiry_type || (window.currentExecutingOpp && window.currentExecutingOpp.inquiry_type) || (task.template_id && task.template_id.includes('RENT') ? 'RENT' : (task.template_id && task.template_id.includes('INVEST') ? 'INVESTMENT' : 'BUY'))).toUpperCase();
+
+                // Build HTML
+                let html = '';
+
+                // 1. Assigned units section
+                if (assignedUnits.length > 0) {
+                    html += `
+                        <div style="margin-bottom: 8px; font-weight: 700; color: #166534; font-size: 0.88em; display: flex; align-items: center; justify-content: space-between;">
+                            <span>★ ${isAr ? 'الوحدات المخصصة والمرتبطة بالصفقة حالياً (المقترح إرسالها):' : 'Units Assigned to Deal (Recommended for Client):'}</span>
+                            <span style="font-size: 0.8em; color: #0284c7; cursor: pointer; text-decoration: underline;" onclick="openOppUnitsMatchingModalFromTask()">${isAr ? 'تعديل الوحدات ↗' : 'Edit Units ↗'}</span>
+                        </div>
+                    `;
+                    assignedUnits.forEach(u => {
+                        const ownerName = u.unit_owner_name || u.owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                        const isPrimary = u.is_primary;
+                        const city = isAr ? (u.city_name_ar || u.city_name_en || '') : (u.city_name_en || u.city_name_ar || '');
+                        const propType = isAr ? (u.property_type_name_ar || u.property_type_name || '') : (u.property_type_name || u.property_type_name_ar || '');
+
+                        let priceTag = '';
+                        if (inq === 'RENT') {
+                            const val = u.offered_price != null ? u.offered_price : u.rent_price;
+                            priceTag = `🔑 ${isAr ? 'إيجار:' : 'Rent:'} ${val != null ? Number(val).toLocaleString() + ' SAR/yr' : '--'}`;
+                        } else {
+                            const val = u.offered_price != null ? u.offered_price : u.asking_price;
+                            priceTag = `🏠 ${isAr ? 'سعر البيع:' : 'Price:'} ${val != null ? Number(val).toLocaleString() + ' SAR' : '--'}`;
+                        }
+
+                        html += `
+                            <label style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:6px; margin-bottom:6px; cursor:pointer;">
+                                <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" checked style="width:16px; height:16px; cursor:pointer;">
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                        <span style="color:#166534;">🏢 #${u.unit_number || u.unit_id}</span>
+                                        <span class="id-badge">${u.unit_id}</span>
+                                        <span style="background:#dcfce7; color:#15803d; font-size:0.75em; padding:1px 6px; border-radius:4px; font-weight:700;">★ ${isAr ? 'مخصصة بالصفقة' : 'Assigned'}</span>
+                                        ${isPrimary ? `<span style="background:#fef08a; color:#854d0e; font-size:0.75em; padding:1px 6px; border-radius:4px; font-weight:700;">★ ${isAr ? 'رئيسية' : 'Primary'}</span>` : ''}
+                                        ${city ? `<span style="color:#0369a1; font-size:0.8em;">📍 ${city}</span>` : ''}
+                                        <span style="color:var(--text-muted); font-size:0.82em;">(${propType})</span>
+                                    </div>
+                                    <div style="font-size:0.8em; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap;">
+                                        <strong style="color:#16a34a;">${priceTag}</strong>
+                                        <span>👤 ${ownerName}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                    });
+                } else {
+                    html += `
+                        <div style="background:#fffbeb; border:1px dashed #fcd34d; border-radius:6px; padding:10px 12px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                            <div style="font-size:0.85em; color:#92400e;">
+                                ⚠️ <strong>${isAr ? 'تنبيه:' : 'Notice:'}</strong> ${isAr ? 'لم يتم ربط وحدات مخصصة بهذه الصفقة حتى الآن. اضغط الزر لمطابقة الوحدات وتعيينها للصفقة.' : 'No units assigned to this deal yet. Click the button to match & assign units.'}
+                            </div>
+                            <button type="button" class="btn-sm" onclick="openOppUnitsMatchingModalFromTask()" style="background:#0284c7; color:#fff; border:none; padding:4px 10px; border-radius:5px; font-weight:700; cursor:pointer;">
+                                ⚡ ${isAr ? 'مطابقة وتخصيص الوحدات الآن' : 'Match Units Now'}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                // 2. Additional available inventory units (excluding already assigned)
+                let otherUnits = (invUnits || []).filter(u => {
+                    if (assignedIds.includes(u.unit_id)) return false;
                     const st = (u.status || 'AVAILABLE').toUpperCase();
-                    if (st === 'SOLD' || st === 'RENTED') return false;
-                    if (st === 'RESERVED' && !shortlistedIds.includes(u.unit_id)) return false;
-
+                    if (st === 'SOLD' || st === 'RENTED' || st === 'RESERVED') return false;
                     const lp = (u.listing_purpose || 'ALL').toUpperCase();
                     if (lp !== 'ALL' && lp !== 'UNSPECIFIED' && lp !== '') {
                         if (inq === 'RENT' && lp !== 'RENT') return false;
@@ -3932,65 +5707,50 @@
                     return true;
                 });
 
-                if (units.length === 0) {
-                    listEl.innerHTML = `<span style="color:var(--text-muted);">${isAr ? 'لا توجد وحدات مطابقة لنوع هذا الطلب بالمخزون حالياً' : 'No matching units for this inquiry type currently in inventory'}</span>`;
-                    return;
-                }
-                // Sort so that previously shortlisted units appear at the top and are pre-checked
-                units.sort((a, b) => {
-                    const aShort = shortlistedIds.includes(a.unit_id) ? 1 : 0;
-                    const bShort = shortlistedIds.includes(b.unit_id) ? 1 : 0;
-                    return bShort - aShort;
-                });
-                listEl.innerHTML = units.slice(0, 8).map((u, idx) => {
-                    const isChecked = shortlistedIds.length > 0 ? shortlistedIds.includes(u.unit_id) : (idx < 3);
-                    const ownerName = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
-                    
-                    const lp = (u.listing_purpose || 'ALL').toUpperCase();
-                    let lpBadge = '';
-                    if (lp === 'RENT') {
-                        lpBadge = `<span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🔑 ${isAr ? 'للإيجار' : 'Rent'}</span>`;
-                    } else if (lp === 'SALE') {
-                        lpBadge = `<span style="background:#dcfce7; color:#166534; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🏠 ${isAr ? 'للبيع' : 'Sale'}</span>`;
-                    } else if (lp === 'INVESTMENT') {
-                        lpBadge = `<span style="background:#f3e8ff; color:#7e22ce; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">💼 ${isAr ? 'استثمار' : 'Invest'}</span>`;
-                    } else {
-                        lpBadge = `<span style="background:#f1f5f9; color:#475569; padding:1px 5px; border-radius:3px; font-size:0.75em; font-weight:700;">🌐 ${isAr ? 'عام' : 'All'}</span>`;
-                    }
-
-                    let priceTag = '';
-                    if (inq === 'RENT') {
-                        const r = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '--';
-                        priceTag = `🔑 ${isAr ? 'إيجار:' : 'Rent:'} ${r}`;
-                    } else if (inq === 'INVESTMENT' || inq === 'INVEST') {
-                        const s = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
-                        let roi = '';
-                        if (u.asking_price && u.rent_price && u.asking_price > 0) {
-                            roi = ` (ROI: ${((u.rent_price / u.asking_price) * 100).toFixed(1)}%)`;
-                        }
-                        priceTag = `💼 ${isAr ? 'سعر البيع:' : 'Sell:'} ${s}${roi}`;
-                    } else {
-                        const b = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
-                        priceTag = `🏠 ${isAr ? 'سعر الشراء:' : 'Buy:'} ${b}`;
-                    }
-                    return `
-                    <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;">
-                        <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${isChecked ? 'checked' : ''}>
-                        <div style="flex:1;">
-                            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">
-                                <span>🏢 ${u.unit_number || u.unit_id}</span>
-                                ${lpBadge}
-                                <span style="color:var(--text-muted); font-size:0.85em;">(${u.property_type_name_ar || u.property_type_name || 'وحدة'})</span>
-                            </div>
-                            <div style="font-size:0.8em; color:var(--text-muted);">
-                                <span>${priceTag}</span> | <span>👤 ${ownerName}</span>
-                            </div>
+                if (otherUnits.length > 0) {
+                    html += `
+                        <div style="margin-top: 10px; margin-bottom: 6px; font-weight: 600; color: var(--navy); font-size: 0.83em;">
+                            🌐 ${isAr ? 'وحدات إضافية متوافقة بالمخزون يمكن ترشيحها:' : 'Additional compatible inventory units:'}
                         </div>
-                    </label>
                     `;
-                }).join('');
+                    html += otherUnits.slice(0, assignedUnits.length === 0 ? 5 : 3).map((u, idx) => {
+                        const isChecked = assignedUnits.length === 0 && idx < 2;
+                        const ownerName = u.owner_name || u.unit_owner_name || (isAr ? 'الوكالة / الإدارة' : 'Direct Agency');
+                        const city = isAr ? (u.city_name_ar || u.city_name_en || '') : (u.city_name_en || u.city_name_ar || '');
+                        const propType = isAr ? (u.property_type_name_ar || u.property_type_name || '') : (u.property_type_name || u.property_type_name_ar || '');
+
+                        let priceTag = '';
+                        if (inq === 'RENT') {
+                            const r = u.rent_price != null ? `${Number(u.rent_price).toLocaleString()} SAR/yr` : '--';
+                            priceTag = `🔑 ${isAr ? 'إيجار:' : 'Rent:'} ${r}`;
+                        } else {
+                            const b = u.asking_price != null ? `${Number(u.asking_price).toLocaleString()} SAR` : '--';
+                            priceTag = `🏠 ${isAr ? 'سعر الشراء:' : 'Buy:'} ${b}`;
+                        }
+
+                        return `
+                        <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+                            <input type="checkbox" name="comp_match_unit" value="${u.unit_id}" ${isChecked ? 'checked' : ''}>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <span>🏢 #${u.unit_number || u.unit_id}</span>
+                                    <span class="id-badge" style="font-size:0.75em;">${u.unit_id}</span>
+                                    ${city ? `<span style="color:#0369a1; font-size:0.8em;">📍 ${city}</span>` : ''}
+                                    <span style="color:var(--text-muted); font-size:0.82em;">(${propType})</span>
+                                </div>
+                                <div style="font-size:0.78em; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap;">
+                                    <span>${priceTag}</span> | <span>👤 ${ownerName}</span>
+                                </div>
+                            </div>
+                        </label>
+                        `;
+                    }).join('');
+                }
+
+                listEl.innerHTML = html;
             } catch (err) {
-                listEl.innerHTML = `<span style="color:#ef4444;">${isAr ? 'خطأ في تحميل الوحدات' : 'Error loading units'}</span>`;
+                console.error(err);
+                listEl.innerHTML = `<span style="color:#ef4444;">${isAr ? 'خطأ في تحميل وتحديث الوحدات: ' : 'Error loading units: '} ${err.message}</span>`;
             }
         }
 
@@ -4092,10 +5852,10 @@
         /* ============================================================== */
         function switchTaskRecordTab(tab) {
             document.querySelectorAll('.task-rec-tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('#comp-records-nav .cat-pill').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#comp-records-nav .comp-tab-pill, #comp-records-nav .cat-pill').forEach(el => el.classList.remove('active'));
 
             const contentEl = document.getElementById(`tab-content-${tab}`);
-            if (contentEl) contentEl.style.display = 'flex';
+            if (contentEl) contentEl.style.display = 'block';
             const btnEl = document.getElementById(`tab-btn-${tab}`);
             if (btnEl) btnEl.classList.add('active');
         }
@@ -4129,6 +5889,7 @@
             let reservations = [];
             let viewings = [];
             let invoices = [];
+            let oppUnits = [];
 
             const paramParts = [];
             if (oppId) paramParts.push(`opportunity_id=${encodeURIComponent(oppId)}`);
@@ -4136,24 +5897,23 @@
             const param = paramParts.join('&') || `lead_id=${encodeURIComponent(leadId)}`;
 
             try {
-                const [docsRes, resRes, viewRes, invRes] = await Promise.allSettled([
+                const fetchPromises = [
                     apiRequest(`${API_BASE}/api/v1/documents?page_size=50&${param}`),
                     apiRequest(`${API_BASE}/api/v1/reservations?page_size=10&${param}`),
                     apiRequest(`${API_BASE}/api/v1/viewings?page_size=10&${param}`),
                     apiRequest(`${API_BASE}/api/v1/invoices?limit=10&${param}`)
-                ]);
+                ];
+                if (oppId) {
+                    fetchPromises.push(apiRequest(`${API_BASE}/api/v1/sales/opportunities/${encodeURIComponent(oppId)}/units`));
+                }
 
-                if (docsRes.status === 'fulfilled' && docsRes.value && docsRes.value.data) {
-                    docs = docsRes.value.data;
-                }
-                if (resRes.status === 'fulfilled' && resRes.value && resRes.value.data) {
-                    reservations = resRes.value.data;
-                }
-                if (viewRes.status === 'fulfilled' && viewRes.value && viewRes.value.data) {
-                    viewings = viewRes.value.data;
-                }
-                if (invRes.status === 'fulfilled' && invRes.value && invRes.value.data) {
-                    invoices = invRes.value.data;
+                const results = await Promise.allSettled(fetchPromises);
+                if (results[0].status === 'fulfilled' && results[0].value?.data) docs = results[0].value.data;
+                if (results[1].status === 'fulfilled' && results[1].value?.data) reservations = results[1].value.data;
+                if (results[2].status === 'fulfilled' && results[2].value?.data) viewings = results[2].value.data;
+                if (results[3].status === 'fulfilled' && results[3].value?.data) invoices = results[3].value.data;
+                if (oppId && results[4] && results[4].status === 'fulfilled' && results[4].value?.data) {
+                    oppUnits = results[4].value.data;
                 }
             } catch (e) {
                 console.warn("Parallel fetch error in decision records:", e);
@@ -4233,27 +5993,64 @@
                     `;
                 } else {
                     depListEl.innerHTML = reservations.map(r => {
-                        const isPaid = r.status === 'CONVERTED' || r.status === 'ACTIVE';
-                        const badgeBg = isPaid ? '#dcfce7' : '#fef3c7';
-                        const badgeClr = isPaid ? '#15803d' : '#b45309';
-                        const badgeTxt = isPaid ? (isAr ? '✓ العربون مسدد ومثبت' : 'Deposit Confirmed') : (isAr ? '⏳ بانتظار سداد العربون' : 'Pending Deposit');
+                        const isPaid = (r.status === 'CONFIRMED' || r.status === 'CONVERTED' || r.status === 'PAID') || Boolean(r.deposit_paid_at) || Boolean(r.receipt_number);
+                        const isExpired = (r.status === 'EXPIRED');
+                        const isCancelled = (r.status === 'CANCELLED');
+
+                        let badgeBg = '#fef3c7';
+                        let badgeClr = '#b45309';
+                        let badgeBorder = '#fde68a';
+                        let badgeTxt = isAr ? '⏳ بانتظار سداد العربون' : 'Pending Deposit';
+
+                        if (isPaid) {
+                            badgeBg = '#dcfce7';
+                            badgeClr = '#15803d';
+                            badgeBorder = '#86efac';
+                            badgeTxt = isAr ? '✓ العربون مسدد ومثبت' : 'Deposit Confirmed & Paid';
+                        } else if (isExpired) {
+                            badgeBg = '#fee2e2';
+                            badgeClr = '#b91c1c';
+                            badgeBorder = '#fca5a5';
+                            badgeTxt = isAr ? '⚠️ منتهي الصلاحية' : 'Expired';
+                        } else if (isCancelled) {
+                            badgeBg = '#f1f5f9';
+                            badgeClr = '#475569';
+                            badgeBorder = '#cbd5e1';
+                            badgeTxt = isAr ? '❌ ملغي' : 'Cancelled';
+                        }
+
                         const depAmount = (r.deposit_amount || 0).toLocaleString();
                         const agreedPrice = (r.agreed_price || r.asking_price || 0).toLocaleString();
+                        const reservedDate = r.reserved_at ? String(r.reserved_at).substring(0, 10) : '--';
+                        const paidDate = r.deposit_paid_at ? String(r.deposit_paid_at).substring(0, 16).replace('T', ' ') : null;
+                        const expiryDate = r.expires_at ? String(r.expires_at).substring(0, 10) : null;
+
+                        const payMethodMap = {
+                            'BANK_TRANSFER': isAr ? 'تحويل بنكي' : 'Bank Transfer',
+                            'CASH': isAr ? 'نقدي' : 'Cash',
+                            'CHEQUE': isAr ? 'شيك مصرفي' : 'Bank Cheque',
+                            'POS': isAr ? 'نقاط بيع مدى' : 'POS / Mada',
+                            'ONLINE': isAr ? 'دفع إلكتروني' : 'Online Payment'
+                        };
+                        const methodLabel = r.payment_method ? (payMethodMap[r.payment_method] || r.payment_method) : '';
 
                         return `
-                            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:10px 14px; margin-bottom:6px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                            <div style="background:#fff; border:1.5px solid ${isPaid ? '#86efac' : '#fdba74'}; border-radius:8px; padding:12px 14px; margin-bottom:10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                                     <div>
                                         <strong style="color:#0f172a; font-size:0.95em;">سند حجز رقم #${r.reservation_number || r.reservation_id}</strong>
                                         <span style="font-size:0.8em; color:#64748b; margin-inline-start:6px;">(وحدة: <strong>${r.unit_number || 'غير محدد'}</strong> - مشروع: ${r.project_name || 'عام'})</span>
                                     </div>
-                                    <span style="background:${badgeBg}; color:${badgeClr}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${badgeTxt}</span>
+                                    <span style="background:${badgeBg}; color:${badgeClr}; border:1px solid ${badgeBorder}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${badgeTxt}</span>
                                 </div>
-                                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.84em; color:#334155; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
-                                    <div>مبلغ العربون المسدد: <strong style="color:#15803d; font-size:1.05em;">${depAmount} ريال</strong></div>
-                                    <div>سعر البيع المتفق عليه: <strong>${agreedPrice} ريال</strong></div>
-                                    <div>تاريخ الحجز: <strong>${r.reserved_at ? r.reserved_at.substring(0, 10) : '--'}</strong></div>
-                                    ${r.expires_at ? `<div>المهلة حتى: <strong style="color:#b45309;">${r.expires_at.substring(0, 10)}</strong></div>` : ''}
+                                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px 12px; font-size:0.84em; padding-top:8px; border-top:1px dashed #e2e8f0;">
+                                    <div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'مبلغ العربون' : 'Deposit'}</div><div class="comp-spec-value ${isPaid ? 'highlight-green' : ''}">${depAmount} ريال ${isPaid ? '✓ (مسدد)' : ''}</div></div>
+                                    <div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'سعر البيع المتفق عليه' : 'Agreed Price'}</div><div class="comp-spec-value">${agreedPrice} ريال</div></div>
+                                    <div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'تاريخ الحجز' : 'Reserved At'}</div><div class="comp-spec-value">${reservedDate}</div></div>
+                                    ${isPaid && paidDate ? `<div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'تاريخ السداد' : 'Paid Date'}</div><div class="comp-spec-value highlight-green">📅 ${paidDate}</div></div>` : ''}
+                                    ${isPaid && r.receipt_number ? `<div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'رقم سند القبض' : 'Receipt No'}</div><div class="comp-spec-value highlight-blue">🧾 ${r.receipt_number}</div></div>` : ''}
+                                    ${isPaid && (methodLabel || r.payment_ref) ? `<div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'طريقة وسند الدفع' : 'Payment Method'}</div><div class="comp-spec-value">${methodLabel || ''} ${r.payment_ref ? `(${r.payment_ref})` : ''}</div></div>` : ''}
+                                    ${!isPaid && expiryDate ? `<div class="comp-spec-item"><div class="comp-spec-label">${isAr ? 'المهلة حتى' : 'Expiry'}</div><div class="comp-spec-value" style="color:#b45309;">⏳ ${expiryDate}</div></div>` : ''}
                                 </div>
                             </div>
                         `;
@@ -4261,7 +6058,7 @@
                 }
             }
 
-            // 3. Render Viewings & Inspections
+            // 3. Render Viewings & Inspections (Part ب: عرض موعد الانتهاء من المعاينة عند الإنجاز)
             const viewListEl = document.getElementById('comp-viewings-list');
             if (viewListEl) {
                 if (viewings.length === 0) {
@@ -4272,32 +6069,42 @@
                     `;
                 } else {
                     viewListEl.innerHTML = viewings.map(v => {
-                        const vDate = v.scheduled_start ? v.scheduled_start.substring(0, 16).replace('T', ' ') : '--';
+                        const isCompleted = (v.status === 'COMPLETED');
+                        const completionDate = v.updated_at || v.scheduled_end || v.scheduled_start;
+                        const formattedDate = (isCompleted && completionDate)
+                            ? String(completionDate).substring(0, 16).replace('T', ' ')
+                            : (v.scheduled_start ? String(v.scheduled_start).substring(0, 16).replace('T', ' ') : '--');
+                        const dateLabel = isCompleted
+                            ? (isAr ? 'موعد الانتهاء من المعاينة' : 'Inspection Completed At')
+                            : (isAr ? 'موعد المعاينة' : 'Scheduled Visit');
+
                         let outcomeColor = '#0369a1';
                         let outcomeBg = '#e0f2fe';
-                        if (v.outcome === 'RECOMMENDED' || v.outcome === 'ACCEPTED') {
+                        if (v.outcome === 'INTERESTED' || v.outcome === 'RECOMMENDED' || v.outcome === 'ACCEPTED') {
                             outcomeColor = '#15803d'; outcomeBg = '#dcfce7';
                         } else if (v.outcome === 'REJECTED') {
                             outcomeColor = '#b91c1c'; outcomeBg = '#fee2e2';
+                        } else if (v.outcome === 'REQUESTS_ANOTHER_VIEWING' || v.outcome === 'NEEDS_ANOTHER_UNIT') {
+                            outcomeColor = '#b45309'; outcomeBg = '#fef3c7';
                         }
 
                         return `
-                            <div style="background:#fff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:6px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                            <div style="background:#fff; border:1.5px solid #bfdbfe; border-radius:8px; padding:12px 14px; margin-bottom:10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                                     <div>
-                                        <strong style="color:#0f172a; font-size:0.92em;">معاينة وحدة 🏠 ${v.unit_number || 'عام'}</strong>
-                                        <span style="font-size:0.8em; color:#64748b; margin-inline-start:6px;">(${v.project_name || ''} - موعد: <strong>${vDate}</strong>)</span>
+                                        <strong style="color:#0f172a; font-size:0.95em;">معاينة وحدة 🏠 ${v.unit_number || 'عام'}</strong>
+                                        <span style="font-size:0.8em; color:#64748b; margin-inline-start:6px;">(${v.project_name || ''} ${v.project_name ? '-' : ''} ${dateLabel}: <strong style="${isCompleted ? 'color:#15803d;' : ''}">${formattedDate}</strong>)</span>
                                     </div>
                                     <span style="background:${outcomeBg}; color:${outcomeColor}; font-weight:700; font-size:0.8em; padding:3px 10px; border-radius:12px;">${v.outcome || v.status}</span>
                                 </div>
-                                ${v.notes ? `<div style="font-size:0.82em; color:#334155; line-height:1.45; background:#f8fafc; padding:6px 10px; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;">${v.notes}</div>` : ''}
+                                ${v.notes ? `<div style="font-size:0.84em; color:#334155; line-height:1.5; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-top:6px;">${v.notes}</div>` : ''}
                             </div>
                         `;
                     }).join('');
                 }
             }
 
-            // 4. Render Solvency & Qualification
+            // 4. Render Qualification Data (Part أ: بيانات التأهيل)
             const solContentEl = document.getElementById('comp-solvency-content');
             if (solContentEl) {
                 const lead = taskLead || window.currentExecutingLead || {};
@@ -4305,24 +6112,163 @@
                 const bMin = (lead.budget_min != null ? lead.budget_min : opp.budget_min) || 0;
                 const bMax = (lead.budget_max != null ? lead.budget_max : opp.budget_max) || 0;
                 const inq = (lead.inquiry_type || opp.inquiry_type || (taskObj && taskObj.inquiry_type) || 'BUY').toUpperCase();
-                const pType = lead.preferred_property_type_name_ar || lead.preferred_property_type_name || opp.preferred_property_type_name_ar || 'غير محدد';
-                const city = lead.preferred_city_name_ar || lead.preferred_city_name || opp.preferred_city_name_ar || 'غير محدد';
-                const qualStatus = lead.qualification_status || opp.stage || 'QUALIFIED';
+                const pTypeRaw = lead.preferred_property_type_name_ar || lead.preferred_property_type_name || opp.preferred_property_type_name_ar || opp.preferred_property_type_name || (isAr ? 'غير محدد' : 'Unspecified');
+                const ptParsed = formatPropertyTypeDisplay(pTypeRaw);
+                const pType = ptParsed.desc 
+                    ? `${ptParsed.clean} <span title="${ptParsed.desc.replace(/"/g, '&quot;')}" style="cursor:help; opacity:0.8;">ℹ️</span>`
+                    : ptParsed.clean;
+                const city = lead.preferred_city_name_ar || lead.preferred_city_name || opp.preferred_city_name_ar || opp.preferred_city_name || (isAr ? 'غير محدد' : 'Unspecified');
+                const qualStatus = lead.status || lead.qualification_status || opp.stage || 'QUALIFIED';
 
-                let inqName = 'شراء تمليك';
-                if (inq === 'RENT') inqName = 'استئجار سكني / تجاري';
-                else if (inq.includes('INVEST')) inqName = 'استثمار عقاري وتوليد عوائد';
+                let inqName = isAr ? 'شراء تمليك' : 'Purchase / Buy';
+                if (inq === 'RENT') inqName = isAr ? 'استئجار سكني / تجاري' : 'Rent / Lease';
+                else if (inq.includes('INVEST')) inqName = isAr ? 'استثمار عقاري وتوليد عوائد' : 'Investment';
+
+                // Resolve Target Unit ID
+                let targetUnitId = null;
+                if (oppUnits && oppUnits.length > 0) {
+                    const prim = oppUnits.find(u => u.is_primary) || oppUnits[0];
+                    targetUnitId = prim.unit_id;
+                }
+                if (!targetUnitId && viewings && viewings.length > 0) {
+                    const vMatch = viewings.find(v => v.outcome === 'INTERESTED' || v.outcome === 'ACCEPTED' || v.status === 'COMPLETED') || viewings[0];
+                    targetUnitId = vMatch.unit_id;
+                }
+                if (!targetUnitId) {
+                    targetUnitId = (taskObj && taskObj.unit_id) || (taskOpp && taskOpp.unit_id) || (taskLead && taskLead.unit_id) || window.currentViewingUnitId;
+                }
+
+                let unitData = null;
+                if (targetUnitId) {
+                    try {
+                        const uRes = await apiRequest(`${API_BASE}/api/v1/units/${encodeURIComponent(targetUnitId)}`);
+                        if (uRes && uRes.data && (uRes.data.unit_id || uRes.data.unit_number)) {
+                            unitData = uRes.data;
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch unit details for decision support:", e);
+                    }
+                }
+
+                // Strictly check if valid unit data exists
+                const hasUnit = Boolean(unitData && (unitData.unit_id || unitData.unit_number));
+
+                // Orientation mapper
+                const orientationMap = {
+                    'NORTH': isAr ? 'شمالية' : 'North',
+                    'SOUTH': isAr ? 'جنوبية' : 'South',
+                    'EAST': isAr ? 'شرقية' : 'East',
+                    'WEST': isAr ? 'غربية' : 'West',
+                    'NORTH_EAST': isAr ? 'شمالية شرقية' : 'North-East',
+                    'NORTH_WEST': isAr ? 'شمالية غربية' : 'North-West',
+                    'SOUTH_EAST': isAr ? 'جنوبية شرقية' : 'South-East',
+                    'SOUTH_WEST': isAr ? 'جنوبية غربية' : 'South-West'
+                };
+                const orientAr = unitData && unitData.orientation ? (orientationMap[unitData.orientation] || unitData.orientation) : '--';
+                const oppExpVal = (opp && opp.expected_value != null) ? opp.expected_value : (taskOpp && taskOpp.expected_value != null ? taskOpp.expected_value : null);
+
+                const ownerDisplay = unitData ? (unitData.owner_name || unitData.owner_customer_id || (isAr ? 'غير محدد' : 'Unspecified')) : '--';
+                const ownerMobileDisplay = unitData && unitData.owner_mobile ? ` (${unitData.owner_mobile})` : '';
+
+                // Build Lead Data Specs (Concise single-line labels, no technical bracket clutter)
+                const leadSpecs = [
+                    { label: isAr ? 'رقم الطلب' : 'Lead ID', val: `#${lead.lead_id || leadId || '--'}` },
+                    { label: isAr ? 'العميل المسجل' : 'Customer', val: `${lead.customer_name || (taskObj && taskObj.customer_name) || '--'}${lead.customer_mobile ? ` (${lead.customer_mobile})` : ''}` },
+                    { label: isAr ? 'نوع الاحتياج' : 'Inquiry Type', val: inqName, isBlue: true },
+                    { label: isAr ? 'حالة الطلب' : 'Status', val: `✓ ${qualStatus}`, isGreen: true },
+                    { label: isAr ? 'الأولوية' : 'Priority', val: lead.priority || (taskObj && taskObj.priority) || 'NORMAL' },
+                    { label: isAr ? 'المدينة المفضلة' : 'City', val: city },
+                    { label: isAr ? 'نوع العقار المفضل' : 'Property Type', val: pType },
+                ];
+
+                if (lead.area_min_sqm != null && Number(lead.area_min_sqm) > 0) {
+                    leadSpecs.push({ label: isAr ? 'المساحة المطلوبة' : 'Min Area', val: `${Number(lead.area_min_sqm).toLocaleString()} م²` });
+                }
+                if (lead.bedrooms_min != null && Number(lead.bedrooms_min) > 0) {
+                    leadSpecs.push({ label: isAr ? 'عدد الغرف المطلوبة' : 'Min Bedrooms', val: String(lead.bedrooms_min) });
+                }
+                leadSpecs.push({ label: isAr ? 'الوسيط المسؤول' : 'Assigned Agent', val: lead.assigned_user_name || (taskObj && taskObj.assigned_user_name) || '--' });
+
+                const budgetStr = (bMin || bMax)
+                    ? `${bMin ? Number(bMin).toLocaleString() : '0'} إلى ${bMax ? Number(bMax).toLocaleString() : (isAr ? 'غير مقيد' : 'Open')} ${isAr ? 'ريال' : 'SAR'}`
+                    : (isAr ? 'غير محدد' : 'Not specified');
+                leadSpecs.push({ label: isAr ? 'الميزانية المستهدفة' : 'Target Budget', val: budgetStr, isFull: true, isGreen: true });
+
+                const gridClass = hasUnit ? 'comp-spec-grid-half' : 'comp-spec-grid-full';
+
+                const leadSpecsHtml = leadSpecs.map(item => `
+                    <div class="comp-spec-item ${item.isFull ? 'span-all' : ''}">
+                        <div class="comp-spec-label">${item.label}</div>
+                        <div class="comp-spec-value ${item.isGreen ? 'highlight-green' : (item.isBlue ? 'highlight-blue' : '')}">${item.val}</div>
+                    </div>
+                `).join('');
+
+                let unitCardHtml = '';
+                if (hasUnit) {
+                    const unitPtRaw = unitData.property_type_name_ar || unitData.property_type_name || unitData.property_type_id || '--';
+                    const unitPtParsed = formatPropertyTypeDisplay(unitPtRaw);
+                    const unitPt = unitPtParsed.desc
+                        ? `${unitPtParsed.clean} <span title="${unitPtParsed.desc.replace(/"/g, '&quot;')}" style="cursor:help; opacity:0.8;">ℹ️</span>`
+                        : unitPtParsed.clean;
+
+                    const unitSpecs = [
+                        { label: isAr ? 'كود الوحدة' : 'Unit ID', val: `${unitData.unit_id}${unitData.unit_number ? ` (#${unitData.unit_number})` : ''}` },
+                        { label: isAr ? 'نوع العقار' : 'Property Type', val: unitPt },
+                        { label: isAr ? 'رقم الطابق' : 'Floor No', val: unitData.floor_no != null ? unitData.floor_no : (unitData.total_floors ? `${isAr ? 'إجمالي الأدوار: ' : 'Total: '}${unitData.total_floors}` : '--') },
+                        { label: isAr ? 'المساحة' : 'Area', val: unitData.area_sqm != null ? `${Number(unitData.area_sqm).toLocaleString()} م²` : '--' },
+                    ];
+
+                    if (unitData.bedrooms != null) {
+                        unitSpecs.push({ label: isAr ? 'غرف النوم' : 'Bedrooms', val: String(unitData.bedrooms) });
+                    }
+                    if (unitData.bathrooms != null) {
+                        unitSpecs.push({ label: isAr ? 'دورات المياه' : 'Bathrooms', val: String(unitData.bathrooms) });
+                    }
+                    if (unitData.parking_spaces != null) {
+                        unitSpecs.push({ label: isAr ? 'مواقف السيارات' : 'Parking Spaces', val: String(unitData.parking_spaces) });
+                    }
+                    unitSpecs.push({ label: isAr ? 'الواجهة / الاتجاه' : 'Orientation', val: orientAr });
+
+                    const expValStr = oppExpVal != null ? `${Number(oppExpVal).toLocaleString()} ${isAr ? 'ريال' : 'SAR'}` : (unitData.asking_price ? `${Number(unitData.asking_price).toLocaleString()} ${isAr ? 'ريال' : 'SAR'}` : '--');
+                    unitSpecs.push({ label: isAr ? 'القيمة المتوقعة للصفقة' : 'Expected Value', val: expValStr, isFull: true, isGreen: true });
+
+                    unitSpecs.push({ label: isAr ? 'المالك' : 'Owner', val: `${ownerDisplay}${ownerMobileDisplay}`, isFull: true });
+
+                    const unitSpecsHtml = unitSpecs.map(item => `
+                        <div class="comp-spec-item ${item.isFull ? 'span-all' : ''}">
+                            <div class="comp-spec-label">${item.label}</div>
+                            <div class="comp-spec-value ${item.isGreen ? 'highlight-green' : ''}">${item.val}</div>
+                        </div>
+                    `).join('');
+
+                    unitCardHtml = `
+                        <!-- Left Card: Unit & Opportunity Data (المربع الثاني: بيانات Unit والصفقة) -->
+                        <div class="comp-decision-card comp-card-unit">
+                            <div class="comp-card-header">
+                                <span class="comp-card-title">🏢 ${isAr ? 'بيانات الوحدة العقارية والصفقة' : 'Unit & Deal Data'}</span>
+                                <span class="comp-card-badge">${unitData.unit_number ? `#${unitData.unit_number}` : unitData.unit_id}</span>
+                            </div>
+                            <div class="${gridClass}">
+                                ${unitSpecsHtml}
+                            </div>
+                        </div>
+                    `;
+                }
 
                 solContentEl.innerHTML = `
-                    <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px;">
-                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:0.86em;">
-                            <div><span style="color:#64748b;">نوع الاحتياج المصرح:</span> <strong>${inqName}</strong></div>
-                            <div><span style="color:#64748b;">حالة التأهيل المالي:</span> <strong style="color:#15803d;">✓ ${qualStatus}</strong></div>
-                            <div><span style="color:#64748b;">الميزانية المستهدفة:</span> <strong style="color:#1e3a8a;">${bMin ? bMin.toLocaleString() : '0'} إلى ${bMax ? bMax.toLocaleString() : 'غير مقيد'} ريال</strong></div>
-                            <div><span style="color:#64748b;">النوع والمدينة المفضلة:</span> <strong>${pType} (${city})</strong></div>
-                            <div><span style="color:#64748b;">العميل المسجل:</span> <strong>${lead.customer_name || (taskObj && taskObj.customer_name) || '--'}</strong></div>
-                            <div><span style="color:#64748b;">أولوية التعامل:</span> <strong style="color:#c2410c;">${lead.priority || (taskObj && taskObj.priority) || 'NORMAL'}</strong></div>
+                    <div style="display: grid; grid-template-columns: ${hasUnit ? 'repeat(auto-fit, minmax(340px, 1fr))' : '1fr'}; gap: 14px; width: 100%;">
+                        <!-- Right Card: Current Lead Data (المربع الأول: بيانات Lead الحالية) -->
+                        <div class="comp-decision-card comp-card-lead">
+                            <div class="comp-card-header">
+                                <span class="comp-card-title">📋 ${isAr ? 'بيانات الطلب والعميل الحالية' : 'Current Lead & Client Data'}</span>
+                                <span class="comp-card-badge">#${lead.lead_id || leadId || '--'}</span>
+                            </div>
+                            <div class="${gridClass}">
+                                ${leadSpecsHtml}
+                            </div>
                         </div>
+
+                        ${unitCardHtml}
                     </div>
                 `;
             }
@@ -4361,7 +6307,9 @@
             const upperTitle = taskTitle.toUpperCase();
             const upperTpl = templateId.toUpperCase();
 
-            if (upperTitle.includes('عقد') || upperTitle.includes('حجز') || upperTitle.includes('عربون') || upperTpl.includes('CONTRACT') || upperTpl.includes('RESERVATION')) {
+            if (upperTitle.includes('عرض') || upperTpl.includes('OFFER')) {
+                switchTaskRecordTab('solvency');
+            } else if (upperTitle.includes('عقد') || upperTitle.includes('حجز') || upperTitle.includes('عربون') || upperTpl.includes('CONTRACT') || upperTpl.includes('RESERVATION')) {
                 if (reservations.length > 0) switchTaskRecordTab('deposits');
                 else switchTaskRecordTab('docs');
             } else if (upperTitle.includes('معاين') || upperTitle.includes('فحص') || upperTpl.includes('VIEWING') || upperTpl.includes('INSPECTION')) {
@@ -4435,7 +6383,7 @@
 
             const payload = { outcome, notes };
 
-            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED') {
+            if (outcome === 'QUALIFIED' || outcome === 'INFO_COMPLETED' || outcome === 'CONTACTED_QUALIFIED') {
                 const bMin = document.getElementById('comp-budget-min').value;
                 const bMax = document.getElementById('comp-budget-max').value;
                 const city = document.getElementById('comp-city').value;
@@ -4467,7 +6415,7 @@
                 if (branchId) payload.branch_id = branchId;
             }
 
-            if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+            if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES' || templateId === 'TASK_RENT_MATCH_PROPERTIES' || templateId === 'TASK_MATCH_PROPERTIES') {
                 const chks = document.querySelectorAll('input[name="comp_match_unit"]:checked');
                 payload.unit_ids = Array.from(chks).map(c => c.value);
             }
@@ -4781,7 +6729,7 @@
                         showToast(isAr ? "📵 تم توثيق عدم صحة بيانات الاتصال واستبعاد الطلب." : "📵 Invalid contact info logged and lead disqualified.", "info");
                     } else if (outcome === 'QUALIFIED') {
                         showToast(isAr ? "تهانينا! تم تأهيل الطلب بنجاح وترقيته إلى فرصة بيعية نشطة ومطابقة العقارات!" : "Congratulations! Lead qualified and promoted to active deal with property matching!", "success");
-                    } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES') {
+                    } else if (templateId === 'TASK_OPPORTUNITY_MATCH_PROPERTIES' || templateId === 'TASK_RENT_MATCH_PROPERTIES') {
                         showToast(isAr ? "🏢 تم توثيق ترشيح العقارات وإرسال التوصيات للعميل وتوليد مهمة جدولة المعاينة!" : "🏢 Property shortlist documented, recommendations sent, and viewing task generated!", "success");
                     } else if (outcome === 'ASSIGNED') {
                         showToast(isAr ? "تم إنجاز مهمة توجيه الطلب وتعيين الوسيط بنجاح!" : "Lead routing completed and agent assigned successfully!", "success");
@@ -7033,19 +8981,37 @@
                 // 6. Viewing or Offer Details (if present)
                 if (viewing) {
                     html += `
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-                            <h4 style="margin: 0 0 10px 0; color: #0284c7; font-size: 0.95em;">🏠 ${isAr ? 'معلومات معاينة الوحدة' : 'Viewing Details'}</h4>
-                            <div><b>${isAr ? 'حالة المعاينة:' : 'Status:'}</b> ${viewing.status || 'N/A'}</div>
-                            <div><b>${isAr ? 'التقييم والملاحظات:' : 'Feedback:'}</b> ${viewing.feedback || 'N/A'}</div>
+                        <div style="background: #ffffff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 10px 0; color: #0284c7; font-size: 0.95em; display:flex; align-items:center; justify-content:space-between;">
+                                <span>🏠 ${isAr ? 'معلومات معاينة الوحدة' : 'Viewing Details'}</span>
+                                ${viewing.viewing_id ? `<span style="font-family:monospace; font-size:0.8em; background:#f0f9ff; color:#0369a1; padding:2px 6px; border-radius:4px; border:1px solid #bae6fd;">#${viewing.viewing_id}</span>` : ''}
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.88em; margin-bottom: 8px;">
+                                <div><b>${isAr ? 'الوحدة:' : 'Unit:'}</b> <span style="font-family:monospace; font-weight:700; color:#1e293b;">${viewing.unit_number || viewing.unit_id || 'N/A'}</span></div>
+                                <div><b>${isAr ? 'حالة المعاينة:' : 'Status:'}</b> <span class="badge ${viewing.status === 'COMPLETED' ? 'badge-completed' : 'badge-open'}">${viewing.status || 'N/A'}</span></div>
+                                ${viewing.outcome ? `<div><b>${isAr ? 'نتيجة الزيارة:' : 'Outcome:'}</b> <span style="font-weight:700; color:#0284c7;">${viewing.outcome}</span></div>` : ''}
+                                ${viewing.scheduled_start ? `<div><b>${isAr ? 'تاريخ الموعد:' : 'Scheduled:'}</b> 📅 ${new Date(viewing.scheduled_start).toLocaleString('ar-SA')}</div>` : ''}
+                            </div>
+                            ${(viewing.notes || viewing.feedback) ? `
+                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; font-size:0.86em; color:#475569; margin-top:6px;">
+                                    <b>${isAr ? 'ملاحظات المعاينة الميدانية:' : 'Viewing Notes:'}</b> ${(viewing.notes || viewing.feedback)}
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 }
                 if (offer) {
                     html += `
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-                            <h4 style="margin: 0 0 10px 0; color: #0284c7; font-size: 0.95em;">💰 ${isAr ? 'معلومات العرض المقدم' : 'Offer Details'}</h4>
-                            <div><b>${isAr ? 'قيمة العرض:' : 'Amount:'}</b> ${Number(offer.amount || 0).toLocaleString()} SAR</div>
-                            <div><b>${isAr ? 'الحالة:' : 'Status:'}</b> ${offer.status || 'N/A'}</div>
+                        <div style="background: #ffffff; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <h4 style="margin: 0 0 10px 0; color: #ea580c; font-size: 0.95em; display:flex; align-items:center; justify-content:space-between;">
+                                <span>💰 ${isAr ? 'معلومات العرض المالي المقدم' : 'Offer Details'}</span>
+                                ${offer.offer_id ? `<span style="font-family:monospace; font-size:0.8em; background:#fff7ed; color:#c2410c; padding:2px 6px; border-radius:4px; border:1px solid #ffedd5;">#${offer.offer_id}</span>` : ''}
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.88em;">
+                                <div><b>${isAr ? 'قيمة العرض:' : 'Amount:'}</b> <span style="font-weight:800; color:#15803d; font-size:1.1em;">${Number(offer.offer_amount || offer.amount || 0).toLocaleString()} SAR</span></div>
+                                <div><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span class="badge ${offer.status === 'ACCEPTED' ? 'badge-completed' : 'badge-open'}">${offer.status || 'N/A'}</span></div>
+                                ${offer.unit_number ? `<div><b>${isAr ? 'الوحدة:' : 'Unit:'}</b> ${offer.unit_number}</div>` : ''}
+                            </div>
                         </div>
                     `;
                 }

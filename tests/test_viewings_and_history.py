@@ -28,6 +28,10 @@ class TestViewingsAndViewingManagement(unittest.TestCase):
                 self.assertEqual(single_v["viewing_id"], v_id)
                 self.assertIn("status", single_v)
                 self.assertIn("unit_number", single_v)
+                self.assertIn("updated_at", single_v)
+
+            if len(data) > 0:
+                self.assertIn("updated_at", data[0])
 
     def test_patch_viewing(self):
         with TestClient(app) as client:

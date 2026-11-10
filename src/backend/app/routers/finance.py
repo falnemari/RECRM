@@ -108,14 +108,24 @@ CONTRACT_SELECT_QUERY = """
         c.contract_id,
         c.reservation_id,
         r.reservation_number,
-        COALESCE(r.customer_id, ten.tenant_customer_id) AS customer_id,
-        COALESCE(NULLIF(TRIM(cust.first_name || ' ' || cust.last_name), ''), cust.company_name, NULLIF(TRIM(ten_cust.first_name || ' ' || ten_cust.last_name), ''), ten_cust.company_name) AS customer_name,
-        COALESCE(cust.mobile, ten_cust.mobile) AS customer_mobile,
-        COALESCE(r.unit_id, ten.unit_id) AS unit_id,
-        COALESCE(u.unit_number, ten_u.unit_number) AS unit_number,
-        COALESCE(u.owner_customer_id, ten_u.owner_customer_id) AS owner_customer_id,
-        COALESCE(NULLIF(TRIM(CONCAT(owner_cust.first_name, ' ', owner_cust.last_name)), ''), owner_cust.company_name, NULLIF(TRIM(CONCAT(ten_owner.first_name, ' ', ten_owner.last_name)), ''), ten_owner.company_name) AS unit_owner_name,
-        COALESCE(owner_cust.mobile, ten_owner.mobile) AS unit_owner_mobile,
+        COALESCE(r.customer_id, ten.tenant_customer_id, opp_r.customer_id, dir_l.customer_id) AS customer_id,
+        COALESCE(
+            NULLIF(TRIM(cust.first_name || ' ' || cust.last_name), ''), cust.company_name,
+            NULLIF(TRIM(ten_cust.first_name || ' ' || ten_cust.last_name), ''), ten_cust.company_name,
+            NULLIF(TRIM(opp_cust.first_name || ' ' || opp_cust.last_name), ''), opp_cust.company_name,
+            NULLIF(TRIM(dir_l_cust.first_name || ' ' || dir_l_cust.last_name), ''), dir_l_cust.company_name
+        ) AS customer_name,
+        COALESCE(cust.mobile, ten_cust.mobile, opp_cust.mobile, dir_l_cust.mobile) AS customer_mobile,
+        COALESCE(r.unit_id, ten.unit_id, opp_u.unit_id, dir_l_u.unit_id) AS unit_id,
+        COALESCE(u.unit_number, ten_u.unit_number, opp_u.unit_number, dir_l_u.unit_number) AS unit_number,
+        COALESCE(u.owner_customer_id, ten_u.owner_customer_id, opp_u.owner_customer_id, dir_l_u.owner_customer_id) AS owner_customer_id,
+        COALESCE(
+            NULLIF(TRIM(CONCAT(owner_cust.first_name, ' ', owner_cust.last_name)), ''), owner_cust.company_name,
+            NULLIF(TRIM(CONCAT(ten_owner.first_name, ' ', ten_owner.last_name)), ''), ten_owner.company_name,
+            NULLIF(TRIM(CONCAT(opp_owner.first_name, ' ', opp_owner.last_name)), ''), opp_owner.company_name,
+            NULLIF(TRIM(CONCAT(dir_l_owner.first_name, ' ', dir_l_owner.last_name)), ''), dir_l_owner.company_name
+        ) AS unit_owner_name,
+        COALESCE(owner_cust.mobile, ten_owner.mobile, opp_owner.mobile, dir_l_owner.mobile) AS unit_owner_mobile,
         c.contract_number,
         c.contract_type,
         c.start_date,
@@ -131,9 +141,13 @@ CONTRACT_SELECT_QUERY = """
         ten.bank_beneficiary,
         ten.maintenance_terms,
         COALESCE(ten.notes, '') AS notes,
-        COALESCE(ten.ejar_contract_number, c.contract_number) AS ejar_contract_number
+        COALESCE(ten.ejar_contract_number, c.contract_number) AS ejar_contract_number,
+        COALESCE(c.opportunity_id, r.opportunity_id, ten.opportunity_id, (SELECT opportunity_id FROM opportunities WHERE customer_id = ten_cust.customer_id ORDER BY created_at DESC LIMIT 1)) AS opportunity_id,
+        COALESCE(c.lead_id, opp_r.lead_id, ten.lead_id, dir_l.lead_id, (SELECT lead_id FROM leads WHERE customer_id = ten_cust.customer_id ORDER BY created_at DESC LIMIT 1)) AS lead_id
     FROM contracts c
     LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
+    LEFT JOIN opportunities opp_r ON COALESCE(c.opportunity_id, r.opportunity_id) = opp_r.opportunity_id
+    LEFT JOIN leads dir_l ON COALESCE(c.lead_id, opp_r.lead_id) = dir_l.lead_id
     LEFT JOIN customers cust ON r.customer_id = cust.customer_id
     LEFT JOIN units u ON r.unit_id = u.unit_id
     LEFT JOIN customers owner_cust ON u.owner_customer_id = owner_cust.customer_id
@@ -141,6 +155,12 @@ CONTRACT_SELECT_QUERY = """
     LEFT JOIN customers ten_cust ON ten.tenant_customer_id = ten_cust.customer_id
     LEFT JOIN units ten_u ON ten.unit_id = ten_u.unit_id
     LEFT JOIN customers ten_owner ON ten_u.owner_customer_id = ten_owner.customer_id
+    LEFT JOIN customers opp_cust ON opp_r.customer_id = opp_cust.customer_id
+    LEFT JOIN units opp_u ON (SELECT unit_id FROM opportunity_units WHERE opportunity_id = opp_r.opportunity_id ORDER BY is_primary DESC LIMIT 1) = opp_u.unit_id
+    LEFT JOIN customers opp_owner ON opp_u.owner_customer_id = opp_owner.customer_id
+    LEFT JOIN customers dir_l_cust ON dir_l.customer_id = dir_l_cust.customer_id
+    LEFT JOIN units dir_l_u ON dir_l.unit_id = dir_l_u.unit_id
+    LEFT JOIN customers dir_l_owner ON dir_l_u.owner_customer_id = dir_l_owner.customer_id
 """
 
 @router.get("/finance/summary", response_model=ResponseEnvelope[FinanceSummary])
@@ -178,13 +198,15 @@ async def list_contracts(
     page_size: int = Query(50, ge=1, le=1000),
     status_filter: Optional[str] = Query(None, alias="status"),
     contract_type: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
     search: Optional[str] = None,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
-    conditions = ["1=1"]
+    conditions = ["1=1", "(c.lead_id IS NOT NULL OR c.opportunity_id IS NOT NULL OR r.opportunity_id IS NOT NULL OR ten.lead_id IS NOT NULL OR ten.opportunity_id IS NOT NULL OR ten_cust.customer_id IS NOT NULL)"]
     params = []
     p_idx = 1
 
@@ -198,17 +220,36 @@ async def list_contracts(
         params.append(contract_type.upper())
         p_idx += 1
 
+    if lead_id:
+        conditions.append(f"(c.lead_id = ${p_idx} OR opp_r.lead_id = ${p_idx} OR ten.lead_id = ${p_idx} OR dir_l.lead_id = ${p_idx} OR EXISTS (SELECT 1 FROM leads WHERE customer_id = ten_cust.customer_id AND lead_id = ${p_idx}))")
+        params.append(lead_id)
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"(c.opportunity_id = ${p_idx} OR r.opportunity_id = ${p_idx} OR ten.opportunity_id = ${p_idx} OR EXISTS (SELECT 1 FROM opportunities WHERE customer_id = ten_cust.customer_id AND opportunity_id = ${p_idx}))")
+        params.append(opportunity_id)
+        p_idx += 1
+
     if search:
         conditions.append(f"""(
             c.contract_number ILIKE ${p_idx} 
+            OR c.contract_id ILIKE ${p_idx}
+            OR c.lead_id ILIKE ${p_idx}
+            OR c.opportunity_id ILIKE ${p_idx}
+            OR r.opportunity_id ILIKE ${p_idx}
+            OR opp_r.lead_id ILIKE ${p_idx}
             OR cust.first_name ILIKE ${p_idx} 
             OR cust.last_name ILIKE ${p_idx} 
             OR cust.company_name ILIKE ${p_idx} 
             OR ten_cust.first_name ILIKE ${p_idx} 
             OR ten_cust.last_name ILIKE ${p_idx} 
             OR ten_cust.company_name ILIKE ${p_idx} 
+            OR opp_cust.first_name ILIKE ${p_idx}
+            OR opp_cust.last_name ILIKE ${p_idx}
+            OR opp_cust.company_name ILIKE ${p_idx}
             OR u.unit_number ILIKE ${p_idx}
             OR ten_u.unit_number ILIKE ${p_idx}
+            OR opp_u.unit_number ILIKE ${p_idx}
         )""")
         params.append(f"%{search}%")
         p_idx += 1
@@ -219,11 +260,15 @@ async def list_contracts(
         SELECT count(*) 
         FROM contracts c 
         LEFT JOIN reservations r ON c.reservation_id = r.reservation_id 
+        LEFT JOIN opportunities opp_r ON COALESCE(c.opportunity_id, r.opportunity_id) = opp_r.opportunity_id
+        LEFT JOIN leads dir_l ON COALESCE(c.lead_id, opp_r.lead_id) = dir_l.lead_id
         LEFT JOIN customers cust ON r.customer_id = cust.customer_id 
         LEFT JOIN units u ON r.unit_id = u.unit_id 
         LEFT JOIN tenancies ten ON (c.contract_number = ten.contract_number OR c.contract_id = ten.contract_number)
         LEFT JOIN customers ten_cust ON ten.tenant_customer_id = ten_cust.customer_id
         LEFT JOIN units ten_u ON ten.unit_id = ten_u.unit_id
+        LEFT JOIN customers opp_cust ON opp_r.customer_id = opp_cust.customer_id
+        LEFT JOIN units opp_u ON (SELECT unit_id FROM opportunity_units WHERE opportunity_id = opp_r.opportunity_id ORDER BY is_primary DESC LIMIT 1) = opp_u.unit_id
         WHERE {where_clause}
         """,
         *params
@@ -232,7 +277,7 @@ async def list_contracts(
     query = f"""
         {CONTRACT_SELECT_QUERY}
         WHERE {where_clause}
-        ORDER BY c.signed_at DESC NULLS LAST, c.start_date DESC NULLS LAST, CAST(substring(c.contract_id from '[0-9]+') AS INTEGER) DESC
+        ORDER BY CAST(substring(c.contract_id from '[0-9]+') AS INTEGER) DESC, c.signed_at DESC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -574,7 +619,7 @@ async def list_payments(
 ):
     await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
-    conditions = ["1=1"]
+    conditions = ["1=1", "(p.lead_id IS NOT NULL OR p.opportunity_id IS NOT NULL)"]
     params = []
     p_idx = 1
 
@@ -679,7 +724,7 @@ async def list_payments(
             p.lead_id, p.opportunity_id
         {unified_from}
         WHERE {where_clause}
-        ORDER BY p.due_date DESC NULLS LAST, p.payment_id DESC
+        ORDER BY CAST(substring(p.payment_id from '[0-9]+') AS INTEGER) DESC, p.due_date DESC NULLS LAST
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
     """
     params.extend([page_size, offset])
@@ -885,13 +930,15 @@ async def list_commissions(
     page_size: int = Query(200, ge=1, le=500),
     status_filter: Optional[str] = Query(None, alias="status"),
     user_id: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    opportunity_id: Optional[str] = None,
     search: Optional[str] = None,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     conn: asyncpg.Connection = Depends(get_db)
 ):
     await verify_finance_access(conn, x_user_id)
     offset = (page - 1) * page_size
-    conditions = ["1=1"]
+    conditions = ["1=1", "(con.lead_id IS NOT NULL OR con.opportunity_id IS NOT NULL OR r.opportunity_id IS NOT NULL OR ten.lead_id IS NOT NULL OR ten.opportunity_id IS NOT NULL OR cust.customer_id IS NOT NULL)"]
     params = []
     p_idx = 1
 
@@ -905,12 +952,26 @@ async def list_commissions(
         params.append(user_id)
         p_idx += 1
 
+    if lead_id:
+        conditions.append(f"(con.lead_id = ${p_idx} OR opp_con.lead_id = ${p_idx} OR ten.lead_id = ${p_idx} OR EXISTS (SELECT 1 FROM leads WHERE customer_id = cust.customer_id AND lead_id = ${p_idx}))")
+        params.append(lead_id)
+        p_idx += 1
+
+    if opportunity_id:
+        conditions.append(f"(con.opportunity_id = ${p_idx} OR r.opportunity_id = ${p_idx} OR ten.opportunity_id = ${p_idx} OR EXISTS (SELECT 1 FROM opportunities WHERE customer_id = cust.customer_id AND opportunity_id = ${p_idx}))")
+        params.append(opportunity_id)
+        p_idx += 1
+
     if search and search.strip():
         s_term = f"%{search.strip()}%"
         conditions.append(f"""(
             c.commission_id ILIKE ${p_idx} OR
             u.full_name ILIKE ${p_idx} OR
             con.contract_number ILIKE ${p_idx} OR
+            con.lead_id ILIKE ${p_idx} OR
+            con.opportunity_id ILIKE ${p_idx} OR
+            r.opportunity_id ILIKE ${p_idx} OR
+            opp_con.lead_id ILIKE ${p_idx} OR
             cust.first_name ILIKE ${p_idx} OR
             cust.last_name ILIKE ${p_idx} OR
             cust.company_name ILIKE ${p_idx} OR
@@ -927,6 +988,7 @@ async def list_commissions(
         LEFT JOIN users u ON c.user_id = u.user_id
         LEFT JOIN contracts con ON c.contract_id = con.contract_id
         LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN opportunities opp_con ON COALESCE(con.opportunity_id, r.opportunity_id) = opp_con.opportunity_id
         LEFT JOIN tenancies ten ON (con.contract_number = ten.contract_number OR con.contract_id = ten.contract_number)
         LEFT JOIN customers cust ON COALESCE(r.customer_id, ten.tenant_customer_id) = cust.customer_id
         LEFT JOIN units un ON COALESCE(r.unit_id, ten.unit_id) = un.unit_id
@@ -951,15 +1013,23 @@ async def list_commissions(
             c.calculation_notes,
             con.contract_number,
             con.status AS contract_status,
-            COALESCE(cust.first_name || ' ' || cust.last_name, cust.company_name) AS customer_name,
-            un.unit_number
+            COALESCE(NULLIF(TRIM(cust.first_name || ' ' || cust.last_name), ''), cust.company_name, NULLIF(TRIM(opp_cust.first_name || ' ' || opp_cust.last_name), ''), opp_cust.company_name, NULLIF(TRIM(dir_l_cust.first_name || ' ' || dir_l_cust.last_name), ''), dir_l_cust.company_name) AS customer_name,
+            COALESCE(un.unit_number, opp_u.unit_number, dir_l_u.unit_number) AS unit_number,
+            COALESCE(con.lead_id, opp_con.lead_id, ten.lead_id, dir_l.lead_id, (SELECT lead_id FROM leads WHERE customer_id = cust.customer_id ORDER BY created_at DESC LIMIT 1)) AS lead_id,
+            COALESCE(con.opportunity_id, r.opportunity_id, ten.opportunity_id, (SELECT opportunity_id FROM opportunities WHERE customer_id = cust.customer_id ORDER BY created_at DESC LIMIT 1)) AS opportunity_id
         FROM commissions c
         LEFT JOIN users u ON c.user_id = u.user_id
         LEFT JOIN contracts con ON c.contract_id = con.contract_id
         LEFT JOIN reservations r ON con.reservation_id = r.reservation_id
+        LEFT JOIN opportunities opp_con ON COALESCE(con.opportunity_id, r.opportunity_id) = opp_con.opportunity_id
+        LEFT JOIN leads dir_l ON COALESCE(con.lead_id, opp_con.lead_id) = dir_l.lead_id
         LEFT JOIN tenancies ten ON (con.contract_number = ten.contract_number OR con.contract_id = ten.contract_number)
         LEFT JOIN customers cust ON COALESCE(r.customer_id, ten.tenant_customer_id) = cust.customer_id
+        LEFT JOIN customers opp_cust ON opp_con.customer_id = opp_cust.customer_id
+        LEFT JOIN customers dir_l_cust ON dir_l.customer_id = dir_l_cust.customer_id
         LEFT JOIN units un ON COALESCE(r.unit_id, ten.unit_id) = un.unit_id
+        LEFT JOIN units opp_u ON (SELECT unit_id FROM opportunity_units WHERE opportunity_id = opp_con.opportunity_id ORDER BY is_primary DESC LIMIT 1) = opp_u.unit_id
+        LEFT JOIN units dir_l_u ON dir_l.unit_id = dir_l_u.unit_id
         WHERE {where_clause}
         ORDER BY CAST(substring(c.commission_id from '[0-9]+') AS INTEGER) DESC
         LIMIT ${p_idx} OFFSET ${p_idx + 1}
@@ -1255,7 +1325,7 @@ async def list_invoices(
 ):
     await verify_finance_access(conn, x_user_id)
     effective_limit = page_size if page_size is not None else limit
-    conditions = []
+    conditions = ["(inv.lead_id IS NOT NULL OR inv.opportunity_id IS NOT NULL)"]
     params = []
     p_idx = 1
 

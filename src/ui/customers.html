@@ -9,15 +9,35 @@
     <style>
         :root {
             --primary: #1e3a8a;
-            --secondary: #3b82f6;
+            --primary-hover: #1e40af;
+            --primary-light: #eff6ff;
+            --secondary: #2563eb;
+            --secondary-hover: #1d4ed8;
             --accent: #10b981;
+            --accent-hover: #059669;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
+            --border-focus: #3b82f6;
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
             --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
+
         /* Top-Tier Professional Arabic Typography */
         [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
             font-family: var(--ar-font) !important;
@@ -30,18 +50,86 @@
         .ar-font {
             font-family: var(--ar-font) !important;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header Navigation */
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 1.35em; font-weight: 800; letter-spacing: -0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .nav {
+            background-color: #0f172a;
+            padding: 0 16px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        .nav li a {
+            display: inline-block;
+            padding: 12px 18px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.88em;
+            font-weight: 500;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .nav li a:hover, .nav li a.active {
+            background-color: #1e293b;
+            color: white;
+            border-bottom: 2px solid #3b82f6;
+        }
+
         .sub-nav-banner {
             background: #0f172a;
             border-top: 1px solid #1e293b;
             border-bottom: 2px solid #3b82f6;
             color: #e2e8f0;
-            padding: 7px 24px;
+            padding: 8px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .sub-nav-banner .banner-title {
-            font-size: 1.15em;
+            font-size: 1.1em;
             font-weight: 700;
             color: #60a5fa;
             letter-spacing: 0.3px;
@@ -50,140 +138,630 @@
             font-size: 0.8em;
             color: #94a3b8;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--text-main);
+
+        /* Main Content Layout */
+        .content {
+            padding: 24px;
+            max-width: 1440px;
+            margin: 0 auto;
         }
-        .header {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 24px;
+
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        .logo-wrap { display: flex; align-items: center; gap: 12px; }
-        .logo { font-size: 1.4em; font-weight: 700; }
-        .header-actions { display: flex; align-items: center; gap: 16px; }
-        .lang-btn {
-            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+        .page-header h1 {
+            font-size: 1.6em;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
         }
-        .nav { background-color: #0f172a; padding: 0 16px; }
-        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
-        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
-        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
-        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .counter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #475569;
+            background: #e2e8f0;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            margin-top: 4px;
+        }
+
+        /* Modern Controls & Filters Bar */
         .controls-bar {
-            background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
-            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+            background: #ffffff;
+            padding: 14px 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
         }
-        .controls-bar input, .controls-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em; }
-        
-        /* Table Styles */
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+            display: flex;
+            align-items: center;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: #94a3b8;
+            font-size: 0.9em;
+            pointer-events: none;
+        }
+        [dir="rtl"] .search-icon {
+            left: auto;
+            right: 12px;
+        }
+        .search-wrap input {
+            width: 100%;
+            padding: 9px 12px 9px 36px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.88em;
+            transition: all 0.2s ease;
+            outline: none;
+            background: #f8fafc;
+        }
+        [dir="rtl"] .search-wrap input {
+            padding: 9px 36px 9px 12px;
+        }
+        .search-wrap input:focus {
+            background: #ffffff;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .controls-bar select {
+            padding: 9px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.88em;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .controls-bar select:focus {
+            background-color: #ffffff;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--secondary);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.88em;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .btn:hover {
+            background-color: var(--secondary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-success {
+            background-color: var(--accent);
+        }
+        .btn-success:hover {
+            background-color: var(--accent-hover);
+        }
+        .btn-outline {
+            background: #ffffff;
+            color: #334155;
+            border: 1.5px solid var(--border);
+        }
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.78em;
+            border-radius: var(--radius-sm);
+        }
+        .btn-primary-sm {
+            padding: 5px 12px;
+            font-size: 0.78em;
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: var(--radius-sm);
+        }
+        .btn-primary-sm:hover {
+            background: #1d4ed8;
+        }
+
+        /* Table Architecture */
         .table-wrap {
-            background: white; border-radius: 8px; border: 1px solid var(--border);
-            overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
         }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
-        [dir="rtl"] table { text-align: right; }
-        th, td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; font-size: 0.82rem; }
-        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
-        tr:hover { background: #f8fafc; }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-align: left;
+            font-size: 0.84rem;
+        }
+        [dir="rtl"] table {
+            text-align: right;
+        }
+        th, td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #475569;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Identity & Copy Pills (Unified Geometry) */
+        .id-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.80em;
+            background: #f1f5f9;
+            color: #334155;
+            padding: 0 8px;
+            height: 26px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .cust-id-pill {
+            width: 140px;
+            height: 28px;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 0.82em;
+            border-radius: 6px;
+            padding: 0 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-copy {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 0 6px;
+            height: 26px;
+            box-sizing: border-box;
+            cursor: pointer;
+            font-size: 0.75em;
+            margin-inline-start: 4px;
+            color: #64748b;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .btn-copy:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+        /* Customer Cell with Initials Avatar */
+        .cust-avatar-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cust-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            color: #0284c7;
+            font-weight: 700;
+            font-size: 0.78em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1.5px solid #7dd3fc;
+        }
+        .cust-avatar.company {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #b45309;
+            border-color: #fcd34d;
+        }
+
+        /* Status & Type Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .cust-type-pill {
+            width: 140px;
+            height: 28px;
+            box-sizing: border-box;
+            border-radius: 6px !important;
+            font-size: 0.80em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            text-align: center;
+        }
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: var(--radius-full);
+        }
+        .badge-individual {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+        .badge-company {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+        .badge-active {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .badge-active .badge-dot {
+            background-color: #16a34a;
+        }
+        .badge-inactive {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .badge-inactive .badge-dot {
+            background-color: #dc2626;
+        }
 
         /* Pagination Bar */
         .pagination-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 16px; background: #fff; border-top: 1px solid var(--border);
-            font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            font-size: 0.82rem;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .pagination-controls { display: flex; align-items: center; gap: 6px; }
-        .page-size-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
-        .btn-page { padding: 3px 8px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; }
-        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
-        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
-        .page-num-display { font-weight: 600; padding: 0 4px; color: var(--text-main); }
-
-        /* Badges */
-        .badge { padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700; display: inline-block; }
-        .badge-individual { background: #e0f2fe; color: #0369a1; }
-        .badge-company { background: #fef3c7; color: #b45309; }
-        .badge-active { background: #dcfce7; color: #15803d; }
-        .badge-inactive { background: #fee2e2; color: #b91c1c; }
-
-        .id-badge {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.8em;
-            background: #f1f5f9;
-            color: #475569;
-            padding: 3px 6px;
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
-            user-select: all;
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn-copy {
-            background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 5px;
-            cursor: pointer; font-size: 0.75em; margin-left: 4px; color: #64748b;
+        .page-size-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            background: #fff;
+            cursor: pointer;
         }
-        .btn-copy:hover { background: #e2e8f0; color: #0f172a; }
-
-        .btn {
-            background-color: var(--secondary); color: white; padding: 8px 16px; border: none;
-            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.9em; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 4px;
+        .btn-page {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
-        .btn:hover { background-color: #2563eb; }
-        .btn-success { background-color: var(--accent); }
-        .btn-success:hover { background-color: #059669; }
-        .btn-sm { padding: 4px 10px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; }
-        .btn-sm:hover { background: #cbd5e1; }
-        .btn-primary-sm { padding: 4px 10px; font-size: 0.8em; background: #2563eb; color: #ffffff; }
-        .btn-primary-sm:hover { background: #1d4ed8; }
+        .btn-page:hover:not(:disabled) {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .page-num-display {
+            font-weight: 700;
+            padding: 0 4px;
+            color: var(--text-main);
+        }
 
-        /* Modal Styles */
+        /* Modern Modals System */
         .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            animation: fadeIn 0.15s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .modal {
-            background: white; border-radius: 12px; width: 90%; max-width: 650px; max-height: 90vh;
-            overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+            background: white;
+            border-radius: var(--radius-xl);
+            width: 95%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(12px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         .modal-header {
-            padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1.5px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        .modal-body { padding: 24px; }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.15em;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-body {
+            padding: 20px 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
         .modal-footer {
-            padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8fafc;
+            border-bottom-left-radius: var(--radius-xl);
+            border-bottom-right-radius: var(--radius-xl);
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
         }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 0.85em; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
-        .form-group input, .form-group select {
-            width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
         }
-        .form-row { display: flex; gap: 12px; }
-        .form-row .form-group { flex: 1; }
-        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); }
+        .close-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
 
-        .id-display-box {
-            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
-            padding: 10px 14px; font-size: 0.88em; margin-bottom: 16px; display: flex;
-            justify-content: space-between; align-items: center;
+        /* Form Controls & Groups */
+        .form-section {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .form-section-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.88em;
+            transition: all 0.2s ease;
+            outline: none;
+            background: #ffffff;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Customer 360 Dashboard Elevation */
+        .c360-hero-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            border: 1.5px solid #bfdbfe;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .c360-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .c360-kpi-tile {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            text-align: center;
+            box-shadow: var(--shadow-xs);
+        }
+        .c360-kpi-val {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: #1e3a8a;
+        }
+        .c360-kpi-lbl {
+            font-size: 0.76em;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .c360-card-item {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.86em;
+            transition: border-color 0.15s ease;
+        }
+        .c360-card-item:hover {
+            border-color: #cbd5e1;
         }
 
         /* Toast notification */
         #toast {
-            visibility: hidden; min-width: 250px; background-color: #0f172a; color: #fff; text-align: center;
-            border-radius: 8px; padding: 12px 16px; position: fixed; z-index: 2000; right: 30px; bottom: 30px;
-            font-size: 0.9em; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            visibility: hidden;
+            min-width: 260px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            position: fixed;
+            z-index: 2000;
+            right: 24px;
+            bottom: 24px;
+            font-size: 0.88em;
+            font-weight: 600;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
-        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
-        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+        #toast.show {
+            visibility: visible;
+            animation: toastFadeIn 0.25s, toastFadeOut 0.3s 2.5s;
+        }
+        @keyframes toastFadeIn { from { bottom: 10px; opacity: 0; } to { bottom: 24px; opacity: 1; } }
+        @keyframes toastFadeOut { from { bottom: 24px; opacity: 1; } to { bottom: 10px; opacity: 0; } }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .content { padding: 16px; }
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .search-wrap { min-width: 100%; }
+            .modal { width: 98%; max-height: 95vh; }
+            .modal-body { padding: 16px; }
+            .form-grid-2 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -191,9 +769,9 @@
         <div class="logo-wrap">
             <div class="logo">RE CRM</div>
             <span class="ar-font" style="font-size: 1.05em; color: #f8fafc; font-weight: 700; margin: 0 10px;" data-i18n="nav_brand">Muath Khidr Al-Nemari Real Estate Office</span>
-            <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">Customer 360</span>
+            <span style="font-size: 0.78em; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 4px; font-weight: 600;">Customer 360</span>
         </div>
-        <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+        <div class="header-actions">
             <div id="user-session-widget" style="display: inline-flex; align-items: center;">
                 <div id="user-greeting" style="font-size: 0.88em; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;" onclick="openUserProfileModal()" title="View permissions & switch user">
                     <span>👤</span>
@@ -240,15 +818,18 @@
     <div class="content">
         <div class="page-header">
             <div>
-                <h1 style="margin: 0;" data-i18n="page_title">Customer Directory & 360 Profiles</h1>
-                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label">Loading customers...</p>
+                <h1 data-i18n="page_title">Customer Directory & 360 Profiles</h1>
+                <div class="counter-badge" id="counter-label">Loading customers...</div>
             </div>
             <button class="btn btn-success" onclick="openAddCustomerModal()" data-i18n="btn_add_customer">+ Add New Customer</button>
         </div>
 
         <div class="controls-bar">
-            <input type="text" id="search-box" placeholder="Search by name, customer_id, mobile, email or national ID..." style="flex-grow: 1; min-width: 250px;" oninput="debounceFetch()">
-            <select id="type-select" onchange="fetchCustomers()">
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-box" placeholder="Search by name, customer_id, mobile, email or national ID..." oninput="debounceFetch()">
+            </div>
+            <select id="type-select" onchange="fetchCustomers(1)">
                 <option value="" data-i18n="opt_all_types">All Customer Types</option>
                 <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
                 <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
@@ -259,9 +840,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th data-i18n="th_id">Customer ID</th>
+                        <th data-i18n="th_id" style="width: 155px; text-align: center;">Customer ID</th>
                         <th data-i18n="th_name">Customer / Company</th>
-                        <th data-i18n="th_type">Type</th>
+                        <th data-i18n="th_type" style="width: 155px; text-align: center;">Type</th>
                         <th data-i18n="th_mobile">Mobile Phone</th>
                         <th data-i18n="th_email">Email</th>
                         <th data-i18n="th_lang">Language</th>
@@ -295,67 +876,78 @@
     <div class="modal-overlay" id="add-modal">
         <div class="modal">
             <div class="modal-header">
-                <h3 style="margin: 0;" data-i18n="modal_add_title">Create New Customer Profile</h3>
+                <h3 data-i18n="modal_add_title">Create New Customer Profile</h3>
                 <button class="close-btn" onclick="closeAddCustomerModal()">&times;</button>
             </div>
             <form id="add-customer-form" onsubmit="submitNewCustomer(event)">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label data-i18n="form_type">Customer Type</label>
-                        <select id="f-type" onchange="toggleCompanyFields('add')">
-                            <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
-                            <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
-                        </select>
-                    </div>
-
-                    <div class="form-row" id="add-row-individual-name">
+                    <!-- Section 1: Customer Type & Identity -->
+                    <div class="form-section">
+                        <div class="form-section-title">👤 <span data-i18n="sec_cust_info">Customer Information</span></div>
                         <div class="form-group">
-                            <label data-i18n="form_first_name">First Name *</label>
-                            <input type="text" id="f-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
+                            <label data-i18n="form_type">Customer Type</label>
+                            <select id="f-type" onchange="toggleCompanyFields('add')">
+                                <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
+                                <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
+                            </select>
                         </div>
-                        <div class="form-group">
-                            <label data-i18n="form_last_name">Last Name *</label>
-                            <input type="text" id="f-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
-                        </div>
-                    </div>
 
-                    <div class="form-group" id="add-row-company-name" style="display: none;">
-                        <label data-i18n="form_company">Company Legal Name *</label>
-                        <input type="text" id="f-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="form_mobile">Mobile Phone *</label>
-                            <input type="tel" id="f-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
+                        <div class="form-grid-2" id="add-row-individual-name">
+                            <div class="form-group">
+                                <label data-i18n="form_first_name">First Name *</label>
+                                <input type="text" id="f-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_last_name">Last Name *</label>
+                                <input type="text" id="f-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label data-i18n="form_email">Email Address</label>
-                            <input type="email" id="f-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
+
+                        <div class="form-group" id="add-row-company-name" style="display: none;">
+                            <label data-i18n="form_company">Company Legal Name *</label>
+                            <input type="text" id="f-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="form_national_id">National ID / Iqama / CR</label>
-                            <input type="text" id="f-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="form_nationality">Nationality</label>
-                            <input type="text" id="f-nationality" value="SA" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
+                    <!-- Section 2: Contact Details -->
+                    <div class="form-section">
+                        <div class="form-section-title">📞 <span data-i18n="sec_contact_details">Contact Details</span></div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label data-i18n="form_mobile">Mobile Phone *</label>
+                                <input type="tel" id="f-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_email">Email Address</label>
+                                <input type="email" id="f-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label data-i18n="form_language">Preferred Language</label>
-                        <select id="f-lang">
-                            <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
-                            <option value="en" data-i18n="opt_lang_en">English</option>
-                        </select>
+                    <!-- Section 3: Identity & Preferences -->
+                    <div class="form-section">
+                        <div class="form-section-title">🪪 <span data-i18n="sec_id_lang">Identity & Preferences</span></div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label data-i18n="form_national_id">National ID / Iqama / CR</label>
+                                <input type="text" id="f-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_nationality">Nationality</label>
+                                <input type="text" id="f-nationality" value="SA" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="form_language">Preferred Language</label>
+                            <select id="f-lang">
+                                <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
+                                <option value="en" data-i18n="opt_lang_en">English</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-sm" onclick="closeAddCustomerModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="closeAddCustomerModal()" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn btn-success" data-i18n="btn_save">Save Customer Profile</button>
                 </div>
             </form>
@@ -366,82 +958,91 @@
     <div class="modal-overlay" id="edit-modal">
         <div class="modal">
             <div class="modal-header">
-                <h3 style="margin: 0;" data-i18n="modal_edit_title">Edit Customer Profile</h3>
+                <h3 data-i18n="modal_edit_title">Edit Customer Profile</h3>
                 <button class="close-btn" onclick="closeEditCustomerModal()">&times;</button>
             </div>
             <form id="edit-customer-form" onsubmit="submitEditCustomer(event)">
                 <input type="hidden" id="edit-cust-id">
                 <div class="modal-body">
-                    <div class="id-display-box">
+                    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
                         <span><strong data-i18n="lbl_customer_id">Customer ID:</strong> <span id="edit-id-display" class="id-badge">--</span></span>
                         <button type="button" class="btn-copy" onclick="copyId(document.getElementById('edit-id-display').textContent)">📋 <span data-i18n="btn_copy">Copy ID</span></button>
                     </div>
 
-                    <div class="form-group">
-                        <label data-i18n="form_type">Customer Type</label>
-                        <select id="edit-type" onchange="toggleCompanyFields('edit')">
-                            <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
-                            <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
-                        </select>
-                    </div>
-
-                    <div class="form-row" id="edit-row-individual-name">
+                    <div class="form-section">
+                        <div class="form-section-title">👤 <span data-i18n="sec_cust_info">Customer Information</span></div>
                         <div class="form-group">
-                            <label data-i18n="form_first_name">First Name *</label>
-                            <input type="text" id="edit-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="form_last_name">Last Name *</label>
-                            <input type="text" id="edit-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="edit-row-company-name" style="display: none;">
-                        <label data-i18n="form_company">Company Legal Name *</label>
-                        <input type="text" id="edit-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="form_mobile">Mobile Phone *</label>
-                            <input type="tel" id="edit-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="form_email">Email Address</label>
-                            <input type="email" id="edit-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="form_national_id">National ID / Iqama / CR</label>
-                            <input type="text" id="edit-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="form_nationality">Nationality</label>
-                            <input type="text" id="edit-nationality" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="form_language">Preferred Language</label>
-                            <select id="edit-lang">
-                                <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
-                                <option value="en" data-i18n="opt_lang_en">English</option>
+                            <label data-i18n="form_type">Customer Type</label>
+                            <select id="edit-type" onchange="toggleCompanyFields('edit')">
+                                <option value="INDIVIDUAL" data-i18n="opt_individual">Individual</option>
+                                <option value="COMPANY" data-i18n="opt_company">Corporate / Developer</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label data-i18n="form_status">Account Status</label>
-                            <select id="edit-status">
-                                <option value="ACTIVE" data-i18n="opt_status_active">Active</option>
-                                <option value="INACTIVE" data-i18n="opt_status_inactive">Inactive</option>
-                            </select>
+
+                        <div class="form-grid-2" id="edit-row-individual-name">
+                            <div class="form-group">
+                                <label data-i18n="form_first_name">First Name *</label>
+                                <input type="text" id="edit-first-name" required placeholder="e.g. Mohammed" data-i18n-placeholder="placeholder_first_name">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_last_name">Last Name *</label>
+                                <input type="text" id="edit-last-name" required placeholder="e.g. Al-Otaibi" data-i18n-placeholder="placeholder_last_name">
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="edit-row-company-name" style="display: none;">
+                            <label data-i18n="form_company">Company Legal Name *</label>
+                            <input type="text" id="edit-company-name" placeholder="e.g. Riyadh Real Estate Development Co." data-i18n-placeholder="placeholder_company">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">📞 <span data-i18n="sec_contact_details">Contact Details</span></div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label data-i18n="form_mobile">Mobile Phone *</label>
+                                <input type="tel" id="edit-mobile" required placeholder="+966 50 123 4567" data-i18n-placeholder="placeholder_mobile">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_email">Email Address</label>
+                                <input type="email" id="edit-email" placeholder="client@example.com" data-i18n-placeholder="placeholder_email">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">🪪 <span data-i18n="sec_id_lang">Identity & Status</span></div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label data-i18n="form_national_id">National ID / Iqama / CR</label>
+                                <input type="text" id="edit-national-id" placeholder="10-digit National ID or 700 CR" data-i18n-placeholder="placeholder_national_id">
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_nationality">Nationality</label>
+                                <input type="text" id="edit-nationality" maxlength="2" placeholder="SA" data-i18n-placeholder="placeholder_nationality">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label data-i18n="form_language">Preferred Language</label>
+                                <select id="edit-lang">
+                                    <option value="ar" data-i18n="opt_lang_ar">Arabic</option>
+                                    <option value="en" data-i18n="opt_lang_en">English</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="form_status">Account Status</label>
+                                <select id="edit-status">
+                                    <option value="ACTIVE" data-i18n="opt_status_active">Active</option>
+                                    <option value="INACTIVE" data-i18n="opt_status_inactive">Inactive</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-sm" onclick="closeEditCustomerModal()" data-i18n="btn_cancel">Cancel</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="closeEditCustomerModal()" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn btn-primary-sm" data-i18n="btn_save_changes">Save Changes</button>
                 </div>
             </form>
@@ -450,11 +1051,11 @@
 
     <!-- MODAL: CUSTOMER 360 VIEW -->
     <div class="modal-overlay" id="c360-modal">
-        <div class="modal" style="max-width: 800px;">
+        <div class="modal" style="max-width: 860px;">
             <div class="modal-header">
                 <div>
-                    <h3 style="margin: 0;" id="c360-title">Customer 360 View</h3>
-                    <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 4px;" id="c360-id-subtitle">ID: --</div>
+                    <h3 id="c360-title">Customer 360 View</h3>
+                    <div style="font-size: 0.82em; color: var(--text-muted); margin-top: 4px;" id="c360-id-subtitle">ID: --</div>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <button class="btn btn-primary-sm" id="c360-edit-btn" onclick="openEditFrom360()">✏️ <span data-i18n="btn_edit">Edit</span></button>
@@ -462,10 +1063,10 @@
                 </div>
             </div>
             <div class="modal-body" id="c360-body">
-                <p>Loading 360 history...</p>
+                <p style="text-align:center; padding: 20px; color: #64748b;">Loading 360 history...</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-sm" onclick="closeC360Modal()" data-i18n="btn_close">Close</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeC360Modal()" data-i18n="btn_close">Close</button>
             </div>
         </div>
     </div>
@@ -508,6 +1109,7 @@
                 form_type: "Customer Type", form_first_name: "First Name *", form_last_name: "Last Name *", form_company: "Company Legal Name *",
                 form_mobile: "Mobile Phone *", form_email: "Email Address", form_national_id: "National ID / Iqama / CR",
                 form_nationality: "Nationality Code (e.g. SA)", form_language: "Preferred Language", form_status: "Account Status",
+                sec_cust_info: "Customer Information", sec_contact_details: "Contact Details", sec_id_lang: "Identity & Preferences",
                 btn_cancel: "Cancel", btn_save: "Save Customer Profile", btn_save_changes: "Save Changes",
                 placeholder_first_name: "e.g. Mohammed",
                 placeholder_last_name: "e.g. Al-Otaibi",
@@ -542,6 +1144,7 @@
                 form_type: "نوع العميل", form_first_name: "الاسم الأول *", form_last_name: "اسم العائلة *", form_company: "اسم الشركة القانوني *",
                 form_mobile: "رقم الجوال *", form_email: "البريد الإلكتروني", form_national_id: "الهوية الوطنية / الإقامة / السجل",
                 form_nationality: "رمز الجنسية (مثال: SA)", form_language: "اللغة المفضلة", form_status: "حالة الحساب",
+                sec_cust_info: "بيانات العميل الأساسية", sec_contact_details: "معلومات الاتصال والتواصل", sec_id_lang: "الهوية والحالة وخيارات النظام",
                 btn_cancel: "إلغاء", btn_save: "حفظ ملف العميل", btn_save_changes: "حفظ التغييرات",
                 placeholder_first_name: "مثال: محمد",
                 placeholder_last_name: "مثال: العتيبي",
@@ -614,17 +1217,18 @@
 
         function copyId(val) {
             if (!val || val === '--') return;
-            navigator.clipboard.writeText(val.trim()).then(() => {
-                showToast(`Copied to clipboard: ${val.trim()}`);
-            }).catch(err => {
-                showToast(`Copied: ${val.trim()}`);
+            const textToCopy = val.trim();
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast(currentLang === 'ar' ? `تم نسخ المعرف: ${textToCopy}` : `Copied ID: ${textToCopy}`);
+            }).catch(() => {
+                showToast(currentLang === 'ar' ? `تم النسخ: ${textToCopy}` : `Copied: ${textToCopy}`);
             });
         }
 
         let debounceTimer;
         function debounceFetch() {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(fetchCustomers, 300);
+            debounceTimer = setTimeout(() => fetchCustomers(1), 300);
         }
 
         let currentPage = 1;
@@ -678,31 +1282,45 @@
 
                 const tbody = document.getElementById('customers-tbody');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No customers found matching criteria.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px; color: #64748b;">${currentLang === 'ar' ? 'لم يتم العثور على عملاء مطابقين لمعايير البحث.' : 'No customers found matching criteria.'}</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = customers.map(c => {
-                    const badgeClass = c.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual';
-                    const displayName = c.customer_type === 'COMPANY' ? (c.company_name || 'Company') : (c.full_name || 'Individual');
+                    const isComp = c.customer_type === 'COMPANY';
+                    const badgeClass = isComp ? 'badge-company' : 'badge-individual';
+                    const displayName = isComp ? (c.company_name || 'Company') : (c.full_name || 'Individual');
                     const statusClass = c.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive';
+                    const avatarLetter = isComp ? '🏢' : (displayName.charAt(0).toUpperCase() || '👤');
                     
                     return `
                         <tr>
-                            <td>
-                                <span class="id-badge">${c.customer_id}</span>
-                                <button class="btn-copy" onclick="copyId('${c.customer_id}')" title="Copy Customer ID">📋</button>
+                            <td style="text-align: center;">
+                                <span class="id-badge cust-id-pill">${c.customer_id}</span>
                             </td>
-                            <td><strong>${displayName}</strong></td>
-                            <td><span class="badge ${badgeClass}">${c.customer_type}</span></td>
-                            <td>${c.mobile || '--'}</td>
-                            <td>${c.email || '--'}</td>
-                            <td>${c.preferred_language?.toUpperCase() || 'AR'}</td>
-                            <td><span class="badge ${statusClass}">${c.status}</span></td>
                             <td>
-                                <div style="display: flex; gap: 4px;">
+                                <div class="cust-avatar-cell">
+                                    <div class="cust-avatar ${isComp ? 'company' : ''}">${avatarLetter}</div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #0f172a;">${displayName}</div>
+                                        ${c.national_id ? `<div style="font-size: 0.76em; color: #64748b;">ID: ${c.national_id}</div>` : ''}
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="text-align: center;"><span class="badge ${badgeClass} cust-type-pill">${isComp ? (currentLang === 'ar' ? '🏢 شركة' : '🏢 COMPANY') : (currentLang === 'ar' ? '👤 فرد' : '👤 INDIVIDUAL')}</span></td>
+                            <td><span style="font-family:monospace; font-weight:600;">${c.mobile || '--'}</span></td>
+                            <td>${c.email ? `<a href="mailto:${c.email}" style="color:#0284c7; text-decoration:none;">${c.email}</a>` : '--'}</td>
+                            <td><span style="font-size:0.8em; font-weight:700; color:#475569;">${c.preferred_language?.toUpperCase() || 'AR'}</span></td>
+                            <td>
+                                <span class="badge ${statusClass}">
+                                    <span class="badge-dot"></span>
+                                    <span>${c.status}</span>
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px; align-items: center;">
                                     <button class="btn btn-primary-sm" onclick="openEditCustomerModal('${c.customer_id}')">✏️ ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
-                                    <button class="btn btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 ${currentLang === 'ar' ? 'سجل 360°' : '360°'}</button>
+                                    <button class="btn btn-outline btn-sm" onclick="viewCustomer360('${c.customer_id}')">🔍 ${currentLang === 'ar' ? 'سجل 360°' : '360°'}</button>
                                     <a href="tasks.html?customer_id=${encodeURIComponent(c.customer_id)}&action=new_activity" class="btn btn-sm" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; text-decoration:none;" title="${currentLang === 'ar' ? 'تسجيل نشاط أو مهمة' : 'Log activity or task'}">📝 ${currentLang === 'ar' ? 'نشاط' : 'Act'}</a>
                                 </div>
                             </td>
@@ -749,7 +1367,7 @@
                 fLastName.required = false;
                 fCompName.required = true;
             } else {
-                indRow.style.display = 'flex';
+                indRow.style.display = 'grid';
                 compRow.style.display = 'none';
                 fFirstName.required = true;
                 fLastName.required = true;
@@ -791,7 +1409,7 @@
 
                 if (res.ok) {
                     const result = await res.json();
-                    showToast(`Customer created! ID: ${result.data.customer_id}`);
+                    showToast(currentLang === 'ar' ? `تم إنشاء العميل بنجاح! ID: ${result.data.customer_id}` : `Customer created! ID: ${result.data.customer_id}`);
                     closeAddCustomerModal();
                     fetchCustomers();
                 } else {
@@ -804,7 +1422,6 @@
         }
 
         async function openEditCustomerModal(customerId) {
-            // Find in cache or fetch
             let customer = cachedCustomers.find(c => c.customer_id === customerId);
             if (!customer) {
                 try {
@@ -834,7 +1451,7 @@
             document.getElementById('edit-nationality').value = customer.nationality_code || 'SA';
             document.getElementById('edit-lang').value = customer.preferred_language || 'ar';
             document.getElementById('edit-status').value = customer.status || 'ACTIVE';
-            document.getElementById('edit-national-id').value = '';
+            document.getElementById('edit-national-id').value = customer.national_id || '';
 
             toggleCompanyFields('edit');
             document.getElementById('edit-modal').style.display = 'flex';
@@ -876,10 +1493,9 @@
 
                 if (res.ok) {
                     const result = await res.json();
-                    showToast(`Customer ${result.data.customer_id} updated successfully!`);
+                    showToast(currentLang === 'ar' ? `تم تحديث بيانات العميل ${result.data.customer_id} بنجاح!` : `Customer ${result.data.customer_id} updated successfully!`);
                     closeEditCustomerModal();
                     fetchCustomers();
-                    // If 360 is open, refresh it too
                     if (current360CustomerId === customerId) {
                         viewCustomer360(customerId);
                     }
@@ -894,8 +1510,9 @@
 
         async function viewCustomer360(customerId) {
             current360CustomerId = customerId;
+            const isAr = currentLang === 'ar';
             document.getElementById('c360-modal').style.display = 'flex';
-            document.getElementById('c360-body').innerHTML = '<p>Loading customer 360 relationship data...</p>';
+            document.getElementById('c360-body').innerHTML = `<p style="text-align:center; padding: 24px; color: #64748b;">${isAr ? 'جاري استدعاء سجل العميل الشامل 360°...' : 'Loading customer 360 relationship data...'}</p>`;
             document.getElementById('c360-id-subtitle').textContent = `Customer ID: ${customerId}`;
 
             try {
@@ -909,67 +1526,143 @@
                 const tenancies = d.tenancies || [];
                 const ownedUnits = d.owned_units || [];
 
-                document.getElementById('c360-title').textContent = `Customer 360: ${p.full_name || p.company_name || 'Client'}`;
+                const displayName = p.customer_type === 'COMPANY' ? (p.company_name || 'Corporate') : (p.full_name || 'Individual');
+                const isCompany = p.customer_type === 'COMPANY';
+
+                document.getElementById('c360-title').textContent = `${isAr ? 'ملف العميل الشامل 360°: ' : 'Customer 360: '}${displayName}`;
                 document.getElementById('c360-id-subtitle').innerHTML = `
-                    Customer ID: <strong class="id-badge">${p.customer_id || customerId}</strong>
-                    <button class="btn-copy" onclick="copyId('${p.customer_id || customerId}')">📋 Copy</button>
+                    ${isAr ? 'معرّف العميل:' : 'Customer ID:'} <strong class="id-badge">${p.customer_id || customerId}</strong>
+                    <button class="btn-copy" onclick="copyId('${p.customer_id || customerId}')">📋 ${isAr ? 'نسخ' : 'Copy'}</button>
                 `;
 
                 document.getElementById('c360-body').innerHTML = `
-                    <div style="background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
-                        <div style="font-size: 1.1em; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+                    <!-- 1. Hero Profile Card -->
+                    <div class="c360-hero-card">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div class="cust-avatar ${isCompany ? 'company' : ''}" style="width: 46px; height: 46px; font-size: 1.1em;">
+                                ${isCompany ? '🏢' : (displayName.charAt(0).toUpperCase() || '👤')}
+                            </div>
                             <div>
-                                ${p.full_name || p.company_name || 'Customer'} 
-                                <span class="badge ${p.customer_type === 'COMPANY' ? 'badge-company' : 'badge-individual'}">${p.customer_type || 'INDIVIDUAL'}</span>
-                                <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}">${p.status || 'ACTIVE'}</span>
+                                <div style="font-size: 1.15em; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span>${displayName}</span>
+                                    <span class="badge ${isCompany ? 'badge-company' : 'badge-individual'}">${p.customer_type || 'INDIVIDUAL'}</span>
+                                    <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}">
+                                        <span class="badge-dot"></span>
+                                        <span>${p.status || 'ACTIVE'}</span>
+                                    </span>
+                                </div>
+                                <div style="margin-top: 6px; font-size: 0.85em; color: #475569; display: flex; gap: 14px; flex-wrap: wrap;">
+                                    <span>📞 <strong>${p.mobile || '--'}</strong></span>
+                                    <span>✉️ <strong>${p.email || '--'}</strong></span>
+                                    <span>🪪 <strong>${p.national_id || '--'}</strong></span>
+                                    <span>🌐 <strong>${p.nationality_code || 'SA'} (${(p.preferred_language || 'ar').toUpperCase()})</strong></span>
+                                </div>
                             </div>
                         </div>
-                        <div style="margin-top: 8px; font-size: 0.9em; color: var(--text-muted); line-height: 1.6;">
-                            <div>📞 Mobile: <strong>${p.mobile || '--'}</strong> | ✉️ Email: <strong>${p.email || '--'}</strong></div>
-                            <div>🌐 Nationality: <strong>${p.nationality_code || 'SA'}</strong> | Language: <strong>${p.preferred_language?.toUpperCase() || 'AR'}</strong></div>
+                    </div>
+
+                    <!-- 2. KPI Summary Tiles -->
+                    <div class="c360-kpi-grid">
+                        <div class="c360-kpi-tile">
+                            <div class="c360-kpi-val">${leads.length}</div>
+                            <div class="c360-kpi-lbl">📋 ${isAr ? 'الطلبات' : 'Leads'}</div>
+                        </div>
+                        <div class="c360-kpi-tile">
+                            <div class="c360-kpi-val" style="color: #0284c7;">${opportunities.length}</div>
+                            <div class="c360-kpi-lbl">💼 ${isAr ? 'صفقات المبيعات' : 'Deals'}</div>
+                        </div>
+                        <div class="c360-kpi-tile">
+                            <div class="c360-kpi-val" style="color: #15803d;">${tenancies.length}</div>
+                            <div class="c360-kpi-lbl">🔑 ${isAr ? 'عقود الإيجار' : 'Leases'}</div>
+                        </div>
+                        <div class="c360-kpi-tile">
+                            <div class="c360-kpi-val" style="color: #ea580c;">${ownedUnits.length}</div>
+                            <div class="c360-kpi-lbl">🏢 ${isAr ? 'الوحدات المملوكة' : 'Owned Units'}</div>
                         </div>
                     </div>
 
-                    <!-- Quick Interaction Action Buttons -->
+                    <!-- 3. Quick Action Buttons Bar -->
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1;">
-                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_viewing" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Schedule a property viewing for this client">
-                            👁️ + Schedule Viewing
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_viewing" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; text-decoration: none;" title="${isAr ? 'جدولة معاينة ميدانية' : 'Schedule viewing'}">
+                            👁️ ${isAr ? '+ جدولة معاينة' : '+ Schedule Viewing'}
                         </a>
-                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_activity" class="btn btn-sm" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Log a call, WhatsApp, viewing, meeting or internal note">
-                            📝 + Log Activity
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_activity" class="btn btn-sm" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; text-decoration: none;" title="${isAr ? 'تسجيل نشاط ميداني أو مكالمة' : 'Log activity'}">
+                            📝 ${isAr ? '+ تسجيل نشاط' : '+ Log Activity'}
                         </a>
-                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_comm" class="btn btn-sm" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Record outbound/inbound communication message">
-                            💬 + Log Communication
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_comm" class="btn btn-sm" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; text-decoration: none;" title="${isAr ? 'تسجيل رسالة تواصل' : 'Log communication'}">
+                            💬 ${isAr ? '+ تسجيل رسالة' : '+ Log Message'}
                         </a>
-                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_task" class="btn btn-sm" style="background: #fefce8; color: #854d0e; border: 1px solid #fde047; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Create follow-up task">
-                            📋 + New Task
+                        <a href="tasks.html?customer_id=${encodeURIComponent(p.customer_id || customerId)}&action=new_task" class="btn btn-sm" style="background: #fefce8; color: #854d0e; border: 1px solid #fde047; text-decoration: none;" title="${isAr ? 'إنشاء مهمة متابعة' : 'Create follow-up task'}">
+                            📋 ${isAr ? '+ مهمة جديدة' : '+ New Task'}
                         </a>
                     </div>
 
-                    <h4 style="margin: 16px 0 8px 0;">Inbound Leads (${leads.length})</h4>
-                    ${leads.length ? leads.map(l => `
-                        <div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                            <div>• Lead ID: <span class="id-badge">${l.lead_id}</span> | Status: <strong>${l.status}</strong> | Priority: <strong>${l.priority}</strong> | Type: ${l.inquiry_type}</div>
-                            <button type="button" class="btn btn-sm" style="font-size: 0.78em; padding: 2px 8px; background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; border-radius: 4px; cursor: pointer;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey">📍 مسار المعاملة</button>
-                        </div>
-                    `).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No leads recorded.</p>'}
+                    <!-- 4. Sectional Relationship Lists -->
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.92em; color: #0f172a; display: flex; align-items: center; justify-content: space-between;">
+                            <span>📋 ${isAr ? 'الطلبات المسجلة' : 'Inbound Leads'} (${leads.length})</span>
+                        </h4>
+                        ${leads.length ? leads.map(l => `
+                            <div class="c360-card-item">
+                                <div>
+                                    <span class="id-badge">${l.lead_id}</span>
+                                    <span style="font-weight: 700; margin-inline-start: 6px;">${l.inquiry_type || 'BUY'}</span>
+                                    <span style="color: #64748b; font-size: 0.85em;">• ${isAr ? 'الحالة:' : 'Status:'} <strong>${l.status}</strong></span>
+                                    <span style="color: #64748b; font-size: 0.85em;">• ${isAr ? 'الأولوية:' : 'Priority:'} <strong>${l.priority}</strong></span>
+                                </div>
+                                <button type="button" class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey">📍 ${isAr ? 'مسار المعاملة' : 'Situation'}</button>
+                            </div>
+                        `).join('') : `<p style="color: #94a3b8; font-size: 0.84em; margin: 4px 0 12px 0;">${isAr ? 'لا توجد طلبات مسجلة لهذا العميل.' : 'No leads recorded.'}</p>`}
+                    </div>
 
-                    <h4 style="margin: 16px 0 8px 0;">Sales Pipeline Deals (${opportunities.length})</h4>
-                    ${opportunities.length ? opportunities.map(o => `
-                        <div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                            <div>• Stage: <strong>${o.stage}</strong> | Expected Value: <strong>${Number(o.expected_value || 0).toLocaleString()} SAR</strong> | Target Date: ${o.expected_close_date || '--'}</div>
-                            <button type="button" class="btn btn-sm" style="font-size: 0.78em; padding: 2px 8px; background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; border-radius: 4px; cursor: pointer;" onclick="openSituationModal({ oppId: '${o.opportunity_id}' })" title="Situation & Operational Journey">📍 مسار المعاملة</button>
-                        </div>
-                    `).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No pipeline opportunities.</p>'}
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.92em; color: #0f172a; display: flex; align-items: center; justify-content: space-between;">
+                            <span>💼 ${isAr ? 'فرص المبيعات النشطة' : 'Sales Pipeline Deals'} (${opportunities.length})</span>
+                        </h4>
+                        ${opportunities.length ? opportunities.map(o => `
+                            <div class="c360-card-item">
+                                <div>
+                                    <span class="badge badge-active">${o.stage}</span>
+                                    <span style="font-weight: 700; color: #15803d; margin-inline-start: 8px;">${Number(o.expected_value || 0).toLocaleString()} SAR</span>
+                                    <span style="color: #64748b; font-size: 0.85em;">• ${isAr ? 'الإغلاق المتوقع:' : 'Target:'} ${o.expected_close_date || '--'}</span>
+                                </div>
+                                <button type="button" class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ oppId: '${o.opportunity_id}' })" title="Situation & Operational Journey">📍 ${isAr ? 'مسار المعاملة' : 'Situation'}</button>
+                            </div>
+                        `).join('') : `<p style="color: #94a3b8; font-size: 0.84em; margin: 4px 0 12px 0;">${isAr ? 'لا توجد صفقات جارية في مسار المبيعات.' : 'No pipeline opportunities.'}</p>`}
+                    </div>
 
-                    <h4 style="margin: 16px 0 8px 0;">Leases & Tenancies (${tenancies.length})</h4>
-                    ${tenancies.length ? tenancies.map(t => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Contract: <strong>${t.contract_number}</strong> | Rent: <strong>${Number(t.rent_amount || 0).toLocaleString()} SAR</strong> | Status: ${t.status}</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No tenancy agreements.</p>'}
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.92em; color: #0f172a;">
+                            🔑 ${isAr ? 'عقود الإيجار والتأجير' : 'Leases & Tenancies'} (${tenancies.length})
+                        </h4>
+                        ${tenancies.length ? tenancies.map(t => `
+                            <div class="c360-card-item">
+                                <div>
+                                    <strong>#${t.contract_number}</strong>
+                                    <span style="color: #15803d; font-weight: 700; margin-inline-start: 8px;">${Number(t.rent_amount || 0).toLocaleString()} SAR</span>
+                                    <span style="color: #64748b; font-size: 0.85em;">• ${isAr ? 'الحالة:' : 'Status:'} ${t.status}</span>
+                                </div>
+                            </div>
+                        `).join('') : `<p style="color: #94a3b8; font-size: 0.84em; margin: 4px 0 12px 0;">${isAr ? 'لا توجد عقود إيجار مسجلة.' : 'No tenancy agreements.'}</p>`}
+                    </div>
 
-                    <h4 style="margin: 16px 0 8px 0;">Owned Units (${ownedUnits.length})</h4>
-                    ${ownedUnits.length ? ownedUnits.map(u => `<div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85em;">• Unit: <strong>${u.unit_number}</strong> | Status: ${u.status} | Asking: ${Number(u.asking_price || 0).toLocaleString()} SAR</div>`).join('') : '<p style="color: #94a3b8; font-size: 0.85em;">No units owned.</p>'}
+                    <div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.92em; color: #0f172a;">
+                            🏢 ${isAr ? 'الوحدات العقارية المملوكة' : 'Owned Units'} (${ownedUnits.length})
+                        </h4>
+                        ${ownedUnits.length ? ownedUnits.map(u => `
+                            <div class="c360-card-item">
+                                <div>
+                                    <strong>${u.unit_number}</strong>
+                                    <span style="color: #64748b; font-size: 0.85em; margin-inline-start: 6px;">(${u.status})</span>
+                                    <span style="color: #15803d; font-weight: 700; margin-inline-start: 8px;">${Number(u.asking_price || 0).toLocaleString()} SAR</span>
+                                </div>
+                            </div>
+                        `).join('') : `<p style="color: #94a3b8; font-size: 0.84em; margin: 4px 0 0 0;">${isAr ? 'لا يملك أي وحدات مسجلة بالمخزون.' : 'No units owned.'}</p>`}
+                    </div>
                 `;
             } catch (e) {
-                document.getElementById('c360-body').innerHTML = '<p style="color: red;">Failed to load Customer 360 data.</p>';
+                document.getElementById('c360-body').innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Failed to load Customer 360 data.</p>';
             }
         }
 

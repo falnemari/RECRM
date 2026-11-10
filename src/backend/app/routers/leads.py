@@ -414,7 +414,7 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
             elif inq in ("INVEST", "INVESTMENT"):
                 contact_tmpl = "TASK_INVEST_LEAD_FIRST_CONTACT"
             else:
-                contact_tmpl = "TASK_LEAD_FIRST_CONTACT"
+                contact_tmpl = "TASK_SALES_LEAD_CONTACT_QUALIFY"
             await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
                 template_id=contact_tmpl,
@@ -442,7 +442,7 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
         else:
             # Unassigned lead: Route to Branch Manager with TASK_LEAD_ASSIGN (15m SLA)
             assign_due_at = now_dt + timedelta(minutes=15)
-            await WorkflowEngine.spawn_task_from_template(
+            assign_task, _ = await WorkflowEngine.spawn_task_from_template(
                 conn=conn,
                 template_id="TASK_LEAD_ASSIGN",
                 lead_id=lead_id,
@@ -463,6 +463,7 @@ async def create_lead(payload: LeadCreate, conn: asyncpg.Connection = Depends(ge
                 user_id=branch_manager_id,
                 customer_id=customer_id,
                 lead_id=lead_id,
+                task_id=assign_task["task_id"] if assign_task else None,
                 outcome="ROUTED",
                 notes=activity_notes
             )
@@ -846,6 +847,113 @@ async def add_lead_note(lead_id: str, payload: LeadNoteCreate, conn: asyncpg.Con
     return ResponseEnvelope(data=LeadNoteOut(**dict(row)), meta=BaseMeta())
 
 
+@router.get("/{lead_id}/inventory", response_model=ResponseEnvelope[dict])
+async def get_lead_inventory(
+    lead_id: str,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get a complete traceability inventory of everything created or linked in the system for this lead:
+    Tasks, Activities, Communications, Viewings, Documents, Shortlisted Units, Notes, Events, Opportunities, Invoices.
+    """
+    lead = await conn.fetchrow(
+        """
+        SELECT l.lead_id, l.status, l.customer_id,
+               COALESCE(c.first_name || ' ' || c.last_name, c.company_name, 'Unknown Customer') AS customer_name,
+               c.mobile AS customer_mobile
+        FROM leads l
+        LEFT JOIN customers c ON l.customer_id = c.customer_id
+        WHERE l.lead_id = $1
+        """,
+        lead_id
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود (Lead not found)")
+
+    def _serialize(row):
+        d = dict(row)
+        for k, v in d.items():
+            if hasattr(v, "isoformat"):
+                d[k] = v.isoformat()
+            elif hasattr(v, "__float__") and not isinstance(v, (int, float)):
+                d[k] = float(v)
+        return d
+
+    tasks = await conn.fetch(
+        "SELECT task_id, title, status, priority, due_at, created_at FROM tasks WHERE lead_id = $1 ORDER BY created_at DESC",
+        lead_id
+    )
+    activities = await conn.fetch(
+        "SELECT activity_id, activity_type_id, subject, status, scheduled_at, completed_at, created_at FROM activities WHERE lead_id = $1 ORDER BY created_at DESC",
+        lead_id
+    )
+    comms = await conn.fetch(
+        "SELECT communication_id, channel, direction, delivery_status, created_at FROM communications WHERE lead_id = $1 ORDER BY created_at DESC",
+        lead_id
+    )
+    viewings = await conn.fetch(
+        "SELECT viewing_id, unit_id, status, scheduled_start FROM viewings WHERE lead_id = $1 ORDER BY scheduled_start DESC",
+        lead_id
+    )
+    docs = await conn.fetch(
+        "SELECT document_id, file_name, document_type_id, status, created_at FROM documents WHERE lead_id = $1 ORDER BY created_at DESC",
+        lead_id
+    )
+    units = await conn.fetch(
+        """
+        SELECT lu.unit_id, lu.is_primary, u.unit_number, CAST(u.asking_price AS FLOAT) AS asking_price
+        FROM lead_units lu
+        LEFT JOIN units u ON lu.unit_id = u.unit_id
+        WHERE lu.lead_id = $1
+        """,
+        lead_id
+    )
+    opps = await conn.fetch(
+        "SELECT opportunity_id, stage, CAST(expected_value AS FLOAT) AS expected_value FROM opportunities WHERE lead_id = $1",
+        lead_id
+    )
+    invoices = await conn.fetch(
+        "SELECT invoice_id, invoice_number, CAST(total_amount AS FLOAT) AS total_amount, status FROM invoices WHERE lead_id = $1",
+        lead_id
+    )
+    events_count = await conn.fetchval("SELECT count(*) FROM lead_events WHERE lead_id = $1", lead_id) or 0
+    notes_count = await conn.fetchval("SELECT count(*) FROM lead_notes WHERE lead_id = $1", lead_id) or 0
+
+    return ResponseEnvelope(
+        data={
+            "lead_id": lead_id,
+            "status": lead["status"],
+            "customer": {
+                "customer_id": lead["customer_id"],
+                "name": lead["customer_name"],
+                "mobile": lead["customer_mobile"]
+            },
+            "summary_counts": {
+                "tasks_count": len(tasks),
+                "activities_count": len(activities),
+                "communications_count": len(comms),
+                "viewings_count": len(viewings),
+                "documents_count": len(docs),
+                "shortlisted_units_count": len(units),
+                "journey_events_count": events_count,
+                "notes_count": notes_count,
+                "opportunities_count": len(opps),
+                "invoices_count": len(invoices)
+            },
+            "tasks": [_serialize(t) for t in tasks],
+            "activities": [_serialize(a) for a in activities],
+            "communications": [_serialize(c) for c in comms],
+            "viewings": [_serialize(v) for v in viewings],
+            "documents": [_serialize(d) for d in docs],
+            "shortlisted_units": [_serialize(u) for u in units],
+            "opportunities": [_serialize(o) for o in opps],
+            "invoices": [_serialize(i) for i in invoices],
+            "can_delete": len(opps) == 0 and len(invoices) == 0
+        },
+        message="تم استخراج حصر شامل لكافة السجلات المرتبطة بالطلب بنجاح"
+    )
+
+
 @router.delete("/{lead_id}", response_model=ResponseEnvelope[dict])
 async def delete_lead(
     lead_id: str,
@@ -853,7 +961,7 @@ async def delete_lead(
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
-    Delete a lead and its dependent records (activities, tasks, lead_events, communications, lead_units, lead_notes).
+    Delete a lead and its dependent records (activities, tasks, lead_events, communications, lead_units, lead_notes, viewings, documents).
     Permissions:
     - GENERAL_MANAGER, SYS_ADMIN, ADMIN: can delete any lead.
     - BRANCH_MANAGER, SALES_MANAGER: can delete leads belonging to their branch.
@@ -916,6 +1024,16 @@ async def delete_lead(
             detail="لا يمكن حذف الطلب لوجود صفقات بيعية أو فواتير مالية مرتبطة به. يرجى إلغاء أو معالجة السجلات المرتبطة أولاً."
         )
 
+    # Tally records to be deleted for audit feedback
+    tasks_count = await conn.fetchval("SELECT count(*) FROM tasks WHERE lead_id = $1", lead_id) or 0
+    activities_count = await conn.fetchval("SELECT count(*) FROM activities WHERE lead_id = $1", lead_id) or 0
+    comms_count = await conn.fetchval("SELECT count(*) FROM communications WHERE lead_id = $1", lead_id) or 0
+    viewings_count = await conn.fetchval("SELECT count(*) FROM viewings WHERE lead_id = $1", lead_id) or 0
+    docs_count = await conn.fetchval("SELECT count(*) FROM documents WHERE lead_id = $1", lead_id) or 0
+    notes_count = await conn.fetchval("SELECT count(*) FROM lead_notes WHERE lead_id = $1", lead_id) or 0
+    events_count = await conn.fetchval("SELECT count(*) FROM lead_events WHERE lead_id = $1", lead_id) or 0
+    units_count = await conn.fetchval("SELECT count(*) FROM lead_units WHERE lead_id = $1", lead_id) or 0
+
     async with conn.transaction():
         await conn.execute("DELETE FROM lead_events WHERE lead_id = $1", lead_id)
         await conn.execute("DELETE FROM lead_notes WHERE lead_id = $1", lead_id)
@@ -924,10 +1042,25 @@ async def delete_lead(
         await conn.execute("DELETE FROM communications WHERE lead_id = $1", lead_id)
         await conn.execute("DELETE FROM activities WHERE lead_id = $1", lead_id)
         await conn.execute("DELETE FROM tasks WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM viewings WHERE lead_id = $1", lead_id)
+        await conn.execute("DELETE FROM documents WHERE lead_id = $1", lead_id)
         await conn.execute("DELETE FROM leads WHERE lead_id = $1", lead_id)
 
     return ResponseEnvelope(
-        data={"deleted": True, "lead_id": lead_id},
-        message="تم حذف الطلب بنجاح"
+        data={
+            "deleted": True,
+            "lead_id": lead_id,
+            "purged": {
+                "tasks": tasks_count,
+                "activities": activities_count,
+                "communications": comms_count,
+                "viewings": viewings_count,
+                "documents": docs_count,
+                "notes": notes_count,
+                "events": events_count,
+                "units": units_count
+            }
+        },
+        message="تم حذف الطلب وكافة متعلقاته بنجاح"
     )
 

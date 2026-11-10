@@ -19,6 +19,129 @@ from app.config import settings
 # - requires_fields: callback | qual | viewing_schedule | viewing_report | offer | None
 
 RICH_TASK_OUTCOMES = {
+    "TASK_SALES_LEAD_CONTACT_QUALIFY": {
+        "CONTACTED_QUALIFIED": {
+            "next_template_id": "TASK_MATCH_PROPERTIES",
+            "label_ar": "📞 تم الاتصال واستكمال التأهيل بنجاح",
+            "label_en": "📞 Successfully Connected & Qualified",
+            "description_ar": "تم التواصل مع العميل واستيفاء كافة معايير التأهيل والميزانية وترقية الطلب لصفقة بيع نشطة",
+            "description_en": "Successfully connected with client, gathered qualification criteria, and promoted to active sale opportunity",
+            "style": "success",
+            "requires_fields": "qual",
+            "sort_order": 1
+        },
+        "CALLBACK_REQUESTED": {
+            "next_template_id": "TASK_LEAD_FOLLOWUP_QUALIFY",
+            "label_ar": "⏰ طلب معاودة الاتصال",
+            "label_en": "⏰ Callback Requested",
+            "description_ar": "تحديد موعد وتوقيت لإعادة الاتصال بالعميل واستكمال التأهيل",
+            "description_en": "Specify date and time to follow up and qualify client",
+            "style": "info",
+            "requires_fields": "callback",
+            "sort_order": 2
+        },
+        "UNREACHABLE": {
+            "next_template_id": "TASK_LEAD_FOLLOWUP_QUALIFY",
+            "label_ar": "📵 تعذر الوصول / لا يوجد رد",
+            "label_en": "📵 Unreachable / No Answer",
+            "description_ar": "تسجيل محاولة اتصال أولية وتوليد مهمة متابعة وتأهيل (بحد أقصى 3 محاولات)",
+            "description_en": "Record first contact attempt and schedule follow-up qualification (up to 3 attempts max)",
+            "style": "info",
+            "requires_fields": "callback",
+            "sort_order": 3
+        },
+        "NOT_INTERESTED": {
+            "next_template_id": None,
+            "label_ar": "🚫 غير مهتم",
+            "label_en": "🚫 Not Interested",
+            "description_ar": "إغلاق الطلب واستبعاده بناء على رغبة العميل",
+            "description_en": "Disqualify and close lead per client request",
+            "style": "danger",
+            "requires_fields": None,
+            "sort_order": 4
+        },
+        "INVALID_CONTACT": {
+            "next_template_id": None,
+            "label_ar": "📵 رقم خاطئ / بيانات غير صالحة",
+            "label_en": "📵 Invalid Number / Data",
+            "description_ar": "استبعاد الطلب لعدم صحة بيانات الاتصال نهائياً",
+            "description_en": "Disqualify lead permanently due to invalid contact details",
+            "style": "danger",
+            "requires_fields": None,
+            "sort_order": 5
+        }
+    },
+    "TASK_LEAD_FOLLOWUP_QUALIFY": {
+        "CONTACTED_QUALIFIED": {
+            "next_template_id": "TASK_MATCH_PROPERTIES",
+            "label_ar": "📞 تم الاتصال واستكمال التأهيل بنجاح",
+            "label_en": "📞 Successfully Connected & Qualified",
+            "description_ar": "تم التواصل في المتابعة واستيفاء معايير التأهيل وترقية الطلب لصفقة بيع نشطة",
+            "description_en": "Follow-up successful, gathered qualification criteria and promoted to active opportunity",
+            "style": "success",
+            "requires_fields": "qual",
+            "sort_order": 1
+        },
+        "CALLBACK_REQUESTED": {
+            "next_template_id": "TASK_LEAD_FOLLOWUP_QUALIFY",
+            "label_ar": "⏰ طلب معاودة الاتصال",
+            "label_en": "⏰ Callback Requested",
+            "description_ar": "تحديد موعد جديد لمعاودة الاتصال بالعميل",
+            "description_en": "Specify new date and time to call client back",
+            "style": "info",
+            "requires_fields": "callback",
+            "sort_order": 2
+        },
+        "UNREACHABLE": {
+            "next_template_id": "TASK_LEAD_FOLLOWUP_QUALIFY",
+            "label_ar": "📵 تعذر الوصول / لا يوجد رد",
+            "label_en": "📵 Unreachable / No Answer",
+            "description_ar": "تسجيل محاولة متابعة (يغلق الطلب كغير مستجيب تلقائياً بعد 3 محاولات)",
+            "description_en": "Record follow-up attempt (auto-closes after 3 unreached attempts)",
+            "style": "info",
+            "requires_fields": "callback",
+            "sort_order": 3
+        },
+        "NOT_INTERESTED": {
+            "next_template_id": None,
+            "label_ar": "🚫 غير مهتم",
+            "label_en": "🚫 Not Interested",
+            "description_ar": "إغلاق الطلب واستبعاده",
+            "description_en": "Disqualify and close inquiry",
+            "style": "danger",
+            "requires_fields": None,
+            "sort_order": 4
+        }
+    },
+    "TASK_MATCH_PROPERTIES": {
+        "MATCHED": {
+            "next_template_id": "TASK_VIEWING_SCHEDULE",
+            "label_ar": "🏢 ترشيح الوحدات بنجاح",
+            "label_en": "🏢 Properties Matched & Presented",
+            "description_ar": "توثيق إرسال مقترحات العقارات وتوليد مهمة جدولة المعاينة الميدانية",
+            "description_en": "Record sent property recommendations and spawn site visit scheduling task",
+            "style": "success",
+            "requires_fields": "match"
+        },
+        "REVISE_CRITERIA": {
+            "next_template_id": None,
+            "label_ar": "🔄 تعديل شروط وميزانية البحث",
+            "label_en": "🔄 Revise Search Criteria",
+            "description_ar": "تحديث وتعديل متطلبات البحث والميزانية مع العميل",
+            "description_en": "Update search preferences and budget criteria with client",
+            "style": "info",
+            "requires_fields": None
+        },
+        "NONE_FOUND": {
+            "next_template_id": None,
+            "label_ar": "🔍 لا توجد وحدات مطابقة بالمخزون",
+            "label_en": "🔍 No Units Found in Inventory",
+            "description_ar": "وضع الطلب في الانتظار للمطابقة التلقائية مع المخزون الجديد",
+            "description_en": "Place deal on waitlist for auto-matching with new listings",
+            "style": "warning",
+            "requires_fields": None
+        }
+    },
     "TASK_LEAD_FIRST_CONTACT": {
         "CONNECTED": {
             "next_template_id": "TASK_LEAD_QUALIFY",
@@ -318,20 +441,29 @@ RICH_TASK_OUTCOMES = {
     "TASK_LEAD_QUALIFY": {
         "QUALIFIED": {
             "next_template_id": "TASK_VIEWING_SCHEDULE",
-            "label_ar": "⭐ استيفاء معايير التأهيل",
-            "label_en": "⭐ Qualified",
-            "description_ar": "تحويل الطلب لفرصة بيعية نشطة وتوليد مهمة مطابقة العقارات أو المعاينة",
-            "description_en": "Promote lead to active deal opportunity and spawn property matching or viewing",
+            "label_ar": "⭐ استكمال التأهيل بنجاح وتحويل لصفقة",
+            "label_en": "⭐ Lead Qualified & Converted",
+            "description_ar": "استيفاء معايير التأهيل وترقية الطلب لصفقة نشطة وتوليد مهمة ترشيح العقارات أو المعاينة",
+            "description_en": "Criteria met, promote lead to active opportunity and spawn property matching or viewing",
             "style": "success",
             "requires_fields": "qual"
         },
-        "CONVERTED": {
-            "next_template_id": "TASK_VIEWING_SCHEDULE",
-            "label_ar": "🌟 تحويل فوري لفرصة بيعية مؤكدة",
-            "label_en": "🌟 Converted to Active Deal",
-            "description_ar": "ترقية الصفقة وتحديد موعد معاينة مباشرة",
-            "description_en": "Advance deal and schedule direct viewing",
-            "style": "success",
+        "QUALIFIED_RENT": {
+            "next_template_id": "TASK_RENT_MATCH_PROPERTIES",
+            "label_ar": "🔑 مؤهل لطلب إيجار",
+            "label_en": "🔑 Qualified for Rental",
+            "description_ar": "تحويل لمسار الإيجار وتوليد مهمة ترشيح الوحدات السكنية/التجارية",
+            "description_en": "Promote to rental pipeline and spawn unit matching",
+            "style": "info",
+            "requires_fields": "qual"
+        },
+        "QUALIFIED_INVESTMENT": {
+            "next_template_id": "TASK_INVEST_CONFIRM_OBJECTIVES",
+            "label_ar": "💼 مؤهل لفرصة استثمارية",
+            "label_en": "💼 Qualified for Investment",
+            "description_ar": "تحويل لمسار الاستثمار وتوليد مهمة تأكيد الأهداف والعوائد",
+            "description_en": "Promote to investment pipeline and spawn objectives confirmation",
+            "style": "primary",
             "requires_fields": "qual"
         },
         "FOLLOWUP_NEEDED": {
@@ -347,17 +479,17 @@ RICH_TASK_OUTCOMES = {
             "next_template_id": "TASK_LEAD_FOLLOWUP",
             "label_ar": "📵 تعذر الاتصال أثناء التأهيل",
             "label_en": "📵 No Answer during Qualification",
-            "description_ar": "إعادة محاولة المتابعة",
+            "description_ar": "إعادة محاولة المتابعة لاستكمال التأهيل",
             "description_en": "Retry qualification call",
             "style": "warning",
             "requires_fields": None
         },
         "DISQUALIFIED": {
             "next_template_id": None,
-            "label_ar": "❌ غير مؤهل",
-            "label_en": "❌ Disqualified",
-            "description_ar": "استبعاد الطلب لعدم الجدية أو عدم مناسبة المعايير",
-            "description_en": "Disqualify lead due to lack of serious interest or unmatched criteria",
+            "label_ar": "❌ استبعاد الطلب لعدم الملاءمة",
+            "label_en": "❌ Disqualified / Opportunity Lost",
+            "description_ar": "استبعاد الطلب لعدم الجدية أو الملاءمة المالية أو انسحاب العميل",
+            "description_en": "Disqualify lead due to lack of serious interest, financial mismatch or lost to competitor",
             "style": "danger",
             "requires_fields": None
         },
@@ -369,51 +501,24 @@ RICH_TASK_OUTCOMES = {
             "description_en": "Archive inquiry as customer is not interested",
             "style": "danger",
             "requires_fields": None
-        },
-        "LOST": {
-            "next_template_id": None,
-            "label_ar": "📉 صفقة مفقودة",
-            "label_en": "📉 Lost Opportunity",
-            "description_ar": "إغلاق الطلب وفقدان العميل لصالح منافس أو تراجعه",
-            "description_en": "Close deal as lost",
-            "style": "danger",
-            "requires_fields": None
-        },
-        "QUALIFIED_RENT": {
-            "next_template_id": "TASK_RENT_MATCH_PROPERTIES",
-            "label_ar": "🔑 مؤهل لطلب إيجار",
-            "label_en": "🔑 Qualified for Rental",
-            "description_ar": "تحويل لمسار الإيجار وتوليد مهمة ترشيح الوحدات السكنية/التجارية",
-            "description_en": "Promote to rental pipeline and spawn unit matching",
-            "style": "info",
-            "requires_fields": "qual"
-        },
-        "QUALIFIED_SALE": {
-            "next_template_id": "TASK_VIEWING_SCHEDULE",
-            "label_ar": "🏠 مؤهل لطلب شراء",
-            "label_en": "🏠 Qualified for Purchase",
-            "description_ar": "تحويل لمسار الشراء وتوليد مهمة جدول المعاينة",
-            "description_en": "Promote to purchase pipeline and spawn viewing schedule",
-            "style": "success",
-            "requires_fields": "qual"
-        },
-        "QUALIFIED_INVESTMENT": {
-            "next_template_id": "TASK_INVEST_CONFIRM_OBJECTIVES",
-            "label_ar": "💼 مؤهل لفرصة استثمارية",
-            "label_en": "💼 Qualified for Investment",
-            "description_ar": "تحويل لمسار الاستثمار وتوليد مهمة تأكيد الأهداف والعوائد",
-            "description_en": "Promote to investment pipeline and spawn objectives confirmation",
-            "style": "primary",
-            "requires_fields": "qual"
         }
     },
     "TASK_LEAD_ASSIGN": {
+        "SALES": {
+            "next_template_id": "TASK_SALES_LEAD_CONTACT_QUALIFY",
+            "label_ar": "👤 تم تعيين وسيط البيع",
+            "label_en": "👤 Agent Assigned",
+            "description_ar": "إتمام التعيين وتوليد مهمة الاتصال الأولي والتأهيل للوسيط بمهلة SLA قدرها 30 دقيقة",
+            "description_en": "Complete assignment and spawn 30-min first contact & qualification SLA task",
+            "style": "success",
+            "requires_fields": "assign"
+        },
         "ASSIGNED": {
-            "next_template_id": "TASK_LEAD_FIRST_CONTACT",
-            "label_ar": "✓ تم توجيه وتعيين وسيط المبيعات",
-            "label_en": "✓ Agent Assigned",
-            "description_ar": "إتمام التعيين وتوليد مهمة الاتصال الأولي للوسيط بمهلة SLA قدرها 30 دقيقة",
-            "description_en": "Complete assignment and spawn 30-min first contact SLA task",
+            "next_template_id": "TASK_SALES_LEAD_CONTACT_QUALIFY",
+            "label_ar": "👤 تم تعيين وسيط البيع",
+            "label_en": "👤 Agent Assigned",
+            "description_ar": "إتمام التعيين وتوليد مهمة الاتصال الأولي والتأهيل للوسيط بمهلة SLA قدرها 30 دقيقة",
+            "description_en": "Complete assignment and spawn 30-min first contact & qualification SLA task",
             "style": "success",
             "requires_fields": "assign"
         },
@@ -537,19 +642,10 @@ RICH_TASK_OUTCOMES = {
     "TASK_VIEWING_REPORT": {
         "INTERESTED": {
             "next_template_id": "TASK_OFFER_SUBMIT",
-            "label_ar": "⭐ العميل مهتم ويرغب بتقديم عرض",
+            "label_ar": "⭐ العميل مهتم ويرغب بتقديم عرض مالي",
             "label_en": "⭐ Interested — Ready to Submit Offer",
-            "description_ar": "ترقية الصفقة لمرحلة التفاوض (NEGOTIATION) وتوليد مهمة تقديم العرض المالي بمهلة 12 ساعة",
-            "description_en": "Promote deal to NEGOTIATION and generate 12-hour offer submission task",
-            "style": "success",
-            "requires_fields": "offer"
-        },
-        "OFFER_REQUESTED": {
-            "next_template_id": "TASK_OFFER_SUBMIT",
-            "label_ar": "📝 طلب تقديم عرض مالي رسمي",
-            "label_en": "📝 Official Offer Requested",
-            "description_ar": "إعداد وتقديم العرض للوحدة العقارية",
-            "description_en": "Prepare and submit offer for property unit",
+            "description_ar": "ترقية الصفقة لمرحلة التفاوض (NEGOTIATION) وتوليد مهمة تقديم العرض المالي بمهلة 12 ساعة وتثبيت قيمة السوم",
+            "description_en": "Promote deal to NEGOTIATION and generate 12-hour offer submission task and lock offer amount",
             "style": "success",
             "requires_fields": "offer"
         },
@@ -562,21 +658,12 @@ RICH_TASK_OUTCOMES = {
             "style": "info",
             "requires_fields": None
         },
-        "ANOTHER_VIEWING": {
-            "next_template_id": "TASK_VIEWING_SCHEDULE",
-            "label_ar": "👁️ طلب زيارة ثانية لنفس العقار",
-            "label_en": "👁️ Second Viewing Requested",
-            "description_ar": "تنسيق موعد زيارة إضافية بصحبة أسرته أو مستشار فني",
-            "description_en": "Coordinate second visit with family or advisor",
-            "style": "info",
-            "requires_fields": None
-        },
         "REQUESTS_ANOTHER_VIEWING": {
             "next_template_id": "TASK_VIEWING_SCHEDULE",
             "label_ar": "👁️ يرغب بزيارة إضافية للمعاينة",
             "label_en": "👁️ Requests Additional Viewing",
-            "description_ar": "جدولة زيارة جديدة",
-            "description_en": "Schedule new viewing appointment",
+            "description_ar": "جدولة زيارة ثانية لنفس العقار بصحبة العائلة أو مستشار",
+            "description_en": "Schedule follow-up viewing appointment for the same property",
             "style": "info",
             "requires_fields": None
         },
@@ -627,21 +714,12 @@ RICH_TASK_OUTCOMES = {
             "style": "info",
             "requires_fields": None
         },
-        "ANOTHER_VIEWING": {
-            "next_template_id": "TASK_RENT_VIEWING_SCHEDULE",
-            "label_ar": "👁️ معاينة وحدة أخرى",
-            "label_en": "👁️ Another Viewing",
-            "description_ar": "جدولة زيارة لوحدة أخرى",
-            "description_en": "Schedule visit for another unit",
-            "style": "info",
-            "requires_fields": None
-        },
         "REQUESTS_ANOTHER_VIEWING": {
             "next_template_id": "TASK_RENT_VIEWING_SCHEDULE",
-            "label_ar": "👁️ طلب زيارة ثانية",
-            "label_en": "👁️ Requests Another Viewing",
-            "description_ar": "جدولة زيارة إضافية للمستأجر",
-            "description_en": "Schedule another viewing for tenant",
+            "label_ar": "👁️ طلب زيارة إضافية للمستأجر",
+            "label_en": "👁️ Requests Additional Viewing",
+            "description_ar": "جدولة زيارة إضافية للمستأجر بصحبة مرافق أو مستشار",
+            "description_en": "Schedule another viewing appointment for tenant",
             "style": "info",
             "requires_fields": None
         },
@@ -725,95 +803,41 @@ RICH_TASK_OUTCOMES = {
         }
     },
     "TASK_OFFER_FOLLOWUP": {
-        "ACCEPTED": {
-            "next_template_id": "TASK_RESERVATION_VERIFY_AVAILABILITY",
-            "label_ar": "🎉 قبول المالك للعرض كاملاً",
-            "label_en": "🎉 Owner Accepted Offer",
-            "description_ar": "ترقية الصفقة لمرحلة الحجز (RESERVATION) وتوليد مهمة التحقق من الوحدة وسداد العربون",
-            "description_en": "Advance deal to RESERVATION and spawn unit check & deposit task",
-            "style": "success",
-            "requires_fields": None
-        },
         "OFFER_ACCEPTED": {
             "next_template_id": "TASK_RESERVATION_VERIFY_AVAILABILITY",
-            "label_ar": "🎉 تم توثيق قبول العرض من الطرفين",
-            "label_en": "🎉 Deal Accepted by Both Parties",
-            "description_ar": "تثبيت الاتفاق وبدء إجراءات الحجز والعقد",
-            "description_en": "Confirm agreement and start reservation/contracting",
+            "label_ar": "🎉 قبول المالك للعرض وتثبيت الاتفاق",
+            "label_en": "🎉 Offer Accepted by Owner",
+            "description_ar": "ترقية الصفقة لمرحلة الحجز (RESERVATION) وتوليد مهمة التحقق من جاهزية الوحدة وسداد العربون",
+            "description_en": "Advance deal to RESERVATION and spawn unit availability verification and deposit task",
             "style": "success",
-            "requires_fields": None
-        },
-        "COUNTER": {
-            "next_template_id": "TASK_SALE_NEGOTIATE_CONCESSIONS",
-            "label_ar": "⚖️ قدم المالك عرضاً مضاداً (Counter Offer)",
-            "label_en": "⚖️ Counter Offer Received",
-            "description_ar": "توليد مهمة التفاوض على التخفيض وشروط السداد مع المشتري",
-            "description_en": "Spawn concessions negotiation task with buyer",
-            "style": "warning",
             "requires_fields": None
         },
         "COUNTER_OFFER": {
             "next_template_id": "TASK_SALE_NEGOTIATE_CONCESSIONS",
-            "label_ar": "⚖️ تفاوض وعرض بديل من المالك",
-            "label_en": "⚖️ Negotiation & Alternative Offer",
-            "description_ar": "استكمال التفاوض للوصول لحل وسطي",
-            "description_en": "Continue negotiations to reach agreement",
+            "label_ar": "⚖️ تفاوض وعرض مالي مضاد من المالك",
+            "label_en": "⚖️ Owner Counter Offer Received",
+            "description_ar": "استلام عرض مضاد وتوليد مهمة التفاوض على التخفيض وشروط السداد مع المشتري",
+            "description_en": "Counter offer received, spawn concessions and terms negotiation task with buyer",
             "style": "warning",
-            "requires_fields": None
-        },
-        "COUNTERED": {
-            "next_template_id": "TASK_SALE_NEGOTIATE_CONCESSIONS",
-            "label_ar": "⚖️ وجود تعديلات على السعر أو الدفعات",
-            "label_en": "⚖️ Price or Payment Terms Modified",
-            "description_ar": "الانتقال للتفاوض على التنازلات",
-            "description_en": "Proceed to concessions negotiation",
-            "style": "warning",
-            "requires_fields": None
-        },
-        "NEGOTIATION": {
-            "next_template_id": "TASK_SALE_NEGOTIATE_CONCESSIONS",
-            "label_ar": "💬 جاري التفاوض للتقارب في السعر",
-            "label_en": "💬 In Negotiation",
-            "description_ar": "جلسة تفاوض مشتركة بين البائع والمشتري",
-            "description_en": "Joint negotiation session between parties",
-            "style": "info",
             "requires_fields": None
         },
         "REJECTED": {
             "next_template_id": "TASK_OPPORTUNITY_MATCH_PROPERTIES",
-            "label_ar": "❌ رفض المالك للعرض نهائياً",
-            "label_en": "❌ Owner Rejected Offer",
-            "description_ar": "إغلاق التفاوض والعودة لمطابقة وترشيح عقارات بديلة للعميل",
-            "description_en": "Close negotiation and return to matching alternative properties",
-            "style": "danger",
-            "requires_fields": None
-        },
-        "EXPIRED": {
-            "next_template_id": "TASK_OPPORTUNITY_MATCH_PROPERTIES",
-            "label_ar": "⏰ انتهاء مهلة العرض دون رد",
-            "label_en": "⏰ Offer Expired without Response",
-            "description_ar": "سقوط العرض وإتاحة الفرصة لوحدات أخرى",
-            "description_en": "Offer lapsed, look for other options",
+            "label_ar": "❌ رفض المالك للعرض أو انتهاء مهلته",
+            "label_en": "❌ Offer Rejected or Expired",
+            "description_ar": "إغلاق المفاوضات على هذه الوحدة والعودة لمطابقة وترشيح عقارات بديلة للعميل",
+            "description_en": "Close negotiations on this property and return to matching alternative units",
             "style": "danger",
             "requires_fields": None
         }
     },
     "TASK_SALE_NEGOTIATE_CONCESSIONS": {
-        "AGREED": {
-            "next_template_id": "TASK_RESERVATION_VERIFY_AVAILABILITY",
-            "label_ar": "🤝 التوصل لاتفاق نهائي وسعر توافقي",
-            "label_en": "🤝 Agreement Reached on Terms",
-            "description_ar": "نجاح التفاوض والترقية لمرحلة الحجز والعقد",
-            "description_en": "Negotiation succeeded, advance to reservation",
-            "style": "success",
-            "requires_fields": None
-        },
         "CONCESSION_AGREED": {
             "next_template_id": "TASK_RESERVATION_VERIFY_AVAILABILITY",
-            "label_ar": "🤝 موافقة الطرفين على شروط التنازلات",
+            "label_ar": "🤝 التوصل لاتفاق نهائي وسعر توافقي",
             "label_en": "🤝 Concessions Mutually Agreed",
-            "description_ar": "تثبيت الاتفاق والانتقال للحجز",
-            "description_en": "Lock agreement and proceed to reservation",
+            "description_ar": "موافقة الطرفين على التنازلات وترقية الصفقة لمرحلة الحجز والعربون",
+            "description_en": "Both parties agreed on terms, proceed to unit reservation and deposit",
             "style": "success",
             "requires_fields": None
         },
@@ -841,17 +865,8 @@ RICH_TASK_OUTCOMES = {
             "next_template_id": "TASK_RESERVATION_DEPOSIT_FOLLOWUP",
             "label_ar": "🟢 الوحدة شاغرة ومتاحة للحجز الفوري",
             "label_en": "🟢 Unit Available for Immediate Reservation",
-            "description_ar": "حجز الوحدة بالمخزون كـ (RESERVED) وتوليد مهمة سداد وتدقيق العربون بمهلة 48 ساعة",
+            "description_ar": "تثبيت حجز الوحدة بالمخزون كـ (RESERVED) وتوليد مهمة سداد وتدقيق العربون بمهلة 48 ساعة",
             "description_en": "Lock unit in inventory as RESERVED and spawn 48h deposit verification task",
-            "style": "success",
-            "requires_fields": None
-        },
-        "CONFIRMED": {
-            "next_template_id": "TASK_RESERVATION_DEPOSIT_FOLLOWUP",
-            "label_ar": "🟢 تأكيد الجاهزية القانونية والفنية للوحدة",
-            "label_en": "🟢 Unit Confirmed Ready",
-            "description_ar": "إتمام الحجز وتوليد مهمة متابعة العربون",
-            "description_en": "Complete reservation and spawn deposit task",
             "style": "success",
             "requires_fields": None
         },
@@ -866,30 +881,12 @@ RICH_TASK_OUTCOMES = {
         }
     },
     "TASK_RESERVATION_DEPOSIT_FOLLOWUP": {
-        "PAID": {
-            "next_template_id": "TASK_CONTRACT_DRAFT",
-            "label_ar": "💰 تم سداد وتدقيق العربون بنجاح",
-            "label_en": "💰 Deposit Paid & Verified",
-            "description_ar": "إصدار سند القبض، وتثبيت الحجز، وتوليد مهمة صياغة مسودة العقد الرسمي",
-            "description_en": "Issue receipt, secure reservation, and spawn formal contract drafting task",
-            "style": "success",
-            "requires_fields": None
-        },
-        "VERIFIED": {
-            "next_template_id": "TASK_CONTRACT_DRAFT",
-            "label_ar": "💰 اعتماد التحويل البنكي للعربون",
-            "label_en": "💰 Bank Transfer Verified",
-            "description_ar": "الانتقال لمرحلة صياغة العقد",
-            "description_en": "Proceed to contract drafting",
-            "style": "success",
-            "requires_fields": None
-        },
         "DEPOSIT_VERIFIED": {
             "next_template_id": "TASK_CONTRACT_DRAFT",
-            "label_ar": "💰 توثيق العربون في الحساب البنكي",
-            "label_en": "💰 Deposit Cleared in Bank",
-            "description_ar": "تأكيد الإيداع وبدء العقد",
-            "description_en": "Confirm deposit and begin contract",
+            "label_ar": "💰 سداد وتوثيق العربون بالحساب البنكي",
+            "label_en": "💰 Earnest Money Deposit Verified",
+            "description_ar": "إصدار سند القبض الرسمي، وتثبيت حجز الوحدة، وتوليد مهمة صياغة مسودة العقد",
+            "description_en": "Issue official receipt, lock unit reservation, and spawn contract drafting task",
             "style": "success",
             "requires_fields": None
         },
@@ -942,22 +939,13 @@ RICH_TASK_OUTCOMES = {
         }
     },
     "TASK_CONTRACT_DRAFT": {
-        "DRAFTED": {
-            "next_template_id": "TASK_CONTRACT_INTERNAL_REVIEW",
-            "label_ar": "📄 تم إعداد مسودة العقد الرسمي",
-            "label_en": "📄 Contract Draft Prepared",
-            "description_ar": "رفع المسودة وتوليد مهمة التدقيق القانوني والاعتماد الداخلي",
-            "description_en": "Upload draft and spawn internal legal review task",
-            "style": "success",
-            "requires_fields": None
-        },
         "SUBMITTED": {
             "next_template_id": "TASK_CONTRACT_INTERNAL_REVIEW",
-            "label_ar": "📤 إرسال المسودة للمراجعة القانونية",
+            "label_ar": "📤 إرسال المسودة للمراجعة القانونية والاعتماد",
             "label_en": "📤 Submit Draft for Legal Review",
-            "description_ar": "إحالة المسودة للإدارة القانونية للمراجعة",
-            "description_en": "Refer draft to legal department for vetting",
-            "style": "info",
+            "description_ar": "إحالة مسودة العقد المكتملة للإدارة القانونية للتدقيق والاعتماد الداخلي",
+            "description_en": "Refer completed contract draft to legal department for review and internal approval",
+            "style": "success",
             "requires_fields": None
         }
     },
@@ -966,35 +954,17 @@ RICH_TASK_OUTCOMES = {
             "next_template_id": "TASK_CONTRACT_SIGNATURE",
             "label_ar": "✅ اعتماد مسودة العقد للمطابقة والتوقيع",
             "label_en": "✅ Contract Approved for Signature",
-            "description_ar": "جاهزية العقد للتوقيع وتوليد مهمة متابعة توقيع الأطراف عبر إيجار أو إلكترونياً",
-            "description_en": "Contract approved, spawn client signature execution task",
+            "description_ar": "اعتماد المسودة وتوليد مهمة توقيع العقد من كافة الأطراف عبر شبكة إيجار أو إلكترونياً",
+            "description_en": "Contract approved, spawn task for party signatures via Ejar or e-signature",
             "style": "success",
-            "requires_fields": None
-        },
-        "APPROVED_DRAFT": {
-            "next_template_id": "TASK_CONTRACT_SIGNATURE",
-            "label_ar": "✅ تدقيق المسودة بنجاح وبدء التوقيع",
-            "label_en": "✅ Draft Vetted & Ready for Signing",
-            "description_ar": "الانتقال لمرحلة التوقيع",
-            "description_en": "Proceed to signing phase",
-            "style": "success",
-            "requires_fields": None
-        },
-        "REJECTED": {
-            "next_template_id": "TASK_CONTRACT_DRAFT",
-            "label_ar": "❌ رفض المسودة وإعادتها للتصحيح",
-            "label_en": "❌ Draft Rejected — Revisions Required",
-            "description_ar": "وجود بنود ناقصة أو غير دقيقة تتطلب إعادة الصياغة",
-            "description_en": "Missing clauses, return draft to be rewritten",
-            "style": "danger",
             "requires_fields": None
         },
         "REVISIONS_NEEDED": {
             "next_template_id": "TASK_CONTRACT_DRAFT",
             "label_ar": "📝 طلب تعديلات قانونية إضافية",
             "label_en": "📝 Legal Amendments Requested",
-            "description_ar": "إعادة المسودة للتعديل وفق ملاحظات الشؤون القانونية",
-            "description_en": "Return draft to amend per legal counsel remarks",
+            "description_ar": "إعادة المسودة للتعديل وفق ملاحظات التدقيق القانوني والشؤون التعاقدية",
+            "description_en": "Return draft to drafter to incorporate legal counsel revisions",
             "style": "warning",
             "requires_fields": None
         }
@@ -1002,66 +972,30 @@ RICH_TASK_OUTCOMES = {
     "TASK_CONTRACT_SIGNATURE": {
         "SIGNED": {
             "next_template_id": "TASK_CONTRACT_HANDOVER",
-            "label_ar": "✍️ تم اكتمال توقيع العقد من كافة الأطراف",
-            "label_en": "✍️ Contract Signed by All Parties",
+            "label_ar": "✍️ اكتمال توقيع وتوثيق العقد من كافة الأطراف",
+            "label_en": "✍️ Contract Signed & Documented by All Parties",
             "description_ar": "ترقية الصفقة إلى (WON) وتوليد مهمة تسليم الوحدة وإصدار فواتير الرسوم والعمولة",
             "description_en": "Advance deal to WON, generate unit handover task and issue fee invoices",
-            "style": "success",
-            "requires_fields": None
-        },
-        "RECORD_SIGNATURE": {
-            "next_template_id": "TASK_CONTRACT_HANDOVER",
-            "label_ar": "✍️ توثيق توقيع العقد في منصة إيجار / بيع",
-            "label_en": "✍️ Official Platform Signature Verified",
-            "description_ar": "اعتماد سريان العقد والانتقال للتسليم",
-            "description_en": "Activate contract and proceed to handover",
             "style": "success",
             "requires_fields": None
         }
     },
     "TASK_RENT_PREPARE_TENANCY": {
-        "APPROVED": {
-            "next_template_id": "TASK_RENT_COLLECTION_MONITORING",
-            "label_ar": "✍️ توثيق عقد الإيجار الرسمي في منصة إيجار",
-            "label_en": "✍️ Tenancy Contract Registered in Ejar",
-            "description_ar": "اعتماد وتفعيل العقد رسمياً وتوليد مهمة متابعة تحصيل الإيجارات الدورية",
-            "description_en": "Register in Ejar, activate tenancy, and spawn rent collection monitoring task",
-            "style": "success",
-            "requires_fields": None
-        },
-        "EXECUTED": {
-            "next_template_id": "TASK_RENT_COLLECTION_MONITORING",
-            "label_ar": "✍️ تنفيذ وسريان عقد الإيجار",
-            "label_en": "✍️ Tenancy Agreement Executed",
-            "description_ar": "تفعيل العقد وبدء جداول السداد الدورية",
-            "description_en": "Activate lease agreement and payment schedules",
-            "style": "success",
-            "requires_fields": None
-        },
         "AGREEMENT_EXECUTED": {
             "next_template_id": "TASK_RENT_COLLECTION_MONITORING",
-            "label_ar": "✍️ اكتمال إجراءات العقد الإلكتروني",
-            "label_en": "✍️ E-Contract Completed",
-            "description_ar": "سريان العقد وتوليد متابعة الإيجار",
-            "description_en": "Lease in effect, spawn collection task",
+            "label_ar": "📑 اكتمال إبرام وتوثيق عقد الإيجار الرسمي",
+            "label_en": "📑 Ejar Tenancy Agreement Executed",
+            "description_ar": "توثيق وتفعيل العقد في شبكة إيجار وتوليد مهمة متابعة تحصيل الإيجارات والدفعات",
+            "description_en": "Register and activate tenancy in Ejar network and spawn periodic rent collection monitoring",
             "style": "success",
-            "requires_fields": None
-        },
-        "REJECTED": {
-            "next_template_id": "TASK_RENT_MATCH_PROPERTIES",
-            "label_ar": "❌ تعذر الاتفاق على بنود العقد",
-            "label_en": "❌ Failed to Agree on Lease Terms",
-            "description_ar": "إلغاء إجراءات الإيجار والعودة للبحث عن وحدة بديلة",
-            "description_en": "Cancel tenancy setup and search for alternative unit",
-            "style": "danger",
             "requires_fields": None
         },
         "TERMS_REJECTED": {
             "next_template_id": "TASK_RENT_MATCH_PROPERTIES",
-            "label_ar": "❌ رفض المستأجر أو المالك للشروط",
-            "label_en": "❌ Terms Rejected by Party",
-            "description_ar": "إلغاء المعاملة والعودة للترشيح",
-            "description_en": "Cancel deal and return to matching",
+            "label_ar": "🚫 تعذر الاتفاق على بنود العقد وصرف النظر",
+            "label_en": "🚫 Tenancy Terms Rejected",
+            "description_ar": "إلغاء المعاملة الإيجارية الحالية والعودة لترشيح وحدات بديلة للعميل",
+            "description_en": "Cancel current tenancy deal and return to matching alternative rental units",
             "style": "danger",
             "requires_fields": None
         }
@@ -1069,57 +1003,30 @@ RICH_TASK_OUTCOMES = {
     "TASK_INVEST_INSPECTION_REPORT": {
         "RECOMMENDED": {
             "next_template_id": "TASK_INVEST_VALIDATE_FINANCIALS",
-            "label_ar": "⭐ توصية بقبول العقار الاستثماري",
-            "label_en": "⭐ Recommended for Acquisition",
-            "description_ar": "اجتياز الفحص الفني وتوليد مهمة تدقيق الافتراضات المالية (Valuation)",
-            "description_en": "Due diligence passed, spawn financial assumptions validation task",
+            "label_ar": "⭐ توصية بقبول العقار الاستثماري وسلامة الفحص",
+            "label_en": "⭐ Asset Recommended for Investment",
+            "description_ar": "اجتياز الفحص الفني (Due Diligence) بنجاح وتوليد مهمة تدقيق التدفقات والافتراضات المالية",
+            "description_en": "Technical due diligence passed successfully, spawn financial valuation validation task",
             "style": "success",
-            "requires_fields": None
-        },
-        "COMPLETED": {
-            "next_template_id": "TASK_INVEST_VALIDATE_FINANCIALS",
-            "label_ar": "✓ اكتمال وتوثيق تقرير الفحص الفني",
-            "label_en": "✓ Inspection Report Documented",
-            "description_ar": "اعتماد التقرير والانتقال للتدقيق المالي",
-            "description_en": "Approve report and proceed to financial audit",
-            "style": "success",
-            "requires_fields": None
-        },
-        "REJECTED": {
-            "next_template_id": "TASK_INVEST_COMPARE_RETURNS",
-            "label_ar": "❌ عدم التوصية بـ العقار (عيوب فنية جوهرية)",
-            "label_en": "❌ Not Recommended (Major Deficiencies)",
-            "description_ar": "صرف النظر عن الأصل والعودة لمقارنة عوائد وحدات بديلة",
-            "description_en": "Decline asset due to critical defects, return to comparing alternative units",
-            "style": "danger",
             "requires_fields": None
         },
         "NOT_RECOMMENDED": {
             "next_template_id": "TASK_INVEST_COMPARE_RETURNS",
-            "label_ar": "❌ عدم استيفاء معايير الجودة الفنية",
-            "label_en": "❌ Technical Quality Criteria Not Met",
-            "description_ar": "العودة لمقارنة عوائد عقارات أخرى",
-            "description_en": "Return to compare alternative properties",
+            "label_ar": "❌ عدم التوصية بالعقار (عيوب فنية جوهرية)",
+            "label_en": "❌ Not Recommended (Major Technical Deficiencies)",
+            "description_ar": "صرف النظر عن الأصل لعدم الجدوى الفنية والعودة لمقارنة عوائد وحدات بديلة",
+            "description_en": "Decline asset due to critical physical defects, return to comparing alternative investments",
             "style": "danger",
             "requires_fields": None
         }
     },
     "TASK_INVEST_VALIDATE_FINANCIALS": {
-        "APPROVED": {
-            "next_template_id": "TASK_INVEST_PREPARE_ACQUISITION_OFFER",
-            "label_ar": "✅ اعتماد التقييم المالي دون تعديل سعري",
-            "label_en": "✅ Financial Valuation Approved",
-            "description_ar": "العوائد والـ Cap Rate تحقق المستهدف، وتوليد مهمة إعداد عرض الاستحواذ",
-            "description_en": "Target yield achieved, spawn acquisition offer preparation task",
-            "style": "success",
-            "requires_fields": None
-        },
         "VALIDATED": {
             "next_template_id": "TASK_INVEST_PREPARE_ACQUISITION_OFFER",
-            "label_ar": "✅ تدقيق واعتماد الافتراضات الاستثمارية",
-            "label_en": "✅ Investment Metrics Validated",
-            "description_ar": "الانتقال لتقديم عرض الاستحواذ للمستثمر",
-            "description_en": "Proceed to acquisition offer presentation",
+            "label_ar": "📈 اعتماد صحة التدفقات النقدية والتقييم المالي",
+            "label_en": "📈 Financial Cash Flows & Valuation Validated",
+            "description_ar": "العوائد الاستثمارية ومعدل الرسملة (Cap Rate) تحقق المستهدف، والانتقال لإعداد عرض الاستحواذ",
+            "description_en": "Target yield and Cap Rate achieved, proceed to acquisition offer preparation task",
             "style": "success",
             "requires_fields": None
         },
@@ -1181,30 +1088,12 @@ RICH_TASK_OUTCOMES = {
         }
     },
     "TASK_INVEST_PREPARE_ACQUISITION_OFFER": {
-        "ACCEPTED": {
-            "next_template_id": "TASK_INVEST_BASELINE_PERFORMANCE",
-            "label_ar": "🎉 قبول عرض الاستحواذ وتثبيت الصفقة",
-            "label_en": "🎉 Acquisition Offer Accepted",
-            "description_ar": "نجاح الصفقة الاستثمارية وتوليد مهمة تأسيس خط الأساس لأداء الاستثمار",
-            "description_en": "Deal won, spawn investment performance baseline establishment task",
-            "style": "success",
-            "requires_fields": None
-        },
         "OFFER_ACCEPTED": {
             "next_template_id": "TASK_INVEST_BASELINE_PERFORMANCE",
-            "label_ar": "🎉 تم اعتماد وتوقيع عرض الاستحواذ",
-            "label_en": "🎉 Offer Formally Executed",
-            "description_ar": "تثبيت الأداء والانتقال لخط الأساس",
-            "description_en": "Proceed to baseline establishment",
-            "style": "success",
-            "requires_fields": None
-        },
-        "WON": {
-            "next_template_id": "TASK_INVEST_BASELINE_PERFORMANCE",
-            "label_ar": "🎉 إتمام الاستحواذ بنجاح (صفقة رابحة)",
-            "label_en": "🎉 Deal Won",
-            "description_ar": "تحويل الصفقة لـ WON والبدء في إدارة ومراقبة الأداء",
-            "description_en": "Advance deal to WON and begin performance monitoring",
+            "label_ar": "🤝 قبول البائع لعرض الاستحواذ وتثبيت الصفقة",
+            "label_en": "🤝 Acquisition Offer Formally Accepted",
+            "description_ar": "إتمام الاستحواذ بنجاح (WON) وتوليد مهمة تأسيس خط الأساس لأداء الاستثمار",
+            "description_en": "Acquisition finalized successfully (WON), spawn investment performance baseline establishment task",
             "style": "success",
             "requires_fields": None
         },
@@ -1217,21 +1106,12 @@ RICH_TASK_OUTCOMES = {
             "style": "success",
             "requires_fields": None
         },
-        "REJECTED": {
-            "next_template_id": "TASK_INVEST_COMPARE_RETURNS",
-            "label_ar": "❌ رفض عرض الاستحواذ نهائياً",
-            "label_en": "❌ Acquisition Offer Rejected",
-            "description_ar": "إغلاق المعاملة والعودة للبحث عن بدائل",
-            "description_en": "Close transaction and search for alternatives",
-            "style": "danger",
-            "requires_fields": None
-        },
         "OFFER_REJECTED": {
             "next_template_id": "TASK_INVEST_COMPARE_RETURNS",
-            "label_ar": "❌ تعذر الاتفاق على الاستحواذ",
-            "label_en": "❌ Acquisition Failed",
-            "description_ar": "العودة للترشيح والمقارنة",
-            "description_en": "Return to property comparison",
+            "label_ar": "❌ رفض البائع لعرض الاستحواذ نهائياً",
+            "label_en": "❌ Acquisition Offer Rejected",
+            "description_ar": "تعذر التوصل لاتفاق استحواذ وإغلاق المعاملة والعودة للبحث عن فرص استثمارية بديلة",
+            "description_en": "Acquisition offer rejected, close transaction and return to comparing alternatives",
             "style": "danger",
             "requires_fields": None
         }
@@ -1246,21 +1126,12 @@ RICH_TASK_OUTCOMES = {
             "style": "success",
             "requires_fields": None
         },
-        "FAST_TRACK_OFFER": {
-            "next_template_id": "TASK_INVEST_PREPARE_ACQUISITION_OFFER",
-            "label_ar": "⚡ مسار سريع: تقديم عرض استحواذ مباشر",
-            "label_en": "⚡ Fast Track: Direct Acquisition Offer",
-            "description_ar": "العقار جاهز ولا يتطلب فحصاً إضافياً، والتوجيه فوراً لعرض الاستحواذ",
-            "description_en": "Asset pre-inspected, proceed directly to acquisition offer",
-            "style": "primary",
-            "requires_fields": None
-        },
         "PROCEED_TO_OFFER": {
             "next_template_id": "TASK_INVEST_PREPARE_ACQUISITION_OFFER",
-            "label_ar": "📤 الانتقال المباشر لتقديم العرض للمستثمر",
-            "label_en": "📤 Proceed Directly to Offer",
-            "description_ar": "تجاوز المعاينة بناءً على رغبة المستثمر والبدء بالعرض",
-            "description_en": "Investor waived inspection, proceed to offer",
+            "label_ar": "⚡ الانتقال المباشر لتقديم عرض الاستحواذ (مسار سريع)",
+            "label_en": "⚡ Fast-Track: Proceed Directly to Acquisition Offer",
+            "description_ar": "تجاوز الفحص الفني بناءً على طلب المستثمر وتوليد مهمة تجهيز عرض الاستحواذ فوراً",
+            "description_en": "Waive inspection per investor request and immediately spawn acquisition offer task",
             "style": "primary",
             "requires_fields": None
         },
@@ -1279,36 +1150,18 @@ RICH_TASK_OUTCOMES = {
             "next_template_id": "TASK_INVEST_MONITOR_ACTUAL_RETURNS",
             "label_ar": "📈 استمرار الاحتفاظ بالأصل (Hold Strategy)",
             "label_en": "📈 Hold Strategy Confirmed",
-            "description_ar": "الأداء يطابق المستهدف، وتوليد مهمة مراقبة وتدقيق العوائد الدورية",
-            "description_en": "Asset performing well, spawn periodic returns monitoring task",
+            "description_ar": "الأداء المالي يطابق مستهدف خط الأساس، وتوليد مهمة مراقبة وتدقيق العوائد الدورية",
+            "description_en": "Financial returns meet baseline target, spawn periodic operating returns monitoring task",
             "style": "success",
-            "requires_fields": None
-        },
-        "MONITOR_AGAIN": {
-            "next_template_id": "TASK_INVEST_MONITOR_ACTUAL_RETURNS",
-            "label_ar": "📊 جدولة مراجعة دورية قادمة",
-            "label_en": "📊 Schedule Next Monitoring Cycle",
-            "description_ar": "متابعة دورة العوائد التشغيلية",
-            "description_en": "Continue operating returns tracking",
-            "style": "info",
             "requires_fields": None
         },
         "EXIT": {
             "next_template_id": None,
-            "label_ar": "💰 التوصية بالتخارج وإعادة توظيف رأس المال (Exit)",
-            "label_en": "💰 Recommend Exit / Capital Recycling",
-            "description_ar": "تحقيق الأفق الزمني المستهدف والبدء في إجراءات بيع الأصل لتحقيق مكاسب رأسمالية",
-            "description_en": "Target horizon achieved, recommend selling asset for capital gains",
+            "label_ar": "💰 التوصية بالتخارج وإعادة توظيف رأس المال (Strategic Exit)",
+            "label_en": "💰 Strategic Exit & Capital Recycling Recommended",
+            "description_ar": "تحقيق الأفق الزمني المستهدف وتوصية ببيع الأصل لتحقيق الأرباح الرأسمالية",
+            "description_en": "Target investment horizon reached, recommend selling asset to capture capital gains",
             "style": "primary",
-            "requires_fields": None
-        },
-        "LIQUIDATE": {
-            "next_template_id": None,
-            "label_ar": "🔴 تصفية الاستثمار والتخارج",
-            "label_en": "🔴 Liquidate Investment",
-            "description_ar": "إنهاء دورة الاستثمار وتوزيع الأرباح",
-            "description_en": "Liquidate and distribute returns",
-            "style": "danger",
             "requires_fields": None
         }
     },
@@ -1436,10 +1289,17 @@ RICH_ACTIVITY_OUTCOMES = {
 }
 
 
-async def enrich_workflow_templates():
-    conn = await asyncpg.connect(settings.asyncpg_dsn)
+async def enrich_workflow_templates(target_db: Optional[str] = None):
+    dsn = settings.asyncpg_dsn
+    if target_db:
+        dsn = dsn.rsplit("/", 1)[0] + f"/{target_db}"
+    db_name = dsn.rsplit('/', 1)[-1]
+    print(f"Connecting to database: {db_name} ...")
+    conn = await asyncpg.connect(dsn)
     try:
-        print("Starting workflow templates outcome metadata enrichment...")
+        print(f"Starting workflow templates outcome metadata enrichment on '{db_name}'...")
+        # Ensure column is JSON (preserves exact dictionary key ordering)
+        await conn.execute("ALTER TABLE workflow_templates ALTER COLUMN outcome_transitions TYPE JSON USING outcome_transitions::json;")
         updated_tasks = 0
         updated_activities = 0
 
@@ -1449,7 +1309,7 @@ async def enrich_workflow_templates():
             res = await conn.execute(
                 """
                 UPDATE workflow_templates
-                SET outcome_transitions = $1::jsonb
+                SET outcome_transitions = $1::json
                 WHERE template_id = $2
                 """,
                 json_str, tmpl_id
@@ -1464,7 +1324,7 @@ async def enrich_workflow_templates():
             res = await conn.execute(
                 """
                 UPDATE workflow_templates
-                SET outcome_transitions = $1::jsonb
+                SET outcome_transitions = $1::json
                 WHERE template_id = $2
                 """,
                 json_str, tmpl_id
@@ -1483,5 +1343,6 @@ async def enrich_workflow_templates():
 
 
 if __name__ == "__main__":
-    asyncio.run(enrich_workflow_templates())
+    target = sys.argv[1] if len(sys.argv) > 1 else None
+    asyncio.run(enrich_workflow_templates(target))
 

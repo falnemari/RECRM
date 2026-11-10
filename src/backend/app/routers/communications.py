@@ -443,6 +443,27 @@ async def get_task_completion_details(
         task_id
     )
     activity_data = dict(activity_row) if activity_row else None
+    if not activity_data and task_data.get("completed_at") and (task_data.get("opportunity_id") or task_data.get("lead_id")):
+        fallback_act = await conn.fetchrow(
+            """
+            SELECT a.*, u.full_name AS agent_name
+            FROM activities a
+            LEFT JOIN users u ON a.user_id = u.user_id
+            WHERE (
+                (a.opportunity_id = $1 AND $1::text IS NOT NULL) OR 
+                (a.lead_id = $2 AND $2::text IS NOT NULL)
+            )
+            ORDER BY ABS(EXTRACT(EPOCH FROM (a.created_at - $3::timestamptz))) ASC
+            LIMIT 1
+            """,
+            task_data.get("opportunity_id"), task_data.get("lead_id"), task_data.get("completed_at")
+        )
+        if fallback_act:
+            activity_data = dict(fallback_act)
+
+    if activity_data:
+        task_data["outcome"] = activity_data.get("outcome")
+        task_data["notes"] = activity_data.get("description")
 
     # 2. Fetch linked Documents
     doc_rows = await conn.fetch(
@@ -510,7 +531,8 @@ async def get_task_completion_details(
             """
             SELECT c.*, u.unit_number 
             FROM contracts c 
-            LEFT JOIN units u ON c.contract_id = u.unit_id 
+            LEFT JOIN reservations r ON c.reservation_id = r.reservation_id
+            LEFT JOIN units u ON r.unit_id = u.unit_id 
             WHERE c.contract_number = $1 
             LIMIT 1
             """,
@@ -556,7 +578,7 @@ async def get_task_completion_details(
             LEFT JOIN units u ON v.unit_id = u.unit_id
             LEFT JOIN customers c ON v.customer_id = c.customer_id
             WHERE (v.opportunity_id = $1 OR v.lead_id = $2)
-            ORDER BY v.scheduled_at DESC, v.created_at DESC
+            ORDER BY v.scheduled_start DESC, v.created_at DESC
             LIMIT 1
             """,
             task_data.get("opportunity_id"), task_data.get("lead_id")

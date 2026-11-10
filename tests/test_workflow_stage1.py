@@ -362,9 +362,9 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(completed_assign_task["status"], "COMPLETED")
             self.assertIsNotNone(completed_assign_task["completed_at"])
 
-            # Verify TASK_LEAD_FIRST_CONTACT is now SPAWNED for the assigned sales agent
+            # Verify TASK_SALES_LEAD_CONTACT_QUALIFY or TASK_LEAD_FIRST_CONTACT is now SPAWNED for the assigned sales agent
             first_contact_task = await self.conn.fetchrow(
-                "SELECT task_id, template_id, assigned_user_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                "SELECT task_id, template_id, assigned_user_id, status FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY')",
                 lead_id
             )
             self.assertIsNotNone(first_contact_task)
@@ -413,7 +413,7 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
 
             # Initial first contact task was created
             tasks_before = await self.conn.fetch(
-                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY')",
                 lead_id
             )
             self.assertEqual(len(tasks_before), 1)
@@ -435,9 +435,9 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
                 assigned_user_id=self.agent_id
             )
 
-            # Ensure NO second TASK_LEAD_FIRST_CONTACT was spawned
+            # Ensure NO second first contact task was spawned
             tasks_after = await self.conn.fetch(
-                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                "SELECT task_id, template_id, status FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY')",
                 lead_id
             )
             self.assertEqual(len(tasks_after), 1, "Must NOT spawn duplicate TASK_LEAD_FIRST_CONTACT")
@@ -519,7 +519,7 @@ class TestWorkflowStage1(unittest.IsolatedAsyncioTestCase):
 
             # Verify 30-min SLA contact task was spawned for the assigned agent
             contact_task = await self.conn.fetchrow(
-                "SELECT task_id, template_id, assigned_user_id, status FROM tasks WHERE lead_id = $1 AND template_id = 'TASK_LEAD_FIRST_CONTACT'",
+                "SELECT task_id, template_id, assigned_user_id, status FROM tasks WHERE lead_id = $1 AND template_id IN ('TASK_LEAD_FIRST_CONTACT', 'TASK_SALES_LEAD_CONTACT_QUALIFY')",
                 lead_id
             )
             self.assertIsNotNone(contact_task)

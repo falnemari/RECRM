@@ -9,16 +9,35 @@
     <style>
         :root {
             --primary: #1e3a8a;
-            --secondary: #3b82f6;
+            --primary-hover: #1e40af;
+            --primary-light: #eff6ff;
+            --secondary: #2563eb;
+            --secondary-hover: #1d4ed8;
             --accent: #10b981;
+            --accent-hover: #059669;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            --ar-font: 'Cairo', 'Tajawal', 'Almarai', 'Sakkal Majalla', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --border-focus: #3b82f6;
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --ar-font: 'Cairo', 'Tajawal', 'Almarai', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
-        /* Top-Tier Professional Arabic Typography */
+        /* Top-Tier Professional Arabic Typography & Emoji Rendering */
         [lang="ar"], [dir="rtl"], [dir="rtl"] body, html[lang="ar"], html[dir="rtl"] {
             font-family: var(--ar-font) !important;
         }
@@ -30,32 +49,18 @@
         .ar-font {
             font-family: var(--ar-font) !important;
         }
-        .sub-nav-banner {
-            background: #0f172a;
-            border-top: 1px solid #1e293b;
-            border-bottom: 2px solid #3b82f6;
-            color: #e2e8f0;
-            padding: 7px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .sub-nav-banner .banner-title {
-            font-size: 1.15em;
-            font-weight: 700;
-            color: #60a5fa;
-            letter-spacing: 0.3px;
-        }
-        .sub-nav-banner .banner-subtitle {
-            font-size: 0.8em;
-            color: #94a3b8;
+        * {
+            box-sizing: border-box;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--bg);
             color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            width: 100%;
         }
         .header {
             background-color: var(--primary);
@@ -64,138 +69,342 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         }
         .logo-wrap { display: flex; align-items: center; gap: 12px; }
-        .logo { font-size: 1.4em; font-weight: 700; }
-        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 1.35em; font-weight: 800; letter-spacing: -0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
         .lang-btn {
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+            color: white; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85em; font-weight: 600;
+            transition: all 0.2s ease;
         }
-        .nav { background-color: #0f172a; padding: 0 16px; }
-        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
-        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.9em; font-weight: 500; }
-        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; }
-        .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .nav { background-color: #0f172a; padding: 0 16px; overflow-x: auto; white-space: nowrap; }
+        .nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; }
+        .nav li a { display: inline-block; padding: 12px 18px; color: #cbd5e1; text-decoration: none; font-size: 0.88em; font-weight: 500; transition: all 0.15s ease; }
+        .nav li a:hover, .nav li a.active { background-color: #1e293b; color: white; border-bottom: 2px solid #3b82f6; }
+        .sub-nav-banner {
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            color: #e2e8f0;
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sub-nav-banner .banner-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.3px;
+        }
+        .sub-nav-banner .banner-subtitle {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        .content { padding: 24px; max-width: 1440px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .page-header h1 { font-size: 1.6em; font-weight: 800; color: #0f172a; margin: 0; }
+        .counter-badge {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 0.82em; font-weight: 600;
+            color: #475569; background: #e2e8f0; padding: 3px 10px; border-radius: var(--radius-full); margin-top: 4px;
+        }
+
+        /* Modern Controls Bar */
         .controls-bar {
-            background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
-            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+            background: #ffffff; padding: 14px 18px; border-radius: var(--radius-lg); border: 1px solid var(--border);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; box-shadow: var(--shadow-sm);
         }
-        .controls-bar input, .controls-bar select {
-            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+        .search-wrap {
+            position: relative; flex: 1; min-width: 240px; display: flex; align-items: center;
         }
+        .search-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; font-size: 1rem; pointer-events: none; line-height: 1;
+            display: inline-flex; align-items: center; justify-content: center; overflow: visible;
+        }
+        [dir="rtl"] .search-icon { left: auto; right: 14px; }
+        .search-wrap input {
+            width: 100%; padding: 9px 14px 9px 40px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.88em; outline: none; transition: all 0.2s ease; background: #f8fafc;
+        }
+        [dir="rtl"] .search-wrap input { padding: 9px 40px 9px 14px; }
+        .search-wrap input:focus {
+            background: #ffffff; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .controls-bar select {
+            padding: 9px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.88em; background-color: #f8fafc; color: #1e293b; font-weight: 500; cursor: pointer;
+            outline: none; transition: all 0.2s ease;
+        }
+        .controls-bar select:focus {
+            background-color: #ffffff; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Table Architecture */
         .table-wrap {
-            background: white; border-radius: 8px; border: 1px solid var(--border);
-            overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+            background: #ffffff; border-radius: var(--radius-lg); border: 1px solid var(--border);
+            overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow-sm); margin-bottom: 20px;
+            width: 100%; max-width: 100%; box-sizing: border-box;
         }
         .leads-table {
-            width: 100%; border-collapse: collapse; background: white; font-size: 0.82rem;
+            width: 100%; border-collapse: separate; border-spacing: 0; background: white; font-size: 0.84rem;
+            table-layout: auto;
         }
         .leads-table th, .leads-table td {
-            padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border);
-            vertical-align: middle; white-space: nowrap; font-size: 0.82rem;
+            padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+            vertical-align: middle; overflow: visible;
         }
         [dir="rtl"] .leads-table th, [dir="rtl"] .leads-table td { text-align: right; }
         .leads-table th {
-            background-color: #f1f5f9; color: var(--text-muted); font-weight: 600;
-            text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; white-space: nowrap;
+            background: #f8fafc; color: #475569; font-weight: 700;
+            text-transform: uppercase; font-size: 0.74rem; letter-spacing: 0.5px;
+            position: sticky; top: 0; z-index: 10; white-space: nowrap;
         }
-        .leads-table tr:hover { background-color: #f8fafc; }
+        .leads-table tbody tr { transition: background-color 0.15s ease; }
+        .leads-table tbody tr:hover { background-color: #f8fafc; }
+        .leads-table tbody tr:last-child td { border-bottom: none; }
+
+        /* Icon & Pill Utilities */
+        .icon-glyph, .btn-icon, .badge-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            line-height: 1; flex-shrink: 0; vertical-align: middle; overflow: visible !important;
+            font-style: normal;
+        }
+        .prop-type-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+            border-radius: 4px; padding: 2px 7px; font-size: 0.8em; font-weight: 600;
+            margin-top: 3px; max-width: 100%;
+        }
+        .prop-type-info-btn {
+            cursor: help; opacity: 0.75; font-size: 0.85em; display: inline-flex;
+            align-items: center; justify-content: center; line-height: 1;
+        }
+        .prop-type-info-btn:hover { opacity: 1; }
 
         /* Pagination Bar */
         .pagination-bar {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 16px; background: #fff; border-top: 1px solid var(--border);
-            font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+            padding: 10px 18px; background: #fff; border-top: 1px solid var(--border);
+            font-size: 0.82rem; flex-wrap: wrap; gap: 10px;
         }
-        .pagination-controls { display: flex; align-items: center; gap: 6px; }
-        .page-size-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: #fff; cursor: pointer; }
-        .btn-page { padding: 3px 8px; font-size: 0.78rem; border: 1px solid var(--border); background: #f8fafc; border-radius: 4px; cursor: pointer; }
-        .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .page-size-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; background: #fff; cursor: pointer; }
+        .btn-page { padding: 4px 10px; font-size: 0.8rem; border: 1px solid var(--border); background: #f8fafc; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s ease; }
+        .btn-page:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
         .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
-        .page-num-display { font-weight: 600; padding: 0 4px; color: var(--text-main); }
+        .page-num-display { font-weight: 700; padding: 0 4px; color: var(--text-main); }
         
+        /* Badges & Unified Geometric Rectangles */
         .badge {
-            padding: 3px 8px; border-radius: 9999px; font-size: 0.75em; font-weight: 700;
-            text-transform: uppercase; display: inline-block;
+            height: 26px; box-sizing: border-box;
+            padding: 0 10px; border-radius: 6px; font-size: 0.78em; font-weight: 700;
+            text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+            overflow: visible; line-height: 1;
         }
-        .badge-new { background: #fee2e2; color: #991b1b; }
-        .badge-contacted { background: #fef3c7; color: #92400e; }
-        .badge-qualified { background: #dcfce7; color: #166534; }
-        .badge-converted { background: #e0e7ff; color: #3730a3; }
-        .badge-lost { background: #f1f5f9; color: #475569; }
+        .lead-status-badge {
+            width: 150px;
+            height: 28px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.78em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+        }
+        .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .badge-new { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .badge-new .badge-dot { background: #dc2626; }
+        .badge-contacted { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-contacted .badge-dot { background: #d97706; }
+        .badge-qualified { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .badge-qualified .badge-dot { background: #16a34a; }
+        .badge-converted { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+        .badge-converted .badge-dot { background: #7c3aed; }
+        .badge-lost { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .badge-lost .badge-dot { background: #64748b; }
 
         .id-badge {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.8em; background: #f1f5f9; color: #475569; padding: 3px 6px;
-            border-radius: 4px; border: 1px solid #cbd5e1; user-select: all;
+            font-size: 0.80em; background: #f1f5f9; color: #334155; padding: 0 8px;
+            height: 28px; box-sizing: border-box;
+            border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700;
+            display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+            white-space: nowrap;
+        }
+        .lead-id-badge {
+            width: 150px;
+            height: 28px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.80em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+        }
+        .lead-type-chip {
+            height: 28px; box-sizing: border-box; width: 150px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+            border-radius: 6px; font-size: 0.76em; font-weight: 700;
+            background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px;
+            margin: 0 auto;
         }
         .btn-copy {
-            background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 5px;
-            cursor: pointer; font-size: 0.75em; margin-left: 4px; color: #64748b;
+            background: transparent; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 6px;
+            cursor: pointer; font-size: 0.75em; margin-inline-start: 4px; color: #64748b; transition: all 0.15s ease;
+            display: inline-flex; align-items: center; justify-content: center; line-height: 1; overflow: visible;
+            height: 26px; box-sizing: border-box;
         }
-        .btn-copy:hover { background: #e2e8f0; color: #0f172a; }
+        .btn-copy:hover { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
 
+        /* Buttons */
         .btn {
-            background-color: var(--secondary); color: white; padding: 8px 14px; border: none;
-            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.85em; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 4px;
+            background-color: var(--secondary); color: white; padding: 8px 16px; border: none;
+            border-radius: var(--radius-md); cursor: pointer; text-decoration: none; font-size: 0.88em; font-weight: 600;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease;
+            box-shadow: var(--shadow-xs);
         }
-        .btn:hover { background-color: #2563eb; }
+        .btn:hover { background-color: var(--secondary-hover); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+        .btn:active { transform: translateY(0); }
         .btn-success { background-color: var(--accent); }
-        .btn-success:hover { background-color: #059669; }
-        .btn-sm { padding: 4px 8px; font-size: 0.8em; background: #e2e8f0; color: #0f172a; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-sm:hover { background: #cbd5e1; }
-        .btn-primary-sm { padding: 4px 10px; font-size: 0.8em; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-success:hover { background-color: var(--accent-hover); }
+        .btn-outline { background: #ffffff; color: #334155; border: 1.5px solid var(--border); }
+        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+        .btn-sm { padding: 5px 10px; font-size: 0.78em; border-radius: var(--radius-sm); }
+        .btn-primary-sm { padding: 5px 12px; font-size: 0.78em; background: #2563eb; color: #ffffff; border-radius: var(--radius-sm); }
         .btn-primary-sm:hover { background: #1d4ed8; }
 
-        /* Modal Styles */
+        /* Modal Architecture */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            z-index: 1000; justify-content: center; align-items: center; padding: 16px; animation: fadeIn 0.15s ease-out;
         }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .modal {
-            background: white; border-radius: 12px; width: 90%; max-width: 750px; max-height: 90vh;
-            overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+            background: white; border-radius: var(--radius-xl); width: 95%; max-width: 780px; max-height: 90vh;
+            overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--border);
+            display: flex; flex-direction: column; animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-header {
-            padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 24px; border-bottom: 1.5px solid var(--border); display: flex; justify-content: space-between;
+            align-items: center; background: #ffffff; position: sticky; top: 0; z-index: 10;
         }
-        .modal-body { padding: 24px; }
+        .modal-header h3 { margin: 0; font-size: 1.15em; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        .modal-body { padding: 20px 24px; flex: 1; overflow-y: auto; }
         .modal-footer {
-            padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;
+            padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;
+            background: #f8fafc; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);
+            position: sticky; bottom: 0; z-index: 10;
         }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 0.85em; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        .close-btn {
+            background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text-muted);
+            width: 32px; height: 32px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .close-btn:hover { background: #f1f5f9; color: #0f172a; }
+
+        /* Form Controls & Groups */
+        .form-section {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 14px;
+        }
+        .form-section-title {
+            font-size: 0.85em; font-weight: 700; color: #1e3a8a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+        }
+        .form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .form-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-size: 0.82em; font-weight: 700; color: #334155; margin-bottom: 5px; }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9em;
+            width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.88em; transition: all 0.2s ease; outline: none; background: #ffffff;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
         .form-row { display: flex; gap: 12px; }
         .form-row .form-group { flex: 1; }
-        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-muted); }
 
         .search-customer-card {
-            background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+            background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 14px;
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88em;
+            transition: all 0.15s ease;
         }
-        .search-customer-card:hover { border-color: var(--secondary); background: #f8fafc; }
+        .search-customer-card:hover { border-color: var(--secondary); background: #f8fafc; transform: translateY(-1px); }
 
         .id-display-box {
-            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: var(--radius-md);
             padding: 10px 14px; font-size: 0.88em; margin-bottom: 16px; display: flex;
             justify-content: space-between; align-items: center;
         }
 
+        /* Modern Outcome Cards (for Stage 2 Lead Contact & Qualifications) */
+        .outcome-card {
+            display: flex !important; flex-direction: row !important; align-items: flex-start !important;
+            width: 100% !important; padding: 12px 14px !important; background: #ffffff; border: 1.5px solid #cbd5e1;
+            border-radius: 10px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 8px !important; gap: 12px;
+            box-sizing: border-box;
+        }
+        .outcome-card:hover { border-color: #94a3b8; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+        .outcome-card-control { flex-shrink: 0; padding-top: 2px; }
+        .outcome-card-control input[type="radio"] { width: 18px; height: 18px; cursor: pointer; margin: 0; }
+        .outcome-card-content { flex: 1; min-width: 0; text-align: start; }
+        .outcome-card-title { font-size: 0.94em; font-weight: 700; line-height: 1.35; color: #0f172a; margin-bottom: 3px; }
+        .outcome-card-desc { font-size: 0.8em; color: #475569; line-height: 1.4; margin: 0; }
+
+        .outcome-card.style-success { border-color: #86efac; }
+        .outcome-card.style-success:hover { background: #fcfdfc; }
+        .outcome-card.style-success:has(input:checked) {
+            border-color: #16a34a !important; background: #f0fdf4 !important;
+            box-shadow: 0 0 0 1.5px #16a34a, 0 2px 8px rgba(22, 163, 74, 0.08) !important;
+        }
+        .outcome-card.style-success input[type="radio"] { accent-color: #16a34a; }
+
+        .outcome-card.style-warning { border-color: #fdba74; }
+        .outcome-card.style-warning:hover { background: #fffdfb; }
+        .outcome-card.style-warning:has(input:checked) {
+            border-color: #ea580c !important; background: #fff7ed !important;
+            box-shadow: 0 0 0 1.5px #ea580c, 0 2px 8px rgba(234, 88, 12, 0.08) !important;
+        }
+        .outcome-card.style-warning input[type="radio"] { accent-color: #ea580c; }
+
+        .outcome-card.style-danger { border-color: #fca5a5; }
+        .outcome-card.style-danger:hover { background: #fffcfc; }
+        .outcome-card.style-danger:has(input:checked) {
+            border-color: #dc2626 !important; background: #fef2f2 !important;
+            box-shadow: 0 0 0 1.5px #dc2626, 0 2px 8px rgba(220, 38, 38, 0.08) !important;
+        }
+        .outcome-card.style-danger input[type="radio"] { accent-color: #dc2626; }
+
         /* Toast notification */
         #toast {
-            visibility: hidden; min-width: 250px; background-color: #0f172a; color: #fff; text-align: center;
-            border-radius: 8px; padding: 12px 16px; position: fixed; z-index: 2000; right: 30px; bottom: 30px;
-            font-size: 0.9em; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            visibility: hidden; min-width: 260px; background-color: #0f172a; color: #fff; text-align: center;
+            border-radius: var(--radius-md); padding: 12px 18px; position: fixed; z-index: 2000; right: 24px; bottom: 24px;
+            font-size: 0.88em; font-weight: 600; box-shadow: var(--shadow-xl); border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
-        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
-        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+        #toast.show { visibility: visible; animation: toastFadeIn 0.25s, toastFadeOut 0.3s 2.5s; }
+        @keyframes toastFadeIn { from { bottom: 10px; opacity: 0; } to { bottom: 24px; opacity: 1; } }
+        @keyframes toastFadeOut { from { bottom: 24px; opacity: 1; } to { bottom: 10px; opacity: 0; } }
+
+        @media (max-width: 768px) {
+            .content { padding: 16px; }
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .search-wrap { min-width: 100%; }
+            .modal { width: 98%; max-height: 95vh; }
+            .modal-body { padding: 16px; }
+            .form-grid-2, .form-grid-3, .form-row { grid-template-columns: 1fr; flex-direction: column; }
+        }
     </style>
 </head>
 <body>
@@ -252,14 +461,17 @@
     <div class="content">
         <div class="page-header">
             <div>
-                <h1 style="margin: 0;" data-i18n="page_title">Leads</h1>
-                <p style="margin: 4px 0 0 0; color: var(--text-muted);" id="counter-label" data-i18n="counter_loading">Loading leads...</p>
+                <h1 data-i18n="page_title">Leads</h1>
+                <div class="counter-badge" id="counter-label" data-i18n="counter_loading">Loading leads...</div>
             </div>
             <button class="btn btn-success" onclick="openAddLeadModal()" data-i18n="new_lead_btn">+ Add Inbound Lead</button>
         </div>
 
         <div class="controls-bar">
-            <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." style="flex-grow: 1; min-width: 200px;" oninput="debounceFetch()">
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-box" placeholder="Search by name, customer ID, phone or email..." oninput="debounceFetch()">
+            </div>
             <select id="agent-filter" onchange="fetchLeads(1)">
                 <option value="" data-i18n="opt_all_agents">All Agents</option>
             </select>
@@ -295,11 +507,11 @@
             <table class="leads-table">
                 <thead>
                     <tr>
-                        <th data-i18n="col_lead_id">Lead ID</th>
+                        <th data-i18n="col_lead_id" style="width: 165px; text-align: center;">Lead ID</th>
                         <th data-i18n="col_customer">Customer</th>
-                        <th data-i18n="col_inquiry">Type / Source</th>
+                        <th data-i18n="col_inquiry" style="width: 165px; text-align: center;">Type / Source</th>
                         <th data-i18n="col_budget">Budget Range</th>
-                        <th data-i18n="col_status">Status & SLA</th>
+                        <th data-i18n="col_status" style="width: 165px; text-align: center;">Status & SLA</th>
                         <th data-i18n="col_agent">Assigned Agent</th>
                         <th data-i18n="col_actions">Actions</th>
                     </tr>
@@ -860,27 +1072,33 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-weight: 600; display: block; margin-bottom: 8px;" data-i18n="lbl_call_outcome">Call Outcome *</label>
+                        <label style="font-weight: 700; font-size: 0.88em; color: #0f172a; display: block; margin-bottom: 8px;" data-i18n="lbl_call_outcome">Call Outcome *</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #bbf7d0; border-radius: 6px; cursor: pointer;">
-                                <input type="radio" name="cl_outcome" value="CONNECTED" checked>
-                                <div>
-                                    <strong style="color: #166534;" data-i18n="opt_outcome_connected">📞 Connected with Client</strong>
-                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_connected_sub">Promote to CONTACTED and generate qualification task</div>
+                            <label class="outcome-card style-success">
+                                <div class="outcome-card-control">
+                                    <input type="radio" name="cl_outcome" value="CONNECTED" checked>
+                                </div>
+                                <div class="outcome-card-content">
+                                    <div class="outcome-card-title" data-i18n="opt_outcome_connected">📞 Connected with Client</div>
+                                    <div class="outcome-card-desc" data-i18n="opt_outcome_connected_sub">Promote to CONTACTED and generate qualification task</div>
                                 </div>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #fed7aa; border-radius: 6px; cursor: pointer;">
-                                <input type="radio" name="cl_outcome" value="NO_ANSWER">
-                                <div>
-                                    <strong style="color: #c2410c;" data-i18n="opt_outcome_no_answer">📵 No Answer / Busy</strong>
-                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_no_answer_sub">Keep lead status and schedule follow-up in 3 hours</div>
+                            <label class="outcome-card style-warning">
+                                <div class="outcome-card-control">
+                                    <input type="radio" name="cl_outcome" value="NO_ANSWER">
+                                </div>
+                                <div class="outcome-card-content">
+                                    <div class="outcome-card-title" data-i18n="opt_outcome_no_answer">📵 No Answer / Busy</div>
+                                    <div class="outcome-card-desc" data-i18n="opt_outcome_no_answer_sub">Keep lead status and schedule follow-up in 3 hours</div>
                                 </div>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;">
-                                <input type="radio" name="cl_outcome" value="NOT_INTERESTED">
-                                <div>
-                                    <strong style="color: #991b1b;" data-i18n="opt_outcome_not_interested">🚫 Not Interested / Disqualified</strong>
-                                    <div style="font-size: 0.8em; color: var(--text-muted);" data-i18n="opt_outcome_not_interested_sub">Disqualify lead and update status to DISQUALIFIED</div>
+                            <label class="outcome-card style-danger">
+                                <div class="outcome-card-control">
+                                    <input type="radio" name="cl_outcome" value="NOT_INTERESTED">
+                                </div>
+                                <div class="outcome-card-content">
+                                    <div class="outcome-card-title" data-i18n="opt_outcome_not_interested">🚫 Not Interested / Disqualified</div>
+                                    <div class="outcome-card-desc" data-i18n="opt_outcome_not_interested_sub">Disqualify lead and update status to DISQUALIFIED</div>
                                 </div>
                             </label>
                         </div>
@@ -1183,7 +1401,9 @@
                 ? 'الطلبات - RE CRM' 
                 : 'Leads - RE CRM';
             populateReferenceSelects();
-            renderLeads();
+            if (typeof fetchLeads === 'function' && Array.isArray(cachedLeads) && cachedLeads.length > 0) {
+                fetchLeads(currentLeadsPage);
+            }
             if (document.getElementById('edit-lead-modal')?.style?.display === 'flex') {
                 renderLeadUnitsList();
                 filterLeadUnitsList();
@@ -1233,11 +1453,19 @@
 
         function getStatusBadge(status) {
             const s = (status || '').toUpperCase();
-            if (s === 'NEW') return `<span class="badge badge-new">${s}</span>`;
-            if (s === 'CONTACTED') return `<span class="badge badge-contacted">${s}</span>`;
-            if (s === 'QUALIFIED') return `<span class="badge badge-qualified">${s}</span>`;
-            if (s === 'CONVERTED') return `<span class="badge badge-converted">${s}</span>`;
-            return `<span class="badge badge-lost">${s}</span>`;
+            let cls = 'badge-lost';
+            if (s === 'NEW') cls = 'badge-new';
+            else if (s === 'CONTACTED') cls = 'badge-contacted';
+            else if (s === 'QUALIFIED') cls = 'badge-qualified';
+            else if (s === 'CONVERTED') cls = 'badge-converted';
+            return `<span class="badge ${cls} lead-status-badge"><span class="badge-dot"></span><span>${s}</span></span>`;
+        }
+
+        function formatPropertyTypeDisplay(rawName) {
+            if (!rawName) return { clean: '', desc: '' };
+            const m = rawName.match(/^([^(]+)(?:\s*\((.*?)\))?/);
+            if (!m) return { clean: rawName.trim(), desc: '' };
+            return { clean: m[1].trim(), desc: m[2] ? m[2].trim() : '' };
         }
 
         let refDataLoaded = false;
@@ -1363,11 +1591,25 @@
                     usersToShow = refUsers.filter(u => u.branch_id === currentUser.branch_id);
                 }
 
+                function formatBranchName(rawName, isArabic) {
+                    if (!rawName) return isArabic ? 'الإدارة العامة والمركز الرئيسي' : 'Headquarters / Corporate Office';
+                    if (!isArabic) return rawName;
+                    const lower = rawName.toLowerCase();
+                    if (lower.includes('riyadh')) return 'الفرع الرئيسي - الرياض';
+                    if (lower.includes('makkah')) return 'فرع مكة المكرمة';
+                    if (lower.includes('jeddah')) return 'فرع جدة';
+                    if (lower.includes('dammam')) return 'فرع الدمام';
+                    if (lower.includes('khobar')) return 'فرع الخبر';
+                    if (lower.includes('medina') || lower.includes('madinah')) return 'فرع المدينة المنورة';
+                    return rawName;
+                }
+
                 let html = `<option value="">${isAr ? '🌐 جميع الوسطاء' : '🌐 All Agents'}</option>`;
 
                 if (isBM && !isGM && currentUser.branch_id) {
                     // For Branch Manager: show branch brokers only
-                    const branchName = currentUser.branch_name || (usersToShow[0]?.branch_name) || (isAr ? 'الفرع' : 'Branch');
+                    const rawBranch = currentUser.branch_name || (usersToShow[0]?.branch_name) || '';
+                    const branchName = formatBranchName(rawBranch, isAr);
                     html += `<optgroup label="🏢 ${branchName} (${isAr ? 'وسطاء الفرع فقط' : 'Branch Brokers Only'})">`;
                     html += usersToShow.map(u => {
                         const rTitle = isAr ? (u.role_titles_ar || '') : (u.role_names_en?.join(', ') || '');
@@ -1376,12 +1618,13 @@
                     }).join('');
                     html += `</optgroup>`;
                 } else {
-                    // For General Manager & staff under GM: show all brokers, grouped and sorted by branch
+                    // For General Manager & staff: show all brokers, classified and grouped by branch
                     const branchGroups = {};
                     usersToShow.forEach(u => {
-                        const bName = u.branch_name || (isAr ? 'الإدارة العامة والمركز الرئيسي' : 'Headquarters / Corporate Office');
-                        if (!branchGroups[bName]) branchGroups[bName] = [];
-                        branchGroups[bName].push(u);
+                        const rawBName = u.branch_name || '';
+                        const bLabel = formatBranchName(rawBName, isAr);
+                        if (!branchGroups[bLabel]) branchGroups[bLabel] = [];
+                        branchGroups[bLabel].push(u);
                     });
 
                     const sortedBranches = Object.keys(branchGroups).sort((a, b) => a.localeCompare(b, isAr ? 'ar' : 'en'));
@@ -1740,15 +1983,15 @@
                     if (l.first_contact_at) {
                         const cDate = new Date(l.first_contact_at);
                         const cStr = cDate.toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-                        slaHtml = `<span style="font-size: 0.72em; color: #15803d; margin-inline-start: 4px;" title="Contacted at: ${l.first_contact_at}">✓ ${cStr}</span>`;
+                        slaHtml = `<span style="font-size: 0.72em; color: #15803d; margin-inline-start: 4px;" title="Contacted at: ${l.first_contact_at}"><span class="icon-glyph">✓</span> ${cStr}</span>`;
                     } else if (l.first_contact_due_at) {
                         const dueDate = new Date(l.first_contact_due_at);
                         const isOverdue = new Date() > dueDate;
                         const dueStr = dueDate.toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                         if (isOverdue) {
-                            slaHtml = `<span style="font-size: 0.72em; color: #dc2626; font-weight: 600; margin-inline-start: 4px;" title="SLA Overdue! Due was: ${l.first_contact_due_at}">⚠️ SLA Overdue</span>`;
+                            slaHtml = `<span style="font-size: 0.72em; color: #dc2626; font-weight: 600; margin-inline-start: 4px;" title="SLA Overdue! Due was: ${l.first_contact_due_at}"><span class="icon-glyph">⚠️</span> SLA Overdue</span>`;
                         } else {
-                            slaHtml = `<span style="font-size: 0.72em; color: #2563eb; margin-inline-start: 4px;" title="First contact due: ${l.first_contact_due_at}">⏰ ${dueStr}</span>`;
+                            slaHtml = `<span style="font-size: 0.72em; color: #2563eb; margin-inline-start: 4px;" title="First contact due: ${l.first_contact_due_at}"><span class="icon-glyph">⏰</span> ${dueStr}</span>`;
                         }
                     }
 
@@ -1756,51 +1999,81 @@
                         ? `${l.customer_name || ''} | ${l.customer_mobile || ''} ${l.customer_email ? '• ' + l.customer_email : ''}`
                         : (l.customer_name || '');
                     const contactIcon = l.customer_mobile 
-                        ? `<span style="font-size: 0.75em; color: #64748b; margin-inline-start: 4px; cursor: help;" title="${l.customer_mobile}${l.customer_email ? ' • ' + l.customer_email : ''}">📞</span>`
+                        ? `<span class="icon-glyph" style="font-size: 0.8em; color: #64748b; margin-inline-start: 4px; cursor: help;" title="${l.customer_mobile}${l.customer_email ? ' • ' + l.customer_email : ''}">📞</span>`
                         : '';
 
                     let unitsBadgeHtml = '';
                     if (l.units && l.units.length > 0) {
                         const prim = l.units.find(u => u.is_primary) || l.units[0];
                         const extra = l.units.length - 1;
-                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;">🏢 Unit ${prim.unit_number || prim.unit_id} ${extra > 0 ? `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 0.82em; font-weight: 600;">+${extra} more</span>` : ''}</div>`;
+                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;"><span class="icon-glyph">🏢</span> Unit ${prim.unit_number || prim.unit_id} ${extra > 0 ? `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 0.82em; font-weight: 600;">+${extra} more</span>` : ''}</div>`;
                     } else if (l.unit_number) {
-                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;">🏢 Unit ${l.unit_number} <span style="font-size: 0.9em; color: var(--text-muted); font-weight: normal;">(${l.building_name || l.project_name || 'Assigned'})</span></div>`;
+                        unitsBadgeHtml = `<div style="font-size: 0.78em; color: #0284c7; margin-top: 3px; font-weight: 600;"><span class="icon-glyph">🏢</span> Unit ${l.unit_number} <span style="font-size: 0.9em; color: var(--text-muted); font-weight: normal;">(${l.building_name || l.project_name || 'Assigned'})</span></div>`;
+                    }
+
+                    const rawPt = isAr 
+                        ? (l.preferred_property_type_name_ar || l.preferred_property_type_name || '')
+                        : (l.preferred_property_type_name || l.preferred_property_type_name_ar || '');
+                    const ptObj = formatPropertyTypeDisplay(rawPt);
+                    const ptHtml = ptObj.clean ? `
+                        <div class="prop-type-badge">
+                            <span>🏢 ${ptObj.clean}</span>
+                            ${ptObj.desc ? `<span class="prop-type-info-btn" title="${ptObj.desc.replace(/"/g, '&quot;')}">ℹ️</span>` : ''}
+                        </div>
+                    ` : '';
+
+                    const rawInq = (l.inquiry_type || '').toUpperCase();
+                    let inqLabel = isAr ? 'طلب عقاري' : (l.inquiry_type || 'Inquiry');
+                    let inqIcon = '🎯';
+                    if (rawInq === 'RENT') {
+                        inqLabel = isAr ? 'إيجار' : 'Rent';
+                        inqIcon = '🔑';
+                    } else if (rawInq === 'INVEST' || rawInq === 'INVESTMENT') {
+                        inqLabel = isAr ? 'استثمار' : 'Invest';
+                        inqIcon = '💼';
+                    } else if (rawInq === 'BUY') {
+                        inqLabel = isAr ? 'شراء' : 'Buy';
+                        inqIcon = '🏠';
                     }
 
                     return `
                         <tr>
-                            <td>
-                                <span class="id-badge">${l.lead_id}</span>
-                                <button class="btn-copy" onclick="copyId('${l.lead_id}')" title="Copy Lead ID">📋</button>
+                            <td style="text-align: center;">
+                                <span class="id-badge lead-id-badge">${l.lead_id}</span>
                             </td>
-                            <td title="${contactTooltip}">
+                            <td title="${contactTooltip}" style="max-width: 220px; white-space: normal;">
                                 <strong>${l.customer_name || 'N/A'}</strong>
                                 <span style="font-size: 0.75em; color: var(--text-muted); margin-inline-start: 4px;">(${l.customer_id || '--'})</span>
                                 ${contactIcon}
                             </td>
-                            <td>
-                                <strong>${l.inquiry_type || 'N/A'}</strong>
-                                <span style="font-size: 0.78em; color: var(--text-muted);">• ${l.lead_source_name || 'Direct'}</span>
-                                ${unitsBadgeHtml}
+                            <td style="max-width: 220px; white-space: normal;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div class="lead-type-chip" title="${inqLabel} • ${l.lead_source_name || 'Direct'}">
+                                        <span>${inqIcon}</span> <span>${inqLabel}</span> <span style="opacity:0.5;">•</span> <span>${l.lead_source_name || 'Direct'}</span>
+                                    </div>
+                                    ${ptHtml}
+                                    ${unitsBadgeHtml}
+                                </div>
                             </td>
-                            <td>${budget}</td>
-                            <td>
-                                ${getStatusBadge(l.status)}
-                                ${slaHtml}
+                            <td style="white-space: nowrap;">${budget}</td>
+                            <td style="white-space: nowrap; text-align: center;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                    ${getStatusBadge(l.status)}
+                                    ${slaHtml}
+                                </div>
                             </td>
-                            <td>${l.assigned_user_name || 'Unassigned'}</td>
-                            <td>
-                                <div style="display: flex; gap: 4px; align-items: center;">
-                                    <button class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey / مسار المعاملة">📍 ${currentLang === 'ar' ? 'مسار المعاملة' : 'Situation'}</button>
-                                    <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details">✏️ ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
-                                    ${canDelRow ? `<button class="btn btn-sm" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 7px;" onclick="deleteLead('${l.lead_id}', '${(l.customer_name || l.lead_id).replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'حذف الطلب' : 'Delete Lead'}">🗑️</button>` : ''}
+                            <td style="max-width: 160px; white-space: normal;">${l.assigned_user_name || 'Unassigned'}</td>
+                            <td style="white-space: nowrap;">
+                                <div style="display: flex; gap: 4px; align-items: center; flex-wrap: nowrap;">
+                                    <button class="btn btn-sm" style="background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc;" onclick="openSituationModal({ leadId: '${l.lead_id}' })" title="Situation & Operational Journey / مسار المعاملة"><span class="icon-glyph">📍</span> ${currentLang === 'ar' ? 'مسار المعاملة' : 'Situation'}</button>
+                                    <button class="btn btn-primary-sm" onclick="openEditLeadModal('${l.lead_id}')" title="Edit Lead Details"><span class="icon-glyph">✏️</span> ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                                    ${canDelRow ? `<button class="btn btn-sm" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 7px;" onclick="deleteLead('${l.lead_id}', '${(l.customer_name || l.lead_id).replace(/'/g, "\\'")}')" title="${currentLang === 'ar' ? 'حذف الطلب' : 'Delete Lead'}"><span class="icon-glyph">🗑️</span></button>` : ''}
                                     ${l.status === 'NEW' 
-                                        ? `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;" onclick="markContacted('${l.lead_id}')" title="Mark as Contacted (records first contact time)">📞 Contacted</button>` 
+                                        ? `<button class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;" onclick="markContacted('${l.lead_id}')" title="Mark as Contacted (records first contact time)"><span class="icon-glyph">📞</span> Contacted</button>` 
                                         : ''}
                                     ${l.status !== 'QUALIFIED' && l.status !== 'CONVERTED' 
-                                        ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')" title="Qualify & send to Sales Pipeline">⭐ Qualify</button>` 
-                                        : `<a href="sales.html?lead_id=${encodeURIComponent(l.lead_id)}" class="btn btn-sm" style="background: #dcfce7; color: #166534; text-decoration: none;" title="View deal on Sales Pipeline board">📊 Pipeline</a>`}
+                                        ? `<button class="btn btn-sm" onclick="qualifyLead('${l.lead_id}')" title="Qualify & send to Sales Pipeline"><span class="icon-glyph">⭐</span> Qualify</button>` 
+                                        : `<a href="sales.html?lead_id=${encodeURIComponent(l.lead_id)}" class="btn btn-sm" style="background: #dcfce7; color: #166534; text-decoration: none;" title="View deal on Sales Pipeline board"><span class="icon-glyph">📊</span> Pipeline</a>`}
                                 </div>
                             </td>
                         </tr>
@@ -2667,9 +2940,44 @@
             }
 
             const isAr = currentLang === 'ar';
+
+            // 1. Fetch full live inventory of all records created/linked to this lead
+            let inventorySummary = '';
+            try {
+                const invRes = await fetch(`${API_BASE}/api/v1/leads/${leadId}/inventory`);
+                if (invRes.ok) {
+                    const invJson = await invRes.json();
+                    const sc = invJson.data?.summary_counts || {};
+                    if (!invJson.data?.can_delete) {
+                        const blocker = (sc.opportunities_count > 0) 
+                            ? (isAr ? `${sc.opportunities_count} صفقات بيعية نشطة` : `${sc.opportunities_count} active opportunities`)
+                            : (isAr ? `${sc.invoices_count} فواتير مالية مسجلة` : `${sc.invoices_count} statutory invoices`);
+                        alert(isAr 
+                            ? `⚠️ تنبيه حماية البيانات والسلامة المالية:\n\nلا يمكن حذف الطلب لوجود (${blocker}) مرتبطة به في النظام.\nيرجى إلغاء أو معالجة الصفقات والفواتير المرتبطة أولاً قبل محاولة الحذف.` 
+                            : `⚠️ Data Integrity Protection:\n\nCannot delete lead: linked to (${blocker}). Please process or cancel linked deals/invoices first.`);
+                        return;
+                    }
+                    inventorySummary = isAr
+                        ? `\n📊 حصر السجلات التابعة للطلب والتي سيتم حذفها نهائياً:\n` +
+                          `• المهام المسندة: ${sc.tasks_count || 0}\n` +
+                          `• الأنشطة المنفذة: ${sc.activities_count || 0}\n` +
+                          `• الاتصالات والمكالمات: ${sc.communications_count || 0}\n` +
+                          `• المعاينات العقارية: ${sc.viewings_count || 0}\n` +
+                          `• المستندات والملفات: ${sc.documents_count || 0}\n` +
+                          `• الوحدات المرشحة: ${sc.shortlisted_units_count || 0}\n`
+                        : `\n📊 Traceability Inventory of dependent records to be permanently deleted:\n` +
+                          `• Tasks: ${sc.tasks_count || 0}\n` +
+                          `• Activities: ${sc.activities_count || 0}\n` +
+                          `• Communications: ${sc.communications_count || 0}\n` +
+                          `• Property Viewings: ${sc.viewings_count || 0}\n` +
+                          `• Documents: ${sc.documents_count || 0}\n` +
+                          `• Shortlisted Units: ${sc.shortlisted_units_count || 0}\n`;
+                }
+            } catch (_) {}
+
             const confirmMsg = isAr
-                ? `هل أنت متأكد من حذف هذا الطلب نهائياً وكافة مهامه وأنشطته؟\n\nالطلب: ${leadId} (${custName || ''})\n\nتحذير: لا يمكن التراجع عن هذا الإجراء.`
-                : `Are you sure you want to permanently delete this lead and its activities/tasks?\n\nLead: ${leadId} (${custName || ''})\n\nWarning: This action cannot be undone.`;
+                ? `هل أنت متأكد من حذف هذا الطلب نهائياً وكافة متعلقاته؟\n\nالطلب: ${leadId} (${custName || ''})\n${inventorySummary}\n⚠️ تحذير: سيتم مسح كافة المهام والأنشطة والاتصالات التابعة للطلب فوراً ولا يمكن التراجع.`
+                : `Are you sure you want to permanently delete this lead and all its records?\n\nLead: ${leadId} (${custName || ''})\n${inventorySummary}\n⚠️ Warning: All dependent tasks, activities and comms will be purged immediately.`;
 
             if (!confirm(confirmMsg)) return;
 
@@ -2681,7 +2989,15 @@
                     }
                 });
                 if (res.ok) {
-                    showToast(isAr ? 'تم حذف الطلب بنجاح' : 'Lead deleted successfully');
+                    const resJson = await res.json().catch(() => ({}));
+                    const purged = resJson.data?.purged;
+                    let successDetail = '';
+                    if (purged) {
+                        successDetail = isAr
+                            ? ` (تم مسح ${purged.tasks} مهمة، ${purged.activities} نشاط، ${purged.communications} اتصال)`
+                            : ` (${purged.tasks} tasks, ${purged.activities} activities, ${purged.communications} comms purged)`;
+                    }
+                    showToast((isAr ? 'تم حذف الطلب وكافة متعلقاته بنجاح' : 'Lead and dependent records deleted successfully') + successDetail);
                     closeEditLeadModal();
                     fetchLeads(currentLeadsPage);
                 } else {
@@ -2913,7 +3229,11 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('recrm:user-ready', () => {
+            populateReferenceSelects();
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
             initTypographyAndLang();
             const urlParams = new URLSearchParams(window.location.search);
             const urlAgent = urlParams.get('assigned_user_id') || urlParams.get('agent_id');
@@ -2929,8 +3249,8 @@
                 const sBox = document.getElementById('search-box');
                 if (sBox) sBox.value = preLead;
             }
-            fetchLeads(); // Priority 1: Immediate live data display
-            setTimeout(initReferenceData, 150); // Priority 2: Pre-fetch modal reference selects in background
+            await initReferenceData();
+            fetchLeads();
         });
     </script>
     <script src="common.js"></script>
